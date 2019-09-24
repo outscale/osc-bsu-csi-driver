@@ -19,6 +19,7 @@ package driver
 import (
 	"context"
 	"fmt"
+	"log"
 	"net"
 
 	csi "github.com/container-storage-interface/spec/lib/go/csi"
@@ -93,11 +94,13 @@ func NewDriver(options ...func(*DriverOptions)) (*Driver, error) {
 }
 
 func (d *Driver) Run() error {
+	log.Printf("Driver: %+v", d)
+	log.Printf("endpoint: %s", d.options.endpoint)
 	scheme, addr, err := util.ParseEndpoint(d.options.endpoint)
 	if err != nil {
 		return err
 	}
-
+	log.Printf("scheme addr: %+v %+v", scheme, addr)
 	listener, err := net.Listen(scheme, addr)
 	if err != nil {
 		return err

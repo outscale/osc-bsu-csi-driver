@@ -18,8 +18,9 @@ package cloud
 
 import (
 	"fmt"
-	"github.com/aws/aws-sdk-go/aws/ec2metadata"
 	"log"
+
+	"github.com/aws/aws-sdk-go/aws/ec2metadata"
 )
 
 type EC2Metadata interface {

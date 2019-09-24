@@ -51,6 +51,6 @@ replace (
 	k8s.io/sample-apiserver => k8s.io/sample-apiserver v0.17.3
 	k8s.io/sample-cli-plugin => k8s.io/sample-cli-plugin v0.17.3
 	k8s.io/sample-controller => k8s.io/sample-controller v0.17.3
+	vbom.ml/util => github.com/fvbommel/util v0.0.0-20160121211510-db5cfe13f5cc
 )
 
-go 1.13

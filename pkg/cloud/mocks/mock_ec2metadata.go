@@ -57,3 +57,11 @@ func (m *MockEC2Metadata) GetInstanceIdentityDocument() (ec2metadata.EC2Instance
 func (mr *MockEC2MetadataMockRecorder) GetInstanceIdentityDocument() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetInstanceIdentityDocument", reflect.TypeOf((*MockEC2Metadata)(nil).GetInstanceIdentityDocument))
 }
+
+// GetMetadata(p string) (string, error) mocks base method
+func (m *MockEC2Metadata) GetMetadata(p string) (string, error) {
+	ret := m.ctrl.Call(m, "GetMetadata")
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}

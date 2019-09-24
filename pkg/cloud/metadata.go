@@ -18,8 +18,8 @@ package cloud
 
 import (
 	"fmt"
-    "log"
 	"github.com/aws/aws-sdk-go/aws/ec2metadata"
+	"log"
 )
 
 type EC2Metadata interface {
@@ -65,7 +65,6 @@ func (m *Metadata) GetAvailabilityZone() string {
 	return m.AvailabilityZone
 }
 
-
 // NewMetadataService returns a new MetadataServiceImplementation.
 func NewMetadataService(svc EC2Metadata) (MetadataService, error) {
 
@@ -73,29 +72,29 @@ func NewMetadataService(svc EC2Metadata) (MetadataService, error) {
 		return nil, fmt.Errorf("EC2 instance metadata is not available")
 	}
 
-    instanceID, err := svc.GetMetadata("instance-id")
+	instanceID, err := svc.GetMetadata("instance-id")
 	if err != nil || len(instanceID) == 0 {
 		return nil, fmt.Errorf("could not get valid EC2 instance ID")
 	}
-    instanceType, err := svc.GetMetadata("instance-type")
-    if err != nil || len(instanceType) == 0 {
-    	return nil, fmt.Errorf("could not get valid EC2 instance type")
-    }
+	instanceType, err := svc.GetMetadata("instance-type")
+	if err != nil || len(instanceType) == 0 {
+		return nil, fmt.Errorf("could not get valid EC2 instance type")
+	}
 
-    availabilityZone, err := svc.GetMetadata("placement/availability-zone")
-    if err != nil || len(availabilityZone) == 0 {
-    	return nil, fmt.Errorf("could not get valid EC2 availavility zone")
-    }
-    region := availabilityZone[0:len(availabilityZone)-1]
-    log.Println("region region region : %s", region)
-    if len(region) == 0 {
-    	return nil, fmt.Errorf("could not get valid EC2 region")
-    }
+	availabilityZone, err := svc.GetMetadata("placement/availability-zone")
+	if err != nil || len(availabilityZone) == 0 {
+		return nil, fmt.Errorf("could not get valid EC2 availavility zone")
+	}
+	region := availabilityZone[0 : len(availabilityZone)-1]
+	log.Println("region : ", region)
+	if len(region) == 0 {
+		return nil, fmt.Errorf("could not get valid EC2 region")
+	}
 
 	return &Metadata{
-		InstanceID:       instanceID, // doc.InstanceID,
-		InstanceType:     instanceType, // doc.InstanceType,
-		Region:           region, // doc.Region,
+		InstanceID:       instanceID,       // doc.InstanceID,
+		InstanceType:     instanceType,     // doc.InstanceType,
+		Region:           region,           // doc.Region,
 		AvailabilityZone: availabilityZone, //doc.AvailabilityZone,
 	}, nil
 }

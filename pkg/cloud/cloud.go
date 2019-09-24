@@ -27,9 +27,9 @@ import (
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/credentials/ec2rolecreds"
 	"github.com/aws/aws-sdk-go/aws/ec2metadata"
+	"github.com/aws/aws-sdk-go/aws/endpoints"
 	"github.com/aws/aws-sdk-go/aws/request"
 	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/aws/endpoints"
 	"github.com/aws/aws-sdk-go/service/ec2"
 	dm "github.com/kubernetes-sigs/aws-ebs-csi-driver/pkg/cloud/devicemanager"
 	"github.com/kubernetes-sigs/aws-ebs-csi-driver/pkg/util"
@@ -208,16 +208,16 @@ func NewCloudWithMetadata(metadata MetadataService) (Cloud, error) {
 }
 
 func newEC2MetadataSvc() *ec2metadata.EC2Metadata {
-    myCustomResolver := func(service, region string, optFns ...func(*endpoints.Options)) (endpoints.ResolvedEndpoint, error) {
-            return endpoints.ResolvedEndpoint{
-                URL:           "http://169.254.169.254/latest",
-                SigningRegion: "custom-signing-region",
-            }, nil
+	myCustomResolver := func(service, region string, optFns ...func(*endpoints.Options)) (endpoints.ResolvedEndpoint, error) {
+		return endpoints.ResolvedEndpoint{
+			URL:           "http://169.254.169.254/latest",
+			SigningRegion: "custom-signing-region",
+		}, nil
 
-    }
+	}
 	sess := session.Must(session.NewSession(&aws.Config{
-	    Region : aws.String("eu-west-2"),
-	    EndpointResolver: endpoints.ResolverFunc(myCustomResolver),
+		Region:           aws.String("eu-west-2"),
+		EndpointResolver: endpoints.ResolverFunc(myCustomResolver),
 	}))
 	return ec2metadata.New(sess)
 }

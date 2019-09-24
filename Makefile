@@ -26,7 +26,7 @@ GOPROXY=direct
 .PHONY: aws-ebs-csi-driver
 aws-ebs-csi-driver:
 	mkdir -p bin
-	CGO_ENABLED=0 GOOS=linux go build  -gcflags "-N -l" -ldflags ${LDFLAGS}  -o  bin/aws-ebs-csi-driver ./cmd/
+	CGO_ENABLED=0 GOOS=linux go build -v -gcflags "-N -l" -ldflags ${LDFLAGS}  -o  bin/aws-ebs-csi-driver ./cmd/
 
 .PHONY: verify
 verify:

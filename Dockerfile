@@ -13,15 +13,16 @@
 # limitations under the License.
 
 FROM golang:1.12.7-stretch
+RUN apt-get -y update && \
+    apt-get -y install gdb jq && \
+    echo "add-auto-load-safe-path /usr/local/go/src/runtime/runtime-gdb.py" >> /root/.gdbinit
+
 
 WORKDIR /go/src/github.com/kubernetes-sigs/aws-ebs-csi-driver
 COPY . .
 RUN make -j 4 && \
     cp /go/src/github.com/kubernetes-sigs/aws-ebs-csi-driver/bin/aws-ebs-csi-driver /bin/aws-ebs-csi-driver
 
-RUN apt-get -y update && \
-    apt-get -y install gdb jq && \
-    echo "add-auto-load-safe-path /usr/local/go/src/runtime/runtime-gdb.py" >> /root/.gdbinit
 
 ENTRYPOINT ["/bin/aws-ebs-csi-driver"]
 

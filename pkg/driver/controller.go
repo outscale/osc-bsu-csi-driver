@@ -21,6 +21,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"log"
 
 	csi "github.com/container-storage-interface/spec/lib/go/csi"
 	"github.com/golang/protobuf/ptypes"
@@ -110,7 +111,9 @@ func (d *controllerService) CreateVolume(ctx context.Context, req *csi.CreateVol
 		return nil, status.Error(codes.InvalidArgument, "Volume capabilities not supported")
 	}
 
+	log.Printf("TEST 1")
 	disk, err := d.cloud.GetDiskByName(ctx, volName, volSizeBytes)
+	log.Printf("Err test 1 %s", err.Error())
 	if err != nil {
 		switch err {
 		case cloud.ErrNotFound:
@@ -246,10 +249,12 @@ func (d *controllerService) ControllerPublishVolume(ctx context.Context, req *cs
 	if !isValidVolumeCapabilities(caps) {
 		return nil, status.Error(codes.InvalidArgument, "Volume capability not supported")
 	}
+	log.Printf("TEST 1")
 
 	if !d.cloud.IsExistInstance(ctx, nodeID) {
 		return nil, status.Errorf(codes.NotFound, "Instance %q not found", nodeID)
 	}
+	log.Printf("TEST 2")
 
 	if _, err := d.cloud.GetDiskByID(ctx, volumeID); err != nil {
 		if err == cloud.ErrNotFound {
@@ -257,6 +262,7 @@ func (d *controllerService) ControllerPublishVolume(ctx context.Context, req *cs
 		}
 		return nil, status.Errorf(codes.Internal, "Could not get volume with ID %q: %v", volumeID, err)
 	}
+	log.Printf("TEST 3")
 
 	devicePath, err := d.cloud.AttachDisk(ctx, volumeID, nodeID)
 	if err != nil {

@@ -228,11 +228,21 @@ func newEC2Cloud(metadata MetadataService, svc *ec2metadata.EC2Metadata) (Cloud,
 		&ec2rolecreds.EC2RoleProvider{Client: svc},
 		&credentials.SharedCredentialsProvider{},
 	}
-
+	myCustomResolver := func(service, region string, optFns ...func(*endpoints.Options)) (endpoints.ResolvedEndpoint, error) {
+	        if service == endpoints.Ec2ServiceID {
+	            return endpoints.ResolvedEndpoint{
+          		  URL:           "https://fcu.eu-west-2.outscale.com",
+			  SigningRegion: "eu-west-2",
+			  SigningName: "ec2",
+	            }, nil
+	        }
+	        return endpoints.DefaultResolver().EndpointFor(service, region, optFns...)
+	}
 	awsConfig := &aws.Config{
 		Region:                        aws.String(metadata.GetRegion()),
 		Credentials:                   credentials.NewChainCredentials(provider),
 		CredentialsChainVerboseErrors: aws.Bool(true),
+		EndpointResolver: endpoints.ResolverFunc(myCustomResolver),
 	}
 
 	return &cloud{

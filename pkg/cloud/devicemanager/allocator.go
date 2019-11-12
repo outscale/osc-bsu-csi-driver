@@ -50,14 +50,11 @@ var _ NameAllocator = &nameAllocator{}
 //     ba, ... ,bz, ca, ... , cz
 // and return the first one that is not used yet.
 func (d *nameAllocator) GetNext(existingNames ExistingNames) (string, error) {
-//	for _, c1 := range []string{"b", "c"} {
-		for c2 := 'b'; c2 <= 'z'; c2++ {
-			name := fmt.Sprintf("%s", string(c2))
-			if _, found := existingNames[name]; !found {
-				return name, nil
-			}
-		}
-//	}
-
+    for c2 := 'b'; c2 <= 'z'; c2++ {
+        name := fmt.Sprintf("%s", string(c2))
+        if _, found := existingNames[name]; !found {
+            return name, nil
+        }
+    }
 	return "", fmt.Errorf("there are no names available")
 }

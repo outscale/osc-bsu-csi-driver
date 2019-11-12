@@ -208,16 +208,9 @@ func NewCloudWithMetadata(metadata MetadataService) (Cloud, error) {
 }
 
 func newEC2MetadataSvc() *ec2metadata.EC2Metadata {
-	myCustomResolver := func(service, region string, optFns ...func(*endpoints.Options)) (endpoints.ResolvedEndpoint, error) {
-		return endpoints.ResolvedEndpoint{
-			URL:           "http://169.254.169.254/latest",
-			SigningRegion: "custom-signing-region",
-		}, nil
 
-	}
 	sess := session.Must(session.NewSession(&aws.Config{
-		Region:           aws.String("eu-west-2"),
-		EndpointResolver: endpoints.ResolverFunc(myCustomResolver),
+		EndpointResolver: endpoints.ResolverFunc(util.OscSetupMetadataResolver()),
 	}))
 	return ec2metadata.New(sess)
 }
@@ -228,21 +221,12 @@ func newEC2Cloud(metadata MetadataService, svc *ec2metadata.EC2Metadata) (Cloud,
 		&ec2rolecreds.EC2RoleProvider{Client: svc},
 		&credentials.SharedCredentialsProvider{},
 	}
-	myCustomResolver := func(service, region string, optFns ...func(*endpoints.Options)) (endpoints.ResolvedEndpoint, error) {
-	        if service == endpoints.Ec2ServiceID {
-	            return endpoints.ResolvedEndpoint{
-          		  URL:           "https://fcu.eu-west-2.outscale.com",
-			  SigningRegion: "eu-west-2",
-			  SigningName: "ec2",
-	            }, nil
-	        }
-	        return endpoints.DefaultResolver().EndpointFor(service, region, optFns...)
-	}
+
 	awsConfig := &aws.Config{
 		Region:                        aws.String(metadata.GetRegion()),
 		Credentials:                   credentials.NewChainCredentials(provider),
 		CredentialsChainVerboseErrors: aws.Bool(true),
-		EndpointResolver: endpoints.ResolverFunc(myCustomResolver),
+		EndpointResolver: endpoints.ResolverFunc(util.OscSetupServiceResolver(metadata.GetRegion())),
 	}
 
 	return &cloud{

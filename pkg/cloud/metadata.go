@@ -92,9 +92,9 @@ func NewMetadataService(svc EC2Metadata) (MetadataService, error) {
 	}
 
 	return &Metadata{
-		InstanceID:       instanceID,       // doc.InstanceID,
-		InstanceType:     instanceType,     // doc.InstanceType,
-		Region:           region,           // doc.Region,
-		AvailabilityZone: availabilityZone, //doc.AvailabilityZone,
+		InstanceID:       instanceID,
+		InstanceType:     instanceType,
+		Region:           region,
+		AvailabilityZone: availabilityZone,
 	}, nil
 }

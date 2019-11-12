@@ -110,20 +110,12 @@ func newCSIClient() (*CSIClient, error) {
 }
 
 func newMetadata() (cloud.MetadataService, error) {
-	myCustomResolver := func(service, region string, optFns ...func(*endpoints.Options)) (endpoints.ResolvedEndpoint, error) {
-	     return endpoints.ResolvedEndpoint{
-	         URL:           "http://169.254.169.254/latest",
-	         SigningRegion: "custom-signing-region",
-	     }, nil
-	}
 	s, err := session.NewSession(&aws.Config{
-		Region:           aws.String("eu-west-2"),
-		EndpointResolver: endpoints.ResolverFunc(myCustomResolver),
+		EndpointResolver: endpoints.ResolverFunc(util.OscSetupMetadataResolver()),
 	})
 	if err != nil {
 		return nil, err
 	}
-
 	return cloud.NewMetadataService(ec2metadata.New(s))
 }
 
@@ -134,30 +126,15 @@ func newEC2Client() (*ec2.EC2, error) {
 	}
 
 	provider := []credentials.Provider{
-				&credentials.EnvProvider{},
-				//&ec2rolecreds.EC2RoleProvider{Client: svc},
-				&credentials.SharedCredentialsProvider{},
-			}
-
-               myCustomResolver := func(service, region string, optFns ...func(*endpoints.Options)) (endpoints.ResolvedEndpoint, error) {
-		             if service == endpoints.Ec2ServiceID {
-	                       return endpoints.ResolvedEndpoint{
-	                         URL:           "https://fcu.eu-west-2.outscale.com",
-	                         SigningRegion: "eu-west-2",
-                                 SigningName: "ec2",
-	                     }, nil
-                     }
-                     return endpoints.DefaultResolver().EndpointFor(service, region, optFns...)
-	       }
-
-
+        &credentials.EnvProvider{},
+        &credentials.SharedCredentialsProvider{},
+    }
 	sess := session.Must(session.NewSession(&aws.Config{
 		Region: aws.String(m.GetRegion()),
 		Credentials: credentials.NewChainCredentials(provider),
 		CredentialsChainVerboseErrors: aws.Bool(true),
-		EndpointResolver: endpoints.ResolverFunc(myCustomResolver),
+		EndpointResolver: endpoints.ResolverFunc(util.OscSetupServiceResolver(m.GetRegion())),
 	}))
-	log.Printf("OSC: ec2.new")
 	return ec2.New(sess), nil
 }
 

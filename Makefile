@@ -45,7 +45,6 @@ aws-ebs-csi-driver:
 	CGO_ENABLED=0 GOOS=linux go build $(GO_ADD_OPTIONS) \
 		-ldflags ${LDFLAGS}  -o  bin/aws-ebs-csi-driver ./cmd/
 
-
 .PHONY: debug
 debug:
 	mkdir -p bin

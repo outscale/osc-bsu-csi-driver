@@ -17,7 +17,6 @@ package integration
 import (
 	"flag"
 	"fmt"
-	"log"
 	"net"
 	"testing"
 	"time"

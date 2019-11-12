@@ -24,7 +24,6 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
-//	"github.com/aws/aws-sdk-go/aws/credentials/ec2rolecreds"
 	"github.com/aws/aws-sdk-go/aws/ec2metadata"
 	"github.com/aws/aws-sdk-go/aws/endpoints"
 	"github.com/aws/aws-sdk-go/aws/session"
@@ -102,7 +101,6 @@ func newCSIClient() (*CSIClient, error) {
 		return nil, err
 	}
 
-	log.Printf("OSC: return  CSI CLIENT")	
 	return &CSIClient{
 		ctrl: csi.NewControllerClient(grpcClient),
 		node: csi.NewNodeClient(grpcClient),

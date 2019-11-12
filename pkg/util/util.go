@@ -70,7 +70,7 @@ func ParseEndpoint(endpoint string) (string, string, error) {
 			return "", "", fmt.Errorf("could not remove unix domain socket %q: %v", addr, err)
 		}
 	default:
-		return "", "", fmt.Errorf("iiii unsupported protocol: %s", scheme)
+		return "", "", fmt.Errorf("unsupported protocol: %s", scheme)
 	}
 
 	return scheme, addr, nil

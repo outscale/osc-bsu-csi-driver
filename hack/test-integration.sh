@@ -22,8 +22,6 @@ if ! [[ "$0" =~ hack/test-integration.sh ]]; then
 fi
 
 export GO111MODULE=on
-export AWS_ACCESS_KEY_ID=S2WAEG7943XJWJJ3QDS3
-export AWS_SECRET_ACCESS_KEY=IM56FEQDGM3IXOQHPM5VWOJXFVOZW4H96UBAKBZF
 
 go test -c ./tests/integration/... -o bin/integration.test && \
   sudo -E bin/integration.test -test.v -ginkgo.v -ginkgo.debug -ginkgo.trace

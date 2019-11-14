@@ -23,5 +23,5 @@ fi
 
 export GO111MODULE=on
 
-sudo go test -c ./tests/integration/... -o bin/integration.test && \
+go test -c ./tests/integration/... -o bin/integration.test && \
   sudo -E bin/integration.test -test.v -ginkgo.v -ginkgo.debug -ginkgo.trace

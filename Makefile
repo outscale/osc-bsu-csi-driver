@@ -50,6 +50,7 @@ test-sanity:
 test-integration:
 	./hack/run-integration-test
 
+
 .PHONY: test-e2e-single-az
 test-e2e-single-az:
 	TESTCONFIG=./tester/single-az-config.yaml go run tester/cmd/main.go
@@ -71,6 +72,10 @@ image-release:
 .PHONY: image
 image:
 	docker build -t $(IMAGE):latest .
+
+.PHONY: int_test_image
+int_test_image:
+	docker build  -t $(IMAGE)-int:latest  . -f ./Dockerfile_IntTest
 
 .PHONY: push-release
 push-release:

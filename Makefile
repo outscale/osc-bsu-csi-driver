@@ -62,6 +62,7 @@ test:
 test-sanity:
 	go test -v ./tests/sanity/...
 
+
 .PHONY: test-e2e-multi-az
 test-e2e-multi-az:
 	TESTCONFIG=./tester/multi-az-config.yaml go run tester/cmd/main.go
@@ -83,6 +84,10 @@ image:
 .PHONY: image-tag
 image-tag:
 	docker tag  $(IMAGE):$(IMAGE_TAG) $(REGISTRY)/$(IMAGE):$(IMAGE_TAG)
+
+.PHONY: int_test_image
+int_test_image:
+	docker build  -t $(IMAGE)-int:latest  . -f ./Dockerfile_IntTest
 
 .PHONY: push-release
 push-release:

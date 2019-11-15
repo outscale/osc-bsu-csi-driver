@@ -6,59 +6,56 @@ Integration test verifies the functionality of EBS CSI driver as a standalone se
 The integration test is executed using osc-k8s-tester which is CLI tool for k8s testing on AWS. 
 With aws-k8s-tester, it automates the process of provisioning EC2 instance, pulling down and building EBS CSI driver, running the defined integration test and sending test result back. See aws-k8s-tester for more details about how to use it.
 
-##  Calls covered by the int test
-This plugin implement the following  CSI gRPC calls:
-* **Controller Service**: CreateVolume, DeleteVolume, ControllerPublishVolume, ControllerUnpublishVolume, ControllerGetCapabilities, ValidateVolumeCapabilities, CreateSnapshot, DeleteSnapshot, ListSnapshots
-* **Node Service**: NodeStageVolume, NodeUnstageVolume, NodePublishVolume, NodeUnpublishVolume, NodeGetCapabilities, NodeGetInfo
-* **Identity Service**: GetPluginInfo, GetPluginCapabilities, Probe
+## Integration tests (at Outscale)
 
+CSI gRPC call support for viarity of services.
 
-### .... Identity service ..... 
-#### Covered byt int test
-    
-#### Uncovered byt int test
-    GetPluginInfo:  NO
-    GetPluginCapabilities:  NO
-    Probe : NO
+Legend:
+- :sparkles:: interface is implemented and test pass
+- :fire:: interface is implemented but test fails
+- :question:: interface is implemented but not tested
+- :ghost:: interface is not implemented
 
-### .... Controller service ....
-#### Covered byt int test
-    CreateVolume: YES
-    DeleteVolume: YES
-    ControllerPublishVolume: Yes
-    ControllerUnpublishVolume: Yes
-    
-#### Uncovered byt int test
-    ValidateVolumeCapabilities: NO
-    ControllerGetCapabilities: NO
-    CreateSnapshot: NO 
-    DeleteSnapshot: NO
-    ListSnapshots: : NO
-    ControllerExpandVolume: NO
+### Identity Service
 
-#### **NOT IMPLEMENTED**
-    ListVolumes: NOT IMPLEMENTED
-    GetCapacity: NOT IMPLEMENTED
+|     gRPC Call         |  Support  |
+| :-------------------- | :-------: |
+| GetPluginInfo         | :question:  |
+| GetPluginCapabilities | :question:  |
+| Probe                 | :question:  |
 
+### Contoller Service 
 
-### .... Node service ....
+| gRPC Call                  | Support   |
+| :------------------------- | :-------: |
+| CreateVolume               | :sparkles:   |
+| DeleteVolume               | :sparkles:   |
+| ControllerPublishVolume    | :sparkles:   |
+| ControllerUnpublishVolume  | :sparkles:   |
+| ValidateVolumeCapabilities | :question:  |
+| ControllerGetCapabilities  | :question:  |
+| CreateSnapshot             | :question:  |
+| DeleteSnapshot             | :question:  |
+| ListSnapshots              | :question:  |
+| ControllerExpandVolume     | :question:  |
+| ListVolumes                | :ghost:   |
+| GetCapacity                | :ghost:   |
 
-#### Covered byt int test
-    NodeStageVolume: Yes
-    NodeUnstageVolume: Yes
-    NodePublishVolume: Yes
-    NodeUnpublishVolume: Yes
+### Node Service
 
-#### Uncovered byt int test
-    NodeExpandVolume: No
-    NodeGetCapabilities:No
-    NodeGetCapabilities: No
-    NodeGetInfo: No
-    
-#### **NOT IMPLEMENTED**
-    NodeGetVolumeStats: NOT IMPLEMENTED
-    
-
+| gRPC Call           | Support   |
+| :------------------ | :-------: |
+| NodeStageVolume     | :sparkles:   |
+| NodeUnstageVolume   | :sparkles:   |
+| NodeUnstageVolume   | :sparkles:   |
+| NodePublishVolume   | :sparkles:   |
+| NodeUnpublishVolume | :sparkles:   |
+| NodeExpandVolume    | :question:  |
+| NodeGetCapabilities | :question:  |
+| NodeGetCapabilities | :question:  |
+| NodeGetInfo         | :question:  |
+| NodeGetVolumeStats  | :ghost:   |
+  
 # Running Int test with osc cloud env
 
 ## Define the following env var 

@@ -707,7 +707,7 @@ func TestCreateVolume(t *testing.T) {
 					CapacityRange:      stdCapRange,
 					VolumeCapabilities: stdVolCap,
 					Parameters: map[string]string{
-						VolumeTypeKey: cloud.VolumeTypeSC1,
+						VolumeTypeKey: cloud.VolumeTypeIO1,
 					},
 				}
 

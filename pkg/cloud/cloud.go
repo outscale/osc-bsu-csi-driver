@@ -230,7 +230,7 @@ func newEC2Cloud(metadata MetadataService, svc *ec2metadata.EC2Metadata) (Cloud,
 		Region:                        aws.String(metadata.GetRegion()),
 		Credentials:                   credentials.NewChainCredentials(provider),
 		CredentialsChainVerboseErrors: aws.Bool(true),
-		EndpointResolver:              endpoints.ResolverFunc(
+		EndpointResolver: endpoints.ResolverFunc(
 			util.OscSetupServiceResolver(metadata.GetRegion())),
 	}
 

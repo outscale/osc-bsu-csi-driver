@@ -39,18 +39,22 @@ import (
 
 // AWS volume types
 const (
-	// VolumeTypeIO1 represents a provisioned IOPS SSD type of volume.
-	VolumeTypeIO1 = "io1"
-	// VolumeTypeGP2 represents a general purpose SSD type of volume.
+	// Cold workloads where you do not need to access data frequently
+    // Cases in which the lowest storage cost highly matters.
+	VolumeTypeSTANDARD = "standard"
+	// Most workloads that require moderate performance with moderate costs
+    // Applications that require high performance for a short period of time
+    //(for example, starting a file system)
 	VolumeTypeGP2 = "gp2"
-	// VolumeTypeSC1 represents a cold HDD (sc1) type of volume.
-	VolumeTypeSC1 = "sc1"
-	// VolumeTypeST1 represents a throughput-optimized HDD type of volume.
-	VolumeTypeST1 = "st1"
+	//Workloads where you must access data frequently (for example, a database)
+    //Critical business applications that can be blocked by a low performance when accessing data stored on the volume
+	VolumeTypeIO1 = "io1"
+
 )
 
 var (
-	ValidVolumeTypes = []string{VolumeTypeIO1, VolumeTypeGP2, VolumeTypeSC1, VolumeTypeST1}
+	// ValidVolumeTypes = []string{VolumeTypeIO1, VolumeTypeGP2,             VolumeTypeSC1, VolumeTypeST1}
+	ValidVolumeTypes = []string{VolumeTypeIO1, VolumeTypeGP2, VolumeTypeSTANDARD}
 )
 
 // AWS provisioning limits.
@@ -248,7 +252,7 @@ func (c *cloud) CreateDisk(ctx context.Context, volumeName string, diskOptions *
 	capacityGiB := util.BytesToGiB(diskOptions.CapacityBytes)
 
 	switch diskOptions.VolumeType {
-	case VolumeTypeGP2, VolumeTypeSC1, VolumeTypeST1:
+	case VolumeTypeGP2, VolumeTypeSTANDARD:
 		createType = diskOptions.VolumeType
 	case VolumeTypeIO1:
 		createType = diskOptions.VolumeType

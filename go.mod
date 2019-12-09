@@ -38,7 +38,7 @@ require (
 	github.com/json-iterator/go v1.1.5 // indirect
 	github.com/kubernetes-csi/csi-test v2.0.0+incompatible
 	github.com/kubernetes-csi/external-snapshotter v1.0.1
-	github.com/onsi/ginkgo v1.8.0
+	github.com/onsi/ginkgo v1.10.3
 	github.com/onsi/gomega v1.4.3
 	github.com/opencontainers/go-digest v1.0.0-rc1 // indirect
 	github.com/soheilhy/cmux v0.1.4 // indirect
@@ -94,5 +94,10 @@ replace (
 	k8s.io/sample-apiserver => k8s.io/sample-apiserver v0.0.0-20190805142637-3b65bc4bb24f
 	k8s.io/sample-cli-plugin => k8s.io/sample-cli-plugin v0.0.0-20190805143616-1485e5142db3
 	k8s.io/sample-controller => k8s.io/sample-controller v0.0.0-20190805142825-b16fad786282
+	modernc.org/cc => gitlab.com/cznic/cc v1.0.0
+	modernc.org/golex => gitlab.com/cznic/golex v1.0.0
+	modernc.org/mathutil => gitlab.com/cznic/mathutil v1.0.0
+	modernc.org/strutil => gitlab.com/cznic/strutil v1.0.0
+	modernc.org/xc => gitlab.com/cznic/xc v1.0.0
 	vbom.ml/util => github.com/fvbommel/util v0.0.0-20160121211510-db5cfe13f5cc
 )

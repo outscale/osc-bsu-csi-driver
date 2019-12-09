@@ -106,7 +106,10 @@ var _ = Describe("[ebs-csi-e2e] [single-az] Pre-Provisioned", func() {
 			Fail(fmt.Sprintf("could not get NewCloud: %v", err))
 		}
 		disk, err := cloud.CreateDisk(context.Background(), "", diskOptions)
+        fmt.Printf("DebugAZ diskOptions diskOptions diskOptions::::: %+v\n",diskOptions)
+        fmt.Printf("DebugAZ disk disk disk::::: %+v\n",disk)
 		if err != nil {
+
 			Fail(fmt.Sprintf("could not provision a volume: %v", err))
 		}
 		volumeID = disk.VolumeID

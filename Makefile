@@ -14,6 +14,8 @@
 
 PKG=github.com/kubernetes-sigs/aws-ebs-csi-driver
 IMAGE=osc/osc-ebs-csi-driver
+IMAGE_TAG=latest
+REGISTRY=registry.kube-system:5001
 VERSION=0.5.0-osc
 GIT_COMMIT?=$(shell git rev-parse HEAD)
 BUILD_DATE?=$(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
@@ -71,7 +73,11 @@ image-release:
 
 .PHONY: image
 image:
-	docker build -t $(IMAGE):latest .
+	docker build -t $(IMAGE):$(IMAGE_TAG) .
+
+.PHONY: image-tag
+image-tag:
+	docker tag  $(IMAGE):$(IMAGE_TAG) $(REGISTRY)/$(IMAGE):$(IMAGE_TAG)
 
 .PHONY: int_test_image
 int_test_image:
@@ -83,4 +89,5 @@ push-release:
 
 .PHONY: push
 push:
-	docker push $(IMAGE):latest
+	docker push $(REGISTRY)/$(IMAGE):$(IMAGE_TAG)
+

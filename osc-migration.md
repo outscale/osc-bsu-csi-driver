@@ -6,9 +6,15 @@ Integration test verifies the functionality of EBS CSI driver as a standalone se
 The integration test is executed using osc-k8s-tester which is CLI tool for k8s testing on AWS. 
 With aws-k8s-tester, it automates the process of provisioning EC2 instance, pulling down and building EBS CSI driver, running the defined integration test and sending test result back. See aws-k8s-tester for more details about how to use it.
 
+E2E SingleAZ tests exercises various driver functionalities in Kubernetes cluster
+
+E2E test verifies the funcitonality of EBS CSI driver in the context of Kubernetes. It exercises driver feature e2e including static provisioning, dynamic provisioning, volume scheduling, mount options, etc.
+
+
+
 ## Integration tests (at Outscale)
 
-CSI gRPC call support for viarity of services.
+CSI gRPC call support for variety of services.
 
 Legend:
 - :sparkles:: interface is implemented and test pass
@@ -106,3 +112,83 @@ PASS
 ```
 
 
+****
+
+## E2E single AZ tests (at Outscale)
+
+### k8s platform 
+
+- pre-installed k8s platform under outscale cloud with 3 masters and 2 workers on vm with `t2.medium` type
+- prepare the machine from which you will run the single az test
+```
+    # ENV VARS 
+    export OSC_ACCOUNT_ID=XXXXX
+    export OSC_ACCOUNT_IAM=XXXX
+    export OSC_USER_ID=XXXXXX
+    export OSC_ARN="arn:aws:iam::XXXXX:user/XXX"
+    
+    export AWS_ACCESS_KEY_ID="XXXXXXX"
+    export AWS_SECRET_ACCESS_KEY="XXXXXXX"
+    export AWS_DEFAULT_REGION="eu-west-2"
+    export IMAGE_NAME=registry.kube-system:5001/osc/osc-ebs-csi-driver
+    export IMAGE_TAG="teste2e"
+    IMAGE=osc/osc-ebs-csi-driver
+    REGISTRY=registry.kube-system:5001
+
+    # Build the plugin image
+    git clone -b OSC-MIGRATION git@github.com:outscale-dev/osc-ebs-csi-driver.git
+
+    make image IMAGE=$IMAGE IMAGE_TAG=$IMAGE_TAG REGISTRY=$REGISTRY && \
+    make image-tag IMAGE=$IMAGE IMAGE_TAG=$IMAGE_TAG REGISTRY=$REGISTRY  && \
+    make push IMAGE=$IMAGE IMAGE_TAG=$IMAGE_TAG REGISTRY=$REGISTRY
+    
+    # Deploy the plugin
+    
+    ## set the secrets
+    export IMAGE_SECRET=registry-dockerconfigjson
+    /usr/local/bin/kubectl apply -f /home/jenkins/402-registry-secret.yaml --namespace=kube-system
+    curl https://raw.githubusercontent.com/kubernetes-sigs/aws-ebs-csi-driver/master/deploy/kubernetes/secret.yaml > $HOME/secret_aws_template.yaml
+    cat $HOME/secret_aws_template.yaml | \
+        sed "s/access_key: \"\"/access_key: \"$AWS_SECRET_ACCESS_KEY\"/g" | \
+        sed "s/key_id: \"\"/key_id: \"$AWS_ACCESS_KEY_ID\"/g" > secret_aws.yaml
+    echo "  aws_default_region: \""$AWS_DEFAULT_REGION"\"" >> secret_aws.yaml
+    echo "  osc_account_id: \""$OSC_ACCOUNT_ID"\"" >> secret_aws.yaml
+    echo "  osc_account_iam: \""$OSC_ACCOUNT_IAM"\"" >> secret_aws.yaml
+    echo "  osc_user_id: \""$OSC_USER_ID"\"" >> secret_aws.yaml
+    echo "  osc_arn: \""$OSC_ARN "\"" >> secret_aws.yaml
+    /usr/local/bin/kubectl delete -f secret_aws.yaml --namespace=kube-system
+    /usr/local/bin/kubectl apply -f secret_aws.yaml --namespace=kube-system
+    
+    ## deploy the pod
+    cd osc-ebs-csi-driver
+    helm del --purge aws-ebs-csi-driver --tls
+    helm install --name aws-ebs-csi-driver \
+                --set enableVolumeScheduling=true \
+                --set enableVolumeResizing=true \
+                --set enableVolumeSnapshot=true \
+                --set image.repository=$IMAGE_NAME \
+                --set image.tag=$IMAGE_TAG \
+                --set imagePullSecrets=$IMAGE_SECRET \
+                ./aws-ebs-csi-driver --tls
+    
+    ## Check the pod is running
+    kubectl get pods -o wide -A  | grep csi
+
+    # Run the e2e Test
+    cd osc-ebs-csi-driver
+    wget https://dl.google.com/go/go1.12.7.linux-amd64.tar.gz
+    tar -C /usr/local -xzf go1.12.7.linux-amd64.tar.gz
+    export PATH=$PATH:/usr/local/go/bin
+    export GOPATH="/root/go"
+    
+    go get -v -u github.com/onsi/ginkgo/ginkgo
+    export KUBECONFIG=$HOME/.kube/config
+    export AWS_AVAILABILITY_ZONES=eu-west-2b
+    ARTIFACTS=$PWD/single_az_test_e2e_report
+    mkdir -p $ARTIFACTS
+    export NODES=4
+    $GOPATH/bin/ginkgo -debug -p -nodes=$NODES -v --focus="\[ebs-csi-e2e\] \[single-az\]" tests/e2e -- -report-dir=$ARTIFACTS
+        
+```
+
+### 

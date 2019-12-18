@@ -190,5 +190,34 @@ PASS
     $GOPATH/bin/ginkgo -debug -p -nodes=$NODES -v --focus="\[ebs-csi-e2e\] \[single-az\]" tests/e2e -- -report-dir=$ARTIFACTS
         
 ```
+### status e2e tests [ebs-csi-e2e] [single-az]
 
+```
+7 Failures:
+
+[Fail] [ebs-csi-e2e] [single-az] Dynamic Provisioning [It] should create a volume on demand with volumeType "standard" and encryption
+/home/outscale/poc_csi/osc-ebs-csi-driver/tests/e2e/testsuites/testsuites.go:271
+
+[Fail] [ebs-csi-e2e] [single-az] Snapshot [It] should create a pod, write and read to it, take a volume snapshot, and create another pod from the snapshot
+/home/outscale/poc_csi/osc-ebs-csi-driver/tests/e2e/testsuites/testsuites.go:135
+
+[Fail] [ebs-csi-e2e] [single-az] Dynamic Provisioning [It] should create a volume on demand with volumeType "gp2" and encryption
+/home/outscale/poc_csi/osc-ebs-csi-driver/tests/e2e/testsuites/testsuites.go:271
+
+[Fail] [ebs-csi-e2e] [single-az] Dynamic Provisioning [It] should create a volume on demand with volume type "io1" and fs type "xfs"
+/home/outscale/poc_csi/osc-ebs-csi-driver/tests/e2e/testsuites/testsuites.go:513
+
+[Fail] [ebs-csi-e2e] [single-az] Dynamic Provisioning [It] should create a volume on demand with volumeType "io1" and encryption
+/home/outscale/poc_csi/osc-ebs-csi-driver/tests/e2e/testsuites/testsuites.go:271
+
+[Fail] [ebs-csi-e2e] [single-az] Dynamic Provisioning [It] should create a volume on demand with volume type "gp2" and fs type "xfs"
+/home/outscale/poc_csi/osc-ebs-csi-driver/tests/e2e/testsuites/testsuites.go:513
+
+[Fail] [ebs-csi-e2e] [single-az] Dynamic Provisioning [It] should create a volume on demand with volume type "standard" and fs type "xfs"
+/home/outscale/poc_csi/osc-ebs-csi-driver/tests/e2e/testsuites/testsuites.go:513
+
+Ran 30 of 32 Specs in 1570.987 seconds
+FAIL! -- 23 Passed | 7 Failed | 0 Pending | 2 Skipped
+
+```
 ### 

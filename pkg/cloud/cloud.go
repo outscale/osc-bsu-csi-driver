@@ -304,7 +304,6 @@ func (c *cloud) CreateDisk(ctx context.Context, volumeName string, diskOptions *
 		request.SnapshotId = aws.String(snapshotID)
 	}
 	fmt.Printf("DebugAZ c.ec2.CreateVolumeWithContext : %+v\n", request)
-
 	response, err := c.ec2.CreateVolumeWithContext(ctx, request)
 
 	if err != nil {
@@ -543,7 +542,6 @@ func (c *cloud) CreateSnapshot(ctx context.Context, volumeID string, snapshotOpt
 		tags = append(tags, &ec2.Tag{Key: &key, Value: &value})
 	}
 	fmt.Printf("DebugAZ tags = append( : %+v  \n", tags)
-
 	tagSpec := ec2.TagSpecification{
 		ResourceType: aws.String("snapshot"),
 		Tags:         tags,
@@ -556,9 +554,7 @@ func (c *cloud) CreateSnapshot(ctx context.Context, volumeID string, snapshotOpt
 		TagSpecifications: []*ec2.TagSpecification{&tagSpec},
 		Description:       aws.String(descriptions),
 	}
-
 	fmt.Printf("DebugAZ request := &ec2.CreateSnapshotInput{: %+v  \n", request)
-
 	res, err := c.ec2.CreateSnapshotWithContext(ctx, request)
 	if err != nil {
 		return nil, fmt.Errorf("error creating snapshot of volume %s: %v", volumeID, err)
@@ -573,9 +569,7 @@ func (c *cloud) CreateSnapshot(ctx context.Context, volumeID string, snapshotOpt
 		Tags:      tags,
 	}
 	fmt.Printf("DebugAZ requestTag := &ec2.CreateTagsInput{ : %+v\n", requestTag)
-
 	resTag, err := c.ec2.CreateTagsWithContext(ctx, requestTag)
-
 	if err != nil {
 		return nil, fmt.Errorf("error creating tags of snapshot %v: %v", res.SnapshotId, err)
 	}
@@ -583,7 +577,6 @@ func (c *cloud) CreateSnapshot(ctx context.Context, volumeID string, snapshotOpt
 		return nil, fmt.Errorf("nil CreateTags")
 	}
 	fmt.Printf("DebugAZ resTag, err := c.ec2.CreateTagsWithContext(ctx, requestTag) %+v\n", resTag)
-
 	return c.ec2SnapshotResponseToStruct(res), nil
 }
 
@@ -640,7 +633,6 @@ func (c *cloud) GetSnapshotById(ctx context.Context, snapshotID string) (snapsho
 // there will be no restriction up to 1000 results (https://docs.aws.amazon.com/sdk-for-go/api/service/ec2/#DescribeSnapshotsInput).
 func (c *cloud) ListSnapshots(ctx context.Context, volumeID string, maxResults int64, nextToken string) (listSnapshotsResponse *ListSnapshotsResponse, err error) {
 	fmt.Printf("DebugAZ ListSnapshots : %+v\n", volumeID)
-
 	if maxResults > 0 && maxResults < 5 {
 		return nil, ErrInvalidMaxResults
 	}
@@ -797,8 +789,8 @@ func (c *cloud) listSnapshots(ctx context.Context, request *ec2.DescribeSnapshot
 	var snapshots []*ec2.Snapshot
 	var nextToken *string
 	fmt.Printf("DebugAZ  listSnapshots(ctx context.Context : %+v\n", request)
-
 	response, err := c.ec2.DescribeSnapshotsWithContext(ctx, request)
+	fmt.Printf("DebugAZ  response.Snapshots : %+v\n", response.Snapshots)
 
 	if err != nil {
 		return nil, err
@@ -820,7 +812,6 @@ func (c *cloud) listSnapshots(ctx context.Context, request *ec2.DescribeSnapshot
 // On a random AWS account (shared among several developers) it took 4s on average.
 func (c *cloud) waitForVolume(ctx context.Context, volumeID string) error {
 	fmt.Printf("DebugAZ waitForVolume : %+v\n", volumeID)
-
 	var (
 		checkInterval = 3 * time.Second
 		// This timeout can be "ovewritten" if the value returned by ctx.Deadline()
@@ -885,7 +876,6 @@ func isAWSErrorSnapshotNotFound(err error) bool {
 // It returns the volume size after this call or an error if the size couldn't be determined.
 func (c *cloud) ResizeDisk(ctx context.Context, volumeID string, newSizeBytes int64) (int64, error) {
 	fmt.Printf("DebugAZ ResizeDisk : %+v\n", volumeID)
-
 	request := &ec2.DescribeVolumesInput{
 		VolumeIds: []*string{
 			aws.String(volumeID),
@@ -971,7 +961,6 @@ func (c *cloud) waitForVolumeSize(ctx context.Context, volumeID string) (int64, 
 // getLatestVolumeModification returns the last modification of the volume.
 func (c *cloud) getLatestVolumeModification(ctx context.Context, volumeID string) (*ec2.VolumeModification, error) {
 	fmt.Printf("DebugAZ getLatestVolumeModification : %+v\n", volumeID)
-
 	request := &ec2.DescribeVolumesModificationsInput{
 		VolumeIds: []*string{
 			aws.String(volumeID),

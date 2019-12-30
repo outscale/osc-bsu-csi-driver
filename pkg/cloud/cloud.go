@@ -87,6 +87,7 @@ var (
 	// disks are found with the same volume name.
 	ErrMultiDisks = errors.New("Multiple disks with same name")
 
+
 	// ErrDiskExistsDiffSize is an error that is returned if a disk with a given
 	// name, but different size, is found.
 	ErrDiskExistsDiffSize = errors.New("There is already a disk with same name and different size")
@@ -166,6 +167,7 @@ type EC2 interface {
 	DescribeSnapshotsWithContext(ctx aws.Context, input *ec2.DescribeSnapshotsInput, opts ...request.Option) (*ec2.DescribeSnapshotsOutput, error)
 	ModifyVolumeWithContext(ctx aws.Context, input *ec2.ModifyVolumeInput, opts ...request.Option) (*ec2.ModifyVolumeOutput, error)
 	DescribeVolumesModificationsWithContext(ctx aws.Context, input *ec2.DescribeVolumesModificationsInput, opts ...request.Option) (*ec2.DescribeVolumesModificationsOutput, error)
+    CreateTagsWithContext(ctx aws.Context, input *ec2.CreateTagsInput, opts ...request.Option) (*ec2.CreateTagsOutput, error)
 }
 
 type Cloud interface {
@@ -302,8 +304,10 @@ func (c *cloud) CreateDisk(ctx context.Context, volumeName string, diskOptions *
 	if len(snapshotID) > 0 {
 		request.SnapshotId = aws.String(snapshotID)
 	}
+    fmt.Printf("DebugAZ c.ec2.CreateVolumeWithContext : %+v\n",request)
 
 	response, err := c.ec2.CreateVolumeWithContext(ctx, request)
+
 	if err != nil {
 		if isAWSErrorSnapshotNotFound(err) {
 			return nil, ErrNotFound
@@ -319,6 +323,22 @@ func (c *cloud) CreateDisk(ctx context.Context, volumeName string, diskOptions *
 	size := aws.Int64Value(response.Size)
 	if size == 0 {
 		return nil, fmt.Errorf("disk size was not returned by CreateVolume")
+	}
+
+
+    requestTag := &ec2.CreateTagsInput{
+		Resources: []*string{response.VolumeId},
+		Tags: tags,
+	}
+    fmt.Printf("DebugAZ requestTag := &ec2.CreateTagsInput{ : %+v\n",requestTag)
+
+	resTag, err := c.ec2.CreateTagsWithContext(ctx, requestTag)
+
+	if err != nil {
+		return nil, fmt.Errorf("error creating tags of volume %s: %v", response.VolumeId, err)
+	}
+	if resTag == nil {
+		return nil, fmt.Errorf("nil CreateTags")
 	}
 
 	if err := c.waitForVolume(ctx, volumeID); err != nil {
@@ -519,21 +539,28 @@ func (c *cloud) IsExistInstance(ctx context.Context, nodeID string) bool {
 
 func (c *cloud) CreateSnapshot(ctx context.Context, volumeID string, snapshotOptions *SnapshotOptions) (snapshot *Snapshot, err error) {
 	descriptions := "Created by AWS EBS CSI driver for volume " + volumeID
-
+    fmt.Printf("DebugAZ ctx context.Context, volumeID string, snapshotOptions *SnapshotOptions : %+v /// %+v\n",volumeID, snapshotOptions)
 	var tags []*ec2.Tag
 	for key, value := range snapshotOptions.Tags {
 		tags = append(tags, &ec2.Tag{Key: &key, Value: &value})
 	}
+    fmt.Printf("DebugAZ tags = append( : %+v  \n",tags)
+
 	tagSpec := ec2.TagSpecification{
 		ResourceType: aws.String("snapshot"),
 		Tags:         tags,
 	}
+    fmt.Printf("DebugAZ tagSpec := ec2.TagSpecification( : %+v  \n",tagSpec)
+
 	request := &ec2.CreateSnapshotInput{
 		VolumeId:          aws.String(volumeID),
 		DryRun:            aws.Bool(false),
 		TagSpecifications: []*ec2.TagSpecification{&tagSpec},
 		Description:       aws.String(descriptions),
 	}
+
+
+	fmt.Printf("DebugAZ request := &ec2.CreateSnapshotInput{: %+v  \n",request)
 
 	res, err := c.ec2.CreateSnapshotWithContext(ctx, request)
 	if err != nil {
@@ -542,6 +569,23 @@ func (c *cloud) CreateSnapshot(ctx context.Context, volumeID string, snapshotOpt
 	if res == nil {
 		return nil, fmt.Errorf("nil CreateSnapshotResponse")
 	}
+    fmt.Printf("DebugAZ res, err := c.ec2.CreateSnapshotWithContext(ctx, request) : %+v\n",res)
+
+	requestTag := &ec2.CreateTagsInput{
+		Resources: []*string{res.SnapshotId},
+		Tags: tags,
+	}
+    fmt.Printf("DebugAZ requestTag := &ec2.CreateTagsInput{ : %+v\n",requestTag)
+
+	resTag, err := c.ec2.CreateTagsWithContext(ctx, requestTag)
+
+	if err != nil {
+		return nil, fmt.Errorf("error creating tags of snapshot %s: %v", res.SnapshotId, err)
+	}
+	if resTag == nil {
+		return nil, fmt.Errorf("nil CreateTags")
+	}
+    fmt.Printf("DebugAZ resTag, err := c.ec2.CreateTagsWithContext(ctx, requestTag) %+v\n",resTag)
 
 	return c.ec2SnapshotResponseToStruct(res), nil
 }
@@ -560,6 +604,7 @@ func (c *cloud) DeleteSnapshot(ctx context.Context, snapshotID string) (success 
 }
 
 func (c *cloud) GetSnapshotByName(ctx context.Context, name string) (snapshot *Snapshot, err error) {
+    fmt.Printf("DebugAZ GetSnapshotByName : %+v\n",name)
 	request := &ec2.DescribeSnapshotsInput{
 		Filters: []*ec2.Filter{
 			{
@@ -578,6 +623,7 @@ func (c *cloud) GetSnapshotByName(ctx context.Context, name string) (snapshot *S
 }
 
 func (c *cloud) GetSnapshotById(ctx context.Context, snapshotID string) (snapshot *Snapshot, err error) {
+    fmt.Printf("DebugAZ GetSnapshotById : %+v\n",snapshotID)
 	request := &ec2.DescribeSnapshotsInput{
 		SnapshotIds: []*string{
 			aws.String(snapshotID),
@@ -596,6 +642,8 @@ func (c *cloud) GetSnapshotById(ctx context.Context, snapshotID string) (snapsho
 // a next token value will be returned to the client as well.  They can use this token with subsequent calls to retrieve the next page of results.  If maxResults is not set (0),
 // there will be no restriction up to 1000 results (https://docs.aws.amazon.com/sdk-for-go/api/service/ec2/#DescribeSnapshotsInput).
 func (c *cloud) ListSnapshots(ctx context.Context, volumeID string, maxResults int64, nextToken string) (listSnapshotsResponse *ListSnapshotsResponse, err error) {
+    fmt.Printf("DebugAZ ListSnapshots : %+v\n",volumeID)
+
 	if maxResults > 0 && maxResults < 5 {
 		return nil, ErrInvalidMaxResults
 	}
@@ -657,6 +705,7 @@ func (c *cloud) ec2SnapshotResponseToStruct(ec2Snapshot *ec2.Snapshot) *Snapshot
 }
 
 func (c *cloud) getVolume(ctx context.Context, request *ec2.DescribeVolumesInput) (*ec2.Volume, error) {
+    fmt.Printf("DebugAZ getVolume : %+v\n",request)
 	var volumes []*ec2.Volume
 	var nextToken *string
 
@@ -716,6 +765,7 @@ func (c *cloud) getInstance(ctx context.Context, nodeID string) (*ec2.Instance, 
 }
 
 func (c *cloud) getSnapshot(ctx context.Context, request *ec2.DescribeSnapshotsInput) (*ec2.Snapshot, error) {
+    fmt.Printf("DebugAZ  getSnapshot(ctx context.Context : %+v\n",request)
 	var snapshots []*ec2.Snapshot
 	var nextToken *string
 	for {
@@ -731,21 +781,29 @@ func (c *cloud) getSnapshot(ctx context.Context, request *ec2.DescribeSnapshotsI
 		request.NextToken = nextToken
 	}
 
+    fmt.Printf("DebugAZ  len(snapshots): %+v\n",len(snapshots))
+    fmt.Printf("DebugAZ  (snapshots): %+v\n",snapshots)
+
 	if l := len(snapshots); l > 1 {
 		return nil, ErrMultiSnapshots
 	} else if l < 1 {
 		return nil, ErrNotFound
 	}
-
+    fmt.Printf("DebugAZ  (snapshots[0]): %+v\n",snapshots[0])
 	return snapshots[0], nil
 }
 
 // listSnapshots returns all snapshots based from a request
 func (c *cloud) listSnapshots(ctx context.Context, request *ec2.DescribeSnapshotsInput) (*ec2ListSnapshotsResponse, error) {
+    fmt.Printf("DebugAZ listSnapshots : %+v\n",request)
+
 	var snapshots []*ec2.Snapshot
 	var nextToken *string
+    fmt.Printf("DebugAZ  listSnapshots(ctx context.Context : %+v\n",request)
 
 	response, err := c.ec2.DescribeSnapshotsWithContext(ctx, request)
+    fmt.Printf("DebugAZ  response.Snapshots : %+v\n",response.Snapshots)
+
 	if err != nil {
 		return nil, err
 	}
@@ -765,6 +823,8 @@ func (c *cloud) listSnapshots(ctx context.Context, request *ec2.DescribeSnapshot
 // waitForVolume waits for volume to be in the "available" state.
 // On a random AWS account (shared among several developers) it took 4s on average.
 func (c *cloud) waitForVolume(ctx context.Context, volumeID string) error {
+    fmt.Printf("DebugAZ waitForVolume : %+v\n",volumeID)
+
 	var (
 		checkInterval = 3 * time.Second
 		// This timeout can be "ovewritten" if the value returned by ctx.Deadline()
@@ -828,6 +888,8 @@ func isAWSErrorSnapshotNotFound(err error) bool {
 // ResizeDisk resizes an EBS volume in GiB increments, rouding up to the next possible allocatable unit.
 // It returns the volume size after this call or an error if the size couldn't be determined.
 func (c *cloud) ResizeDisk(ctx context.Context, volumeID string, newSizeBytes int64) (int64, error) {
+    fmt.Printf("DebugAZ ResizeDisk : %+v\n",volumeID)
+
 	request := &ec2.DescribeVolumesInput{
 		VolumeIds: []*string{
 			aws.String(volumeID),
@@ -880,6 +942,7 @@ func (c *cloud) ResizeDisk(ctx context.Context, volumeID string, newSizeBytes in
 
 // waitForVolumeSize waits for a volume modification to finish and return its size.
 func (c *cloud) waitForVolumeSize(ctx context.Context, volumeID string) (int64, error) {
+    fmt.Printf("DebugAZ waitForVolumeSize : %+v\n",volumeID)
 	backoff := wait.Backoff{
 		Duration: 1 * time.Second,
 		Factor:   1.8,
@@ -911,6 +974,8 @@ func (c *cloud) waitForVolumeSize(ctx context.Context, volumeID string) (int64, 
 
 // getLatestVolumeModification returns the last modification of the volume.
 func (c *cloud) getLatestVolumeModification(ctx context.Context, volumeID string) (*ec2.VolumeModification, error) {
+    fmt.Printf("DebugAZ getLatestVolumeModification : %+v\n",volumeID)
+
 	request := &ec2.DescribeVolumesModificationsInput{
 		VolumeIds: []*string{
 			aws.String(volumeID),

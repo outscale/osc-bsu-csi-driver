@@ -98,6 +98,9 @@ rules:
   - apiGroups: ["storage.k8s.io"]
     resources: ["storageclasses"]
     verbs: ["get", "list", "watch"]
+  - apiGroups: ["storage.k8s.io"]
+    resources: ["csinodes"]
+    verbs: ["get", "list", "watch"]
   - apiGroups: [""]
     resources: ["events"]
     verbs: ["list", "watch", "create", "update", "patch"]
@@ -144,9 +147,9 @@ metadata:
 rules:
   # The following rule should be uncommented for plugins that require secrets
   # for provisioning.
-  # - apiGroups: [""]
-  #   resources: ["secrets"]
-  #   verbs: ["get", "list", "watch"]
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["get", "list", "watch"]
   - apiGroups: [""]
     resources: ["persistentvolumes"]
     verbs: ["get", "list", "watch", "update", "patch"]
@@ -158,6 +161,9 @@ rules:
     verbs: ["update", "patch"]
   - apiGroups: ["storage.k8s.io"]
     resources: ["storageclasses"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["storage.k8s.io"]
+    resources: ["csinodes"]
     verbs: ["get", "list", "watch"]
   - apiGroups: [""]
     resources: ["events"]
@@ -279,6 +285,7 @@ spec:
           args:
             - --csi-address=$(ADDRESS)
             - --connection-timeout=15s
+            - --v=100
           env:
             - name: ADDRESS
               value: /var/lib/csi/sockets/pluginproxy/csi.sock

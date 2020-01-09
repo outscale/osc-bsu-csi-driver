@@ -44,10 +44,10 @@ Following sections are Kubernetes specific. If you are Kubernetes user, use foll
 
 
 ## Container Images:
-|OSC EBS CSI Driver Version | Image                               |
-|---------------------------|-------------------------------------|
-|master branch              |amazon/aws-ebs-csi-driver:latest     |
-|OSC-MIGRATION              |amazon/aws-ebs-csi-driver:v0.0.0-beta|
+|OSC EBS CSI Driver Version | Image                                     |
+|---------------------------|-------------------------------------------|
+|master branch              |outscale/osc-ebs-csi-driver:v0.0.0beta     |
+
 
 ## Features
 * **Static Provisioning** - create a new or migrating existing EBS volumes, then create persistence volume (PV) from the EBS volume and consume the PV from container using persistence volume claim (PVC).

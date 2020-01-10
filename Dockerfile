@@ -1,4 +1,4 @@
-FROM golang:1.14.1-stretch as builder
+FROM golang:1.14.1-stretch
 
 ARG DEBUG_IMAGE="disable"
 
@@ -21,3 +21,4 @@ RUN make -j 4 && \
 
 
 ENTRYPOINT ["/bin/aws-ebs-csi-driver"]
+

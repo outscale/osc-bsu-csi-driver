@@ -472,13 +472,39 @@ func (d *nodeService) findDevicePath(devicePath, volumeID string) (string, error
 		return devicePath, nil
 	}
 
-	// Else find the nvme device path using volume ID
-	// This is the magic name on which AWS presents NVME devices under /dev/disk/by-id/
-	// For example, vol-0fab1d5e3f72a5e23 creates a symlink at
-	// /dev/disk/by-id/nvme-Amazon_Elastic_Block_Store_vol0fab1d5e3f72a5e23
-	nvmeName := "nvme-Amazon_Elastic_Block_Store_" + strings.Replace(volumeID, "-", "", -1)
+	// assumption it is a scsi volume for 3DS env
+	scsiName := "scsi-0QEMU_QEMU_HARDDISK_sd" + devicePath[len(devicePath)-1:]
+	klog.V(4).Infof("findDevicePath: check if scsi device for %s is %s and return the device", devicePath, scsiName)
+	return findScsiVolume(scsiName)
+}
 
-	return findNvmeVolume(nvmeName)
+func findScsiVolume(findName string) (device string, err error) {
+	p := filepath.Join("/dev/disk/by-id/", findName)
+	stat, err := os.Lstat(p)
+	if err != nil {
+		if os.IsNotExist(err) {
+			klog.V(5).Infof("scsi path %q not found", p)
+			return "", fmt.Errorf("scsi path %q not found", p)
+		}
+		return "", fmt.Errorf("error getting stat of %q: %v", p, err)
+	}
+
+	if stat.Mode()&os.ModeSymlink != os.ModeSymlink {
+		klog.Warningf("scsi file %q found, but was not a symlink", p)
+		return "", fmt.Errorf("scsi file %q found, but was not a symlink", p)
+	}
+	// Find the target, resolving to an absolute path
+	// scsi-0QEMU_QEMU_HARDDISK_sdb -> ../../sdb
+	// scsi-0QEMU_QEMU_HARDDISK_sde -> ../../sda
+	resolved, err := filepath.EvalSymlinks(p)
+	if err != nil {
+		return "", fmt.Errorf("error reading target of symlink %q: %v", p, err)
+	}
+
+	if !strings.HasPrefix(resolved, "/dev") {
+		return "", fmt.Errorf("resolved symlink for %q was unexpected: %q", p, resolved)
+	}
+	return resolved, nil
 }
 
 // findNvmeVolume looks for the nvme volume with the specified name

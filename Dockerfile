@@ -39,17 +39,15 @@ ARG VERSION=unknown
 ARG GOPROXY
 
 WORKDIR /build
-COPY go.mod go.sum ./
-COPY cmd/ cmd/
-COPY Makefile ./Makefile
+COPY . .
 ENV CGO_ENABLED=0
-ENV GOPROXY ${GOPROXY:-https://proxy.golang.org}
-RUN make aws-cloud-controller-manager
+ENV GOPROXY=${GOPROXY:-https://proxy.golang.org}
+RUN make osc-cloud-controller-manager
 
 ################################################################################
 ##                               MAIN STAGE                                   ##
 ################################################################################
 # Copy the manager into the distroless image.
 FROM ${DISTROLESS_IMAGE}
-COPY --from=builder /build/aws-cloud-controller-manager /bin/aws-cloud-controller-manager
-ENTRYPOINT [ "/bin/aws-cloud-controller-manager" ]
+COPY --from=builder /build/osc-cloud-controller-manager /bin/osc-cloud-controller-manager
+ENTRYPOINT [ "/bin/osc-cloud-controller-manager" ]

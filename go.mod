@@ -1,6 +1,6 @@
-module k8s.io/cloud-provider-aws
+module github.com/outscale-dev/cloud-provider-osc
 
-go 1.12
+go 1.13
 
 replace (
 	// these replacements are pinned to 59603c6e503c which is the sha associated with the 1.17.2 tag on k/k

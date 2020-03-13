@@ -12,19 +12,35 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-SOURCES := $(shell find . -name '*.go')
+SOURCES := $(shell find ./cloud-controller-manager -name '*.go')
 GOOS ?= $(shell go env GOOS)
 VERSION ?= $(shell git describe --exact-match 2> /dev/null || \
                  git describe --match=$(git rev-parse --short=8 HEAD) --always --dirty --abbrev=8)
 LDFLAGS   := "-w -s -X 'main.version=${VERSION}'"
 
-export GO111MODULE=on
+IMAGE = "osc/cloud-provider-osc"
+IMAGE_VERSION = "v${VERSION}"
+REGISTRY = "registry.kube-system:5001"
 
-aws-cloud-controller-manager: $(SOURCES)
-	 CGO_ENABLED=0 GOOS=$(GOOS) go build \
+export GO111MODULE=on
+#GOPATH=$(PWD)
+
+
+osc-cloud-controller-manager: $(SOURCES)
+	CGO_ENABLED=0 GOOS=$(GOOS) go build \
 		-ldflags $(LDFLAGS) \
-		-o aws-cloud-controller-manager \
-		cmd/aws-cloud-controller-manager/main.go
+		-o osc-cloud-controller-manager \
+		cloud-controller-manager/cmd/osc-cloud-controller-manager/main.go
+
+.PHONY: printenv
+printenv:
+	@echo "SOURCES =>  $(SOURCES)"
+	@echo "GO111MODULE =>  $(GO111MODULE)"
+	@echo "LDFLAGS =>  $(LDFLAGS)"
+	@echo "GOOS =>  $(GOOS)"
+	@echo "VERSION =>  $(VERSION)"
+
+
 
 .PHONY: check
 check: verify-fmt verify-lint vet
@@ -49,3 +65,15 @@ vet:
 .PHONY: update-fmt
 update-fmt:
 	./hack/update-gofmt.sh
+
+.PHONY: build-image
+build-image:
+	docker build -t $(IMAGE):$(IMAGE_VERSION) .
+
+.PHONY: tag-image
+tag-image:
+	docker tag  $(IMAGE):$(IMAGE_VERSION) $(REGISTRY)/$(IMAGE):$(IMAGE_VERSION)
+
+.PHONY: push-release
+push-release:
+	docker push $(REGISTRY)/$(IMAGE):$(IMAGE_VERSION)

@@ -1,3 +1,4 @@
+cp /Users/anisznazen/cloud-provider/cloud-provider-osc/kubernetes/staging/src/k8s.io/legacy-cloud-providers/aws  
 # cloud-provider-aws
 The AWS cloud provider provides the interface between a Kubernetes cluster and AWS service APIs. This project allows a Kubernetes cluster to provision, monitor and remove AWS resources necessary for operation of the cluster.
 
@@ -100,11 +101,11 @@ For the `aws-cloud-controller-manager` to be able to communicate to AWS APIs, yo
                   "ecr:BatchGetImage"
               ],
               "Resource": "*"
-          } 
+          }
       ]
   }
   ```
-  
+
 ## Proper Node Names
 The cloud provider currently uses the instance private DNS name as the node name, but this is subject to change in the future.
 
@@ -118,5 +119,5 @@ Before running this, ensure that the instance you are running on has the `Kubern
 
 By default this script will use the cloud provider binary from this repository. You will need to have the k8s main repo cloned before running this script.
 
-## Note 
+## Note
 * All the EBS volume plugin related logic will be in maintenance mode. For new feature request or bug fixes, please create issue or pull reequest in [EBS CSI Driver](https://github.com/kubernetes-sigs/aws-ebs-csi-driver)

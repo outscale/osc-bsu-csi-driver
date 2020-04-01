@@ -90,9 +90,14 @@ func debugGetFrame(skipFrames int) runtime.Frame {
 func debugPrintCallerFunctionName() {
 	called := debugGetFrame(1)
 	caller := debugGetFrame(2)
-	klog.V(10).Infof("Debug Stack => %s(%s:%d) called by %s(%s:%d)",
-	 			called.Function, called.File, called.Line,
-	 			caller.Function, caller.File, caller.Line )
+	klog.V(10).Infof(
+		"DebugStack %s{" +
+		"\n\t call	 {\n\t\tFunc:%s, \n\t\tFile:(%s:%d)\n\t}" +
+		"\n\t called {\n\t\tFunc:%s, \n\t\tFile:(%s:%d)\n\t}" +
+		"\n}",
+		called.Function,
+		called.Function, called.File, called.Line,
+		caller.Function, caller.File, caller.Line)
 }
 
 func debugGetCurrentFunctionName() string {

@@ -1,0 +1,17 @@
+# Default values for osc-cloud-controller-manager.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+replicaCount: 1
+
+image:
+  repository: outscale/cloud-provider-osc
+  tag: v0.0.1beta
+  pullPolicy: Always
+
+verbose: ""
+oscSecretName: ""
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+

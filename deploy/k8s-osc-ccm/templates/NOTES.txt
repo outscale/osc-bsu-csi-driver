@@ -1,0 +1,2 @@
+To verify that osc-cloud-controller-manager has started, run:
+    kubectl get pod -n kube-system -l "app={{ include "osc-cloud-controller-manager.name" . }}"

@@ -1,0 +1,24 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: echoheaders
+  namespace: simple-lb
+  labels:
+    app: echoheaders
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: echoheaders
+  template:
+    metadata:
+      labels:
+        app: echoheaders
+    spec:
+      containers:
+      - name: echoheaders
+        image: gcr.io/google_containers/echoserver:1.10
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8080
+          protocol: TCP

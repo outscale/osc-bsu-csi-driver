@@ -49,7 +49,6 @@ import (
 	"k8s.io/kubernetes/pkg/features" // add the kubernetes feature gates
 	utilflag "k8s.io/kubernetes/pkg/util/flag"
 	
-	// need to replace this "k8s.io/legacy-cloud-providers/aws"
 	aws "github.com/outscale-dev/cloud-provider-osc/cloud-controller-manager/osc"
 	netutils "k8s.io/utils/net"
 

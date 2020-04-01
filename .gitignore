@@ -1,2 +1,7 @@
 /aws-cloud-controller-manager
 /cloudconfig
+*specs_samples/
+cloud-provider-osc.config
+cloud-provider-osc.creator
+cloud-provider-osc.files
+cloud-provider-osc.includes

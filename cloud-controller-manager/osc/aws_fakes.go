@@ -27,6 +27,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/elb"
 	"github.com/aws/aws-sdk-go/service/elbv2"
 	"github.com/aws/aws-sdk-go/service/kms"
+	"github.com/aws/aws-sdk-go/aws/ec2metadata"
 	"k8s.io/klog"
 )
 
@@ -113,6 +114,7 @@ func (s *FakeAWSServices) Autoscaling(region string) (ASG, error) {
 func (s *FakeAWSServices) Metadata() (EC2Metadata, error) {
 	return s.metadata, nil
 }
+
 
 // KeyManagement returns a fake KMS client
 func (s *FakeAWSServices) KeyManagement(region string) (KMS, error) {
@@ -311,6 +313,17 @@ func (ec2i *FakeEC2Impl) DescribeVpcs(request *ec2.DescribeVpcsInput) (*ec2.Desc
 // FakeMetadata is a fake EC2 metadata service client used for testing
 type FakeMetadata struct {
 	aws *FakeAWSServices
+}
+
+// GetInstanceIdentityDocument mocks base method
+func (m *FakeMetadata) GetInstanceIdentityDocument() (ec2metadata.EC2InstanceIdentityDocument, error) {
+	return ec2metadata.EC2InstanceIdentityDocument{}, nil
+}
+
+// Available mocks base method
+func (m *FakeMetadata) Available() bool {
+
+	return true
 }
 
 // GetMetadata returns fake EC2 metadata for testing

@@ -1,123 +1,89 @@
-cp /Users/anisznazen/cloud-provider/cloud-provider-osc/kubernetes/staging/src/k8s.io/legacy-cloud-providers/aws  
-# cloud-provider-aws
-The AWS cloud provider provides the interface between a Kubernetes cluster and AWS service APIs. This project allows a Kubernetes cluster to provision, monitor and remove AWS resources necessary for operation of the cluster.
+**WARNING**: This driver is currently in Beta release and should not be used in performance critical applications.
+
+# Cloud Provider 3DS Outscale CCM (cloud-provider-osc)
+The OSC cloud provider provides the interface between a Kubernetes cluster and 3DS Outscale service APIs. 
+This project allows a Kubernetes cluster to provision, monitor and remove AWS resources necessary for operation of the cluster.
+
+# Cloud Provider 3DS OSC CCM on Kubernetes
+
+## Requirements
+* Golang 1.13.7+
+* Docker 18.09.2+ 
+* K8s v1.16.4+
+
+## Build image
+
+``` 
+	make build-image  IMAGE=osc/cloud-provider-osc IMAGE_VERSION=version
+	make tag-image	  IMAGE=osc/cloud-provider-osc IMAGE_VERSION=version REGISTRY=registry.hub 
+	make push-release IMAGE=osc/cloud-provider-osc IMAGE_VERSION=version REGISTRY=registry.hub 
+``` 
+
+
+## Container Images:
+|OSC EBS CSI Driver Version | Image                                     |
+|---------------------------|-------------------------------------------|
+|OSC-MIGRATION branch       |outscale/cloud-provider-osc:v0.0.0beta     |
+
 
 ## Flags
-The flag `--cloud-provider=external` needs to be passed to kubelet, kube-apiserver, and kube-controller-manager. You should not pass the --cloud-provider flag to `aws-cloud-controller-manager`.
+The flag `--cloud-provider=external` `must` be passed to kubelet, kube-apiserver, and kube-controller-manager.
+You  **must** pass the --cloud-provider flag to `osc-cloud-controller-manager`.
 
-## IAM Policy
-For the `aws-cloud-controller-manager` to be able to communicate to AWS APIs, you will need to create a few IAM policies for your EC2 instances. The master policy is a bit open and can be scaled back depending on the use case. Adjust these based on your needs.
 
-1. Master Policy
+## Installation
+Please go through [DEPLOY](./deploy/README.md)
 
+
+## Prerequisites Kubernetes cluster
+
+- The k8s cluster used for development and tests is a pre-installed k8s platform under outscale cloud with 3 masters and 2 workers on vm with `t2.medium` type, this VMs are running on a VPC
+
+### Prerequisites for 'all' k8s cluster cloud resources
+- You **must** set a clusterID to be used for tagging all ressources
+- You Must **tag** all cluster resources (VPC, Instances, SG, subnets, route tables ....)  with the following tag
+	* The tag key = `OscK8sClusterID/clusterID`
+	* The tag value is an ownership value with the following possible values 
+    	- "shared": resource is shared between multiple clusters, and should not be destroyed
+     	- "owned": the resource is considered owned and managed by the cluster
+	* example of tag
+```     
+	{
+		"key": "OscK8sClusterID/k8s-dev-ccm",
+		"value": "shared"
+ 	}
 ```
-  {
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Effect": "Allow",
-      "Action": [
-        "autoscaling:DescribeAutoScalingGroups",
-        "autoscaling:DescribeLaunchConfigurations",
-        "autoscaling:DescribeTags",
-        "ec2:DescribeInstances",
-        "ec2:DescribeRegions",
-        "ec2:DescribeRouteTables",
-        "ec2:DescribeSecurityGroups",
-        "ec2:DescribeSubnets",
-        "ec2:DescribeVolumes",
-        "ec2:CreateSecurityGroup",
-        "ec2:CreateTags",
-        "ec2:CreateVolume",
-        "ec2:ModifyInstanceAttribute",
-        "ec2:ModifyVolume",
-        "ec2:AttachVolume",
-        "ec2:AuthorizeSecurityGroupIngress",
-        "ec2:CreateRoute",
-        "ec2:DeleteRoute",
-        "ec2:DeleteSecurityGroup",
-        "ec2:DeleteVolume",
-        "ec2:DetachVolume",
-        "ec2:RevokeSecurityGroupIngress",
-        "ec2:DescribeVpcs",
-        "elasticloadbalancing:AddTags",
-        "elasticloadbalancing:AttachLoadBalancerToSubnets",
-        "elasticloadbalancing:ApplySecurityGroupsToLoadBalancer",
-        "elasticloadbalancing:CreateLoadBalancer",
-        "elasticloadbalancing:CreateLoadBalancerPolicy",
-        "elasticloadbalancing:CreateLoadBalancerListeners",
-        "elasticloadbalancing:ConfigureHealthCheck",
-        "elasticloadbalancing:DeleteLoadBalancer",
-        "elasticloadbalancing:DeleteLoadBalancerListeners",
-        "elasticloadbalancing:DescribeLoadBalancers",
-        "elasticloadbalancing:DescribeLoadBalancerAttributes",
-        "elasticloadbalancing:DetachLoadBalancerFromSubnets",
-        "elasticloadbalancing:DeregisterInstancesFromLoadBalancer",
-        "elasticloadbalancing:ModifyLoadBalancerAttributes",
-        "elasticloadbalancing:RegisterInstancesWithLoadBalancer",
-        "elasticloadbalancing:SetLoadBalancerPoliciesForBackendServer",
-        "elasticloadbalancing:AddTags",
-        "elasticloadbalancing:CreateListener",
-        "elasticloadbalancing:CreateTargetGroup",
-        "elasticloadbalancing:DeleteListener",
-        "elasticloadbalancing:DeleteTargetGroup",
-        "elasticloadbalancing:DescribeListeners",
-        "elasticloadbalancing:DescribeLoadBalancerPolicies",
-        "elasticloadbalancing:DescribeTargetGroups",
-        "elasticloadbalancing:DescribeTargetHealth",
-        "elasticloadbalancing:ModifyListener",
-        "elasticloadbalancing:ModifyTargetGroup",
-        "elasticloadbalancing:RegisterTargets",
-        "elasticloadbalancing:DeregisterTargets",
-        "elasticloadbalancing:SetLoadBalancerPoliciesOfListener",
-        "iam:CreateServiceLinkedRole",
-        "kms:DescribeKey"
-      ],
-      "Resource": [
-        "*"
-      ]
-    }
-  ]
-}
-
+### Prerequisites for 'Instances'
+- You Must Tag all All cluster nodes with the following tag :
+	* Tag key `OscK8sNodeName`
+	* Tag values must be the k8s host name `kubernetes.io/hostname`
+	
+```     
+	{
+		"key": "OscK8sNodeName",
+		"value": "the value of kubernetes.io/hostname"
+	}
 ```
-2. Node Policy
-
+ 
+### Prerequisites for pre-created 'SG'
+ > **If** you want to use a pre-created `sg` to be applied to be attached/associated to the LBU 
+   it must be Tagged with `OscK8sMainSG/clusterID` and setted to `True`
+	
+```     
+	{
+		"key": "OscK8sMainSG/k8s-dev-ccm",
+		"value": "True"
+	}
 ```
-  {
-      "Version": "2012-10-17",
-      "Statement": [
-          {
-              "Effect": "Allow",
-              "Action": [
-                  "ec2:DescribeInstances",
-                  "ec2:DescribeRegions",
-                  "ecr:GetAuthorizationToken",
-                  "ecr:BatchCheckLayerAvailability",
-                  "ecr:GetDownloadUrlForLayer",
-                  "ecr:GetRepositoryPolicy",
-                  "ecr:DescribeRepositories",
-                  "ecr:ListImages",
-                  "ecr:BatchGetImage"
-              ],
-              "Resource": "*"
-          }
-      ]
-  }
-  ```
+ > **Else** an LB will be created automatically and attached to all Nodes
 
-## Proper Node Names
-The cloud provider currently uses the instance private DNS name as the node name, but this is subject to change in the future.
 
-# Development
-A local single node cluster can be brought up on AWS by running the local up script while on an AWS EC2 instance.
-Before running this, ensure that the instance you are running on has the `KubernetesCluster` tag. The tag can be any value.
 
-```
-./hack/local-up-cluster.sh
-```
 
-By default this script will use the cloud provider binary from this repository. You will need to have the k8s main repo cloned before running this script.
+## Examples
+- [simple-lb](./examples/simple-lb)
+- [2048](./examples/2048)
+
 
 ## Note
-* All the EBS volume plugin related logic will be in maintenance mode. For new feature request or bug fixes, please create issue or pull reequest in [EBS CSI Driver](https://github.com/kubernetes-sigs/aws-ebs-csi-driver)
+* All the EBS volume plugin related logic will be in maintenance mode. For new feature request or bug fixes, please create issue or pull request in [EBS CSI Driver](https://github.com/outscale-dev/osc-ebs-csi-driver)

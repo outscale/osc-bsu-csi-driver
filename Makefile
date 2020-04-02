@@ -39,6 +39,7 @@ printenv:
 	@echo "LDFLAGS =>  $(LDFLAGS)"
 	@echo "GOOS =>  $(GOOS)"
 	@echo "VERSION =>  $(VERSION)"
+	@echo "PWD =>  $(PWD)"
 
 
 
@@ -77,3 +78,12 @@ tag-image:
 .PHONY: push-release
 push-release:
 	docker push $(REGISTRY)/$(IMAGE):$(IMAGE_VERSION)
+
+.PHONY: build-debug
+build-debug:
+	docker build  -t osc/cloud-provider-osc:debug -f ./debug/Dockerfile_debug .
+
+.PHONY: run-debug
+run-debug:
+	docker run -v $(PWD):/go/src/cloud-provider-osc --rm -it osc/cloud-provider-osc:debug bash
+

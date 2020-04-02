@@ -1,7 +1,15 @@
 # Deploy the OSC CCM
  
-## Generate and apply the secret 
+## Generate and apply the osc-secret 
 ```
+	OSC_ACCOUNT_ID=XXXXX		: the osc user id
+	OSC_ACCOUNT_IAM=xxxx		: the eim user name  
+	OSC_USER_ID=XXXX			: the eim user id
+	OSC_ARN="XXXXX"				: the eim user orn
+	AWS_ACCESS_KEY_ID=XXXX 		: the AK
+	AWS_SECRET_ACCESS_KEY=XXXX 	: the SK
+	AWS_DEFAULT_REGION=XXX		: the Region to be used
+	
 	cat ./deploy/secret_osc.yaml | \
 	sed "s@AWS_ACCESS_KEY_ID@\"${AWS_ACCESS_KEY_ID}\"@g" 			  | \
 	sed "s@AWS_SECRET_ACCESS_KEY@\"${AWS_SECRET_ACCESS_KEY}\"@g"    | \
@@ -21,6 +29,7 @@
 ## Deploy the CCM deamonset
 
 ```
+	# set the IMAGE_SECRET, IMAGE_NAME, IMAGE_TAG, SECRET_NAME to the right values on your case
 	IMAGE_SECRET=registry-dockerconfigjson && \
 	IMAGE_NAME=registry.kube-system:5001/osc/cloud-provider-osc && \
 	IMAGE_TAG=v1 && \
@@ -36,3 +45,4 @@
 	kubectl get pods -o wide -A -n kube-system | grep osc-cloud-controller-manager
 
 ```
+

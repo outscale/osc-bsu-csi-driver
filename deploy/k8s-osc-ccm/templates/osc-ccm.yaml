@@ -39,7 +39,7 @@ spec:
         imagePullPolicy: {{ .Values.image.pullPolicy }}
         command:
         - /bin/osc-cloud-controller-manager
-        - --cloud-provider=external  # Add your own cloud provider here!
+        - --cloud-provider=external
         - --leader-elect=true
         - --v={{ .Values.verbose | default "10" }}
         - --logtostderr

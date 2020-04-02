@@ -3622,7 +3622,7 @@ func (c *Cloud) EnsureLoadBalancer(ctx context.Context, clusterName string, apiS
  									nodes []*v1.Node)(*v1.LoadBalancerStatus, error) {
 	debugPrintCallerFunctionName()
 	klog.V(10).Infof("EnsureLoadBalancer(%v, %v, %v)", clusterName, apiService, nodes)
-
+	klog.V(10).Infof("EnsureLoadBalancer.annotations(%v)", apiService.Annotations)
 	annotations := apiService.Annotations
 	if apiService.Spec.SessionAffinity != v1.ServiceAffinityNone {
 		// ELB supports sticky sessions, but only when configured for HTTP/HTTPS
@@ -3829,6 +3829,7 @@ func (c *Cloud) EnsureLoadBalancer(ctx context.Context, clusterName string, apiS
 		if accessLogS3BucketPrefixAnnotation != "" {
 			loadBalancerAttributes.AccessLog.S3BucketPrefix = &accessLogS3BucketPrefixAnnotation
 		}
+		klog.V(10).Infof("Debug OSC:  loadBalancerAttributes.AccessLog : %v", loadBalancerAttributes.AccessLog)
 	}
 
 	// Determine if connection draining enabled/disabled has been specified
@@ -4185,7 +4186,7 @@ func (c *Cloud) updateInstanceSecurityGroupsForLoadBalancer(lb *elb.LoadBalancer
 			instanceSecurityGroupIds[actualGroupID] = false
 		}
 	}
-
+	klog.V(2).Infof("instanceSecurityGroupID, add := range instanceSecurityGroupIds %v", instanceSecurityGroupIds)
 	for instanceSecurityGroupID, add := range instanceSecurityGroupIds {
 		if add {
 			klog.V(2).Infof("Adding rule for traffic from the load balancer (%s) to instances (%s)", loadBalancerSecurityGroupID, instanceSecurityGroupID)
@@ -4291,6 +4292,17 @@ func (c *Cloud) EnsureLoadBalancerDeleted(ctx context.Context, clusterName strin
 	}
 
 	{
+		// De-register the load balancer security group from the instances security group
+		err = c.ensureLoadBalancerInstances(aws.StringValue(lb.LoadBalancerName),
+											lb.Instances,
+											map[InstanceID]*ec2.Instance{})
+		if err != nil {
+			klog.Errorf("ensureLoadBalancerInstances deregistering load balancer %v,%v,%v : %q",
+			 			aws.StringValue(lb.LoadBalancerName),
+						lb.Instances,
+						nil, err)
+		}
+
 		// De-authorize the load balancer security group from the instances security group
 		err = c.updateInstanceSecurityGroupsForLoadBalancer(lb, nil)
 		if err != nil {
@@ -4363,8 +4375,8 @@ func (c *Cloud) EnsureLoadBalancerDeleted(ctx context.Context, clusterName strin
 				} else {
 					ignore := false
 					if awsError, ok := err.(awserr.Error); ok {
-						if awsError.Code() == "DependencyViolation" {
-							klog.V(2).Infof("Ignoring DependencyViolation while deleting load-balancer security group (%s), assuming because LB is in process of deleting", securityGroupID)
+						if awsError.Code() == "DependencyViolation" || awsError.Code() == "InvalidGroup.InUse" {
+							klog.V(2).Infof("Ignoring DependencyViolation or  InvalidGroup.InUse while deleting load-balancer security group (%s), assuming because LB is in process of deleting", securityGroupID)
 							ignore = true
 						}
 					}

@@ -11,6 +11,12 @@ $ /usr/local/bin/kubectl create namespace simple-lb
 namespace/simple-lb created
 ```
 
+- Create bucket for logs 
+```
+$ aws s3 mb s3://ccm-examples  --endpoint https://osu.eu-west-2.outscale.com
+make_bucket: ccm-examples
+```
+
 - Deploy the application ,which a simple server that responds with the http headers it received, along with the Loadbalancer
 
 ```
@@ -39,7 +45,11 @@ $ kubectl get service  -n simple-lb echoheaders-lb-public
 NAME                    TYPE           CLUSTER-IP     EXTERNAL-IP                                                             PORT(S)        AGE
 echoheaders-lb-public   LoadBalancer   10.32.187.30   a4fd6f97708b94d288e9986f98df61da-322867284.eu-west-2.lbu.outscale.com   80:32363/TCP   33s
 ```
+- Check logs under  buckets created  and its content
+```
+aws s3 ls --recursive s3://ccm-examples/ --endpoint https://osu.eu-west-2.outscale.com
 
+```
 - Wait for the lb to be ready  and then check it is running and forwarding traffic
 
 ```		
@@ -76,4 +86,6 @@ Request Body:
 ```
 /usr/local/bin/kubectl delete  -f examples/simple-lb/specs/
 ```
+
+
 

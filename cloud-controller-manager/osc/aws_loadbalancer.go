@@ -1422,6 +1422,7 @@ func (c *Cloud) ensureLoadBalancerInstances(loadBalancerName string,
 		removeInstance.InstanceId = aws.String(instanceID)
 		removeInstances = append(removeInstances, removeInstance)
 	}
+	klog.V(10).Infof("ensureLoadBalancerInstances register/Deregister addInstances(%v) , removeInstances(%v)", addInstances, removeInstances)
 
 	if len(addInstances) > 0 {
 		registerRequest := &elb.RegisterInstancesWithLoadBalancerInput{}

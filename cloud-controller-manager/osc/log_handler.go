@@ -16,7 +16,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package aws
+package osc
 
 import (
 	"github.com/aws/aws-sdk-go/aws/request"

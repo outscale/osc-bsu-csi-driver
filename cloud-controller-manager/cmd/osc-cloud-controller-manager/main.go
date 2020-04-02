@@ -14,14 +14,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// aws-cloud-controller-manager is responsible for running controller loops
-// that create, delete and monitor cloud resources on AWS. These cloud
-// resources include EC2 instances and autoscaling groups, along with network
-// load balancers (NLB) and application load balancers (ALBs) The cloud
-// resources help provide a place for both control plane components -- e.g. EC2
+// osc-cloud-controller-manager is responsible for running controller loops
+// that create, delete and monitor cloud resources on 3DS outscale. These cloud
+// resources include FCU instances and autoscaling groups, along with network
+// load balancers (LBU)  The cloud
+// resources help provide a place for both control plane components -- e.g. FCU
 // instances might house Kubernetes worker nodes -- as well as data plane
-// components -- e.g. a Kubernetes Ingress object might be mapped to an EC2
-// application load balancer.
+// components.
 
 package main
 
@@ -49,7 +48,7 @@ import (
 	"k8s.io/kubernetes/pkg/features" // add the kubernetes feature gates
 	utilflag "k8s.io/kubernetes/pkg/util/flag"
 	
-	aws "github.com/outscale-dev/cloud-provider-osc/cloud-controller-manager/osc"
+	osc "github.com/outscale-dev/cloud-provider-osc/cloud-controller-manager/osc"
 	netutils "k8s.io/utils/net"
 
 
@@ -74,8 +73,8 @@ func main() {
 	}
 
 	command := &cobra.Command{
-		Use:  "aws-cloud-controller-manager",
-		Long: `aws-cloud-controller-manager manages AWS cloud resources for a Kubernetes cluster.`,
+		Use:  "osc-cloud-controller-manager",
+		Long: `osc-cloud-controller-manager manages osc cloud resources for a Kubernetes cluster.`,
 		Run: func(cmd *cobra.Command, args []string) {
 
 			// Use our version instead of the Kubernetes formatted version
@@ -85,9 +84,9 @@ func main() {
 				os.Exit(0)
 			}
 
-			// Hard code aws cloud provider
+			// Hard code osc cloud provider
 			cloudProviderFlag := cmd.Flags().Lookup("cloud-provider")
-			cloudProviderFlag.Value.Set(aws.ProviderName)
+			cloudProviderFlag.Value.Set(osc.ProviderName)
 
 			utilflag.PrintFlags(cmd.Flags())
 

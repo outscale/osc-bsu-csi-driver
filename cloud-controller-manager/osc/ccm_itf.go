@@ -1,5 +1,3 @@
-// +build !providerless
-
 /*
 Copyright 2014 The Kubernetes Authors.
 
@@ -18,30 +16,14 @@ limitations under the License.
 
 package osc
 
-import (
-	"github.com/aws/aws-sdk-go/aws"
+// ********************* CCM Used Interfaces *********************
 
-	"k8s.io/apimachinery/pkg/util/sets"
-)
-
-func stringSetToPointers(in sets.String) []*string {
-	if in == nil {
-		return nil
-	}
-	out := make([]*string, 0, len(in))
-	for k := range in {
-		out = append(out, aws.String(k))
-	}
-	return out
-}
-
-func stringSetFromPointers(in []*string) sets.String {
-	if in == nil {
-		return nil
-	}
-	out := sets.NewString()
-	for i := range in {
-		out.Insert(aws.StringValue(in[i]))
-	}
-	return out
+// Services is an abstraction over AWS, to allow mocking/other implementations
+type Services interface {
+	Compute(region string) (EC2, error)
+	LoadBalancing(region string) (ELB, error)
+	LoadBalancingV2(region string) (ELBV2, error)
+	Autoscaling(region string) (ASG, error)
+	Metadata() (EC2Metadata, error)
+	KeyManagement(region string) (KMS, error)
 }

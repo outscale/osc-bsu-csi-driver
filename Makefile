@@ -18,6 +18,9 @@ VERSION ?= $(shell git describe --exact-match 2> /dev/null || \
                  git describe --match=$(git rev-parse --short=8 HEAD) --always --dirty --abbrev=8)
 LDFLAGS   := "-w -s -X 'main.version=${VERSION}'"
 
+# Full log with  -v -x
+GO_ADD_OPTIONS := -v
+
 IMAGE = "osc/cloud-provider-osc"
 IMAGE_VERSION = "v${VERSION}"
 REGISTRY = "registry.kube-system:5001"
@@ -27,7 +30,7 @@ export GO111MODULE=on
 
 
 osc-cloud-controller-manager: $(SOURCES)
-	CGO_ENABLED=0 GOOS=$(GOOS) go build \
+	CGO_ENABLED=0 GOOS=$(GOOS) go build $(GO_ADD_OPTIONS)\
 		-ldflags $(LDFLAGS) \
 		-o osc-cloud-controller-manager \
 		cloud-controller-manager/cmd/osc-cloud-controller-manager/main.go

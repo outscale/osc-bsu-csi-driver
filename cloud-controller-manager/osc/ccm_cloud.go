@@ -1692,6 +1692,15 @@ func (c *Cloud) findELBSubnets(internalELB bool) ([]string, error) {
 		return nil, fmt.Errorf("error describe route table: %q", err)
 	}
 
+	// Try to break the tie using a tag
+	var tagName string
+	if internalELB {
+		tagName = TagNameSubnetInternalELB
+	} else {
+		tagName = TagNameSubnetPublicELB
+	}
+
+
 	subnetsByAZ := make(map[string]*ec2.Subnet)
 	for _, subnet := range subnets {
 		az := aws.StringValue(subnet.AvailabilityZone)
@@ -1711,17 +1720,12 @@ func (c *Cloud) findELBSubnets(internalELB bool) ([]string, error) {
 		}
 
 		existing := subnetsByAZ[az]
+		_, hasTag := findTag(subnet.Tags, tagName)
 		if existing == nil {
-			subnetsByAZ[az] = subnet
+			if hasTag {
+				subnetsByAZ[az] = subnet
+			}
 			continue
-		}
-
-		// Try to break the tie using a tag
-		var tagName string
-		if internalELB {
-			tagName = TagNameSubnetInternalELB
-		} else {
-			tagName = TagNameSubnetPublicELB
 		}
 
 		_, existingHasTag := findTag(existing.Tags, tagName)

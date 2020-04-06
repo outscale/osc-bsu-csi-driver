@@ -1720,16 +1720,17 @@ func (c *Cloud) findELBSubnets(internalELB bool) ([]string, error) {
 		}
 
 		existing := subnetsByAZ[az]
-		_, hasTag := findTag(subnet.Tags, tagName)
+		_, subnetHasTag := findTag(subnet.Tags, tagName)
 		if existing == nil {
-			if hasTag {
+			if subnetHasTag {
+				subnetsByAZ[az] = subnet
+			} else if isPublic && !internalELB {
 				subnetsByAZ[az] = subnet
 			}
 			continue
 		}
 
 		_, existingHasTag := findTag(existing.Tags, tagName)
-		_, subnetHasTag := findTag(subnet.Tags, tagName)
 
 		if existingHasTag != subnetHasTag {
 			if subnetHasTag {

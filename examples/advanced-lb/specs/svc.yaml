@@ -1,0 +1,44 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: echoheaders-lb-advanced-public
+  namespace: advanced-lb
+  labels:
+    app: echoheaders
+  annotations:
+# ACESS LOG
+    service.beta.kubernetes.io/aws-load-balancer-access-log-enabled: "true"
+    service.beta.kubernetes.io/aws-load-balancer-access-log-emit-interval: "5"
+    service.beta.kubernetes.io/aws-load-balancer-access-log-s3-bucket-name: "ccm-examples"
+    service.beta.kubernetes.io/aws-load-balancer-access-log-s3-bucket-prefix: "logs/lb"
+# Tags
+    service.beta.kubernetes.io/aws-load-balancer-additional-resource-tags: "testKey1=Val1,testKey2=Val2"
+# ConnectionDraining
+    service.beta.kubernetes.io/aws-load-balancer-connection-draining-enabled: "true"
+    service.beta.kubernetes.io/aws-load-balancer-connection-draining-timeout: "30"
+# ConnectionSettings
+    service.beta.kubernetes.io/aws-load-balancer-connection-idle-timeout: "65"
+
+# proxy-protocol
+    service.beta.kubernetes.io/aws-load-balancer-proxy-protocol: "*"
+
+# ssl-cert
+    service.beta.kubernetes.io/aws-load-balancer-ssl-cert : OSC_ORN_ID
+
+spec:
+  ports:
+  - port: 80
+    protocol: TCP
+    targetPort: 8080
+    name: http
+  - port: 443
+    protocol: TCP
+    targetPort: 8443
+    name: https
+  selector:
+    app: echoheaders
+  type: LoadBalancer
+  loadBalancerSourceRanges:
+    #- you can replace it with multiple cidr desired values
+    - MY_CIDR
+

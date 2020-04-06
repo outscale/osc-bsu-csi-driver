@@ -22,14 +22,14 @@ make_bucket: ccm-examples
 ```
 $ /usr/local/bin/kubectl apply  -f examples/simple-internal/specs/
 	deployment.apps/echoheaders created
-	service/echoheaders-lb-public created
+	service/echoheaders-lb-internal created
 	
 $kubectl get all -n simple-internal
 NAME                               READY   STATUS    RESTARTS   AGE
 pod/echoheaders-5465f4df9d-wxht2   1/1     Running   0          5m20s
 
 NAME                            TYPE           CLUSTER-IP     EXTERNAL-IP                                                             PORT(S)        AGE
-service/echoheaders-lb-public   LoadBalancer   10.32.187.30   a4fd6f97708b94d288e9986f98df61da-322867284.eu-west-2.lbu.outscale.com   80:32363/TCP   5m20s
+service/echoheaders-lb-internal   LoadBalancer   10.32.187.30   a4fd6f97708b94d288e9986f98df61da-322867284.eu-west-2.lbu.outscale.com   80:32363/TCP   5m20s
 
 NAME                          READY   UP-TO-DATE   AVAILABLE   AGE
 deployment.apps/echoheaders   1/1     1            1           5m21s
@@ -41,9 +41,9 @@ replicaset.apps/echoheaders-5465f4df9d   1         1         1       5m21s
 - Validate the LB was created and the endpoint is available
 
 ```	
-$ kubectl get service  -n simple-internal echoheaders-lb-public
+$ kubectl get service  -n simple-internal echoheaders-lb-internal
 NAME                    TYPE           CLUSTER-IP     EXTERNAL-IP                                                             PORT(S)        AGE
-echoheaders-lb-public   LoadBalancer   10.32.187.30   a4fd6f97708b94d288e9986f98df61da-322867284.eu-west-2.lbu.outscale.com   80:32363/TCP   33s
+echoheaders-lb-internal   LoadBalancer   10.32.187.30   a4fd6f97708b94d288e9986f98df61da-322867284.eu-west-2.lbu.outscale.com   80:32363/TCP   33s
 ```
 - Check logs under  buckets created  and its content
 ```

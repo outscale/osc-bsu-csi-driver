@@ -83,6 +83,8 @@ Please go through [DEPLOY](./deploy/README.md)
 ## Examples
 - [simple-lb](./examples/simple-lb)
 - [2048](./examples/2048)
+- [simple-internal](./examples/simple-internal)
+- [advanced-lb](./examples/advanced-lb)
 
 
 ## Note

@@ -65,6 +65,16 @@ echoheaders-lb-advanced-public   LoadBalancer   10.32.29.197   ad51051c7a1334895
 ```		
 $ curl -k  https://ad51051c7a133489591adc0e1fbec049-832076221.eu-west-2.lbu.outscale.com/
 
+<html>
+<head><title>400 Bad Request</title></head>
+<body bgcolor="white">
+<center><h1>400 Bad Request</h1></center>
+<hr><center>nginx/1.13.3</center>
+</body>
+</html>
+
+notice: !!! You need to fix certificate name to mach the outscale.com domain
+
 ```
 
 - Cleanup resources:

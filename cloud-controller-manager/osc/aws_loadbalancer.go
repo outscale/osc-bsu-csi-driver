@@ -957,11 +957,13 @@ func (c *Cloud) ensureLoadBalancer(namespacedName types.NamespacedName, loadBala
 		// TODO: What happens if we have more than one subnet per AZ?
 		if subnetIDs == nil {
 			createRequest.Subnets = nil
+
+			createRequest.AvailabilityZones = append(createRequest.AvailabilityZones, aws.String(c.selfAWSInstance.availabilityZone))
 		} else {
 			createRequest.Subnets = aws.StringSlice(subnetIDs)
 		}
 
-		if securityGroupIDs == nil {
+		if securityGroupIDs == nil ||  subnetIDs == nil {
 			createRequest.SecurityGroups = nil
 		} else {
 			createRequest.SecurityGroups = aws.StringSlice(securityGroupIDs)

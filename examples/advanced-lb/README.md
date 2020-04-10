@@ -73,7 +73,7 @@ $ curl -k  https://ad51051c7a133489591adc0e1fbec049-832076221.eu-west-2.lbu.outs
 </body>
 </html>
 
-notice: !!! You need to fix certificate name to mach the outscale.com domain
+notice: !!! You need to fix certificate name to match the outscale.com domain
 
 ```
 

@@ -1570,7 +1570,10 @@ func (c *Cloud) ensureSecurityGroup(name string, description string, additionalT
 		request := &ec2.DescribeSecurityGroupsInput{}
 		request.Filters = []*ec2.Filter{
 			newEc2Filter("group-name", name),
-			newEc2Filter("vpc-id", c.vpcID),
+		}
+
+		if c.vpcID != ""  {
+			request.Filters = append(request.Filters, newEc2Filter("vpc-id", c.vpcID))
 		}
 
 		securityGroups, err := c.ec2.DescribeSecurityGroups(request)
@@ -1593,7 +1596,9 @@ func (c *Cloud) ensureSecurityGroup(name string, description string, additionalT
 		}
 
 		createRequest := &ec2.CreateSecurityGroupInput{}
-		createRequest.VpcId = &c.vpcID
+		if c.vpcID != ""  {
+			createRequest.VpcId = &c.vpcID
+		}
 		createRequest.GroupName = &name
 		createRequest.Description = &description
 
@@ -1640,36 +1645,46 @@ func (c *Cloud) findSubnets() ([]*ec2.Subnet, error) {
 	debugPrintCallerFunctionName()
 	klog.V(10).Infof("findSubnets()")
 	request := &ec2.DescribeSubnetsInput{}
-	request.Filters = []*ec2.Filter{newEc2Filter("vpc-id", c.vpcID)}
+	var err error
+	var subnets []*ec2.Subnet
+	err = nil
+	subnets = []*ec2.Subnet{}
+	if c.vpcID != ""  {
+		request.Filters = []*ec2.Filter{newEc2Filter("vpc-id", c.vpcID)}
 
-	subnets, err := c.ec2.DescribeSubnets(request)
-	if err != nil {
-		return nil, fmt.Errorf("error describing subnets: %q", err)
-	}
+		subnets, err := c.ec2.DescribeSubnets(request)
+		if err != nil {
+			return nil, fmt.Errorf("error describing subnets: %q", err)
+		}
 
-	var matches []*ec2.Subnet
-	for _, subnet := range subnets {
-		if c.tagging.hasClusterTag(subnet.Tags) {
-			matches = append(matches, subnet)
+		var matches []*ec2.Subnet
+		for _, subnet := range subnets {
+			if c.tagging.hasClusterTag(subnet.Tags) {
+				matches = append(matches, subnet)
+			}
+		}
+
+		if len(matches) != 0 {
+			return matches, nil
 		}
 	}
 
-	if len(matches) != 0 {
-		return matches, nil
-	}
+	if c.selfAWSInstance.subnetID != ""  {
+		// Fall back to the current instance subnets, if nothing is tagged
+		klog.Warningf("No tagged subnets found; will fall-back to the current subnet only.  This is likely to be an error in a future version of k8s.")
+		request = &ec2.DescribeSubnetsInput{}
+		request.Filters = []*ec2.Filter{newEc2Filter("subnet-id", c.selfAWSInstance.subnetID)}
 
-	// Fall back to the current instance subnets, if nothing is tagged
-	klog.Warningf("No tagged subnets found; will fall-back to the current subnet only.  This is likely to be an error in a future version of k8s.")
+		subnets, err = c.ec2.DescribeSubnets(request)
+		if err != nil {
+			return nil, fmt.Errorf("error describing subnets: %q", err)
+		}
+		return subnets, nil
 
-	request = &ec2.DescribeSubnetsInput{}
-	request.Filters = []*ec2.Filter{newEc2Filter("subnet-id", c.selfAWSInstance.subnetID)}
-
-	subnets, err = c.ec2.DescribeSubnets(request)
-	if err != nil {
-		return nil, fmt.Errorf("error describing subnets: %q", err)
 	}
 
 	return subnets, nil
+
 }
 
 // Finds the subnets to use for an ELB we are creating.
@@ -1678,18 +1693,20 @@ func (c *Cloud) findSubnets() ([]*ec2.Subnet, error) {
 func (c *Cloud) findELBSubnets(internalELB bool) ([]string, error) {
 	debugPrintCallerFunctionName()
 	klog.V(10).Infof("findELBSubnets(%v)", internalELB)
-	vpcIDFilter := newEc2Filter("vpc-id", c.vpcID)
 
 	subnets, err := c.findSubnets()
 	if err != nil {
 		return nil, err
 	}
-
-	rRequest := &ec2.DescribeRouteTablesInput{}
-	rRequest.Filters = []*ec2.Filter{vpcIDFilter}
-	rt, err := c.ec2.DescribeRouteTables(rRequest)
-	if err != nil {
-		return nil, fmt.Errorf("error describe route table: %q", err)
+	var rt []*ec2.RouteTable
+	if c.vpcID != ""  {
+		vpcIDFilter := newEc2Filter("vpc-id", c.vpcID)
+		rRequest := &ec2.DescribeRouteTablesInput{}
+		rRequest.Filters = []*ec2.Filter{vpcIDFilter}
+		rt, err = c.ec2.DescribeRouteTables(rRequest)
+		if err != nil {
+			return nil, fmt.Errorf("error describe route table: %q", err)
+		}
 	}
 
 	// Try to break the tie using a tag
@@ -2081,7 +2098,7 @@ func (c *Cloud) EnsureLoadBalancer(ctx context.Context, clusterName string, apiS
 
 	// Bail out early if there are no subnets
 	if len(subnetIDs) == 0 {
-		return nil, fmt.Errorf("could not find any suitable subnets for creating the ELB")
+		klog.Warningf("could not find any suitable subnets for creating the ELB")
 	}
 
 	loadBalancerName := c.GetLoadBalancerName(ctx, clusterName, apiService)
@@ -2093,7 +2110,6 @@ func (c *Cloud) EnsureLoadBalancer(ctx context.Context, clusterName string, apiS
 
 	securityGroupIDs, err := c.buildELBSecurityGroupList(serviceName, loadBalancerName, annotations)
 	klog.V(10).Infof("Debug OSC:  ensured securityGroupIDs : %v", securityGroupIDs)
-
 
 	if err != nil {
 		return nil, err
@@ -2200,7 +2216,7 @@ func (c *Cloud) EnsureLoadBalancer(ctx context.Context, clusterName string, apiS
 		}
 	}
 
-	err = c.updateInstanceSecurityGroupsForLoadBalancer(loadBalancer, instances)
+	err = c.updateInstanceSecurityGroupsForLoadBalancer(loadBalancer, instances, securityGroupIDs)
 	if err != nil {
 		klog.Warningf("Error opening ingress rules for the load balancer to the instances: %q", err)
 		return nil, err
@@ -2292,9 +2308,11 @@ func (c *Cloud) getTaggedSecurityGroups() (map[string]*ec2.SecurityGroup, error)
 
 // Open security group ingress rules on the instances so that the load balancer can talk to them
 // Will also remove any security groups ingress rules for the load balancer that are _not_ needed for allInstances
-func (c *Cloud) updateInstanceSecurityGroupsForLoadBalancer(lb *elb.LoadBalancerDescription, instances map[InstanceID]*ec2.Instance) error {
+func (c *Cloud) updateInstanceSecurityGroupsForLoadBalancer(lb *elb.LoadBalancerDescription,
+ 													instances map[InstanceID]*ec2.Instance,
+ 													securityGroupIDs []string) error {
 	debugPrintCallerFunctionName()
-	klog.V(10).Infof("updateInstanceSecurityGroupsForLoadBalancer(%v, %v)", lb, instances)
+	klog.V(10).Infof("updateInstanceSecurityGroupsForLoadBalancer(%v, %v, %v)", lb, instances, securityGroupIDs)
 
 	if c.cfg.Global.DisableSecurityGroupIngress {
 		return nil
@@ -2302,19 +2320,32 @@ func (c *Cloud) updateInstanceSecurityGroupsForLoadBalancer(lb *elb.LoadBalancer
 
 	// Determine the load balancer security group id
 	loadBalancerSecurityGroupID := ""
-	for _, securityGroup := range lb.SecurityGroups {
-		if aws.StringValue(securityGroup) == "" {
+	securityGroupsItem := []string{}
+	if len(lb.SecurityGroups) > 0 {
+		for _, securityGroup := range lb.SecurityGroups {
+		    securityGroupsItem = append(securityGroupsItem, *securityGroup)
+		}
+	} else if len(securityGroupIDs) > 0 {
+		securityGroupsItem = securityGroupIDs
+	}
+
+	for _, securityGroup := range securityGroupsItem {
+		if securityGroup == "" {
 			continue
 		}
 		if loadBalancerSecurityGroupID != "" {
 			// We create LBs with one SG
 			klog.Warningf("Multiple security groups for load balancer: %q", aws.StringValue(lb.LoadBalancerName))
 		}
-		loadBalancerSecurityGroupID = *securityGroup
+		loadBalancerSecurityGroupID = securityGroup
 	}
+
 	if loadBalancerSecurityGroupID == "" {
 		return fmt.Errorf("could not determine security group for load balancer: %s", aws.StringValue(lb.LoadBalancerName))
 	}
+
+	klog.V(10).Infof("loadBalancerSecurityGroupID(%v)", loadBalancerSecurityGroupID)
+
 
 	// Get the actual list of groups that allow ingress from the load-balancer
 	var actualGroups []*ec2.SecurityGroup
@@ -2328,17 +2359,20 @@ func (c *Cloud) updateInstanceSecurityGroupsForLoadBalancer(lb *elb.LoadBalancer
 			return fmt.Errorf("error querying security groups for ELB: %q", err)
 		}
 		for _, sg := range response {
-			if !c.tagging.hasClusterTag(sg.Tags) {
+			if !c.tagging.hasClusterTag(sg.Tags) && len(lb.SecurityGroups) > 0 {
 				continue
 			}
 			actualGroups = append(actualGroups, sg)
 		}
 	}
 
+	klog.V(10).Infof("actualGroups(%v)", actualGroups)
+
 	taggedSecurityGroups, err := c.getTaggedSecurityGroups()
 	if err != nil {
 		return fmt.Errorf("error querying for tagged security groups: %q", err)
 	}
+	klog.V(10).Infof("taggedSecurityGroups(%v)", taggedSecurityGroups)
 
 	// Open the firewall from the load balancer to the instance
 	// We don't actually have a trivial way to know in advance which security group the instance is in
@@ -2368,6 +2402,8 @@ func (c *Cloud) updateInstanceSecurityGroupsForLoadBalancer(lb *elb.LoadBalancer
 		instanceSecurityGroupIds[id] = true
 	}
 
+	klog.V(10).Infof("instanceSecurityGroupIds(%v)", instanceSecurityGroupIds)
+
 	// Compare to actual groups
 	for _, actualGroup := range actualGroups {
 		actualGroupID := aws.StringValue(actualGroup.GroupId)
@@ -2385,7 +2421,8 @@ func (c *Cloud) updateInstanceSecurityGroupsForLoadBalancer(lb *elb.LoadBalancer
 			instanceSecurityGroupIds[actualGroupID] = false
 		}
 	}
-	klog.V(2).Infof("instanceSecurityGroupID, add := range instanceSecurityGroupIds %v", instanceSecurityGroupIds)
+
+	klog.V(10).Infof("instanceSecurityGroupIds(%v)", instanceSecurityGroupIds)
 	for instanceSecurityGroupID, add := range instanceSecurityGroupIds {
 		if add {
 			klog.V(2).Infof("Adding rule for traffic from the load balancer (%s) to instances (%s)", loadBalancerSecurityGroupID, instanceSecurityGroupID)
@@ -2490,6 +2527,22 @@ func (c *Cloud) EnsureLoadBalancerDeleted(ctx context.Context, clusterName strin
 		return nil
 	}
 
+	securityGroupsItem := []string{}
+	if len(lb.SecurityGroups) == 0 && c.vpcID == "" {
+		request := &ec2.DescribeSecurityGroupsInput{}
+		request.Filters = []*ec2.Filter{
+			newEc2Filter("group-name", "k8s-elb-" + aws.StringValue(lb.LoadBalancerName)),
+		}
+		securityGroups, err := c.ec2.DescribeSecurityGroups(request)
+		if err != nil {
+			return err
+		}
+		for _, securityGroup := range securityGroups {
+		    securityGroupsItem = append(securityGroupsItem, aws.StringValue(securityGroup.GroupId))
+		}
+
+	}
+
 	{
 		// De-register the load balancer security group from the instances security group
 		err = c.ensureLoadBalancerInstances(aws.StringValue(lb.LoadBalancerName),
@@ -2503,7 +2556,7 @@ func (c *Cloud) EnsureLoadBalancerDeleted(ctx context.Context, clusterName strin
 		}
 
 		// De-authorize the load balancer security group from the instances security group
-		err = c.updateInstanceSecurityGroupsForLoadBalancer(lb, nil)
+		err = c.updateInstanceSecurityGroupsForLoadBalancer(lb, nil, securityGroupsItem)
 		if err != nil {
 			klog.Errorf("Error deregistering load balancer from instance security groups: %q", err)
 			return err
@@ -2528,7 +2581,7 @@ func (c *Cloud) EnsureLoadBalancerDeleted(ctx context.Context, clusterName strin
 		// Note that this is annoying: the load balancer disappears from the API immediately, but it is still
 		// deleting in the background.  We get a DependencyViolation until the load balancer has deleted itself
 
-		var loadBalancerSGs = aws.StringValueSlice(lb.SecurityGroups)
+		var loadBalancerSGs = securityGroupsItem
 
 		describeRequest := &ec2.DescribeSecurityGroupsInput{}
 		describeRequest.Filters = []*ec2.Filter{
@@ -2656,7 +2709,23 @@ func (c *Cloud) UpdateLoadBalancer(ctx context.Context, clusterName string, serv
 		return nil
 	}
 
-	err = c.updateInstanceSecurityGroupsForLoadBalancer(lb, instances)
+	securityGroupsItem := []string{}
+	if len(lb.SecurityGroups) == 0 && c.vpcID == "" {
+		request := &ec2.DescribeSecurityGroupsInput{}
+		request.Filters = []*ec2.Filter{
+			newEc2Filter("group-name", "k8s-elb-" + aws.StringValue(lb.LoadBalancerName)),
+		}
+		securityGroups, err := c.ec2.DescribeSecurityGroups(request)
+		if err != nil {
+			return err
+		}
+		for _, securityGroup := range securityGroups {
+		    securityGroupsItem = append(securityGroupsItem, aws.StringValue(securityGroup.GroupId))
+		}
+
+	}
+
+	err = c.updateInstanceSecurityGroupsForLoadBalancer(lb, instances, securityGroupsItem)
 	if err != nil {
 		return err
 	}

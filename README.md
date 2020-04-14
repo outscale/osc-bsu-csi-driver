@@ -38,6 +38,7 @@ Please go through [DEPLOY](./deploy/README.md)
 ## Prerequisites Kubernetes cluster
 
 - The k8s cluster used for development and tests is a pre-installed k8s platform under outscale cloud with 3 masters and 2 workers on vm with `t2.medium` type, this VMs are running on a VPC
+- Tests has been done also using a k8s cluster **outside** a VPC using RKE with 1 master and 1 worker on vm with `t2.medium` type. Cloud provider OSC has been adapted to run in such config. 
 
 ### Prerequisites for 'all' k8s cluster cloud resources
 - You **must** set a clusterID to be used for tagging all ressources

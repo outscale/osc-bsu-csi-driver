@@ -225,7 +225,6 @@ const MaxReadThenCreateRetries = 30
 // need hardcoded defaults.
 const DefaultVolumeType = "gp2"
 
-
 // AWS volume types
 const (
 	// Provisioned IOPS SSD
@@ -256,6 +255,10 @@ const TagNameClusterNode = "OscK8sNodeName"
 // The tag key = OscK8sNodeName
 // The tag value host name kubernetes.io/hostname
 const TagNameMainSG = "OscK8sMainSG/"
+
+//default SG Id and Name used when creating LB Public Cloud
+const DefaultSrcSgName = "outscale-elb-sg"
+const DefaultSgOwnerId = "outscale-elb"
 
 var aliveFilter = []string{
 	ec2.InstanceStateNamePending,

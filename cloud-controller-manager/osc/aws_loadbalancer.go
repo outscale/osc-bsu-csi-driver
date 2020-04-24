@@ -847,7 +847,7 @@ func (c *Cloud) updateInstanceSecurityGroupForNLBTraffic(sgID string, sgPerms IP
 	permsToRevoke.DeleteIf(IPPermissionNotMatch{IPPermissionMatchDesc{ruleDesc}})
 	if len(permsToRevoke) > 0 {
 		permsToRevokeList := permsToRevoke.List()
-		changed, err := c.removeSecurityGroupIngress(sgID, permsToRevokeList)
+		changed, err := c.removeSecurityGroupIngress(sgID, permsToRevokeList, false)
 		if err != nil {
 			klog.Warningf("Error remove traffic permission from security group: %q", err)
 			return err
@@ -859,7 +859,7 @@ func (c *Cloud) updateInstanceSecurityGroupForNLBTraffic(sgID string, sgPerms IP
 	}
 	if len(permsToGrant) > 0 {
 		permsToGrantList := permsToGrant.List()
-		changed, err := c.addSecurityGroupIngress(sgID, permsToGrantList)
+		changed, err := c.addSecurityGroupIngress(sgID, permsToGrantList, false)
 		if err != nil {
 			klog.Warningf("Error add traffic permission to security group: %q", err)
 			return err
@@ -900,7 +900,7 @@ func (c *Cloud) updateInstanceSecurityGroupForNLBMTU(sgID string, sgPerms IPPerm
 	permsToRevoke.DeleteIf(IPPermissionNotMatch{IPPermissionMatchDesc{NLBMtuDiscoveryRuleDescription}})
 	if len(permsToRevoke) > 0 {
 		permsToRevokeList := permsToRevoke.List()
-		changed, err := c.removeSecurityGroupIngress(sgID, permsToRevokeList)
+		changed, err := c.removeSecurityGroupIngress(sgID, permsToRevokeList, false)
 		if err != nil {
 			klog.Warningf("Error remove MTU permission from security group: %q", err)
 			return err
@@ -913,7 +913,7 @@ func (c *Cloud) updateInstanceSecurityGroupForNLBMTU(sgID string, sgPerms IPPerm
 	}
 	if len(permsToGrant) > 0 {
 		permsToGrantList := permsToGrant.List()
-		changed, err := c.addSecurityGroupIngress(sgID, permsToGrantList)
+		changed, err := c.addSecurityGroupIngress(sgID, permsToGrantList, false)
 		if err != nil {
 			klog.Warningf("Error add MTU permission to security group: %q", err)
 			return err

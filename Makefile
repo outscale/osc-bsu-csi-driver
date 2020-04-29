@@ -12,6 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+# Docker env
+DOCKERFILES := $(shell find . -name '*Dockerfile*')
+LINTER_VERSION := v1.17.5
+BUILD_ENV := "buildenv/cloud-provider-osc:0.0"
+BUILD_ENV_RUN := "build-cloud-provider-osc"
+
 SOURCES := $(shell find ./cloud-controller-manager -name '*.go')
 GOOS ?= $(shell go env GOOS)
 VERSION ?= $(shell git describe --exact-match 2> /dev/null || \
@@ -43,8 +49,6 @@ printenv:
 	@echo "GOOS =>  $(GOOS)"
 	@echo "VERSION =>  $(VERSION)"
 	@echo "PWD =>  $(PWD)"
-
-
 
 .PHONY: check
 check: verify-fmt verify-lint vet
@@ -90,3 +94,18 @@ build-debug:
 run-debug:
 	docker run -v $(PWD):/go/src/cloud-provider-osc --rm -it osc/cloud-provider-osc:debug bash
 
+.PHONY: dockerlint
+dockerlint:
+	@echo "Lint images =>  $(DOCKERFILES)"
+	$(foreach image,$(DOCKERFILES),docker run --rm -i hadolint/hadolint:${LINTER_VERSION} hadolint --ignore DL3006 - < ${image}; )
+
+.PHONY: build_env
+build_env:
+	docker build  -t $(BUILD_ENV) -f ./debug/Dockerfile_debug .
+	docker stop $(BUILD_ENV_RUN)  >
+	docker rm -f $(BUILD_ENV_RUN) >
+	docker run -d -v $(PWD):/go/src/cloud-provider-osc --rm -it --name $(BUILD_ENV_RUN) $(BUILD_ENV)  bash -l
+
+.PHONY: e2e-test
+e2e-test:
+	./tests/e2-tests.sh

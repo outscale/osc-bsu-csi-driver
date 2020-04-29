@@ -29,6 +29,7 @@ type MetadataService interface {
 	GetAvailabilityZone() string
 }
 
+// Metadata represents OSC metadata data.
 type Metadata struct {
 	InstanceID       string
 	InstanceType     string
@@ -43,7 +44,7 @@ func (m *Metadata) GetInstanceID() string {
 	return m.InstanceID
 }
 
-// GetInstanceID returns the instance type.
+// GetInstanceType returns the instance type.
 func (m *Metadata) GetInstanceType() string {
 	return m.InstanceType
 }

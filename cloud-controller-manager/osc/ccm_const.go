@@ -244,21 +244,21 @@ const (
 	MaxTotalIOPS = 20000
 )
 
-// TagNameClusterNode
-// logically independent clusters running in the same AZ.
+// TagNameClusterNode logically independent clusters running in the same AZ.
 // The tag key = OscK8sNodeName
 // The tag value host name kubernetes.io/hostname
 const TagNameClusterNode = "OscK8sNodeName"
 
-// TagNameClusterNode
-// logically independent clusters running in the same AZ.
-// The tag key = OscK8sNodeName
-// The tag value host name kubernetes.io/hostname
+// TagNameMainSG The main sg Tag
+// The tag key = OscK8sMainSG/clusterId
+// The tag value = True
 const TagNameMainSG = "OscK8sMainSG/"
 
-//default SG Id and Name used when creating LB Public Cloud
+// DefaultSrcSgName default SG Name used when creating LB Public Cloud
 const DefaultSrcSgName = "outscale-elb-sg"
-const DefaultSgOwnerId = "outscale-elb"
+
+// DefaultSgOwnerID default SG Id used when creating LB Public Cloud
+const DefaultSgOwnerID = "outscale-elb"
 
 var aliveFilter = []string{
 	ec2.InstanceStateNamePending,

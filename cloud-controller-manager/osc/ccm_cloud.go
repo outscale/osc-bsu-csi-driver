@@ -1473,7 +1473,7 @@ func (c *Cloud) addSecurityGroupIngress(securityGroupID string, addPermissions [
 		request.IpPermissions = changes
 	} else {
 		request.SourceSecurityGroupName = aws.String(DefaultSrcSgName)
-		request.SourceSecurityGroupOwnerId = aws.String(DefaultSgOwnerId)
+		request.SourceSecurityGroupOwnerId = aws.String(DefaultSgOwnerID)
 	}
 	_, err = c.ec2.AuthorizeSecurityGroupIngress(request)
 	if err != nil {
@@ -1551,7 +1551,7 @@ func (c *Cloud) removeSecurityGroupIngress(securityGroupID string, removePermiss
 		request.IpPermissions = changes
 	} else {
 		request.SourceSecurityGroupName = aws.String(DefaultSrcSgName)
-		request.SourceSecurityGroupOwnerId = aws.String(DefaultSgOwnerId)
+		request.SourceSecurityGroupOwnerId = aws.String(DefaultSgOwnerID)
 	}
 
 	_, err = c.ec2.RevokeSecurityGroupIngress(request)

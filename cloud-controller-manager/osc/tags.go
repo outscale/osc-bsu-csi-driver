@@ -71,9 +71,8 @@ func tagNameKubernetesCluster() string {
 	val, ok := os.LookupEnv("TAG_NAME_KUBERNETES_CLUSTER")
 	if !ok {
 		return TagNameKubernetesClusterLegacy
-	} else {
-		return val
 	}
+	return val
 }
 
 // Extracts the legacy & new cluster ids from the given tags, if they are present

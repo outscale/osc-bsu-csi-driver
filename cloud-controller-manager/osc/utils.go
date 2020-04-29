@@ -41,7 +41,8 @@ import (
 
 // ********************* CCM ServiceResolver functions *********************
 
-func OscSetupMetadataResolver() endpoints.ResolverFunc {
+// SetupMetadataResolver resolver for osc metadata service
+func SetupMetadataResolver() endpoints.ResolverFunc {
 	return func(service, region string, optFns ...func(*endpoints.Options)) (endpoints.ResolvedEndpoint, error) {
 		return endpoints.ResolvedEndpoint{
 			URL:           "http://169.254.169.254/latest",
@@ -50,32 +51,34 @@ func OscSetupMetadataResolver() endpoints.ResolverFunc {
 	}
 }
 
-func OscEndpoint(region string, service string) string {
+// Endpoint builder for outscale
+func Endpoint(region string, service string) string {
 	return "https://" + service + "." + region + ".outscale.com"
 }
 
-func OscSetupServiceResolver(region string) endpoints.ResolverFunc {
+// SetupServiceResolver resolver for osc service
+func SetupServiceResolver(region string) endpoints.ResolverFunc {
 
 	return func(service, region string, optFns ...func(*endpoints.Options)) (endpoints.ResolvedEndpoint, error) {
 
-		supported_service := map[string]string{
+		supportedService := map[string]string{
 			endpoints.Ec2ServiceID:                  "fcu",
 			endpoints.ElasticloadbalancingServiceID: "lbu",
 			endpoints.IamServiceID:                  "eim",
 			endpoints.DirectconnectServiceID:        "directlink",
 			endpoints.KmsServiceID:                  "kms",
 		}
-		var osc_service string
+		var oscService string
 		var ok bool
-		if osc_service, ok = supported_service[service]; ok {
+		if oscService, ok = supportedService[service]; ok {
 			return endpoints.ResolvedEndpoint{
-				URL:           OscEndpoint(region, osc_service),
+				URL:           Endpoint(region, oscService),
 				SigningRegion: region,
 				SigningName:   service,
 			}, nil
-		} else {
-			return endpoints.DefaultResolver().EndpointFor(service, region, optFns...)
 		}
+		return endpoints.DefaultResolver().EndpointFor(
+			service, region, optFns...)
 	}
 }
 
@@ -85,11 +88,12 @@ func OscSetupServiceResolver(region string) endpoints.ResolverFunc {
 func newEC2MetadataSvc() *ec2metadata.EC2Metadata {
 
 	sess := session.Must(session.NewSession(&aws.Config{
-		EndpointResolver: endpoints.ResolverFunc(OscSetupMetadataResolver()),
+		EndpointResolver: endpoints.ResolverFunc(SetupMetadataResolver()),
 	}))
 	return ec2metadata.New(sess)
 }
 
+// NewMetadata create a new metadata service
 func NewMetadata() (MetadataService, error) {
 	svc := newEC2MetadataSvc()
 
@@ -100,6 +104,7 @@ func NewMetadata() (MetadataService, error) {
 	return metadata, err
 }
 
+// NewSession create a new session
 func NewSession() (*session.Session, error) {
 
 	provider := []credentials.Provider{
@@ -115,7 +120,7 @@ func NewSession() (*session.Session, error) {
 		Region:                        aws.String(metadata.GetRegion()),
 		Credentials:                   credentials.NewChainCredentials(provider),
 		CredentialsChainVerboseErrors: aws.Bool(true),
-		EndpointResolver:              endpoints.ResolverFunc(OscSetupServiceResolver(metadata.GetRegion())),
+		EndpointResolver:              endpoints.ResolverFunc(SetupServiceResolver(metadata.GetRegion())),
 	}
 
 	sess, err := session.NewSession(awsConfig)

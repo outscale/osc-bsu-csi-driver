@@ -171,7 +171,7 @@ func (p *awsSDKProvider) Metadata() (EC2Metadata, error) {
 	debugPrintCallerFunctionName()
 	klog.V(10).Infof("Metadata()")
 	sess, err := session.NewSession(&aws.Config{
-		EndpointResolver: endpoints.ResolverFunc(OscSetupMetadataResolver()),
+		EndpointResolver: endpoints.ResolverFunc(SetupMetadataResolver()),
 	})
 	if err != nil {
 		return nil, fmt.Errorf("unable to initialize OSC session: %v", err)

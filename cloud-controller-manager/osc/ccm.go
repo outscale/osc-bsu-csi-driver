@@ -47,7 +47,7 @@ var _ cloudprovider.PVLabeler = (*Cloud)(nil)
 // readAWSCloudConfig reads an instance of AWSCloudConfig from config reader.
 func readAWSCloudConfig(config io.Reader) (*CloudConfig, error) {
 	debugPrintCallerFunctionName()
-	klog.V(10).Infof("readAWSCloudConfig(%v,%v)", config)
+	klog.V(10).Infof("readAWSCloudConfig(%v)", config)
 	var cfg CloudConfig
 	var err error
 

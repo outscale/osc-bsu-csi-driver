@@ -20,64 +20,63 @@ import (
 	"fmt"
 	"net"
 	"runtime"
-	"strings"
 	"strconv"
+	"strings"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
+	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/ec2metadata"
+	"github.com/aws/aws-sdk-go/aws/endpoints"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ec2"
-	"github.com/aws/aws-sdk-go/aws/endpoints"
-	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/service/elb"
 	"github.com/aws/aws-sdk-go/service/elbv2"
 
-	"k8s.io/klog"
 	"k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/sets"
+	"k8s.io/klog"
 )
-
 
 // ********************* CCM ServiceResolver functions *********************
 
-func OscSetupMetadataResolver() (endpoints.ResolverFunc) {
-    return func(service, region string, optFns ...func(*endpoints.Options)) (endpoints.ResolvedEndpoint, error) {
-        return endpoints.ResolvedEndpoint{
-            URL:           "http://169.254.169.254/latest",
-            SigningRegion: "custom-signing-region",
-        }, nil
-    }
+func OscSetupMetadataResolver() endpoints.ResolverFunc {
+	return func(service, region string, optFns ...func(*endpoints.Options)) (endpoints.ResolvedEndpoint, error) {
+		return endpoints.ResolvedEndpoint{
+			URL:           "http://169.254.169.254/latest",
+			SigningRegion: "custom-signing-region",
+		}, nil
+	}
 }
 
-func OscEndpoint(region string, service string) (string) {
-    return "https://" + service + "." + region + ".outscale.com"
+func OscEndpoint(region string, service string) string {
+	return "https://" + service + "." + region + ".outscale.com"
 }
 
-func OscSetupServiceResolver(region string) (endpoints.ResolverFunc) {
+func OscSetupServiceResolver(region string) endpoints.ResolverFunc {
 
-    return func(service, region string, optFns ...func(*endpoints.Options))(endpoints.ResolvedEndpoint, error) {
+	return func(service, region string, optFns ...func(*endpoints.Options)) (endpoints.ResolvedEndpoint, error) {
 
-        supported_service := map[string]string  {
-            endpoints.Ec2ServiceID:                    "fcu",
-            endpoints.ElasticloadbalancingServiceID:   "lbu",
-            endpoints.IamServiceID:                    "eim",
-            endpoints.DirectconnectServiceID:          "directlink",
-            endpoints.KmsServiceID:                    "kms",
-        }
-        var osc_service string
-        var ok bool
-        if osc_service, ok =  supported_service[service]; ok {
-            return endpoints.ResolvedEndpoint{
-                    URL:           OscEndpoint(region, osc_service),
-                    SigningRegion: region,
-                    SigningName:   service,
-            }, nil
-        } else {
-            return endpoints.DefaultResolver().EndpointFor(service, region, optFns...)
-        }
-    }
+		supported_service := map[string]string{
+			endpoints.Ec2ServiceID:                  "fcu",
+			endpoints.ElasticloadbalancingServiceID: "lbu",
+			endpoints.IamServiceID:                  "eim",
+			endpoints.DirectconnectServiceID:        "directlink",
+			endpoints.KmsServiceID:                  "kms",
+		}
+		var osc_service string
+		var ok bool
+		if osc_service, ok = supported_service[service]; ok {
+			return endpoints.ResolvedEndpoint{
+				URL:           OscEndpoint(region, osc_service),
+				SigningRegion: region,
+				SigningName:   service,
+			}, nil
+		} else {
+			return endpoints.DefaultResolver().EndpointFor(service, region, optFns...)
+		}
+	}
 }
 
 // ********************* CCM Utils functions *********************
@@ -86,7 +85,7 @@ func OscSetupServiceResolver(region string) (endpoints.ResolverFunc) {
 func newEC2MetadataSvc() *ec2metadata.EC2Metadata {
 
 	sess := session.Must(session.NewSession(&aws.Config{
-	    EndpointResolver: endpoints.ResolverFunc(OscSetupMetadataResolver()),
+		EndpointResolver: endpoints.ResolverFunc(OscSetupMetadataResolver()),
 	}))
 	return ec2metadata.New(sess)
 }
@@ -103,27 +102,27 @@ func NewMetadata() (MetadataService, error) {
 
 func NewSession() (*session.Session, error) {
 
-    provider := []credentials.Provider{
-        &credentials.EnvProvider{},
-        &credentials.SharedCredentialsProvider{},
-    }
+	provider := []credentials.Provider{
+		&credentials.EnvProvider{},
+		&credentials.SharedCredentialsProvider{},
+	}
 
-    metadata,err := NewMetadata()
-    if err != nil {
-        return nil, fmt.Errorf("unable to initialize OSC Metadata session: %v", err)
-    }
+	metadata, err := NewMetadata()
+	if err != nil {
+		return nil, fmt.Errorf("unable to initialize OSC Metadata session: %v", err)
+	}
 	awsConfig := &aws.Config{
-        Region:                        aws.String(metadata.GetRegion()),
-        Credentials:                   credentials.NewChainCredentials(provider),
-        CredentialsChainVerboseErrors: aws.Bool(true),
-        EndpointResolver: endpoints.ResolverFunc(OscSetupServiceResolver(metadata.GetRegion())),
-    }
+		Region:                        aws.String(metadata.GetRegion()),
+		Credentials:                   credentials.NewChainCredentials(provider),
+		CredentialsChainVerboseErrors: aws.Bool(true),
+		EndpointResolver:              endpoints.ResolverFunc(OscSetupServiceResolver(metadata.GetRegion())),
+	}
 
-    sess, err := session.NewSession(awsConfig)
-    if err != nil {
-        return nil, fmt.Errorf("unable to initialize OSC session: %v", err)
-    }
-    return sess, nil
+	sess, err := session.NewSession(awsConfig)
+	if err != nil {
+		return nil, fmt.Errorf("unable to initialize OSC session: %v", err)
+	}
+	return sess, nil
 }
 
 func newEc2Filter(name string, values ...string) *ec2.Filter {
@@ -137,7 +136,7 @@ func newEc2Filter(name string, values ...string) *ec2.Filter {
 }
 
 func setNodeDisk(nodeDiskMap map[types.NodeName]map[KubernetesVolumeID]bool, volumeID KubernetesVolumeID,
-				 nodeName types.NodeName, check bool) {
+	nodeName types.NodeName, check bool) {
 
 	volumeMap := nodeDiskMap[nodeName]
 
@@ -166,9 +165,9 @@ func mapInstanceToNodeName(i *ec2.Instance) types.NodeName {
 func findSecurityGroupForInstance(instance *ec2.Instance, taggedSecurityGroups map[string]*ec2.SecurityGroup) (*ec2.GroupIdentifier, error) {
 	instanceID := aws.StringValue(instance.InstanceId)
 
-    klog.Infof("findSecurityGroupForInstance instance.InstanceId : %v", aws.StringValue(instance.InstanceId))
-    klog.Infof("findSecurityGroupForInstance instance.SecurityGroups : %v", instance.SecurityGroups)
-    klog.Infof("findSecurityGroupForInstance taggedSecurityGroups : %v", taggedSecurityGroups)
+	klog.Infof("findSecurityGroupForInstance instance.InstanceId : %v", aws.StringValue(instance.InstanceId))
+	klog.Infof("findSecurityGroupForInstance instance.SecurityGroups : %v", instance.SecurityGroups)
+	klog.Infof("findSecurityGroupForInstance taggedSecurityGroups : %v", taggedSecurityGroups)
 
 	var tagged []*ec2.GroupIdentifier
 	var untagged []*ec2.GroupIdentifier
@@ -211,7 +210,6 @@ func findSecurityGroupForInstance(instance *ec2.Instance, taggedSecurityGroups m
 	return nil, nil
 }
 
-
 // buildListener creates a new listener from the given port, adding an SSL certificate
 // if indicated by the appropriate annotations.
 func buildListener(port v1.ServicePort, annotations map[string]string, sslPorts *portSets) (*elb.Listener, error) {
@@ -248,7 +246,6 @@ func buildListener(port v1.ServicePort, annotations map[string]string, sslPorts 
 
 	return listener, nil
 }
-
 
 func isSubnetPublic(rt []*ec2.RouteTable, subnetID string) (bool, error) {
 	var subnetTable *ec2.RouteTable
@@ -362,7 +359,6 @@ func findTag(tags []*ec2.Tag, key string) (string, bool) {
 	return "", false
 }
 
-
 func isEqualIntPointer(l, r *int64) bool {
 	if l == nil {
 		return r == nil
@@ -454,8 +450,6 @@ func azToRegion(az string) (string, error) {
 	return region, nil
 }
 
-
-
 // isRegionValid accepts an AWS region name and returns if the region is a
 // valid region known to the AWS SDK. Considers the region returned from the
 // EC2 metadata service to be a valid region as it's only available on a host
@@ -490,7 +484,6 @@ func isRegionValid(region string, metadata EC2Metadata) bool {
 	return false
 }
 
-
 // wrapAttachError wraps the error returned by an AttachVolume request with
 // additional information, if needed and possible.
 func wrapAttachError(err error, disk *awsDisk, instance string) error {
@@ -522,7 +515,6 @@ func newAWSDisk(aws *Cloud, name KubernetesVolumeID) (*awsDisk, error) {
 	return disk, nil
 }
 
-
 // Helper function for describeVolume callers. Tries to retype given error to AWS error
 // and returns true in case the AWS error is "InvalidVolume.NotFound", false otherwise
 func isAWSErrorVolumeNotFound(err error) bool {
@@ -536,7 +528,6 @@ func isAWSErrorVolumeNotFound(err error) bool {
 	}
 	return false
 }
-
 
 // newAWSInstance creates a new awsInstance object
 func newAWSInstance(ec2Service EC2, instance *ec2.Instance) *awsInstance {
@@ -603,7 +594,6 @@ func extractNodeAddresses(instance *ec2.Instance) ([]v1.NodeAddress, error) {
 	return addresses, nil
 }
 
-
 // parseMetadataLocalHostname parses the output of "local-hostname" metadata.
 // If a DHCP option set is configured for a VPC and it has multiple domain names, GetMetadata
 // returns a string containing first the hostname followed by additional domain names,
@@ -646,10 +636,9 @@ func updateConfigZone(cfg *CloudConfig, metadata EC2Metadata) error {
 	return nil
 }
 
-
 func newAWSSDKProvider(creds *credentials.Credentials, cfg *CloudConfig) *awsSDKProvider {
 	debugPrintCallerFunctionName()
-	klog.V(10).Infof("newAWSSDKProvider(%v,%v)",creds, cfg)
+	klog.V(10).Infof("newAWSSDKProvider(%v,%v)", creds, cfg)
 	return &awsSDKProvider{
 		creds:          creds,
 		cfg:            cfg,
@@ -686,10 +675,10 @@ func debugPrintCallerFunctionName() {
 	called := debugGetFrame(1)
 	caller := debugGetFrame(2)
 	klog.V(10).Infof(
-		"DebugStack %s{" +
-		"\n\t call	 {\n\t\tFunc:%s, \n\t\tFile:(%s:%d)\n\t}" +
-		"\n\t called {\n\t\tFunc:%s, \n\t\tFile:(%s:%d)\n\t}" +
-		"\n}",
+		"DebugStack %s{"+
+			"\n\t call	 {\n\t\tFunc:%s, \n\t\tFile:(%s:%d)\n\t}"+
+			"\n\t called {\n\t\tFunc:%s, \n\t\tFile:(%s:%d)\n\t}"+
+			"\n}",
 		called.Function,
 		called.Function, called.File, called.Line,
 		caller.Function, caller.File, caller.Line)

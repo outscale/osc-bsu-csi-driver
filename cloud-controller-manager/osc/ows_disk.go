@@ -1,4 +1,3 @@
-
 /*
 Copyright 2014 The Kubernetes Authors.
 
@@ -25,13 +24,10 @@ import (
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/service/ec2"
 
-	"k8s.io/klog"
 	"k8s.io/apimachinery/pkg/util/wait"
 	volerr "k8s.io/cloud-provider/volume/errors"
+	"k8s.io/klog"
 )
-
-
-
 
 // ********************* CCM awsDisk Def & functions *********************
 

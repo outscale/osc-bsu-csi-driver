@@ -22,12 +22,12 @@ import (
 	"strings"
 
 	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/ec2metadata"
 	"github.com/aws/aws-sdk-go/service/autoscaling"
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/aws/aws-sdk-go/service/elb"
 	"github.com/aws/aws-sdk-go/service/elbv2"
 	"github.com/aws/aws-sdk-go/service/kms"
-	"github.com/aws/aws-sdk-go/aws/ec2metadata"
 	"k8s.io/klog"
 )
 
@@ -114,7 +114,6 @@ func (s *FakeAWSServices) Autoscaling(region string) (ASG, error) {
 func (s *FakeAWSServices) Metadata() (EC2Metadata, error) {
 	return s.metadata, nil
 }
-
 
 // KeyManagement returns a fake KMS client
 func (s *FakeAWSServices) KeyManagement(region string) (KMS, error) {

@@ -1,4 +1,3 @@
-
 /*
 Copyright 2014 The Kubernetes Authors.
 
@@ -33,11 +32,9 @@ import (
 	"github.com/aws/aws-sdk-go/service/elbv2"
 	"github.com/aws/aws-sdk-go/service/kms"
 
-	"k8s.io/klog"
 	"k8s.io/client-go/pkg/version"
+	"k8s.io/klog"
 )
-
-
 
 // ********************* CCM awsSDKProvider Def & functions *********************
 
@@ -174,8 +171,8 @@ func (p *awsSDKProvider) Metadata() (EC2Metadata, error) {
 	debugPrintCallerFunctionName()
 	klog.V(10).Infof("Metadata()")
 	sess, err := session.NewSession(&aws.Config{
-			EndpointResolver: endpoints.ResolverFunc(OscSetupMetadataResolver()),
-    })
+		EndpointResolver: endpoints.ResolverFunc(OscSetupMetadataResolver()),
+	})
 	if err != nil {
 		return nil, fmt.Errorf("unable to initialize OSC session: %v", err)
 	}
@@ -197,4 +194,3 @@ func (p *awsSDKProvider) KeyManagement(regionName string) (KMS, error) {
 
 	return kmsClient, nil
 }
-

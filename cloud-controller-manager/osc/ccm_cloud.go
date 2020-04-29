@@ -1486,7 +1486,7 @@ func (c *Cloud) addSecurityGroupIngress(securityGroupID string, addPermissions [
 				}
 			}
 		}
-		if !ignore { 
+		if !ignore {
 			klog.Warningf("Error authorizing security group ingress %q", err)
 			return false, fmt.Errorf("error authorizing security group ingress: %q", err)
 		}

@@ -20,8 +20,8 @@ package osc
 
 import (
 	"fmt"
-	"strings"
 	"os"
+	"strings"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/ec2"
@@ -65,15 +65,15 @@ type awsTagging struct {
 	usesLegacyTags bool
 }
 
-func tagNameKubernetesCluster() (string) {
+func tagNameKubernetesCluster() string {
 	debugPrintCallerFunctionName()
 	klog.V(10).Infof("tagNameKubernetesCluster()")
-    val, ok := os.LookupEnv("TAG_NAME_KUBERNETES_CLUSTER")
-    if !ok {
-       return TagNameKubernetesClusterLegacy
-    } else {
-        return val
-    }
+	val, ok := os.LookupEnv("TAG_NAME_KUBERNETES_CLUSTER")
+	if !ok {
+		return TagNameKubernetesClusterLegacy
+	} else {
+		return val
+	}
 }
 
 // Extracts the legacy & new cluster ids from the given tags, if they are present
@@ -146,8 +146,6 @@ func (t *awsTagging) initFromTags(tags []*ec2.Tag) error {
 	return t.init(legacyClusterID, newClusterID)
 }
 
-
-
 func (t *awsTagging) clusterTagKey() string {
 	debugPrintCallerFunctionName()
 	klog.V(10).Infof("clusterTagKey()")
@@ -176,7 +174,7 @@ func (t *awsTagging) hasClusterTag(tags []*ec2.Tag) bool {
 func (t *awsTagging) readRepairClusterTags(client EC2, resourceID string, lifecycle ResourceLifecycle, additionalTags map[string]string, observedTags []*ec2.Tag) error {
 	debugPrintCallerFunctionName()
 	klog.V(10).Infof("readRepairClusterTags(%v, %v, %v, %v, %v)",
-	 			client, resourceID, lifecycle, additionalTags, observedTags)
+		client, resourceID, lifecycle, additionalTags, observedTags)
 	actualTagMap := make(map[string]string)
 	for _, tag := range observedTags {
 		actualTagMap[aws.StringValue(tag.Key)] = aws.StringValue(tag.Value)

@@ -1,4 +1,3 @@
-
 /*
 Copyright 2014 The Kubernetes Authors.
 
@@ -20,10 +19,9 @@ package osc
 import (
 	"github.com/aws/aws-sdk-go/service/ec2"
 
-	"k8s.io/klog"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/klog"
 )
-
 
 // ********************* CCM awsInstance Object & functions *********************
 
@@ -55,4 +53,3 @@ func (i *awsInstance) describeInstance() (*ec2.Instance, error) {
 	klog.V(10).Infof("describeInstance")
 	return describeInstance(i.ec2, InstanceID(i.awsID))
 }
-

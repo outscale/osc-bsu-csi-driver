@@ -119,11 +119,11 @@ func getLoadBalancerAdditionalTags(annotations map[string]string) map[string]str
 
 // ensureLoadBalancerv2 ensures a v2 load balancer is created
 func (c *Cloud) ensureLoadBalancerv2(namespacedName types.NamespacedName, loadBalancerName string,
- 									 mappings []nlbPortMapping, instanceIDs, subnetIDs []string,
- 									 internalELB bool, annotations map[string]string) (*elbv2.LoadBalancer, error) {
+	mappings []nlbPortMapping, instanceIDs, subnetIDs []string,
+	internalELB bool, annotations map[string]string) (*elbv2.LoadBalancer, error) {
 	debugPrintCallerFunctionName()
 	klog.V(10).Infof("ensureLoadBalancerv2(%v,%v,%v,%v,%v,%v,%v)", namespacedName, loadBalancerName,
-				mappings, instanceIDs, subnetIDs, internalELB, annotations)
+		mappings, instanceIDs, subnetIDs, internalELB, annotations)
 	loadBalancer, err := c.describeLoadBalancerv2(loadBalancerName)
 	if err != nil {
 		return nil, err
@@ -465,9 +465,9 @@ var invalidELBV2NameRegex = regexp.MustCompile("[^[:alnum:]]")
 // the name is in format k8s-{namespace:8}-{name:8}-{uuid:10} (chosen to benefit most common use cases).
 // Note: targetProtocol & targetType are included since they cannot be modified on existing targetGroup.
 func (c *Cloud) buildTargetGroupName(serviceName types.NamespacedName, servicePort int64,
- 									targetProtocol string, targetType string) string {
+	targetProtocol string, targetType string) string {
 	debugPrintCallerFunctionName()
-	klog.V(10).Infof("buildTargetGroupName(%v,%v,%v,%v)", serviceName,  servicePort, targetProtocol, targetType)
+	klog.V(10).Infof("buildTargetGroupName(%v,%v,%v,%v)", serviceName, servicePort, targetProtocol, targetType)
 	hasher := sha1.New()
 	_, _ = hasher.Write([]byte(c.tagging.clusterID()))
 	_, _ = hasher.Write([]byte(serviceName.Namespace))
@@ -819,11 +819,11 @@ func (c *Cloud) updateInstanceSecurityGroupsForNLB(lbName string, instances map[
 // updateInstanceSecurityGroupForNLBTraffic will manage permissions set(identified by ruleDesc) on securityGroup to match desired set(allow protocol traffic from ports/cidr).
 // Note: sgPerms will be updated to reflect the current permission set on SG after update.
 func (c *Cloud) updateInstanceSecurityGroupForNLBTraffic(sgID string, sgPerms IPPermissionSet,
- 				ruleDesc string, protocol string, ports sets.Int64, cidrs []string) error {
+	ruleDesc string, protocol string, ports sets.Int64, cidrs []string) error {
 
 	debugPrintCallerFunctionName()
 	klog.V(10).Infof("updateInstanceSecurityGroupForNLBTraffic(%v,%v,%v,%v,%v,%v)",
-				sgID, sgPerms, ruleDesc, protocol, ports, cidrs)
+		sgID, sgPerms, ruleDesc, protocol, ports, cidrs)
 
 	desiredPerms := NewIPPermissionSet()
 	for port := range ports {
@@ -927,9 +927,9 @@ func (c *Cloud) updateInstanceSecurityGroupForNLBMTU(sgID string, sgPerms IPPerm
 }
 
 func (c *Cloud) ensureLoadBalancer(namespacedName types.NamespacedName, loadBalancerName string,
-								listeners []*elb.Listener, subnetIDs []string, securityGroupIDs []string, internalELB,
-								proxyProtocol bool, loadBalancerAttributes *elb.LoadBalancerAttributes,
-								annotations map[string]string) (*elb.LoadBalancerDescription, error) {
+	listeners []*elb.Listener, subnetIDs []string, securityGroupIDs []string, internalELB,
+	proxyProtocol bool, loadBalancerAttributes *elb.LoadBalancerAttributes,
+	annotations map[string]string) (*elb.LoadBalancerDescription, error) {
 
 	debugPrintCallerFunctionName()
 	klog.V(10).Infof("ensureLoadBalancer(%v,%v,%v,%v,%v,%v,%v,%v,%v,)",
@@ -963,7 +963,7 @@ func (c *Cloud) ensureLoadBalancer(namespacedName types.NamespacedName, loadBala
 			createRequest.Subnets = aws.StringSlice(subnetIDs)
 		}
 
-		if securityGroupIDs == nil ||  subnetIDs == nil {
+		if securityGroupIDs == nil || subnetIDs == nil {
 			createRequest.SecurityGroups = nil
 		} else {
 			createRequest.SecurityGroups = aws.StringSlice(securityGroupIDs)
@@ -983,7 +983,7 @@ func (c *Cloud) ensureLoadBalancer(namespacedName types.NamespacedName, loadBala
 		}
 
 		klog.Infof("Creating load balancer for %v with name: %s", namespacedName, loadBalancerName)
-        klog.Infof("c.elb.CreateLoadBalancer(createRequest): %v", createRequest)
+		klog.Infof("c.elb.CreateLoadBalancer(createRequest): %v", createRequest)
 
 		_, err := c.elb.CreateLoadBalancer(createRequest)
 		if err != nil {
@@ -1191,7 +1191,7 @@ func (c *Cloud) ensureLoadBalancer(namespacedName types.NamespacedName, loadBala
 			modifyAttributesRequest.LoadBalancerName = aws.String(loadBalancerName)
 			modifyAttributesRequest.LoadBalancerAttributes = loadBalancerAttributes
 			klog.V(2).Infof("Updating load-balancer attributes for %q with attributes (%v)",
-			 				loadBalancerName, loadBalancerAttributes)
+				loadBalancerName, loadBalancerAttributes)
 			_, err = c.elb.ModifyLoadBalancerAttributes(modifyAttributesRequest)
 			if err != nil {
 				return nil, fmt.Errorf("Unable to update load balancer attributes during attribute sync: %q", err)
@@ -1297,7 +1297,7 @@ func createSubnetMappings(subnetIDs []string, allocationIDs []string) []*elbv2.S
 // Comparison is case insensitive
 func elbProtocolsAreEqual(l, r *string) bool {
 	debugPrintCallerFunctionName()
-	klog.V(10).Infof("elbProtocolsAreEqual(%v,%v)", l,r)
+	klog.V(10).Infof("elbProtocolsAreEqual(%v,%v)", l, r)
 	if l == nil || r == nil {
 		return l == r
 	}
@@ -1308,7 +1308,7 @@ func elbProtocolsAreEqual(l, r *string) bool {
 // Comparison is case insensitive
 func awsArnEquals(l, r *string) bool {
 	debugPrintCallerFunctionName()
-	klog.V(10).Infof("awsArnEquals(%v,%v)", l,r)
+	klog.V(10).Infof("awsArnEquals(%v,%v)", l, r)
 	if l == nil || r == nil {
 		return l == r
 	}
@@ -1357,10 +1357,10 @@ func (c *Cloud) getExpectedHealthCheck(target string, annotations map[string]str
 
 // Makes sure that the health check for an ELB matches the configured health check node port
 func (c *Cloud) ensureLoadBalancerHealthCheck(loadBalancer *elb.LoadBalancerDescription,
- 				protocol string, port int32, path string, annotations map[string]string) error {
+	protocol string, port int32, path string, annotations map[string]string) error {
 	debugPrintCallerFunctionName()
 	klog.V(10).Infof("ensureLoadBalancerHealthCheck(%v,%v, %v, %v, %v)",
-	 			loadBalancer, protocol, port, path, annotations)
+		loadBalancer, protocol, port, path, annotations)
 	name := aws.StringValue(loadBalancer.LoadBalancerName)
 
 	actual := loadBalancer.HealthCheck
@@ -1394,8 +1394,8 @@ func (c *Cloud) ensureLoadBalancerHealthCheck(loadBalancer *elb.LoadBalancerDesc
 
 // Makes sure that exactly the specified hosts are registered as instances with the load balancer
 func (c *Cloud) ensureLoadBalancerInstances(loadBalancerName string,
- 											lbInstances []*elb.Instance,
- 											instanceIDs map[InstanceID]*ec2.Instance) error {
+	lbInstances []*elb.Instance,
+	instanceIDs map[InstanceID]*ec2.Instance) error {
 	debugPrintCallerFunctionName()
 	klog.V(10).Infof("ensureLoadBalancerInstances(%v,%v, %v)", loadBalancerName, lbInstances, instanceIDs)
 	expected := sets.NewString()
@@ -1591,11 +1591,11 @@ func (c *Cloud) findInstancesForELB(nodes []*v1.Node) (map[InstanceID]*ec2.Insta
 	debugPrintCallerFunctionName()
 	klog.V(10).Infof("findInstancesForELB(%v)", nodes)
 
-    for _, node := range nodes {
+	for _, node := range nodes {
 		if node.Spec.ProviderID == "" {
 			// TODO  Need to be optimize by setting providerID which is not possible actualy
 			instance, _ := c.findInstanceByNodeName(types.NodeName(node.Name))
-            node.Spec.ProviderID = aws.StringValue(instance.InstanceId)
+			node.Spec.ProviderID = aws.StringValue(instance.InstanceId)
 		}
 	}
 

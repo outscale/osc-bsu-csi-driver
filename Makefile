@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+
+
 # Docker env
 DOCKERFILES := $(shell find . -name '*Dockerfile*')
 LINTER_VERSION := v1.17.5
@@ -110,4 +112,8 @@ build_env:
 
 .PHONY: e2e-test
 e2e-test:
-	./tests/e2-tests.sh
+	. ./tests/e2-tests.sh
+
+.PHONY: deploy
+deploy:
+	IMAGE_TAG=$(IMAGE_VERSION) IMAGE_NAME=$(REGISTRY)/$(IMAGE) . ./tests/deploy.sh

@@ -136,7 +136,7 @@ func TestHasClusterTag(t *testing.T) {
 			Tags: map[string]string{
 				TagNameKubernetesClusterLegacy: TestClusterID,
 			},
-			Expected: true,
+			Expected: false,
 		},
 		{
 			Tags: map[string]string{

@@ -53,14 +53,20 @@ type MockedFakeEC2 struct {
 
 func (m *MockedFakeEC2) expectDescribeSecurityGroups(clusterID, groupName string) {
 	tags := []*ec2.Tag{
-		{Key: aws.String(TagNameKubernetesClusterLegacy), Value: aws.String(clusterID)},
-		{Key: aws.String(fmt.Sprintf("%s%s", TagNameKubernetesClusterPrefix, clusterID)), Value: aws.String(ResourceLifecycleOwned)},
+		{
+			Key:   aws.String(fmt.Sprintf("%s%s", TagNameKubernetesClusterPrefix, clusterID)),
+			Value: aws.String(ResourceLifecycleOwned),
+		},
+		{
+			Key:   aws.String(TagNameKubernetesClusterLegacy),
+			Value: aws.String(clusterID),
+		},
 	}
 
 	m.On("DescribeSecurityGroups", &ec2.DescribeSecurityGroupsInput{Filters: []*ec2.Filter{
 		newEc2Filter("group-name", groupName),
-		newEc2Filter("vpc-id", ""),
-	}}).Return([]*ec2.SecurityGroup{{Tags: tags}})
+		newEc2Filter("vpc-id", "vpc-123456"),
+	}}).Return([]*ec2.SecurityGroup{{Tags: tags, GroupId: aws.String("sg-12345")}})
 }
 
 func (m *MockedFakeEC2) DescribeVolumes(request *ec2.DescribeVolumesInput) ([]*ec2.Volume, error) {
@@ -587,10 +593,10 @@ func TestNodeAddresses(t *testing.T) {
 	var instance2 ec2.Instance
 
 	// ClusterID needs to be set
-	var tag ec2.Tag
-	tag.Key = aws.String(TagNameKubernetesClusterLegacy)
-	tag.Value = aws.String(TestClusterID)
-	tags := []*ec2.Tag{&tag}
+	tags := []*ec2.Tag{
+		{Key: aws.String(TagNameKubernetesClusterPrefix + TestClusterID), Value: aws.String(ResourceLifecycleOwned)},
+		{Key: aws.String(TagNameClusterNode), Value: aws.String("instance-same.ec2.internal")},
+	}
 
 	//0
 	instance0.InstanceId = aws.String("i-0")
@@ -662,14 +668,12 @@ func TestNodeAddresses(t *testing.T) {
 	if err3 != nil {
 		t.Errorf("Should not error when instance found")
 	}
-	if len(addrs3) != 5 {
+	if len(addrs3) != 3 {
 		t.Errorf("Should return exactly 5 NodeAddresses")
 	}
 	testHasNodeAddress(t, addrs3, v1.NodeInternalIP, "192.168.0.1")
 	testHasNodeAddress(t, addrs3, v1.NodeExternalIP, "1.2.3.4")
 	testHasNodeAddress(t, addrs3, v1.NodeExternalDNS, "instance-same.ec2.external")
-	testHasNodeAddress(t, addrs3, v1.NodeInternalDNS, "instance-same.ec2.internal")
-	testHasNodeAddress(t, addrs3, v1.NodeHostName, "instance-same.ec2.internal")
 }
 
 func TestNodeAddressesWithMetadata(t *testing.T) {
@@ -793,7 +797,15 @@ func constructSubnet(id string, az string) *ec2.Subnet {
 	return &ec2.Subnet{
 		SubnetId:         &id,
 		AvailabilityZone: &az,
+		VpcId:            aws.String("vpc-123456"),
+		Tags: []*ec2.Tag{
+			{
+				Key:   aws.String(fmt.Sprintf("%s%s", TagNameKubernetesClusterPrefix, TestClusterID)),
+				Value: aws.String(ResourceLifecycleOwned),
+			},
+		},
 	}
+
 }
 
 func constructRouteTables(routeTablesIn map[string]bool) (routeTablesOut []*ec2.RouteTable) {
@@ -837,6 +849,7 @@ func constructRouteTable(subnetID string, public bool) *ec2.RouteTable {
 func TestSubnetIDsinVPC(t *testing.T) {
 	awsServices := newMockedFakeAWSServices(TestClusterID)
 	c, err := newAWSCloud(CloudConfig{}, awsServices)
+	c.vpcID = "vpc-123456"
 	if err != nil {
 		t.Errorf("Error building aws cloud: %v", err)
 		return
@@ -869,6 +882,16 @@ func TestSubnetIDsinVPC(t *testing.T) {
 	for _, rt := range constructedRouteTables {
 		awsServices.ec2.CreateRouteTable(rt)
 	}
+	request1111 := &ec2.DescribeSubnetsInput{}
+	res, _ := awsServices.ec2.DescribeSubnets(request1111)
+	t.Logf("awsServices.ec2.DescribeSubnets----: %v", res)
+
+	request2222 := &ec2.DescribeRouteTablesInput{}
+	rt, err := awsServices.ec2.DescribeRouteTables(request2222)
+	t.Logf("awsServices.ec2.DescribeRouteTables----: %v", rt)
+
+	subnetsRes, err := c.findSubnets()
+	t.Logf("subnetsRes, err----: %v", subnetsRes)
 
 	result, err := c.findELBSubnets(false)
 	if err != nil {
@@ -1163,10 +1186,11 @@ func TestFindInstanceByNodeNameExcludesTerminatedInstances(t *testing.T) {
 
 	nodeName := types.NodeName("my-dns.internal")
 
-	var tag ec2.Tag
-	tag.Key = aws.String(TagNameKubernetesClusterLegacy)
-	tag.Value = aws.String(TestClusterID)
-	tags := []*ec2.Tag{&tag}
+	// ClusterID needs to be set
+	tags := []*ec2.Tag{
+		{Key: aws.String(TagNameKubernetesClusterPrefix + TestClusterID), Value: aws.String(ResourceLifecycleOwned)},
+		{Key: aws.String(TagNameClusterNode), Value: aws.String(string(nodeName))},
+	}
 
 	var testInstance ec2.Instance
 	testInstance.PrivateDnsName = aws.String(string(nodeName))
@@ -1351,6 +1375,7 @@ func TestGetLabelsForVolume(t *testing.T) {
 func TestDescribeLoadBalancerOnDelete(t *testing.T) {
 	awsServices := newMockedFakeAWSServices(TestClusterID)
 	c, _ := newAWSCloud(CloudConfig{}, awsServices)
+	c.vpcID = "vpc-123456"
 	awsServices.elb.(*MockedFakeELB).expectDescribeLoadBalancers("aid")
 
 	c.EnsureLoadBalancerDeleted(context.TODO(), TestClusterName, &v1.Service{ObjectMeta: metav1.ObjectMeta{Name: "myservice", UID: "id"}})
@@ -1359,6 +1384,7 @@ func TestDescribeLoadBalancerOnDelete(t *testing.T) {
 func TestDescribeLoadBalancerOnUpdate(t *testing.T) {
 	awsServices := newMockedFakeAWSServices(TestClusterID)
 	c, _ := newAWSCloud(CloudConfig{}, awsServices)
+	c.vpcID = "vpc-123456"
 	awsServices.elb.(*MockedFakeELB).expectDescribeLoadBalancers("aid")
 
 	c.UpdateLoadBalancer(context.TODO(), TestClusterName, &v1.Service{ObjectMeta: metav1.ObjectMeta{Name: "myservice", UID: "id"}}, []*v1.Node{})
@@ -1399,72 +1425,72 @@ func TestBuildListener(t *testing.T) {
 		{
 			"No cert or BE protocol annotation, passthrough",
 			80, "", 7999, "", "", "",
-			false, "tcp", "tcp", "",
+			false, "TCP", "TCP", "",
 		},
 		{
 			"Cert annotation without BE protocol specified, SSL->TCP",
 			80, "", 8000, "", "cert", "",
-			false, "ssl", "tcp", "cert",
+			false, "SSL", "TCP", "cert",
 		},
 		{
 			"BE protocol without cert annotation, passthrough",
 			443, "", 8001, "https", "", "",
-			false, "tcp", "tcp", "",
+			false, "TCP", "TCP", "",
 		},
 		{
 			"Invalid cert annotation, bogus backend protocol",
 			443, "", 8002, "bacon", "foo", "",
-			true, "tcp", "tcp", "",
+			true, "TCP", "TCP", "",
 		},
 		{
 			"Invalid cert annotation, protocol followed by equal sign",
 			443, "", 8003, "http=", "=", "",
-			true, "tcp", "tcp", "",
+			true, "TCP", "TCP", "",
 		},
 		{
 			"HTTPS->HTTPS",
 			443, "", 8004, "https", "cert", "",
-			false, "https", "https", "cert",
+			false, "HTTPS", "HTTPS", "cert",
 		},
 		{
 			"HTTPS->HTTP",
 			443, "", 8005, "http", "cert", "",
-			false, "https", "http", "cert",
+			false, "HTTPS", "HTTP", "cert",
 		},
 		{
 			"SSL->SSL",
 			443, "", 8006, "ssl", "cert", "",
-			false, "ssl", "ssl", "cert",
+			false, "SSL", "SSL", "cert",
 		},
 		{
 			"SSL->TCP",
 			443, "", 8007, "tcp", "cert", "",
-			false, "ssl", "tcp", "cert",
+			false, "SSL", "TCP", "cert",
 		},
 		{
 			"Port in whitelist",
 			1234, "", 8008, "tcp", "cert", "1234,5678",
-			false, "ssl", "tcp", "cert",
+			false, "SSL", "TCP", "cert",
 		},
 		{
 			"Port not in whitelist, passthrough",
 			443, "", 8009, "tcp", "cert", "1234,5678",
-			false, "tcp", "tcp", "",
+			false, "TCP", "TCP", "",
 		},
 		{
 			"Named port in whitelist",
 			1234, "bar", 8010, "tcp", "cert", "foo,bar",
-			false, "ssl", "tcp", "cert",
+			false, "SSL", "TCP", "cert",
 		},
 		{
 			"Named port not in whitelist, passthrough",
 			443, "", 8011, "tcp", "cert", "foo,bar",
-			false, "tcp", "tcp", "",
+			false, "TCP", "TCP", "",
 		},
 		{
 			"HTTP->HTTP",
 			80, "", 8012, "http", "", "",
-			false, "http", "http", "",
+			false, "HTTP", "HTTP", "",
 		},
 	}
 
@@ -1607,6 +1633,7 @@ func TestGetLoadBalancerAdditionalTags(t *testing.T) {
 func TestLBExtraSecurityGroupsAnnotation(t *testing.T) {
 	awsServices := newMockedFakeAWSServices(TestClusterID)
 	c, _ := newAWSCloud(CloudConfig{}, awsServices)
+	c.vpcID = "vpc-123456"
 
 	sg1 := map[string]string{ServiceAnnotationLoadBalancerExtraSecurityGroups: "sg-000001"}
 	sg2 := map[string]string{ServiceAnnotationLoadBalancerExtraSecurityGroups: "sg-000002"}
@@ -1642,6 +1669,7 @@ func TestLBExtraSecurityGroupsAnnotation(t *testing.T) {
 func TestLBSecurityGroupsAnnotation(t *testing.T) {
 	awsServices := newMockedFakeAWSServices(TestClusterID)
 	c, _ := newAWSCloud(CloudConfig{}, awsServices)
+	c.vpcID = "vpc-123456"
 
 	sg1 := map[string]string{ServiceAnnotationLoadBalancerSecurityGroups: "sg-000001"}
 	sg2 := map[string]string{ServiceAnnotationLoadBalancerSecurityGroups: "sg-000002"}
@@ -1851,8 +1879,8 @@ func TestCreateDisk(t *testing.T) {
 			{ResourceType: aws.String(ec2.ResourceTypeVolume), Tags: []*ec2.Tag{
 				// CreateVolume from MockedFakeEC2 expects sorted tags, so we need to
 				// always have these tags sorted:
-				{Key: aws.String(TagNameKubernetesClusterLegacy), Value: aws.String(TestClusterID)},
 				{Key: aws.String(fmt.Sprintf("%s%s", TagNameKubernetesClusterPrefix, TestClusterID)), Value: aws.String(ResourceLifecycleOwned)},
+				{Key: aws.String(TagNameKubernetesClusterLegacy), Value: aws.String(TestClusterID)},
 			}},
 		},
 	}

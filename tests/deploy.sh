@@ -3,7 +3,6 @@
 IMAGE_SECRET=registry-dockerconfigjson
 SECRET_NAME=osc-secret
 
-IMAGE_NAME=
 if [[ "${IMAGE_NAME}" == "" ]]; then
 	IMAGE_NAME=registry.kube-system:5001/osc/cloud-provider-osc
 fi

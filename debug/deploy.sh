@@ -6,7 +6,7 @@ container=$1
 echo "Test build with container"$container
 docker exec -it $container make 
 IMAGE_SECRET=registry-dockerconfigjson
-IMAGE_NAME=registry.kube-system:5001/osc/cloud-provider-osc  
+IMAGE_NAME=registry.kube-system:5001/osc/cloud-provider-osc
 IMAGE_TAG=dev
 SECRET_NAME=osc-secret
 make build-image IMAGE_VERSION=$IMAGE_TAG

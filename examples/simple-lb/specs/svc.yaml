@@ -5,11 +5,6 @@ metadata:
   namespace: simple-lb
   labels:
     app: echoheaders
-  annotations:
-    service.beta.kubernetes.io/aws-load-balancer-access-log-enabled: "true"
-    service.beta.kubernetes.io/aws-load-balancer-access-log-emit-interval: "5"
-    service.beta.kubernetes.io/aws-load-balancer-access-log-s3-bucket-name: "ccm-examples"
-    service.beta.kubernetes.io/aws-load-balancer-access-log-s3-bucket-prefix: "logs/lb"
 
 spec:
   ports:

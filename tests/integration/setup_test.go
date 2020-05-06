@@ -123,14 +123,14 @@ func newEC2Client() (*ec2.EC2, error) {
 	}
 
 	provider := []credentials.Provider{
-        &credentials.EnvProvider{},
-        &credentials.SharedCredentialsProvider{},
-    }
+		&credentials.EnvProvider{},
+		&credentials.SharedCredentialsProvider{},
+	}
 	sess := session.Must(session.NewSession(&aws.Config{
-		Region: aws.String(m.GetRegion()),
-		Credentials: credentials.NewChainCredentials(provider),
+		Region:                        aws.String(m.GetRegion()),
+		Credentials:                   credentials.NewChainCredentials(provider),
 		CredentialsChainVerboseErrors: aws.Bool(true),
-		EndpointResolver: endpoints.ResolverFunc(util.OscSetupServiceResolver(m.GetRegion())),
+		EndpointResolver:              endpoints.ResolverFunc(util.OscSetupServiceResolver(m.GetRegion())),
 	}))
 	return ec2.New(sess), nil
 }

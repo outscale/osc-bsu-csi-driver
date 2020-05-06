@@ -81,40 +81,39 @@ func roundUpSize(volumeSizeBytes int64, allocationUnitBytes int64) int64 {
 	return (volumeSizeBytes + allocationUnitBytes - 1) / allocationUnitBytes
 }
 
-func OscSetupMetadataResolver() (endpoints.ResolverFunc) {
-    return func(service, region string, optFns ...func(*endpoints.Options)) (endpoints.ResolvedEndpoint, error) {
-        return endpoints.ResolvedEndpoint{
-            URL:           "http://169.254.169.254/latest",
-            SigningRegion: "custom-signing-region",
-        }, nil
-    }
+func OscSetupMetadataResolver() endpoints.ResolverFunc {
+	return func(service, region string, optFns ...func(*endpoints.Options)) (endpoints.ResolvedEndpoint, error) {
+		return endpoints.ResolvedEndpoint{
+			URL:           "http://169.254.169.254/latest",
+			SigningRegion: "custom-signing-region",
+		}, nil
+	}
 }
 
-func OscEndpoint(region string, service string) (string) {
-    return "https://" + service + "." + region + ".outscale.com"
+func OscEndpoint(region string, service string) string {
+	return "https://" + service + "." + region + ".outscale.com"
 }
 
-func OscSetupServiceResolver(region string) (endpoints.ResolverFunc) {
+func OscSetupServiceResolver(region string) endpoints.ResolverFunc {
 
-    return func(service, region string, optFns ...func(*endpoints.Options))(endpoints.ResolvedEndpoint, error) {
+	return func(service, region string, optFns ...func(*endpoints.Options)) (endpoints.ResolvedEndpoint, error) {
 
-        supported_service := map[string]string  {
-            endpoints.Ec2ServiceID:                    "fcu",
-            endpoints.ElasticloadbalancingServiceID:   "lbu",
-            endpoints.IamServiceID:                    "eim",
-            endpoints.DirectconnectServiceID:          "directlink",
-        }
-        var osc_service string
-        var ok bool
-        if osc_service, ok =  supported_service[service]; ok {
-            return endpoints.ResolvedEndpoint{
-                    URL:           OscEndpoint(region, osc_service),
-                    SigningRegion: region,
-                    SigningName:   service,
-            }, nil
-        } else {
-            return endpoints.DefaultResolver().EndpointFor(service, region, optFns...)
-        }
-    }
+		supported_service := map[string]string{
+			endpoints.Ec2ServiceID:                  "fcu",
+			endpoints.ElasticloadbalancingServiceID: "lbu",
+			endpoints.IamServiceID:                  "eim",
+			endpoints.DirectconnectServiceID:        "directlink",
+		}
+		var osc_service string
+		var ok bool
+		if osc_service, ok = supported_service[service]; ok {
+			return endpoints.ResolvedEndpoint{
+				URL:           OscEndpoint(region, osc_service),
+				SigningRegion: region,
+				SigningName:   service,
+			}, nil
+		} else {
+			return endpoints.DefaultResolver().EndpointFor(service, region, optFns...)
+		}
+	}
 }
-

@@ -507,37 +507,6 @@ func findScsiVolume(findName string) (device string, err error) {
 	return resolved, nil
 }
 
-// findNvmeVolume looks for the nvme volume with the specified name
-// It follows the symlink (if it exists) and returns the absolute path to the device
-func findNvmeVolume(findName string) (device string, err error) {
-	p := filepath.Join("/dev/disk/by-id/", findName)
-	stat, err := os.Lstat(p)
-	if err != nil {
-		if os.IsNotExist(err) {
-			klog.V(5).Infof("nvme path %q not found", p)
-			return "", fmt.Errorf("nvme path %q not found", p)
-		}
-		return "", fmt.Errorf("error getting stat of %q: %v", p, err)
-	}
-
-	if stat.Mode()&os.ModeSymlink != os.ModeSymlink {
-		klog.Warningf("nvme file %q found, but was not a symlink", p)
-		return "", fmt.Errorf("nvme file %q found, but was not a symlink", p)
-	}
-	// Find the target, resolving to an absolute path
-	// For example, /dev/disk/by-id/nvme-Amazon_Elastic_Block_Store_vol0fab1d5e3f72a5e23 -> ../../nvme2n1
-	resolved, err := filepath.EvalSymlinks(p)
-	if err != nil {
-		return "", fmt.Errorf("error reading target of symlink %q: %v", p, err)
-	}
-
-	if !strings.HasPrefix(resolved, "/dev") {
-		return "", fmt.Errorf("resolved symlink for %q was unexpected: %q", p, resolved)
-	}
-
-	return resolved, nil
-}
-
 // getVolumesLimit returns the limit of volumes that the node supports
 func (d *nodeService) getVolumesLimit() int64 {
 	ebsNitroInstanceTypeRegex := "^[cmr]5.*|t3|z1d"

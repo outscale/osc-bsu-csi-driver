@@ -51,7 +51,7 @@ var _ NameAllocator = &nameAllocator{}
 // and return the first one that is not used yet.
 func (d *nameAllocator) GetNext(existingNames ExistingNames) (string, error) {
 	for c2 := 'b'; c2 <= 'z'; c2++ {
-		name := fmt.Sprintf("%s", string(c2))
+		name := string(c2)
 		if _, found := existingNames[name]; !found {
 			return name, nil
 		}

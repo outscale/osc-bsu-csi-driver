@@ -62,7 +62,6 @@ test:
 test-sanity:
 	go test -v ./tests/sanity/...
 
-
 .PHONY: test-e2e-multi-az
 test-e2e-multi-az:
 	TESTCONFIG=./tester/multi-az-config.yaml go run tester/cmd/main.go
@@ -84,10 +83,6 @@ image:
 .PHONY: image-tag
 image-tag:
 	docker tag  $(IMAGE):$(IMAGE_TAG) $(REGISTRY)/$(IMAGE):$(IMAGE_TAG)
-
-.PHONY: int_test_image
-int_test_image:
-	docker build  -t $(IMAGE)-int:latest  . -f ./Dockerfile_IntTest
 
 .PHONY: push-release
 push-release:
@@ -210,4 +205,3 @@ generate-kustomize: bin/helm
 	cd aws-ebs-csi-driver && ../bin/helm template kustomize . -s templates/rolebinding-snapshot-controller-leaderelection.yaml -f ../deploy/kubernetes/values/snapshotter.yaml > ../deploy/kubernetes/overlays/alpha/rbac_add_snapshot_controller_leaderelection_rolebinding.yaml
 	cd aws-ebs-csi-driver && ../bin/helm template kustomize . -s templates/serviceaccount-snapshot-controller.yaml -f ../deploy/kubernetes/values/snapshotter.yaml > ../deploy/kubernetes/overlays/alpha/serviceaccount-snapshot-controller.yaml
 	cd aws-ebs-csi-driver && ../bin/helm template kustomize . -s templates/statefulset.yaml -f ../deploy/kubernetes/values/snapshotter.yaml > ../deploy/kubernetes/overlays/alpha/snapshot_controller.yaml
-

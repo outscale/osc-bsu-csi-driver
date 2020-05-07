@@ -1,0 +1,9 @@
+#MAKE sur to map folders :
+#-v ${PWD}:/go/src/github.com/kubernetes-sigs/aws-ebs-csi-driver
+#-v ${HOME}:/e2e-env/
+#-v /etc/kubectl/:/etc/kubectl/
+
+FROM golang:1.12.7-stretch
+
+WORKDIR /root/aws-ebs-csi-driver
+

@@ -1,4 +1,5 @@
 #!/bin/bash
+set -euo pipefail
 
 make int_test_image
 docker run -it  \

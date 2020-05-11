@@ -12,6 +12,8 @@ for (( dir=0; dir<${#MANDATORY_DIR[@]}; dir++ )); do
 	fi
 done
 
+rm -rf /root/aws-ebs-csi-driver/go.sum
+
 export PATH=$PATH:/usr/local/go/bin
 export GOPATH="/go"
 make aws-ebs-csi-driver -j 4
@@ -27,5 +29,3 @@ SKIP_REGEXP="and encryption"
 $GOPATH/bin/ginkgo -dryRun --progress -debug -p -nodes=$NODES \
 					-v --focus=${FOCUS_REGEXP} --skip=${SKIP_REGEXP} \
 					tests/e2e -- -report-dir=$ARTIFACTS
-
-rm -rf /home/jenkins/osc-bsu-csi-driver/go.sum

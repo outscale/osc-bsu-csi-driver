@@ -117,3 +117,11 @@ e2e-test:
 .PHONY: deploy
 deploy:
 	IMAGE_TAG=$(IMAGE_VERSION) IMAGE_NAME=$(REGISTRY)/$(IMAGE) . ./tests/deploy.sh
+
+.PHONY: clean_build_env
+clean_build_env:
+	docker stop ${BUILD_ENV_RUN} || true 
+	docker wait ${BUILD_ENV_RUN} || true 
+	docker rm -f ${BUILD_ENV_RUN} || true
+	helm del --purge ${DEPLOY_NAME} --tls || true
+

@@ -12,7 +12,6 @@ for (( dir=0; dir<${#MANDATORY_DIR[@]}; dir++ )); do
 	fi
 done
 
-rm -rf /root/aws-ebs-csi-driver/go.sum
 
 export PATH=$PATH:/usr/local/go/bin
 export GOPATH="/go"

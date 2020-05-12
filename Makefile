@@ -19,6 +19,7 @@ DOCKERFILES := $(shell find . -name '*Dockerfile*')
 LINTER_VERSION := v1.17.5
 BUILD_ENV := "buildenv/cloud-provider-osc:0.0"
 BUILD_ENV_RUN := "build-cloud-provider-osc"
+DEPLOY_NAME := "k8s-osc-ccm"
 
 SOURCES := $(shell find ./cloud-controller-manager -name '*.go')
 GOOS ?= $(shell go env GOOS)

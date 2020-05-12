@@ -1,5 +1,5 @@
 #!/bin/sh
-set -e
+set -x
 
 clean_status()
 {
@@ -40,7 +40,7 @@ for i in {1..30}; do
   status=`curl $svc_host`
   if [ "$?" == "0" ]; then
       break
-  elif [ $i -eq 20 ]; then
+  elif [ $i -eq 30 ]; then
       echo "Service Respond fails"
       clean_status
       exit 1

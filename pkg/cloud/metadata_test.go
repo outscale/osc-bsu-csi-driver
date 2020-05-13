@@ -28,15 +28,14 @@ import (
 var (
 	stdInstanceID       = "instance-1"
 	stdInstanceType     = "t2.medium"
-	stdRegion           = "instance-1"
-	stdAvailabilityZone = "az-1"
+	stdRegion           = "az-1"
+	stdAvailabilityZone = "az-1a"
 )
 
 func TestNewMetadataService(t *testing.T) {
 	testCases := []struct {
 		name             string
 		isAvailable      bool
-		isPartial        bool
 		identityDocument ec2metadata.EC2InstanceIdentityDocument
 		err              error
 	}{
@@ -76,38 +75,35 @@ func TestNewMetadataService(t *testing.T) {
 		{
 			name:        "fail: GetInstanceIdentityDocument returned empty instance",
 			isAvailable: true,
-			isPartial:   true,
 			identityDocument: ec2metadata.EC2InstanceIdentityDocument{
 				InstanceID:       "",
 				InstanceType:     stdInstanceType,
 				Region:           stdRegion,
 				AvailabilityZone: stdAvailabilityZone,
 			},
-			err: nil,
+			err: fmt.Errorf("Empty content"),
 		},
 		{
 			name:        "fail: GetInstanceIdentityDocument returned empty region",
 			isAvailable: true,
-			isPartial:   true,
 			identityDocument: ec2metadata.EC2InstanceIdentityDocument{
 				InstanceID:       stdInstanceID,
 				InstanceType:     stdInstanceType,
 				Region:           "",
 				AvailabilityZone: stdAvailabilityZone,
 			},
-			err: nil,
+			err: fmt.Errorf("Empty content"),
 		},
 		{
 			name:        "fail: GetInstanceIdentityDocument returned empty az",
 			isAvailable: true,
-			isPartial:   true,
 			identityDocument: ec2metadata.EC2InstanceIdentityDocument{
 				InstanceID:       stdInstanceID,
 				InstanceType:     stdInstanceType,
 				Region:           stdRegion,
 				AvailabilityZone: "",
 			},
-			err: nil,
+			err: fmt.Errorf("Empty content"),
 		},
 	}
 
@@ -118,11 +114,15 @@ func TestNewMetadataService(t *testing.T) {
 
 			mockEC2Metadata.EXPECT().Available().Return(tc.isAvailable)
 			if tc.isAvailable {
-				mockEC2Metadata.EXPECT().GetInstanceIdentityDocument().Return(tc.identityDocument, tc.err)
+				mockEC2Metadata.EXPECT().GetMetadata(gomock.Eq("instance-id")).Return(tc.identityDocument.InstanceID, tc.err)
+				if tc.err == nil {
+					mockEC2Metadata.EXPECT().GetMetadata(gomock.Eq("instance-type")).Return(tc.identityDocument.InstanceType, tc.err)
+					mockEC2Metadata.EXPECT().GetMetadata(gomock.Eq("placement/availability-zone")).Return(tc.identityDocument.AvailabilityZone, tc.err)
+				}
 			}
 
 			m, err := NewMetadataService(mockEC2Metadata)
-			if tc.isAvailable && tc.err == nil && !tc.isPartial {
+			if tc.isAvailable && tc.err == nil {
 				if err != nil {
 					t.Fatalf("NewMetadataService() failed: expected no error, got %v", err)
 				}

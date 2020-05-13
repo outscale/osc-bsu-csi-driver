@@ -288,3 +288,9 @@ func (m *MockEC2) CreateTagsWithContext(arg0 aws.Context, arg1 *ec2.CreateTagsIn
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
+
+// CreateTagsWithContext indicates an expected call of CreateTagsWithContext
+func (mr *MockEC2MockRecorder) CreateTagsWithContext(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+	varargs := append([]interface{}{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateTagsWithContext", reflect.TypeOf((*MockEC2)(nil).CreateTagsWithContext), varargs...)
+}

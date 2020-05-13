@@ -790,7 +790,6 @@ func (c *cloud) listSnapshots(ctx context.Context, request *ec2.DescribeSnapshot
 	var nextToken *string
 	fmt.Printf("DebugAZ  listSnapshots(ctx context.Context : %+v\n", request)
 	response, err := c.ec2.DescribeSnapshotsWithContext(ctx, request)
-	fmt.Printf("DebugAZ  response.Snapshots : %+v\n", response.Snapshots)
 
 	if err != nil {
 		return nil, err

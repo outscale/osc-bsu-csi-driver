@@ -64,8 +64,13 @@ func (mr *MockEC2MetadataMockRecorder) GetInstanceIdentityDocument() *gomock.Cal
 
 // GetMetadata(p string) (string, error) mocks base method
 func (m *MockEC2Metadata) GetMetadata(p string) (string, error) {
-	ret := m.ctrl.Call(m, "GetMetadata")
+	ret := m.ctrl.Call(m, "GetMetadata", p)
 	ret0, _ := ret[0].(string)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
+}
+
+// GetMetadata indicates an expected call of GetMetadata
+func (mr *MockEC2MetadataMockRecorder) GetMetadata(p interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMetadata", reflect.TypeOf((*MockEC2Metadata)(nil).GetMetadata), p)
 }

@@ -2,8 +2,7 @@
 set -euo pipefail
 
 make int-test-image
-docker run -it  \
-            -e OSC_ACCOUNT_ID=$OSC_ACCOUNT_ID \
+docker run  -e OSC_ACCOUNT_ID=$OSC_ACCOUNT_ID \
             -e OSC_ACCOUNT_IAM=$OSC_ACCOUNT_IAM \
             -e OSC_USER_ID=$OSC_USER_ID \
             -e OSC_ARN=$OSC_ARN \

@@ -1,30 +1,23 @@
-# Copyright 2019 The Kubernetes Authors.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
 FROM golang:1.14.1-stretch as builder
+
+ARG DEBUG_IMAGE="disable"
+
+RUN apt-get -y update && \
+    apt-get -y --no-install-recommends install ca-certificates=20161130+nmu1+deb9u1 \
+                                               e2fsprogs=1.43.4-2+deb9u1 \
+                                               xfsprogs=4.9.0+nmu1 \
+                                               util-linux=2.29.2-1+deb9u1 && \
+    if [ "${DEBUG_IMAGE}" == "enable" ]; then \
+        apt-get -y --no-install-recommends install gdb=7.12-6 jq=1.5+dfsg-1.3; \
+        echo "add-auto-load-safe-path /usr/local/go/src/runtime/runtime-gdb.py" >> /root/.gdbinit; \
+    fi && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
 WORKDIR /go/src/github.com/kubernetes-sigs/aws-ebs-csi-driver
+COPY . .
+RUN make -j 4 && \
+    cp /go/src/github.com/kubernetes-sigs/aws-ebs-csi-driver/bin/aws-ebs-csi-driver /bin/aws-ebs-csi-driver
 
-# Cache go modules
-COPY go.mod .
-COPY go.sum .
-RUN go mod download
-
-ADD . .
-RUN make
-
-FROM amazonlinux:2
-RUN yum install ca-certificates e2fsprogs xfsprogs util-linux -y
-COPY --from=builder /go/src/github.com/kubernetes-sigs/aws-ebs-csi-driver/bin/aws-ebs-csi-driver /bin/aws-ebs-csi-driver
 
 ENTRYPOINT ["/bin/aws-ebs-csi-driver"]

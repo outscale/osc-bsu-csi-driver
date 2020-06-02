@@ -20,11 +20,14 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"os"
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
+	"github.com/aws/aws-sdk-go/aws/credentials"
+	"github.com/aws/aws-sdk-go/aws/credentials/ec2rolecreds"
+	"github.com/aws/aws-sdk-go/aws/ec2metadata"
+	"github.com/aws/aws-sdk-go/aws/endpoints"
 	"github.com/aws/aws-sdk-go/aws/request"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ec2"
@@ -36,43 +39,30 @@ import (
 
 // AWS volume types
 const (
-	// VolumeTypeIO1 represents a provisioned IOPS SSD type of volume.
-	VolumeTypeIO1 = "io1"
-	// VolumeTypeGP2 represents a general purpose SSD type of volume.
+	// Cold workloads where you do not need to access data frequently
+	// Cases in which the lowest storage cost highly matters.
+	VolumeTypeSTANDARD = "standard"
+	// Most workloads that require moderate performance with moderate costs
+	// Applications that require high performance for a short period of time
+	//(for example, starting a file system)
 	VolumeTypeGP2 = "gp2"
-	// VolumeTypeSC1 represents a cold HDD (sc1) type of volume.
-	VolumeTypeSC1 = "sc1"
-	// VolumeTypeST1 represents a throughput-optimized HDD type of volume.
-	VolumeTypeST1 = "st1"
-	// VolumeTypeStandard represents a previous type of  volume.
-	VolumeTypeStandard = "standard"
+	//Workloads where you must access data frequently (for example, a database)
+	//Critical business applications that can be blocked by a low performance when accessing data stored on the volume
+	VolumeTypeIO1 = "io1"
 )
 
 var (
-	ValidVolumeTypes = []string{
-		VolumeTypeIO1,
-		VolumeTypeGP2,
-		VolumeTypeSC1,
-		VolumeTypeST1,
-		VolumeTypeStandard,
-	}
+	// ValidVolumeTypes = []string{VolumeTypeIO1, VolumeTypeGP2,             VolumeTypeSC1, VolumeTypeST1}
+	ValidVolumeTypes = []string{VolumeTypeIO1, VolumeTypeGP2, VolumeTypeSTANDARD}
 )
 
 // AWS provisioning limits.
-// Sources:
-//   http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/EBSVolumeTypes.html
-//   https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/Using_Tags.html#tag-restrictions
+// Source: http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/EBSVolumeTypes.html
 const (
 	// MinTotalIOPS represents the minimum Input Output per second.
 	MinTotalIOPS = 100
 	// MaxTotalIOPS represents the maximum Input Output per second.
 	MaxTotalIOPS = 20000
-	// MaxNumTagsPerResource represents the maximum number of tags per AWS resource.
-	MaxNumTagsPerResource = 50
-	// MaxTagKeyLength represents the maximum key length for a tag.
-	MaxTagKeyLength = 128
-	// MaxTagValueLength represents the maximum value length for a tag.
-	MaxTagValueLength = 256
 )
 
 // Defaults
@@ -89,10 +79,6 @@ const (
 	VolumeNameTagKey = "CSIVolumeName"
 	// SnapshotNameTagKey is the key value that refers to the snapshot's name.
 	SnapshotNameTagKey = "CSIVolumeSnapshotName"
-	// KubernetesTagKeyPrefix is the prefix of the key value that is reserved for Kubernetes.
-	KubernetesTagKeyPrefix = "kubernetes.io"
-	// AWSTagKeyPrefix is the prefix of the key value that is reserved for AWS.
-	AWSTagKeyPrefix = "aws:"
 )
 
 var (
@@ -123,7 +109,6 @@ type Disk struct {
 	VolumeID         string
 	CapacityGiB      int64
 	AvailabilityZone string
-	SnapshotID       string
 }
 
 // DiskOptions represents parameters to create an EBS volume
@@ -180,10 +165,11 @@ type EC2 interface {
 	DescribeSnapshotsWithContext(ctx aws.Context, input *ec2.DescribeSnapshotsInput, opts ...request.Option) (*ec2.DescribeSnapshotsOutput, error)
 	ModifyVolumeWithContext(ctx aws.Context, input *ec2.ModifyVolumeInput, opts ...request.Option) (*ec2.ModifyVolumeOutput, error)
 	DescribeVolumesModificationsWithContext(ctx aws.Context, input *ec2.DescribeVolumesModificationsInput, opts ...request.Option) (*ec2.DescribeVolumesModificationsOutput, error)
-	DescribeAvailabilityZonesWithContext(ctx aws.Context, input *ec2.DescribeAvailabilityZonesInput, opts ...request.Option) (*ec2.DescribeAvailabilityZonesOutput, error)
+	CreateTagsWithContext(ctx aws.Context, input *ec2.CreateTagsInput, opts ...request.Option) (*ec2.CreateTagsOutput, error)
 }
 
 type Cloud interface {
+	GetMetadata() MetadataService
 	CreateDisk(ctx context.Context, volumeName string, diskOptions *DiskOptions) (disk *Disk, err error)
 	DeleteDisk(ctx context.Context, volumeID string) (success bool, err error)
 	AttachDisk(ctx context.Context, volumeID string, nodeID string) (devicePath string, err error)
@@ -196,40 +182,66 @@ type Cloud interface {
 	CreateSnapshot(ctx context.Context, volumeID string, snapshotOptions *SnapshotOptions) (snapshot *Snapshot, err error)
 	DeleteSnapshot(ctx context.Context, snapshotID string) (success bool, err error)
 	GetSnapshotByName(ctx context.Context, name string) (snapshot *Snapshot, err error)
-	GetSnapshotByID(ctx context.Context, snapshotID string) (snapshot *Snapshot, err error)
+	GetSnapshotById(ctx context.Context, snapshotID string) (snapshot *Snapshot, err error)
 	ListSnapshots(ctx context.Context, volumeID string, maxResults int64, nextToken string) (listSnapshotsResponse *ListSnapshotsResponse, err error)
 }
 
 type cloud struct {
-	region string
-	ec2    EC2
-	dm     dm.DeviceManager
+	metadata MetadataService
+	ec2      EC2
+	dm       dm.DeviceManager
 }
 
 var _ Cloud = &cloud{}
 
 // NewCloud returns a new instance of AWS cloud
 // It panics if session is invalid
-func NewCloud(region string) (Cloud, error) {
-	return newEC2Cloud(region)
-}
+func NewCloud() (Cloud, error) {
+	svc := newEC2MetadataSvc()
 
-func newEC2Cloud(region string) (Cloud, error) {
-	awsConfig := &aws.Config{
-		Region:                        aws.String(region),
-		CredentialsChainVerboseErrors: aws.Bool(true),
+	metadata, err := NewMetadataService(svc)
+	if err != nil {
+		return nil, fmt.Errorf("could not get metadata from AWS: %v", err)
 	}
 
-	endpoint := os.Getenv("AWS_EC2_ENDPOINT")
-	if endpoint != "" {
-		awsConfig.Endpoint = aws.String(endpoint)
+	return newEC2Cloud(metadata, svc)
+}
+
+func NewCloudWithMetadata(metadata MetadataService) (Cloud, error) {
+	return newEC2Cloud(metadata, newEC2MetadataSvc())
+}
+
+func newEC2MetadataSvc() *ec2metadata.EC2Metadata {
+
+	sess := session.Must(session.NewSession(&aws.Config{
+		EndpointResolver: endpoints.ResolverFunc(util.OscSetupMetadataResolver()),
+	}))
+	return ec2metadata.New(sess)
+}
+
+func newEC2Cloud(metadata MetadataService, svc *ec2metadata.EC2Metadata) (Cloud, error) {
+	provider := []credentials.Provider{
+		&credentials.EnvProvider{},
+		&ec2rolecreds.EC2RoleProvider{Client: svc},
+		&credentials.SharedCredentialsProvider{},
+	}
+
+	awsConfig := &aws.Config{
+		Region:                        aws.String(metadata.GetRegion()),
+		Credentials:                   credentials.NewChainCredentials(provider),
+		CredentialsChainVerboseErrors: aws.Bool(true),
+		EndpointResolver:              endpoints.ResolverFunc(util.OscSetupServiceResolver(metadata.GetRegion())),
 	}
 
 	return &cloud{
-		region: region,
-		dm:     dm.NewDeviceManager(),
-		ec2:    ec2.New(session.Must(session.NewSession(awsConfig))),
+		metadata: metadata,
+		dm:       dm.NewDeviceManager(),
+		ec2:      ec2.New(session.Must(session.NewSession(awsConfig))),
 	}, nil
+}
+
+func (c *cloud) GetMetadata() MetadataService {
+	return c.metadata
 }
 
 func (c *cloud) CreateDisk(ctx context.Context, volumeName string, diskOptions *DiskOptions) (*Disk, error) {
@@ -240,7 +252,7 @@ func (c *cloud) CreateDisk(ctx context.Context, volumeName string, diskOptions *
 	capacityGiB := util.BytesToGiB(diskOptions.CapacityBytes)
 
 	switch diskOptions.VolumeType {
-	case VolumeTypeGP2, VolumeTypeSC1, VolumeTypeST1, VolumeTypeStandard:
+	case VolumeTypeGP2, VolumeTypeSTANDARD:
 		createType = diskOptions.VolumeType
 	case VolumeTypeIO1:
 		createType = diskOptions.VolumeType
@@ -259,9 +271,7 @@ func (c *cloud) CreateDisk(ctx context.Context, volumeName string, diskOptions *
 
 	var tags []*ec2.Tag
 	for key, value := range diskOptions.Tags {
-		copiedKey := key
-		copiedValue := value
-		tags = append(tags, &ec2.Tag{Key: &copiedKey, Value: &copiedValue})
+		tags = append(tags, &ec2.Tag{Key: &key, Value: &value})
 	}
 	tagSpec := ec2.TagSpecification{
 		ResourceType: aws.String("volume"),
@@ -270,12 +280,8 @@ func (c *cloud) CreateDisk(ctx context.Context, volumeName string, diskOptions *
 
 	zone := diskOptions.AvailabilityZone
 	if zone == "" {
+		zone = c.metadata.GetAvailabilityZone()
 		klog.V(5).Infof("AZ is not provided. Using node AZ [%s]", zone)
-		var err error
-		zone, err = c.randomAvailabilityZone(ctx, c.region)
-		if err != nil {
-			return nil, fmt.Errorf("failed to get availability zone %s", err)
-		}
 	}
 
 	request := &ec2.CreateVolumeInput{
@@ -296,8 +302,10 @@ func (c *cloud) CreateDisk(ctx context.Context, volumeName string, diskOptions *
 	if len(snapshotID) > 0 {
 		request.SnapshotId = aws.String(snapshotID)
 	}
+	fmt.Printf("DebugAZ c.ec2.CreateVolumeWithContext : %+v\n", request)
 
 	response, err := c.ec2.CreateVolumeWithContext(ctx, request)
+
 	if err != nil {
 		if isAWSErrorSnapshotNotFound(err) {
 			return nil, ErrNotFound
@@ -313,6 +321,21 @@ func (c *cloud) CreateDisk(ctx context.Context, volumeName string, diskOptions *
 	size := aws.Int64Value(response.Size)
 	if size == 0 {
 		return nil, fmt.Errorf("disk size was not returned by CreateVolume")
+	}
+
+	requestTag := &ec2.CreateTagsInput{
+		Resources: []*string{response.VolumeId},
+		Tags:      tags,
+	}
+	fmt.Printf("DebugAZ requestTag := &ec2.CreateTagsInput{ : %+v\n", requestTag)
+
+	resTag, err := c.ec2.CreateTagsWithContext(ctx, requestTag)
+
+	if err != nil {
+		return nil, fmt.Errorf("error creating tags of volume %v: %v", response.VolumeId, err)
+	}
+	if resTag == nil {
+		return nil, fmt.Errorf("nil CreateTags")
 	}
 
 	if err := c.waitForVolume(ctx, volumeID); err != nil {
@@ -402,11 +425,6 @@ func (c *cloud) DetachDisk(ctx context.Context, volumeID, nodeID string) error {
 
 	_, err = c.ec2.DetachVolumeWithContext(ctx, request)
 	if err != nil {
-		if isAWSErrorIncorrectState(err) ||
-			isAWSErrorInvalidAttachmentNotFound(err) ||
-			isAWSErrorVolumeNotFound(err) {
-			return ErrNotFound
-		}
 		return fmt.Errorf("could not detach volume %q from node %q: %v", volumeID, nodeID, err)
 	}
 
@@ -486,7 +504,6 @@ func (c *cloud) GetDiskByName(ctx context.Context, name string, capacityBytes in
 		VolumeID:         aws.StringValue(volume.VolumeId),
 		CapacityGiB:      volSizeBytes,
 		AvailabilityZone: aws.StringValue(volume.AvailabilityZone),
-		SnapshotID:       aws.StringValue(volume.SnapshotId),
 	}, nil
 }
 
@@ -519,21 +536,27 @@ func (c *cloud) IsExistInstance(ctx context.Context, nodeID string) bool {
 
 func (c *cloud) CreateSnapshot(ctx context.Context, volumeID string, snapshotOptions *SnapshotOptions) (snapshot *Snapshot, err error) {
 	descriptions := "Created by AWS EBS CSI driver for volume " + volumeID
-
+	fmt.Printf("DebugAZ ctx context.Context, volumeID string, snapshotOptions *SnapshotOptions : %+v /// %+v\n", volumeID, snapshotOptions)
 	var tags []*ec2.Tag
 	for key, value := range snapshotOptions.Tags {
 		tags = append(tags, &ec2.Tag{Key: &key, Value: &value})
 	}
+	fmt.Printf("DebugAZ tags = append( : %+v  \n", tags)
+
 	tagSpec := ec2.TagSpecification{
 		ResourceType: aws.String("snapshot"),
 		Tags:         tags,
 	}
+	fmt.Printf("DebugAZ tagSpec := ec2.TagSpecification( : %+v  \n", tagSpec)
+
 	request := &ec2.CreateSnapshotInput{
 		VolumeId:          aws.String(volumeID),
 		DryRun:            aws.Bool(false),
 		TagSpecifications: []*ec2.TagSpecification{&tagSpec},
 		Description:       aws.String(descriptions),
 	}
+
+	fmt.Printf("DebugAZ request := &ec2.CreateSnapshotInput{: %+v  \n", request)
 
 	res, err := c.ec2.CreateSnapshotWithContext(ctx, request)
 	if err != nil {
@@ -542,6 +565,23 @@ func (c *cloud) CreateSnapshot(ctx context.Context, volumeID string, snapshotOpt
 	if res == nil {
 		return nil, fmt.Errorf("nil CreateSnapshotResponse")
 	}
+	fmt.Printf("DebugAZ res, err := c.ec2.CreateSnapshotWithContext(ctx, request) : %+v\n", res)
+
+	requestTag := &ec2.CreateTagsInput{
+		Resources: []*string{res.SnapshotId},
+		Tags:      tags,
+	}
+	fmt.Printf("DebugAZ requestTag := &ec2.CreateTagsInput{ : %+v\n", requestTag)
+
+	resTag, err := c.ec2.CreateTagsWithContext(ctx, requestTag)
+
+	if err != nil {
+		return nil, fmt.Errorf("error creating tags of snapshot %v: %v", res.SnapshotId, err)
+	}
+	if resTag == nil {
+		return nil, fmt.Errorf("nil CreateTags")
+	}
+	fmt.Printf("DebugAZ resTag, err := c.ec2.CreateTagsWithContext(ctx, requestTag) %+v\n", resTag)
 
 	return c.ec2SnapshotResponseToStruct(res), nil
 }
@@ -560,6 +600,7 @@ func (c *cloud) DeleteSnapshot(ctx context.Context, snapshotID string) (success 
 }
 
 func (c *cloud) GetSnapshotByName(ctx context.Context, name string) (snapshot *Snapshot, err error) {
+	fmt.Printf("DebugAZ GetSnapshotByName : %+v\n", name)
 	request := &ec2.DescribeSnapshotsInput{
 		Filters: []*ec2.Filter{
 			{
@@ -577,7 +618,8 @@ func (c *cloud) GetSnapshotByName(ctx context.Context, name string) (snapshot *S
 	return c.ec2SnapshotResponseToStruct(ec2snapshot), nil
 }
 
-func (c *cloud) GetSnapshotByID(ctx context.Context, snapshotID string) (snapshot *Snapshot, err error) {
+func (c *cloud) GetSnapshotById(ctx context.Context, snapshotID string) (snapshot *Snapshot, err error) {
+	fmt.Printf("DebugAZ GetSnapshotById : %+v\n", snapshotID)
 	request := &ec2.DescribeSnapshotsInput{
 		SnapshotIds: []*string{
 			aws.String(snapshotID),
@@ -596,6 +638,8 @@ func (c *cloud) GetSnapshotByID(ctx context.Context, snapshotID string) (snapsho
 // a next token value will be returned to the client as well.  They can use this token with subsequent calls to retrieve the next page of results.  If maxResults is not set (0),
 // there will be no restriction up to 1000 results (https://docs.aws.amazon.com/sdk-for-go/api/service/ec2/#DescribeSnapshotsInput).
 func (c *cloud) ListSnapshots(ctx context.Context, volumeID string, maxResults int64, nextToken string) (listSnapshotsResponse *ListSnapshotsResponse, err error) {
+	fmt.Printf("DebugAZ ListSnapshots : %+v\n", volumeID)
+
 	if maxResults > 0 && maxResults < 5 {
 		return nil, ErrInvalidMaxResults
 	}
@@ -657,6 +701,7 @@ func (c *cloud) ec2SnapshotResponseToStruct(ec2Snapshot *ec2.Snapshot) *Snapshot
 }
 
 func (c *cloud) getVolume(ctx context.Context, request *ec2.DescribeVolumesInput) (*ec2.Volume, error) {
+	fmt.Printf("DebugAZ getVolume : %+v\n", request)
 	var volumes []*ec2.Volume
 	var nextToken *string
 
@@ -692,9 +737,6 @@ func (c *cloud) getInstance(ctx context.Context, nodeID string) (*ec2.Instance, 
 	for {
 		response, err := c.ec2.DescribeInstancesWithContext(ctx, request)
 		if err != nil {
-			if isAWSErrorInstanceNotFound(err) {
-				return nil, ErrNotFound
-			}
 			return nil, fmt.Errorf("error listing AWS instances: %q", err)
 		}
 
@@ -719,6 +761,7 @@ func (c *cloud) getInstance(ctx context.Context, nodeID string) (*ec2.Instance, 
 }
 
 func (c *cloud) getSnapshot(ctx context.Context, request *ec2.DescribeSnapshotsInput) (*ec2.Snapshot, error) {
+	fmt.Printf("DebugAZ  getSnapshot(ctx context.Context : %+v\n", request)
 	var snapshots []*ec2.Snapshot
 	var nextToken *string
 	for {
@@ -734,25 +777,32 @@ func (c *cloud) getSnapshot(ctx context.Context, request *ec2.DescribeSnapshotsI
 		request.NextToken = nextToken
 	}
 
+	fmt.Printf("DebugAZ  len(snapshots): %+v\n", len(snapshots))
+	fmt.Printf("DebugAZ  (snapshots): %+v\n", snapshots)
+
 	if l := len(snapshots); l > 1 {
 		return nil, ErrMultiSnapshots
 	} else if l < 1 {
 		return nil, ErrNotFound
 	}
-
+	fmt.Printf("DebugAZ  (snapshots[0]): %+v\n", snapshots[0])
 	return snapshots[0], nil
 }
 
 // listSnapshots returns all snapshots based from a request
 func (c *cloud) listSnapshots(ctx context.Context, request *ec2.DescribeSnapshotsInput) (*ec2ListSnapshotsResponse, error) {
+	fmt.Printf("DebugAZ listSnapshots : %+v\n", request)
+
 	var snapshots []*ec2.Snapshot
 	var nextToken *string
+	fmt.Printf("DebugAZ  listSnapshots(ctx context.Context : %+v\n", request)
 
 	response, err := c.ec2.DescribeSnapshotsWithContext(ctx, request)
+
 	if err != nil {
 		return nil, err
 	}
-
+	fmt.Printf("DebugAZ  response.Snapshots : %+v\n", response.Snapshots)
 	snapshots = append(snapshots, response.Snapshots...)
 
 	if response.NextToken != nil {
@@ -768,6 +818,8 @@ func (c *cloud) listSnapshots(ctx context.Context, request *ec2.DescribeSnapshot
 // waitForVolume waits for volume to be in the "available" state.
 // On a random AWS account (shared among several developers) it took 4s on average.
 func (c *cloud) waitForVolume(ctx context.Context, volumeID string) error {
+	fmt.Printf("DebugAZ waitForVolume : %+v\n", volumeID)
+
 	var (
 		checkInterval = 3 * time.Second
 		// This timeout can be "ovewritten" if the value returned by ctx.Deadline()
@@ -814,32 +866,11 @@ func isAWSErrorIncorrectModification(err error) bool {
 	return isAWSError(err, "IncorrectModificationState")
 }
 
-// isAWSErrorInstanceNotFound returns a boolean indicating whether the
-// given error is an AWS InvalidInstanceID.NotFound error. This error is
-// reported when the specified instance doesn't exist.
-func isAWSErrorInstanceNotFound(err error) bool {
-	return isAWSError(err, "InvalidInstanceID.NotFound")
-}
-
 // isAWSErrorVolumeNotFound returns a boolean indicating whether the
 // given error is an AWS InvalidVolume.NotFound error. This error is
 // reported when the specified volume doesn't exist.
 func isAWSErrorVolumeNotFound(err error) bool {
 	return isAWSError(err, "InvalidVolume.NotFound")
-}
-
-// isAWSErrorIncorrectState returns a boolean indicating whether the
-// given error is an AWS IncorrectState error. This error is
-// reported when the resource is not in a correct state for the request.
-func isAWSErrorIncorrectState(err error) bool {
-	return isAWSError(err, "IncorrectState")
-}
-
-// isAWSErrorInvalidAttachmentNotFound returns a boolean indicating whether the
-// given error is an AWS InvalidAttachment.NotFound error. This error is reported
-// when attempting to detach a volume from an instance to which it is not attached.
-func isAWSErrorInvalidAttachmentNotFound(err error) bool {
-	return isAWSError(err, "InvalidAttachment.NotFound")
 }
 
 // isAWSErrorSnapshotNotFound returns a boolean indicating whether the
@@ -852,6 +883,8 @@ func isAWSErrorSnapshotNotFound(err error) bool {
 // ResizeDisk resizes an EBS volume in GiB increments, rouding up to the next possible allocatable unit.
 // It returns the volume size after this call or an error if the size couldn't be determined.
 func (c *cloud) ResizeDisk(ctx context.Context, volumeID string, newSizeBytes int64) (int64, error) {
+	fmt.Printf("DebugAZ ResizeDisk : %+v\n", volumeID)
+
 	request := &ec2.DescribeVolumesInput{
 		VolumeIds: []*string{
 			aws.String(volumeID),
@@ -904,6 +937,7 @@ func (c *cloud) ResizeDisk(ctx context.Context, volumeID string, newSizeBytes in
 
 // waitForVolumeSize waits for a volume modification to finish and return its size.
 func (c *cloud) waitForVolumeSize(ctx context.Context, volumeID string) (int64, error) {
+	fmt.Printf("DebugAZ waitForVolumeSize : %+v\n", volumeID)
 	backoff := wait.Backoff{
 		Duration: 1 * time.Second,
 		Factor:   1.8,
@@ -935,6 +969,8 @@ func (c *cloud) waitForVolumeSize(ctx context.Context, volumeID string) (int64, 
 
 // getLatestVolumeModification returns the last modification of the volume.
 func (c *cloud) getLatestVolumeModification(ctx context.Context, volumeID string) (*ec2.VolumeModification, error) {
+	fmt.Printf("DebugAZ getLatestVolumeModification : %+v\n", volumeID)
+
 	request := &ec2.DescribeVolumesModificationsInput{
 		VolumeIds: []*string{
 			aws.String(volumeID),
@@ -951,21 +987,4 @@ func (c *cloud) getLatestVolumeModification(ctx context.Context, volumeID string
 	}
 
 	return volumeMods[len(volumeMods)-1], nil
-}
-
-// randomAvailabilityZone returns a random zone from the given region
-// the randomness relies on the response of DescribeAvailabilityZones
-func (c *cloud) randomAvailabilityZone(ctx context.Context, region string) (string, error) {
-	request := &ec2.DescribeAvailabilityZonesInput{}
-	response, err := c.ec2.DescribeAvailabilityZonesWithContext(ctx, request)
-	if err != nil {
-		return "", err
-	}
-
-	zones := []string{}
-	for _, zone := range response.AvailabilityZones {
-		zones = append(zones, *zone.ZoneName)
-	}
-
-	return zones[0], nil
 }

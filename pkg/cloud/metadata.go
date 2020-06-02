@@ -18,15 +18,14 @@ package cloud
 
 import (
 	"fmt"
-
-	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/ec2metadata"
-	"github.com/aws/aws-sdk-go/aws/session"
+	"log"
 )
 
 type EC2Metadata interface {
 	Available() bool
 	GetInstanceIdentityDocument() (ec2metadata.EC2InstanceIdentityDocument, error)
+	GetMetadata(p string) (string, error)
 }
 
 // MetadataService represents AWS metadata service.
@@ -66,43 +65,36 @@ func (m *Metadata) GetAvailabilityZone() string {
 	return m.AvailabilityZone
 }
 
-func NewMetadata() (MetadataService, error) {
-	sess := session.Must(session.NewSession(&aws.Config{}))
-	svc := ec2metadata.New(sess)
-	return NewMetadataService(svc)
-}
-
 // NewMetadataService returns a new MetadataServiceImplementation.
 func NewMetadataService(svc EC2Metadata) (MetadataService, error) {
+
 	if !svc.Available() {
 		return nil, fmt.Errorf("EC2 instance metadata is not available")
 	}
 
-	doc, err := svc.GetInstanceIdentityDocument()
-	if err != nil {
-		return nil, fmt.Errorf("could not get EC2 instance identity metadata")
-	}
-
-	if len(doc.InstanceID) == 0 {
+	instanceID, err := svc.GetMetadata("instance-id")
+	if err != nil || len(instanceID) == 0 {
 		return nil, fmt.Errorf("could not get valid EC2 instance ID")
 	}
-
-	if len(doc.InstanceType) == 0 {
+	instanceType, err := svc.GetMetadata("instance-type")
+	if err != nil || len(instanceType) == 0 {
 		return nil, fmt.Errorf("could not get valid EC2 instance type")
 	}
 
-	if len(doc.Region) == 0 {
+	availabilityZone, err := svc.GetMetadata("placement/availability-zone")
+	if err != nil || len(availabilityZone) == 0 {
+		return nil, fmt.Errorf("could not get valid EC2 availavility zone")
+	}
+	region := availabilityZone[0 : len(availabilityZone)-1]
+	log.Println("region : ", region)
+	if len(region) == 0 {
 		return nil, fmt.Errorf("could not get valid EC2 region")
 	}
 
-	if len(doc.AvailabilityZone) == 0 {
-		return nil, fmt.Errorf("could not get valid EC2 availavility zone")
-	}
-
 	return &Metadata{
-		InstanceID:       doc.InstanceID,
-		InstanceType:     doc.InstanceType,
-		Region:           doc.Region,
-		AvailabilityZone: doc.AvailabilityZone,
+		InstanceID:       instanceID,
+		InstanceType:     instanceType,
+		Region:           region,
+		AvailabilityZone: availabilityZone,
 	}, nil
 }

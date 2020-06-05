@@ -169,18 +169,18 @@ func (volume *VolumeDetails) SetupPreProvisionedPersistentVolumeClaim(client cli
 	cleanupFuncs := make([]func(), 0)
 	By("setting up the PV")
 	pv := csiDriver.GetPersistentVolume(volume.VolumeID, volume.FSType, volume.ClaimSize, volume.ReclaimPolicy, namespace.Name)
-	fmt.Printf("DebugAZ pv := csiDriver.GetPersistentVolume:::: %+v\n", pv)
+	fmt.Printf("Debug pv := csiDriver.GetPersistentVolume:::: %+v\n", pv)
 
 	tpv := NewTestPreProvisionedPersistentVolume(client, pv)
-	fmt.Printf("DebugAZ tpv := NewTestPreProvisionedPersistentVolume:::: %+v\n", tpv)
+	fmt.Printf("Debug tpv := NewTestPreProvisionedPersistentVolume:::: %+v\n", tpv)
 	tpv.Create()
-	fmt.Printf("DebugAZ tpv.Create() %+v\n", tpv)
+	fmt.Printf("Debug tpv.Create() %+v\n", tpv)
 
 	By("setting up the PVC")
 	tpvc := NewTestPersistentVolumeClaim(client, namespace, volume.ClaimSize, volume.VolumeMode, nil)
-	fmt.Printf("DebugAZ tpvc := NewTestPersistentVolumeClaim %+v\n", tpvc)
+	fmt.Printf("Debug tpvc := NewTestPersistentVolumeClaim %+v\n", tpvc)
 	tpvc.Create()
-	fmt.Printf("DebugAZ 	tpvc.Create() %+v\n", tpvc)
+	fmt.Printf("Debug tpvc.Create() %+v\n", tpvc)
 
 	cleanupFuncs = append(cleanupFuncs, tpvc.DeleteBoundPersistentVolume)
 	cleanupFuncs = append(cleanupFuncs, tpvc.Cleanup)

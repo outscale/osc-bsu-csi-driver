@@ -78,6 +78,7 @@ type fakeCloudProvider struct {
 	snapshots map[string]*fakeSnapshot
 	pub       map[string]string
 	tokens    map[string]int64
+	m         *cloud.Metadata
 }
 
 type fakeDisk struct {
@@ -96,6 +97,11 @@ func newFakeCloudProvider() *fakeCloudProvider {
 		snapshots: make(map[string]*fakeSnapshot),
 		pub:       make(map[string]string),
 		tokens:    make(map[string]int64),
+		m: &cloud.Metadata{
+			InstanceID:       "instanceID",
+			Region:           "region",
+			AvailabilityZone: "az",
+		},
 	}
 }
 
@@ -267,6 +273,11 @@ func (c *fakeCloudProvider) ResizeDisk(ctx context.Context, volumeID string, new
 		}
 	}
 	return 0, cloud.ErrNotFound
+}
+
+// GetMetadata mocks base method
+func (c *fakeCloudProvider) GetMetadata() cloud.MetadataService {
+	return c.m
 }
 
 type fakeMounter struct {

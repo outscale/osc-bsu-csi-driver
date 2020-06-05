@@ -6,9 +6,10 @@ package mocks
 
 import (
 	context "context"
+	reflect "reflect"
+
 	gomock "github.com/golang/mock/gomock"
 	cloud "github.com/kubernetes-sigs/aws-ebs-csi-driver/pkg/cloud"
-	reflect "reflect"
 )
 
 // MockCloud is a mock of Cloud interface
@@ -239,4 +240,16 @@ func (m *MockCloud) WaitForAttachmentState(arg0 context.Context, arg1, arg2 stri
 func (mr *MockCloudMockRecorder) WaitForAttachmentState(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "WaitForAttachmentState", reflect.TypeOf((*MockCloud)(nil).WaitForAttachmentState), arg0, arg1, arg2)
+}
+
+// GetMetadata mocks base method
+func (m *MockCloud) GetMetadata() cloud.MetadataService {
+	ret := m.ctrl.Call(m, "GetMetadata")
+	ret0, _ := ret[0].(cloud.MetadataService)
+	return ret0
+}
+
+// GetMetadata indicates an expected call of GetMetadata
+func (mr *MockCloudMockRecorder) GetMetadata() *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMetadata", reflect.TypeOf((*MockCloud)(nil).GetMetadata))
 }

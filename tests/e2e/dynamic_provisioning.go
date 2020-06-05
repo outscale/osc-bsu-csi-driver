@@ -85,6 +85,7 @@ var _ = Describe("[ebs-csi-e2e] [single-az] Dynamic Provisioning", func() {
 	for _, t := range awscloud.ValidVolumeTypes {
 		volumeType := t
 		It(fmt.Sprintf("should create a volume on demand with volumeType %q and encryption", volumeType), func() {
+			Skip("Volume encryption is not supported for volume")
 			pods := []testsuites.PodDetails{
 				{
 					Cmd: "echo 'hello world' > /mnt/test-1/data && grep 'hello world' /mnt/test-1/data",

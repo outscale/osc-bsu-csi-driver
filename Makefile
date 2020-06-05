@@ -20,8 +20,9 @@ BUILD_ENV_RUN := "build-osc-bsu-csi-driver"
 
 OSC_BSU_WORKDIR := /go/src/github.com/kubernetes-sigs/aws-ebs-csi-driver
 
-E2E_ENV := "buildenv/osc-bsu-csi-driver:0.0"
-E2E_ENV_RUN := "build-osc-bsu-csi-driver"
+E2E_ENV := "e2e/osc-bsu-csi-driver:0.0"
+E2E_ENV_RUN := "e2e-osc-bsu-csi-driver"
+E2E_AZ := "eu-west-2b"
 
 PKG := github.com/kubernetes-sigs/aws-ebs-csi-driver
 IMAGE := osc/osc-ebs-csi-driver
@@ -35,7 +36,7 @@ GO111MODULE := on
 GOPROXY := direct
 
 # Full log with  -v -x
-GO_ADD_OPTIONS := -v
+GO_ADD_OPTIONS := -v -x
 
 .EXPORT_ALL_VARIABLES:
 
@@ -60,7 +61,8 @@ test:
 
 .PHONY: test-sanity
 test-sanity:
-	go test -v ./tests/sanity/...
+	#go test -v ./tests/sanity/...
+	echo "Disabled"
 
 .PHONY: test-e2e-multi-az
 test-e2e-multi-az:
@@ -95,7 +97,7 @@ push:
 .PHONY: dockerlint
 dockerlint:
 	@echo "Lint images =>  $(DOCKERFILES)"
-	$(foreach image,$(DOCKERFILES), echo "Lint  ${image} " ; docker run --rm -i hadolint/hadolint:${LINTER_VERSION} hadolint --ignore DL3006 - < ${image} || exit 1 ; )
+	$(foreach image,$(DOCKERFILES), echo "Lint  ${image} " ; docker run --rm -i hadolint/hadolint:${LINTER_VERSION} hadolint - < ${image} || exit 1 ; )
 
 
 .PHONY: build_env
@@ -104,7 +106,8 @@ build_env:
 	docker wait $(BUILD_ENV_RUN) || true
 	docker rm -f $(BUILD_ENV_RUN) || true
 	docker build  -t $(BUILD_ENV) -f ./debug/Dockerfile_debug .
-	docker run -d -v $(PWD):$(OSC_BSU_WORKDIR) --rm -it --name $(BUILD_ENV_RUN) $(BUILD_ENV)  bash -l
+	mkdir -p ${HOME}/go_cache
+	docker run -d -v ${HOME}/go_cache:/go -v $(PWD):$(OSC_BSU_WORKDIR) --rm -it --name $(BUILD_ENV_RUN) $(BUILD_ENV)  bash -l
 	until [[ `docker inspect -f '{{.State.Running}}' $(BUILD_ENV_RUN)` == "true" ]] ; do  sleep 1 ; done
 
 .PHONY: test-integration
@@ -120,7 +123,7 @@ run-integration-test:
 	./run_int_test.sh
 
 .PHONY: run_int_test
-run-integration-test:
+run_int_test:
 	./run_int_test.sh
 
 .PHONY: deploy
@@ -136,13 +139,22 @@ test-e2e-single-az:
 	docker wait $(E2E_ENV_RUN) || true
 	docker rm -f $(E2E_ENV_RUN) || true
 	docker build  -t $(E2E_ENV) -f ./tests/e2e/docker/Dockerfile_e2eTest .
+	mkdir -p ${HOME}/go_cache
 	docker run -it -d --rm \
+		-v ${HOME}/go_cache:/go \
 		-v ${PWD}:/root/aws-ebs-csi-driver \
 		-v ${HOME}:/e2e-env/ \
 		-v /etc/kubectl/:/etc/kubectl/ \
+		-e AWS_AVAILABILITY_ZONES=${E2E_AZ} \
+		-e OSC_ACCOUNT_ID=${OSC_ACCOUNT_ID} \
+		-e OSC_ACCOUNT_IAM=${OSC_ACCOUNT_IAM} \
+		-e OSC_USER_ID=${OSC_USER_ID} \
+		-e OSC_ARN=${OSC_ARN} \
+		-e AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} \
+		-e AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} \
 		--name $(E2E_ENV_RUN) $(E2E_ENV) bash -l
 	until [[ `docker inspect -f '{{.State.Running}}' $(E2E_ENV_RUN)` == "true" ]] ; do  sleep 1 ; done
-	docker exec -it $(E2E_ENV_RUN) ./tests/e2e/docker/run_e2e_single_az.sh
+	docker exec $(E2E_ENV_RUN) ./tests/e2e/docker/run_e2e_single_az.sh
 	docker stop $(E2E_ENV_RUN) || true
 	docker wait $(E2E_ENV_RUN) || true
 	docker rm -f $(E2E_ENV_RUN) || true

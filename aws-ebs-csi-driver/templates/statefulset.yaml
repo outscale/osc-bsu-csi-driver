@@ -25,6 +25,6 @@ spec:
         - name: snapshot-controller
           image: quay.io/k8scsi/snapshot-controller:v2.1.1
           args:
-            - --v=5
+            - --v=10
             - --leader-election=false
 {{- end }}

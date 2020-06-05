@@ -9,9 +9,9 @@ The Outscale Block Storage Unit Container Storage Interface (CSI) Driver provide
 
 ## CSI Specification Compability Matrix
 
-| OSC BSU CSI Driver \ CSI Version       |  v1.1.0|
+| OSC BSU CSI Driver \ CSI Version       |  v1.2.0|
 |----------------------------------------|--------|
-| master branch                          | yes    |
+| OSC-MIGRATION branch                   | yes    |
 
 
 ## Features
@@ -38,23 +38,23 @@ There are several optional parameters that could be passed into `CreateVolumeReq
 Following sections are Kubernetes specific. If you are Kubernetes user, use followings for driver features, installation steps and examples.
 
 ## Kubernetes Version Compability Matrix
-| OSC EBS CSI Driver \ Kubernetes Version|v1.15.4| 
+| OSC EBS CSI Driver \ Kubernetes Version|v1.17.4| 
 |----------------------------------------|-------|
-| master branch                          | yes   |
+| OSC-MIGRATION branch                   | yes   |
 
 
 ## Container Images:
 |OSC EBS CSI Driver Version | Image                                     |
 |---------------------------|-------------------------------------------|
-|master branch              |outscale/osc-ebs-csi-driver:v0.0.0beta     |
+| OSC-MIGRATION branch      |outscale/osc-ebs-csi-driver:v0.0.2beta     |
 
 ## Features
 * **Static Provisioning** - create a new or migrating existing EBS volumes, then create persistence volume (PV) from the EBS volume and consume the PV from container using persistence volume claim (PVC).
 * **Dynamic Provisioning** - uses persistence volume claim (PVC) to request the Kuberenetes to create the EBS volume on behalf of user and consumes the volume from inside container.
 * **Mount Option** - mount options could be specified in persistence volume (PV) to define how the volume should be mounted.
 * **Block Volume** (beta since 1.14) - consumes the EBS volume as a raw block device for latency sensitive application eg. MySql
-* **Volume Snapshot** (alpha) - creating volume snapshots and restore volume from snapshot.
-* **Volume Resizing** (alpha) - expand the volume size.
+* **Volume Snapshot** (beta) - creating volume snapshots and restore volume from snapshot.
+* **Volume Resizing**  - Not supported yet.
 
 ## Prerequisites
 
@@ -62,6 +62,8 @@ Following sections are Kubernetes specific. If you are Kubernetes user, use foll
   * Enable flag `--allow-privileged=true` for `kubelet` and `kube-apiserver`
   * Enable `kube-apiserver` feature gates `--feature-gates=CSINodeInfo=true,CSIDriverRegistry=true,CSIBlockVolume=true,VolumeSnapshotDataSource=true`
   * Enable `kubelet` feature gates `--feature-gates=CSINodeInfo=true,CSIDriverRegistry=true,CSIBlockVolume=true`
+  * To Enable snapshot.storage.k8s.io/v1beta1 please follow :
+    * https://kubernetes.io/blog/2019/12/09/kubernetes-1-17-feature-cis-volume-snapshot-beta/
 
 ## Installation
 

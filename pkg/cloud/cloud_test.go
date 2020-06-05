@@ -177,14 +177,6 @@ func TestCreateDisk(t *testing.T) {
 				mockEC2.EXPECT().DescribeSnapshotsWithContext(gomock.Eq(ctx), gomock.Any()).Return(&ec2.DescribeSnapshotsOutput{Snapshots: []*ec2.Snapshot{snapshot}}, nil).AnyTimes()
 			}
 
-			if len(tc.diskOptions.AvailabilityZone) == 0 {
-				mockEC2.EXPECT().DescribeAvailabilityZonesWithContext(gomock.Eq(ctx), gomock.Any()).Return(&ec2.DescribeAvailabilityZonesOutput{
-					AvailabilityZones: []*ec2.AvailabilityZone{
-						{ZoneName: aws.String(defaultZone)},
-					},
-				}, nil)
-			}
-
 			disk, err := c.CreateDisk(ctx, tc.volumeName, tc.diskOptions)
 			if err != nil {
 				if tc.expErr == nil {
@@ -1056,6 +1048,11 @@ func newCloud(mockEC2 EC2) Cloud {
 		region: "test-region",
 		dm:     dm.NewDeviceManager(),
 		ec2:    mockEC2,
+		metadata: &Metadata{
+			InstanceID:       "test-instance",
+			Region:           "test-region",
+			AvailabilityZone: defaultZone,
+		},
 	}
 }
 

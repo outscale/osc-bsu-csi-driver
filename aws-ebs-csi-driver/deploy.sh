@@ -13,7 +13,7 @@ fi
 if [[ "${IMAGE_TAG}" == "" ]]; then
 	IMAGE_TAG=latest
 fi
-
+IMAGE_NAME=
 
 helm del --purge aws-ebs-csi-driver --tls
 helm install --name aws-ebs-csi-driver \
@@ -22,4 +22,5 @@ helm install --name aws-ebs-csi-driver \
             --set enableVolumeSnapshot=true \
             --set image.repository=$IMAGE_NAME \
             --set image.tag=$IMAGE_TAG \
-            ./aws-ebs-csi-driver --tls
+            --set image.pullPolicy=Always\
+            ./aws-ebs-csi-driver --tls 

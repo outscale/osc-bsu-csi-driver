@@ -3,7 +3,7 @@
 #-v ${HOME}:/e2e-env/
 #-v /etc/kubectl/:/etc/kubectl/
 
-FROM golang:1.12.7-stretch
+FROM golang:1.14.1-stretch
 
 WORKDIR /root/aws-ebs-csi-driver
 

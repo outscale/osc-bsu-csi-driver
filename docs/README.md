@@ -5,7 +5,7 @@
 
 ## Overview
 
-The Outscale Block Storage Unit Container Storage Interface (CSI) Driver provides a [CSI](https://github.com/container-storage-interface/spec/blob/master/spec.md) interface used by Container Orchestrators to manage the lifecycle of Amazon EBS volumes.
+The Outscale Block Storage Unit Container Storage Interface (CSI) Driver provides a [CSI](https://github.com/container-storage-interface/spec/blob/master/spec.md) interface used by Container Orchestrators to manage the lifecycle of 3DS outscale BSU volumes.
 
 ## CSI Specification Compability Matrix
 
@@ -34,25 +34,25 @@ There are several optional parameters that could be passed into `CreateVolumeReq
 **Notes**:
 * The parameters are case insensitive.
 
-# EBS CSI Driver on Kubernetes
+# BSU CSI Driver on Kubernetes
 Following sections are Kubernetes specific. If you are Kubernetes user, use followings for driver features, installation steps and examples.
 
 ## Kubernetes Version Compability Matrix
-| OSC EBS CSI Driver \ Kubernetes Version|v1.17.4| 
+| OSC BSU CSI Driver \ Kubernetes Version|v1.17.4| 
 |----------------------------------------|-------|
 | OSC-MIGRATION branch                   | yes   |
 
 
 ## Container Images:
-|OSC EBS CSI Driver Version | Image                                     |
+|OSC BSU CSI Driver Version | Image                                     |
 |---------------------------|-------------------------------------------|
 | OSC-MIGRATION branch      |outscale/osc-ebs-csi-driver:v0.0.2beta     |
 
 ## Features
-* **Static Provisioning** - create a new or migrating existing EBS volumes, then create persistence volume (PV) from the EBS volume and consume the PV from container using persistence volume claim (PVC).
-* **Dynamic Provisioning** - uses persistence volume claim (PVC) to request the Kuberenetes to create the EBS volume on behalf of user and consumes the volume from inside container.
+* **Static Provisioning** - create a new or migrating existing BSU volumes, then create persistence volume (PV) from the BSU volume and consume the PV from container using persistence volume claim (PVC).
+* **Dynamic Provisioning** - uses persistence volume claim (PVC) to request the Kuberenetes to create the BSU volume on behalf of user and consumes the volume from inside container.
 * **Mount Option** - mount options could be specified in persistence volume (PV) to define how the volume should be mounted.
-* **Block Volume** (beta since 1.14) - consumes the EBS volume as a raw block device for latency sensitive application eg. MySql
+* **Block Volume** (beta since 1.14) - consumes the BSU volume as a raw block device for latency sensitive application eg. MySql
 * **Volume Snapshot** (beta) - creating volume snapshots and restore volume from snapshot.
 * **Volume Resizing**  - Not supported yet.
 
@@ -167,6 +167,6 @@ export AWS_DEFAULT_REGION=XXX: the Region to be used
 ```
 **Notes**:
 * Sanity tests make sure the driver complies with the CSI specification
-* EC2 instance is required to run integration test, since it is exercising the actual flow of creating EBS volume, attaching it and read/write on the disk. See [Ingetration Testing](../tests/integration/README.md) for more details.
+* EC2 instance is required to run integration test, since it is exercising the actual flow of creating BSU volume, attaching it and read/write on the disk. See [Ingetration Testing](../tests/integration/README.md) for more details.
 * E22 tests exercises various driver functionalities in Kubernetes cluster. See [E2E Testing](../tests/e2e/README.md) for more details.
 

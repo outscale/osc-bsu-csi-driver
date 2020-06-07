@@ -342,9 +342,12 @@ spec:
         beta.kubernetes.io/os: linux
       hostNetwork: true
       priorityClassName: system-node-critical
+{{- with .Values.tolerations }}
       tolerations:
         - key: CriticalAddonsOnly
           operator: Exists
+{{ toYaml . | indent 8 }}
+{{- end }}
       imagePullSecrets:
         - name: {{ .Values.imagePullSecrets | default "registry-dockerconfigjson" }}
       containers:

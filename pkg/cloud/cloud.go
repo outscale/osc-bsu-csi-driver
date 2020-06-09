@@ -468,12 +468,6 @@ func (c *cloud) WaitForAttachmentState(ctx context.Context, volumeID, state stri
 	// By using 1 second starting interval with a backoff of 1.8,
 	// we get [1, 1.8, 3.24, 5.832000000000001, 10.4976].
 	// In total we wait for 2601 seconds.
-	backoff := wait.Backoff{
-		Duration: 1 * time.Second,
-		Factor:   1.8,
-		Steps:    13,
-	}
-
 	verifyVolumeFunc := func() (bool, error) {
 		request := &ec2.DescribeVolumesInput{
 			VolumeIds: []*string{
@@ -504,6 +498,7 @@ func (c *cloud) WaitForAttachmentState(ctx context.Context, volumeID, state stri
 		return false, nil
 	}
 
+	backoff := util.EnvBackoff()
 	return wait.ExponentialBackoff(backoff, verifyVolumeFunc)
 }
 
@@ -585,7 +580,29 @@ func (c *cloud) CreateSnapshot(ctx context.Context, volumeID string, snapshotOpt
 		Description:       aws.String(descriptions),
 	}
 	fmt.Printf("Debug request := &ec2.CreateSnapshotInput{: %+v  \n", request)
-	res, err := c.ec2.CreateSnapshotWithContext(ctx, request)
+	var res *ec2.Snapshot
+	createSnapshotCallBack := func() (bool, error) {
+		res, err = c.ec2.CreateSnapshotWithContext(ctx, request)
+		if err != nil {
+			requestStr := fmt.Sprintf("%v", request)
+			if keepRetryWithError(
+				requestStr,
+				err,
+				[]string{"RequestLimitExceeded"}) {
+				return false, nil
+			}
+			return false, err
+		}
+		return true, nil
+	}
+
+	backoff := util.EnvBackoff()
+	waitErr := wait.ExponentialBackoff(backoff, createSnapshotCallBack)
+	if waitErr != nil {
+		return nil, waitErr
+	}
+
+	err = waitErr
 	if err != nil {
 		return nil, fmt.Errorf("error creating snapshot of volume %s: %v", volumeID, err)
 	}
@@ -599,7 +616,29 @@ func (c *cloud) CreateSnapshot(ctx context.Context, volumeID string, snapshotOpt
 		Tags:      tags,
 	}
 	fmt.Printf("Debug requestTag := &ec2.CreateTagsInput{ : %+v\n", requestTag)
-	resTag, err := c.ec2.CreateTagsWithContext(ctx, requestTag)
+	var resTag *ec2.CreateTagsOutput
+	createTagCallback := func() (bool, error) {
+		resTag, err = c.ec2.CreateTagsWithContext(ctx, requestTag)
+		if err != nil {
+			requestStr := fmt.Sprintf("%v", request)
+			if keepRetryWithError(
+				requestStr,
+				err,
+				[]string{"RequestLimitExceeded"}) {
+				return false, nil
+			}
+			return false, err
+		}
+		return true, nil
+	}
+
+	backoff = util.EnvBackoff()
+	waitErr = wait.ExponentialBackoff(backoff, createTagCallback)
+	if waitErr != nil {
+		return nil, waitErr
+	}
+
+	err = waitErr
 	if err != nil {
 		return nil, fmt.Errorf("error creating tags of snapshot %v: %v", res.SnapshotId, err)
 	}
@@ -726,31 +765,68 @@ func (c *cloud) ec2SnapshotResponseToStruct(ec2Snapshot *ec2.Snapshot) *Snapshot
 	return snapshot
 }
 
+func keepRetryWithError(requestStr string,
+	err error,
+	allowedErrors []string) bool {
+	if awsError, ok := err.(awserr.Error); ok {
+		for _, v := range allowedErrors {
+			if awsError.Code() == v {
+				klog.Warningf(
+					"Retry even if got (%v) error on request (%s)",
+					awsError.Code(),
+					requestStr)
+				return true
+			}
+		}
+	}
+	return false
+}
+
 func (c *cloud) getVolume(ctx context.Context, request *ec2.DescribeVolumesInput) (*ec2.Volume, error) {
 	fmt.Printf("Debug getVolume : %+v\n", request)
-	var volumes []*ec2.Volume
-	var nextToken *string
+	var volume *ec2.Volume
+	getVolumeCallback := func() (bool, error) {
+		var volumes []*ec2.Volume
+		var nextToken *string
 
-	for {
-		response, err := c.ec2.DescribeVolumesWithContext(ctx, request)
-		if err != nil {
-			return nil, err
+		for {
+			response, err := c.ec2.DescribeVolumesWithContext(ctx, request)
+			if err != nil {
+				requestStr := fmt.Sprintf("%v", request)
+				if keepRetryWithError(
+					requestStr,
+					err,
+					[]string{"RequestLimitExceeded"}) {
+					return false, nil
+				}
+				return false, err
+			}
+			volumes = append(volumes, response.Volumes...)
+			nextToken = response.NextToken
+			if aws.StringValue(nextToken) == "" {
+				break
+			}
+			request.NextToken = nextToken
 		}
-		volumes = append(volumes, response.Volumes...)
-		nextToken = response.NextToken
-		if aws.StringValue(nextToken) == "" {
-			break
+
+		if l := len(volumes); l > 1 {
+			return false, ErrMultiDisks
+		} else if l < 1 {
+			return false, ErrNotFound
 		}
-		request.NextToken = nextToken
+
+		volume = volumes[0]
+		return true, nil
 	}
 
-	if l := len(volumes); l > 1 {
-		return nil, ErrMultiDisks
-	} else if l < 1 {
-		return nil, ErrNotFound
+	backoff := util.EnvBackoff()
+	waitErr := wait.ExponentialBackoff(backoff, getVolumeCallback)
+
+	if waitErr != nil {
+		return nil, waitErr
 	}
 
-	return volumes[0], nil
+	return volume, nil
 }
 
 func (c *cloud) getInstance(ctx context.Context, nodeID string) (*ec2.Instance, error) {
@@ -760,22 +836,38 @@ func (c *cloud) getInstance(ctx context.Context, nodeID string) (*ec2.Instance, 
 		InstanceIds: []*string{&nodeID},
 	}
 
-	var nextToken *string
-	for {
-		response, err := c.ec2.DescribeInstancesWithContext(ctx, request)
-		if err != nil {
-			return nil, fmt.Errorf("error listing AWS instances: %q", err)
-		}
+	getInstanceCallback := func() (bool, error) {
+		var nextToken *string
+		for {
+			response, err := c.ec2.DescribeInstancesWithContext(ctx, request)
+			if err != nil {
+				requestStr := fmt.Sprintf("%v", request)
+				if keepRetryWithError(
+					requestStr,
+					err,
+					[]string{"RequestLimitExceeded"}) {
+					return false, nil
+				}
+				return false, fmt.Errorf("error listing AWS instances: %q", err)
+			}
 
-		for _, reservation := range response.Reservations {
-			instances = append(instances, reservation.Instances...)
-		}
+			for _, reservation := range response.Reservations {
+				instances = append(instances, reservation.Instances...)
+			}
 
-		nextToken = response.NextToken
-		if aws.StringValue(nextToken) == "" {
-			break
+			nextToken = response.NextToken
+			if aws.StringValue(nextToken) == "" {
+				break
+			}
+			request.NextToken = nextToken
 		}
-		request.NextToken = nextToken
+		return true, nil
+	}
+
+	backoff := util.EnvBackoff()
+	waitErr := wait.ExponentialBackoff(backoff, getInstanceCallback)
+	if waitErr != nil {
+		return nil, waitErr
 	}
 
 	if l := len(instances); l > 1 {
@@ -790,18 +882,35 @@ func (c *cloud) getInstance(ctx context.Context, nodeID string) (*ec2.Instance, 
 func (c *cloud) getSnapshot(ctx context.Context, request *ec2.DescribeSnapshotsInput) (*ec2.Snapshot, error) {
 	fmt.Printf("Debug  getSnapshot(ctx context.Context : %+v\n", request)
 	var snapshots []*ec2.Snapshot
-	var nextToken *string
-	for {
-		response, err := c.ec2.DescribeSnapshotsWithContext(ctx, request)
-		if err != nil {
-			return nil, err
+
+	getSnapshotsCallback := func() (bool, error) {
+		var nextToken *string
+		for {
+			response, err := c.ec2.DescribeSnapshotsWithContext(ctx, request)
+			if err != nil {
+				requestStr := fmt.Sprintf("%v", request)
+				if keepRetryWithError(
+					requestStr,
+					err,
+					[]string{"RequestLimitExceeded"}) {
+					return false, nil
+				}
+				return false, err
+			}
+			snapshots = append(snapshots, response.Snapshots...)
+			nextToken = response.NextToken
+			if aws.StringValue(nextToken) == "" {
+				break
+			}
+			request.NextToken = nextToken
 		}
-		snapshots = append(snapshots, response.Snapshots...)
-		nextToken = response.NextToken
-		if aws.StringValue(nextToken) == "" {
-			break
-		}
-		request.NextToken = nextToken
+		return true, nil
+	}
+
+	backoff := util.EnvBackoff()
+	waitErr := wait.ExponentialBackoff(backoff, getSnapshotsCallback)
+	if waitErr != nil {
+		return nil, waitErr
 	}
 
 	fmt.Printf("Debug  len(snapshots): %+v\n", len(snapshots))
@@ -823,14 +932,32 @@ func (c *cloud) listSnapshots(ctx context.Context, request *ec2.DescribeSnapshot
 	var snapshots []*ec2.Snapshot
 	var nextToken *string
 	fmt.Printf("Debug  listSnapshots(ctx context.Context : %+v\n", request)
-	response, err := c.ec2.DescribeSnapshotsWithContext(ctx, request)
 
-	if err != nil {
-		return nil, err
+	var response *ec2.DescribeSnapshotsOutput
+	var err error
+	listSnapshotsCallBack := func() (bool, error) {
+		response, err = c.ec2.DescribeSnapshotsWithContext(ctx, request)
+		if err != nil {
+			requestStr := fmt.Sprintf("%v", request)
+			if keepRetryWithError(
+				requestStr,
+				err,
+				[]string{"RequestLimitExceeded"}) {
+				return false, nil
+			}
+			return false, err
+		}
+		return true, nil
 	}
+	backoff := util.EnvBackoff()
+	waitErr := wait.ExponentialBackoff(backoff, listSnapshotsCallBack)
+
+	if waitErr != nil {
+		return nil, waitErr
+	}
+
 	fmt.Printf("Debug  response.Snapshots : %+v\n", response.Snapshots)
 	snapshots = append(snapshots, response.Snapshots...)
-
 	if response.NextToken != nil {
 		nextToken = response.NextToken
 	}
@@ -962,13 +1089,8 @@ func (c *cloud) ResizeDisk(ctx context.Context, volumeID string, newSizeBytes in
 // waitForVolumeSize waits for a volume modification to finish and return its size.
 func (c *cloud) waitForVolumeSize(ctx context.Context, volumeID string) (int64, error) {
 	fmt.Printf("Debug waitForVolumeSize : %+v\n", volumeID)
-	backoff := wait.Backoff{
-		Duration: 1 * time.Second,
-		Factor:   1.8,
-		Steps:    20,
-	}
-
 	var modVolSizeGiB int64
+	backoff := util.EnvBackoff()
 	waitErr := wait.ExponentialBackoff(backoff, func() (bool, error) {
 		m, err := c.getLatestVolumeModification(ctx, volumeID)
 		if err != nil {
@@ -999,9 +1121,28 @@ func (c *cloud) getLatestVolumeModification(ctx context.Context, volumeID string
 			aws.String(volumeID),
 		},
 	}
-	mod, err := c.ec2.DescribeVolumesModificationsWithContext(ctx, request)
-	if err != nil {
-		return nil, fmt.Errorf("error describing modifications in volume %q: %v", volumeID, err)
+	var err error
+	var mod *ec2.DescribeVolumesModificationsOutput
+	describeVolModCallback := func() (bool, error) {
+		mod, err = c.ec2.DescribeVolumesModificationsWithContext(ctx, request)
+		if err != nil {
+			requestStr := fmt.Sprintf("%v", request)
+			if keepRetryWithError(
+				requestStr,
+				err,
+				[]string{"RequestLimitExceeded"}) {
+				return false, nil
+			}
+			return false, fmt.Errorf("error describing modifications in volume %q: %v", volumeID, err)
+		}
+		return true, nil
+	}
+
+	backoff := util.EnvBackoff()
+	waitErr := wait.ExponentialBackoff(backoff, describeVolModCallback)
+
+	if waitErr != nil {
+		return nil, waitErr
 	}
 
 	volumeMods := mod.VolumesModifications

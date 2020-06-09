@@ -109,7 +109,7 @@ func (d *Driver) Run() error {
 	logErr := func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
 		resp, err := handler(ctx, req)
 		if err != nil {
-			klog.Errorf("GRPC error: %v", err)
+			klog.Errorf("GRPC error: %v / (%v)", err, resp)
 		}
 		return resp, err
 	}

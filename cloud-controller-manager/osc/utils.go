@@ -591,7 +591,7 @@ func extractNodeAddresses(instance *ec2.Instance) ([]v1.NodeAddress, error) {
 			addresses = append(addresses, v1.NodeAddress{Type: v1.NodeInternalIP, Address: ip.String()})
 		}
 	}
-
+	
 	// TODO: Other IP addresses (multiple ips)?
 	publicIPAddress := aws.StringValue(instance.PublicIpAddress)
 	if publicIPAddress != "" {
@@ -602,6 +602,12 @@ func extractNodeAddresses(instance *ec2.Instance) ([]v1.NodeAddress, error) {
 		addresses = append(addresses, v1.NodeAddress{Type: v1.NodeExternalIP, Address: ip.String()})
 	}
 
+	privateDNSName := aws.StringValue(instance.PrivateDnsName)
+	if privateDNSName != "" {
+		addresses = append(addresses, v1.NodeAddress{Type: v1.NodeInternalDNS, Address: privateDNSName})
+		addresses = append(addresses, v1.NodeAddress{Type: v1.NodeHostName, Address: privateDNSName})
+	}
+	
 	publicDNSName := aws.StringValue(instance.PublicDnsName)
 	if publicDNSName != "" {
 		addresses = append(addresses, v1.NodeAddress{Type: v1.NodeExternalDNS, Address: publicDNSName})

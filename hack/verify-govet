@@ -15,6 +15,7 @@
 # limitations under the License.
 
 set -euo pipefail
+set -x
 
 echo "Verifying govet"
 

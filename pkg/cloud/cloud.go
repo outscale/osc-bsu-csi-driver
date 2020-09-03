@@ -427,7 +427,27 @@ func (c *cloud) AttachDisk(ctx context.Context, volumeID, nodeID string) (string
 }
 
 func (c *cloud) DetachDisk(ctx context.Context, volumeID, nodeID string) error {
-	fmt.Printf("Debug DetachDisk: %+v, %v\n", volumeID, nodeID)
+	klog.Infof("Debug DetachDisk: %+v, %v\n", volumeID, nodeID)
+	{
+		klog.Infof("Check Volume state before detaching")
+		//Check if the volume is attached to VM
+		request := &ec2.DescribeVolumesInput{
+			VolumeIds: []*string{
+				aws.String(volumeID),
+			},
+		}
+		volume, err := c.getVolume(ctx, request)
+		klog.Infof("Check Volume state before detaching volume: %+v err: %+v",
+			volume, err)
+		if err == nil && volume != nil {
+			if volume.State != nil && *volume.State == "available" {
+				klog.Warningf("Tolerate DetachDisk called on available volume: %s on %s",
+					volumeID, nodeID)
+				return nil
+			}
+		}
+	}
+	klog.Infof("Debug Continue DetachDisk: %+v, %v\n", volumeID, nodeID)
 	instance, err := c.getInstance(ctx, nodeID)
 	if err != nil {
 		return err

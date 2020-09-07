@@ -116,11 +116,6 @@ func newAWSCloud(cfg CloudConfig, awsServices Services) (*Cloud, error) {
 		return nil, fmt.Errorf("error creating OSC key management client: %v", err)
 	}
 
-	klog.Infof("Init Services/LoadBalancingV2")
-	elbv2, err := awsServices.LoadBalancingV2(regionName)
-	if err != nil {
-		return nil, fmt.Errorf("error creating OSC ELBV2 client: %v", err)
-	}
 	klog.Infof("Init Services/Autoscaling")
 	asg, err := awsServices.Autoscaling(regionName)
 	if err != nil {
@@ -130,7 +125,6 @@ func newAWSCloud(cfg CloudConfig, awsServices Services) (*Cloud, error) {
 	awsCloud := &Cloud{
 		ec2:      ec2,
 		elb:      elb,
-		elbv2:    elbv2,
 		asg:      asg,
 		metadata: metadata,
 		kms:      kms,

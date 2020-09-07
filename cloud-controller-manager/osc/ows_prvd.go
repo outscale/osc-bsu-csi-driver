@@ -29,7 +29,6 @@ import (
 	"github.com/aws/aws-sdk-go/service/autoscaling"
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/aws/aws-sdk-go/service/elb"
-	"github.com/aws/aws-sdk-go/service/elbv2"
 	"github.com/aws/aws-sdk-go/service/kms"
 
 	"k8s.io/client-go/pkg/version"
@@ -134,20 +133,6 @@ func (p *awsSDKProvider) LoadBalancing(regionName string) (ELB, error) {
 		return nil, fmt.Errorf("unable to initialize AWS session: %v", err)
 	}
 	elbClient := elb.New(sess)
-	p.addHandlers(regionName, &elbClient.Handlers)
-
-	return elbClient, nil
-}
-
-func (p *awsSDKProvider) LoadBalancingV2(regionName string) (ELBV2, error) {
-	debugPrintCallerFunctionName()
-	klog.V(10).Infof("LoadBalancingV2(%v)", regionName)
-	sess, err := NewSession()
-	if err != nil {
-		return nil, fmt.Errorf("unable to initialize AWS session: %v", err)
-	}
-	elbClient := elbv2.New(sess)
-
 	p.addHandlers(regionName, &elbClient.Handlers)
 
 	return elbClient, nil

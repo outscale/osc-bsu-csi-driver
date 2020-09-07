@@ -159,11 +159,6 @@ const ServiceAnnotationLoadBalancerHCTimeout = "service.beta.kubernetes.io/aws-l
 // service to specify, in seconds, the interval between health checks.
 const ServiceAnnotationLoadBalancerHCInterval = "service.beta.kubernetes.io/aws-load-balancer-healthcheck-interval"
 
-// ServiceAnnotationLoadBalancerEIPAllocations is the annotation used on the
-// service to specify a comma separated list of EIP allocations to use as
-// static IP addresses for the NLB. Only supported on elbv2 (NLB)
-const ServiceAnnotationLoadBalancerEIPAllocations = "service.beta.kubernetes.io/aws-load-balancer-eip-allocations"
-
 // Event key when a volume is stuck on attaching state when being attached to a volume
 const volumeAttachmentStuck = "VolumeAttachmentStuck"
 

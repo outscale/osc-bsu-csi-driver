@@ -31,7 +31,6 @@ import (
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/aws/aws-sdk-go/service/elb"
-	"github.com/aws/aws-sdk-go/service/elbv2"
 	"k8s.io/api/core/v1"
 	"k8s.io/klog"
 
@@ -61,7 +60,6 @@ import (
 type Cloud struct {
 	ec2      EC2
 	elb      ELB
-	elbv2    ELBV2
 	asg      ASG
 	kms      KMS
 	metadata EC2Metadata
@@ -1285,34 +1283,6 @@ func (c *Cloud) describeLoadBalancer(name string) (*elb.LoadBalancerDescription,
 	return ret, nil
 }
 
-// Gets the current load balancer state
-func (c *Cloud) describeLoadBalancerv2(name string) (*elbv2.LoadBalancer, error) {
-	debugPrintCallerFunctionName()
-	klog.V(10).Infof("describeLoadBalancerv2(%v)", name)
-	request := &elbv2.DescribeLoadBalancersInput{
-		Names: []*string{aws.String(name)},
-	}
-
-	response, err := c.elbv2.DescribeLoadBalancers(request)
-	if err != nil {
-		if awsError, ok := err.(awserr.Error); ok {
-			if awsError.Code() == elbv2.ErrCodeLoadBalancerNotFoundException {
-				return nil, nil
-			}
-		}
-		return nil, fmt.Errorf("error describing load balancer: %q", err)
-	}
-
-	// AWS will not return 2 load balancers with the same name _and_ type.
-	for i := range response.LoadBalancers {
-		if aws.StringValue(response.LoadBalancers[i].Type) == elbv2.LoadBalancerTypeEnumNetwork {
-			return response.LoadBalancers[i], nil
-		}
-	}
-
-	return nil, fmt.Errorf("NLB '%s' could not be found", name)
-}
-
 // Retrieves the specified security group from the AWS API, or returns nil if not found
 func (c *Cloud) findSecurityGroup(securityGroupID string) (*ec2.SecurityGroup, error) {
 	debugPrintCallerFunctionName()
@@ -1862,7 +1832,6 @@ func (c *Cloud) EnsureLoadBalancer(ctx context.Context, clusterName string, apiS
 
 	// Figure out what mappings we want on the load balancer
 	listeners := []*elb.Listener{}
-	v2Mappings := []nlbPortMapping{}
 
 	sslPorts := getPortSets(annotations[ServiceAnnotationLoadBalancerSSLPorts])
 
@@ -1875,32 +1844,6 @@ func (c *Cloud) EnsureLoadBalancer(ctx context.Context, clusterName string, apiS
 			continue
 		}
 
-		if isNLB(annotations) {
-			portMapping := nlbPortMapping{
-				FrontendPort:     int64(port.Port),
-				FrontendProtocol: string(port.Protocol),
-				TrafficPort:      int64(port.NodePort),
-				TrafficProtocol:  string(port.Protocol),
-
-				// if externalTrafficPolicy == "Local", we'll override the
-				// health check later
-				HealthCheckPort:     int64(port.NodePort),
-				HealthCheckProtocol: elbv2.ProtocolEnumTcp,
-			}
-
-			certificateARN := annotations[ServiceAnnotationLoadBalancerCertificate]
-			if certificateARN != "" && (sslPorts == nil || sslPorts.numbers.Has(int64(port.Port)) || sslPorts.names.Has(port.Name)) {
-				portMapping.FrontendProtocol = elbv2.ProtocolEnumTls
-				portMapping.SSLCertificateARN = certificateARN
-				portMapping.SSLPolicy = annotations[ServiceAnnotationLoadBalancerSSLNegotiationPolicy]
-
-				if backendProtocol := annotations[ServiceAnnotationLoadBalancerBEProtocol]; backendProtocol == "ssl" {
-					portMapping.TrafficProtocol = elbv2.ProtocolEnumTls
-				}
-			}
-
-			v2Mappings = append(v2Mappings, portMapping)
-		}
 		listener, err := buildListener(port, annotations, sslPorts)
 		if err != nil {
 			return nil, err
@@ -1933,71 +1876,6 @@ func (c *Cloud) EnsureLoadBalancer(ctx context.Context, clusterName string, apiS
 		internalELB = true
 	}
 	klog.V(10).Infof("Debug OSC:  internalELB : %v", internalELB)
-
-	if isNLB(annotations) {
-
-		if path, healthCheckNodePort := servicehelpers.GetServiceHealthCheckPathPort(apiService); path != "" {
-			for i := range v2Mappings {
-				v2Mappings[i].HealthCheckPort = int64(healthCheckNodePort)
-				v2Mappings[i].HealthCheckPath = path
-				v2Mappings[i].HealthCheckProtocol = elbv2.ProtocolEnumHttp
-			}
-		}
-
-		// Find the subnets that the ELB will live in
-		subnetIDs, err := c.findELBSubnets(internalELB)
-		klog.V(10).Infof("Debug OSC:  c.findELBSubnets(internalELB) : %v", subnetIDs)
-
-		if err != nil {
-			klog.Errorf("Error listing subnets in VPC: %q", err)
-			return nil, err
-		}
-		// Bail out early if there are no subnets
-		if len(subnetIDs) == 0 {
-			return nil, fmt.Errorf("could not find any suitable subnets for creating the ELB")
-		}
-
-		loadBalancerName := c.GetLoadBalancerName(ctx, clusterName, apiService)
-		serviceName := types.NamespacedName{Namespace: apiService.Namespace, Name: apiService.Name}
-
-		instanceIDs := []string{}
-		for id := range instances {
-			instanceIDs = append(instanceIDs, string(id))
-		}
-
-		v2LoadBalancer, err := c.ensureLoadBalancerv2(
-			serviceName,
-			loadBalancerName,
-			v2Mappings,
-			instanceIDs,
-			subnetIDs,
-			internalELB,
-			annotations,
-		)
-		if err != nil {
-			return nil, err
-		}
-
-		sourceRangeCidrs := []string{}
-		for cidr := range sourceRanges {
-			sourceRangeCidrs = append(sourceRangeCidrs, cidr)
-		}
-		if len(sourceRangeCidrs) == 0 {
-			sourceRangeCidrs = append(sourceRangeCidrs, "0.0.0.0/0")
-		}
-
-		err = c.updateInstanceSecurityGroupsForNLB(loadBalancerName, instances, sourceRangeCidrs, v2Mappings)
-		if err != nil {
-			klog.Warningf("Error opening ingress rules for the load balancer to the instances: %q", err)
-			return nil, err
-		}
-
-		// We don't have an `ensureLoadBalancerInstances()` function for elbv2
-		// because `ensureLoadBalancerv2()` requires instance Ids
-
-		// TODO: Wait for creation?
-		return v2toStatus(v2LoadBalancer), nil
-	}
 
 	// Determine if we need to set the Proxy protocol policy
 	proxyProtocol := false
@@ -2261,17 +2139,6 @@ func (c *Cloud) GetLoadBalancer(ctx context.Context, clusterName string, service
 	klog.V(10).Infof("GetLoadBalancer(%v,%v)", clusterName, service)
 	loadBalancerName := c.GetLoadBalancerName(ctx, clusterName, service)
 
-	if isNLB(service.Annotations) {
-		lb, err := c.describeLoadBalancerv2(loadBalancerName)
-		if err != nil {
-			return nil, false, err
-		}
-		if lb == nil {
-			return nil, false, nil
-		}
-		return v2toStatus(lb), true, nil
-	}
-
 	lb, err := c.describeLoadBalancer(loadBalancerName)
 	if err != nil {
 		return nil, false, err
@@ -2496,55 +2363,6 @@ func (c *Cloud) EnsureLoadBalancerDeleted(ctx context.Context, clusterName strin
 	klog.V(10).Infof("EnsureLoadBalancerDeleted(%v, %v)", clusterName, service)
 	loadBalancerName := c.GetLoadBalancerName(ctx, clusterName, service)
 
-	if isNLB(service.Annotations) {
-		lb, err := c.describeLoadBalancerv2(loadBalancerName)
-		if err != nil {
-			return err
-		}
-		if lb == nil {
-			klog.Info("Load balancer already deleted: ", loadBalancerName)
-			return nil
-		}
-
-		// Delete the LoadBalancer and target groups
-		//
-		// Deleting a target group while associated with a load balancer will
-		// fail. We delete the loadbalancer first. This does leave the
-		// possibility of zombie target groups if DeleteLoadBalancer() fails
-		//
-		// * Get target groups for NLB
-		// * Delete Load Balancer
-		// * Delete target groups
-		// * Clean up SecurityGroupRules
-		{
-
-			targetGroups, err := c.elbv2.DescribeTargetGroups(
-				&elbv2.DescribeTargetGroupsInput{LoadBalancerArn: lb.LoadBalancerArn},
-			)
-			if err != nil {
-				return fmt.Errorf("error listing target groups before deleting load balancer: %q", err)
-			}
-
-			_, err = c.elbv2.DeleteLoadBalancer(
-				&elbv2.DeleteLoadBalancerInput{LoadBalancerArn: lb.LoadBalancerArn},
-			)
-			if err != nil {
-				return fmt.Errorf("error deleting load balancer %q: %v", loadBalancerName, err)
-			}
-
-			for _, group := range targetGroups.TargetGroups {
-				_, err := c.elbv2.DeleteTargetGroup(
-					&elbv2.DeleteTargetGroupInput{TargetGroupArn: group.TargetGroupArn},
-				)
-				if err != nil {
-					return fmt.Errorf("error deleting target groups after deleting load balancer: %q", err)
-				}
-			}
-		}
-
-		return c.updateInstanceSecurityGroupsForNLB(loadBalancerName, nil, nil, nil)
-	}
-
 	lb, err := c.describeLoadBalancer(loadBalancerName)
 	if err != nil {
 		return err
@@ -2688,17 +2506,6 @@ func (c *Cloud) UpdateLoadBalancer(ctx context.Context, clusterName string, serv
 	}
 
 	loadBalancerName := c.GetLoadBalancerName(ctx, clusterName, service)
-	if isNLB(service.Annotations) {
-		lb, err := c.describeLoadBalancerv2(loadBalancerName)
-		if err != nil {
-			return err
-		}
-		if lb == nil {
-			return fmt.Errorf("Load balancer not found")
-		}
-		_, err = c.EnsureLoadBalancer(ctx, clusterName, service, nodes)
-		return err
-	}
 	lb, err := c.describeLoadBalancer(loadBalancerName)
 	if err != nil {
 		return err

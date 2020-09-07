@@ -31,7 +31,6 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/aws/aws-sdk-go/service/elb"
-	"github.com/aws/aws-sdk-go/service/elbv2"
 
 	"k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -328,24 +327,6 @@ func toStatus(lb *elb.LoadBalancerDescription) *v1.LoadBalancerStatus {
 	status := &v1.LoadBalancerStatus{}
 
 	if aws.StringValue(lb.DNSName) != "" {
-		var ingress v1.LoadBalancerIngress
-		ingress.Hostname = aws.StringValue(lb.DNSName)
-		status.Ingress = []v1.LoadBalancerIngress{ingress}
-	}
-
-	return status
-}
-
-func v2toStatus(lb *elbv2.LoadBalancer) *v1.LoadBalancerStatus {
-	status := &v1.LoadBalancerStatus{}
-	if lb == nil {
-		klog.Error("[BUG] v2toStatus got nil input, this is a Kubernetes bug, please report")
-		return status
-	}
-
-	// We check for Active or Provisioning, the only successful statuses
-	if aws.StringValue(lb.DNSName) != "" && (aws.StringValue(lb.State.Code) == elbv2.LoadBalancerStateEnumActive ||
-		aws.StringValue(lb.State.Code) == elbv2.LoadBalancerStateEnumProvisioning) {
 		var ingress v1.LoadBalancerIngress
 		ingress.Hostname = aws.StringValue(lb.DNSName)
 		status.Ingress = []v1.LoadBalancerIngress{ingress}

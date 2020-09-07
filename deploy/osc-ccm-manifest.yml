@@ -40,8 +40,8 @@ spec:
       serviceAccountName: cloud-controller-manager
       containers:
         - name: osc-cloud-controller-manager
-          image: outscale/cloud-provider-osc:v0.0.2beta
-          imagePullPolicy: IfNotPresent
+          image: outscale/cloud-provider-osc:dev
+          imagePullPolicy: Always
           command:
             - /bin/osc-cloud-controller-manager
             - --leader-elect=true

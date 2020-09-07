@@ -1008,73 +1008,49 @@ func (c *Cloud) ensureLoadBalancer(namespacedName types.NamespacedName, loadBala
 		dirty = true
 	} else {
 		// TODO: Sync internal vs non-internal
-
 		{
 			// Sync subnets
 			expected := sets.NewString(subnetIDs...)
 			actual := stringSetFromPointers(loadBalancer.Subnets)
-
 			additions := expected.Difference(actual)
 			removals := actual.Difference(expected)
-
+			klog.Warningf("AttachLoadBalancerToSubnets/DetachLoadBalancerFromSubnets loadBalancer: %v / expected: %v / actual %v / additions %v / removals %v",
+				loadBalancer, expected, actual, additions, removals)
 			if removals.Len() != 0 {
-				request := &elb.DetachLoadBalancerFromSubnetsInput{}
-				request.LoadBalancerName = aws.String(loadBalancerName)
-				request.Subnets = stringSetToPointers(removals)
-				klog.V(2).Info("Detaching load balancer from removed subnets")
-				_, err := c.elb.DetachLoadBalancerFromSubnets(request)
-				if err != nil {
-					return nil, fmt.Errorf("error detaching AWS loadbalancer from subnets: %q", err)
-				}
+				klog.Warningf("DetachLoadBalancerFromSubnets not supported loadBalancer: %v / expected: %v / actual %v / additions %v / removals %v",
+					loadBalancer, expected, actual, additions, removals)
 				dirty = true
 			}
-
 			if additions.Len() != 0 {
-				request := &elb.AttachLoadBalancerToSubnetsInput{}
-				request.LoadBalancerName = aws.String(loadBalancerName)
-				request.Subnets = stringSetToPointers(additions)
-				klog.V(2).Info("Attaching load balancer to added subnets")
-				_, err := c.elb.AttachLoadBalancerToSubnets(request)
-				if err != nil {
-					return nil, fmt.Errorf("error attaching AWS loadbalancer to subnets: %q", err)
-				}
+				klog.Warningf("AttachLoadBalancerToSubnets not supported loadBalancer: %v / expected: %v / actual %v / additions %v / removals %v",
+					loadBalancer, expected, actual, additions, removals)
 				dirty = true
 			}
 		}
-
 		{
 			// Sync security groups
 			expected := sets.NewString(securityGroupIDs...)
 			actual := stringSetFromPointers(loadBalancer.SecurityGroups)
+			if len(subnetIDs) == 0 || c.vpcID == "" {
+				actual = sets.NewString([]string{DefaultSrcSgName}...)
+			}
 
+			klog.Infof("ApplySecurityGroupsToLoadBalancer: loadBalancer: %v expected: %v / actual %v",
+				loadBalancer, expected, actual)
 			if !expected.Equal(actual) {
-				// This call just replaces the security groups, unlike e.g. subnets (!)
-				request := &elb.ApplySecurityGroupsToLoadBalancerInput{}
-				request.LoadBalancerName = aws.String(loadBalancerName)
-				if securityGroupIDs == nil {
-					request.SecurityGroups = nil
-				} else {
-					request.SecurityGroups = aws.StringSlice(securityGroupIDs)
-				}
-				klog.V(2).Info("Applying updated security groups to load balancer")
-				_, err := c.elb.ApplySecurityGroupsToLoadBalancer(request)
-				if err != nil {
-					return nil, fmt.Errorf("error applying AWS loadbalancer security groups: %q", err)
-				}
-				dirty = true
+				klog.Warningf("ApplySecurityGroupsToLoadBalancer not supported loadBalancer: %v expected: %v / actual %v",
+					loadBalancer, expected, actual)
 			}
 		}
-
 		{
 			additions, removals := syncElbListeners(loadBalancerName, listeners, loadBalancer.ListenerDescriptions)
-
 			if len(removals) != 0 {
 				request := &elb.DeleteLoadBalancerListenersInput{}
 				request.LoadBalancerName = aws.String(loadBalancerName)
 				request.LoadBalancerPorts = removals
 				klog.V(2).Info("Deleting removed load balancer listeners")
 				if _, err := c.elb.DeleteLoadBalancerListeners(request); err != nil {
-					return nil, fmt.Errorf("error deleting AWS loadbalancer listeners: %q", err)
+					return nil, fmt.Errorf("error deleting OSC loadbalancer listeners: %q", err)
 				}
 				dirty = true
 			}
@@ -1085,7 +1061,7 @@ func (c *Cloud) ensureLoadBalancer(namespacedName types.NamespacedName, loadBala
 				request.Listeners = additions
 				klog.V(2).Info("Creating added load balancer listeners")
 				if _, err := c.elb.CreateLoadBalancerListeners(request); err != nil {
-					return nil, fmt.Errorf("error creating AWS loadbalancer listeners: %q", err)
+					return nil, fmt.Errorf("error creating OSC loadbalancer listeners: %q", err)
 				}
 				dirty = true
 			}

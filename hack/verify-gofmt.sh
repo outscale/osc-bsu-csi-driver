@@ -17,7 +17,7 @@
 set -o errexit
 set -o nounset
 set -o pipefail
-
+set -x
 if ! which gofmt > /dev/null; then
   echo "Can not find gofmt"
   exit 1

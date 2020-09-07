@@ -39,6 +39,9 @@ ARG VERSION=unknown
 ARG GOPROXY
 
 WORKDIR /build
+COPY go.mod .
+COPY go.sum .
+RUN go mod download
 COPY . .
 ENV CGO_ENABLED=0
 ENV GOPROXY=${GOPROXY:-https://proxy.golang.org}

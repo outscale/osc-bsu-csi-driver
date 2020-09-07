@@ -25,7 +25,6 @@ import (
 	"github.com/aws/aws-sdk-go/aws/ec2metadata"
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/aws/aws-sdk-go/service/elb"
-	"github.com/aws/aws-sdk-go/service/kms"
 	"k8s.io/klog"
 )
 
@@ -41,7 +40,6 @@ type FakeAWSServices struct {
 	ec2      FakeEC2
 	elb      ELB
 	metadata *FakeMetadata
-	kms      *FakeKMS
 }
 
 // NewFakeAWSServices creates a new FakeAWSServices
@@ -51,7 +49,6 @@ func NewFakeAWSServices(clusterID string) *FakeAWSServices {
 	s.ec2 = &FakeEC2Impl{aws: s}
 	s.elb = &FakeELB{aws: s}
 	s.metadata = &FakeMetadata{aws: s}
-	s.kms = &FakeKMS{aws: s}
 
 	s.networkInterfacesMacs = []string{"aa:bb:cc:dd:ee:00", "aa:bb:cc:dd:ee:01"}
 	s.networkInterfacesVpcIDs = []string{"vpc-mac0", "vpc-mac1"}
@@ -97,11 +94,6 @@ func (s *FakeAWSServices) LoadBalancing(region string) (ELB, error) {
 // Metadata returns a fake EC2Metadata client
 func (s *FakeAWSServices) Metadata() (EC2Metadata, error) {
 	return s.metadata, nil
-}
-
-// KeyManagement returns a fake KMS client
-func (s *FakeAWSServices) KeyManagement(region string) (KMS, error) {
-	return s.kms, nil
 }
 
 // FakeEC2 is a fake EC2 client used for testing
@@ -472,16 +464,6 @@ func (elb *FakeELB) ModifyLoadBalancerAttributes(*elb.ModifyLoadBalancerAttribut
 // expectDescribeLoadBalancers is not implemented but is required for interface
 // conformance
 func (elb *FakeELB) expectDescribeLoadBalancers(loadBalancerName string) {
-	panic("Not implemented")
-}
-
-// FakeKMS is a fake KMS client used for testing
-type FakeKMS struct {
-	aws *FakeAWSServices
-}
-
-// DescribeKey is not implemented but is required for interface conformance
-func (kms *FakeKMS) DescribeKey(*kms.DescribeKeyInput) (*kms.DescribeKeyOutput, error) {
 	panic("Not implemented")
 }
 

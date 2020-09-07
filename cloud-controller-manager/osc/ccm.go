@@ -110,17 +110,10 @@ func newAWSCloud(cfg CloudConfig, awsServices Services) (*Cloud, error) {
 		return nil, fmt.Errorf("error creating OSC ELB client: %v", err)
 	}
 
-	klog.Infof("Init Services/KeyManagement")
-	kms, err := awsServices.KeyManagement(regionName)
-	if err != nil {
-		return nil, fmt.Errorf("error creating OSC key management client: %v", err)
-	}
-
 	awsCloud := &Cloud{
 		ec2:      ec2,
 		elb:      elb,
 		metadata: metadata,
-		kms:      kms,
 		cfg:      &cfg,
 		region:   regionName,
 

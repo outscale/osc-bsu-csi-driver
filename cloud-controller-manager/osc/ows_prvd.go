@@ -28,7 +28,6 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/aws/aws-sdk-go/service/elb"
-	"github.com/aws/aws-sdk-go/service/kms"
 
 	"k8s.io/client-go/pkg/version"
 	"k8s.io/klog"
@@ -149,18 +148,4 @@ func (p *awsSDKProvider) Metadata() (EC2Metadata, error) {
 	client := ec2metadata.New(sess)
 	p.addAPILoggingHandlers(&client.Handlers)
 	return client, nil
-}
-
-func (p *awsSDKProvider) KeyManagement(regionName string) (KMS, error) {
-	debugPrintCallerFunctionName()
-	klog.V(10).Infof("KeyManagement(%v)", regionName)
-	sess, err := NewSession()
-	if err != nil {
-		return nil, fmt.Errorf("unable to initialize AWS session: %v", err)
-	}
-	kmsClient := kms.New(sess)
-
-	p.addHandlers(regionName, &kmsClient.Handlers)
-
-	return kmsClient, nil
 }

@@ -23,5 +23,4 @@ type Services interface {
 	Compute(region string) (EC2, error)
 	LoadBalancing(region string) (ELB, error)
 	Metadata() (EC2Metadata, error)
-	KeyManagement(region string) (KMS, error)
 }

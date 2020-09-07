@@ -20,7 +20,6 @@ import (
 	"github.com/aws/aws-sdk-go/aws/ec2metadata"
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/aws/aws-sdk-go/service/elb"
-	"github.com/aws/aws-sdk-go/service/kms"
 )
 
 // ********************* CCM API interfaces *********************
@@ -93,12 +92,6 @@ type ELB interface {
 
 	DescribeLoadBalancerAttributes(*elb.DescribeLoadBalancerAttributesInput) (*elb.DescribeLoadBalancerAttributesOutput, error)
 	ModifyLoadBalancerAttributes(*elb.ModifyLoadBalancerAttributesInput) (*elb.ModifyLoadBalancerAttributesOutput, error)
-}
-
-// KMS is a simple pass-through of the Key Management Service client interface,
-// which allows for testing.
-type KMS interface {
-	DescribeKey(*kms.DescribeKeyInput) (*kms.DescribeKeyOutput, error)
 }
 
 // EC2Metadata is an abstraction over the AWS metadata service.

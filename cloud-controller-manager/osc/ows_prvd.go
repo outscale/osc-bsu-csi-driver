@@ -26,7 +26,6 @@ import (
 	"github.com/aws/aws-sdk-go/aws/endpoints"
 	"github.com/aws/aws-sdk-go/aws/request"
 	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/autoscaling"
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/aws/aws-sdk-go/service/elb"
 	"github.com/aws/aws-sdk-go/service/kms"
@@ -136,20 +135,6 @@ func (p *awsSDKProvider) LoadBalancing(regionName string) (ELB, error) {
 	p.addHandlers(regionName, &elbClient.Handlers)
 
 	return elbClient, nil
-}
-
-func (p *awsSDKProvider) Autoscaling(regionName string) (ASG, error) {
-	debugPrintCallerFunctionName()
-	klog.V(10).Infof("Autoscaling(%v)", regionName)
-	sess, err := NewSession()
-	if err != nil {
-		return nil, fmt.Errorf("unable to initialize AWS session: %v", err)
-	}
-	client := autoscaling.New(sess)
-
-	p.addHandlers(regionName, &client.Handlers)
-
-	return client, nil
 }
 
 func (p *awsSDKProvider) Metadata() (EC2Metadata, error) {

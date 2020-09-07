@@ -60,7 +60,6 @@ import (
 type Cloud struct {
 	ec2      EC2
 	elb      ELB
-	asg      ASG
 	kms      KMS
 	metadata EC2Metadata
 	cfg      *CloudConfig

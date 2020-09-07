@@ -22,7 +22,6 @@ package osc
 type Services interface {
 	Compute(region string) (EC2, error)
 	LoadBalancing(region string) (ELB, error)
-	Autoscaling(region string) (ASG, error)
 	Metadata() (EC2Metadata, error)
 	KeyManagement(region string) (KMS, error)
 }

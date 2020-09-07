@@ -23,7 +23,6 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/ec2metadata"
-	"github.com/aws/aws-sdk-go/service/autoscaling"
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/aws/aws-sdk-go/service/elb"
 	"github.com/aws/aws-sdk-go/service/kms"
@@ -41,7 +40,6 @@ type FakeAWSServices struct {
 
 	ec2      FakeEC2
 	elb      ELB
-	asg      *FakeASG
 	metadata *FakeMetadata
 	kms      *FakeKMS
 }
@@ -52,7 +50,6 @@ func NewFakeAWSServices(clusterID string) *FakeAWSServices {
 	s.region = "us-east-1"
 	s.ec2 = &FakeEC2Impl{aws: s}
 	s.elb = &FakeELB{aws: s}
-	s.asg = &FakeASG{aws: s}
 	s.metadata = &FakeMetadata{aws: s}
 	s.kms = &FakeKMS{aws: s}
 
@@ -95,11 +92,6 @@ func (s *FakeAWSServices) Compute(region string) (EC2, error) {
 // LoadBalancing returns a fake ELB client
 func (s *FakeAWSServices) LoadBalancing(region string) (ELB, error) {
 	return s.elb, nil
-}
-
-// Autoscaling returns a fake ASG client
-func (s *FakeAWSServices) Autoscaling(region string) (ASG, error) {
-	return s.asg, nil
 }
 
 // Metadata returns a fake EC2Metadata client
@@ -480,23 +472,6 @@ func (elb *FakeELB) ModifyLoadBalancerAttributes(*elb.ModifyLoadBalancerAttribut
 // expectDescribeLoadBalancers is not implemented but is required for interface
 // conformance
 func (elb *FakeELB) expectDescribeLoadBalancers(loadBalancerName string) {
-	panic("Not implemented")
-}
-
-// FakeASG is a fake Autoscaling client used for testing
-type FakeASG struct {
-	aws *FakeAWSServices
-}
-
-// UpdateAutoScalingGroup is not implemented but is required for interface
-// conformance
-func (a *FakeASG) UpdateAutoScalingGroup(*autoscaling.UpdateAutoScalingGroupInput) (*autoscaling.UpdateAutoScalingGroupOutput, error) {
-	panic("Not implemented")
-}
-
-// DescribeAutoScalingGroups is not implemented but is required for interface
-// conformance
-func (a *FakeASG) DescribeAutoScalingGroups(*autoscaling.DescribeAutoScalingGroupsInput) (*autoscaling.DescribeAutoScalingGroupsOutput, error) {
 	panic("Not implemented")
 }
 

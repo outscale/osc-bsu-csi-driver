@@ -18,7 +18,6 @@ package osc
 
 import (
 	"github.com/aws/aws-sdk-go/aws/ec2metadata"
-	"github.com/aws/aws-sdk-go/service/autoscaling"
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/aws/aws-sdk-go/service/elb"
 	"github.com/aws/aws-sdk-go/service/kms"
@@ -108,11 +107,4 @@ type EC2Metadata interface {
 	GetInstanceIdentityDocument() (ec2metadata.EC2InstanceIdentityDocument, error)
 	// Query the EC2 metadata service (used to discover instance-id etc)
 	GetMetadata(path string) (string, error)
-}
-
-// ASG is a simple pass-through of the Autoscaling client interface, which
-// allows for testing.
-type ASG interface {
-	UpdateAutoScalingGroup(*autoscaling.UpdateAutoScalingGroupInput) (*autoscaling.UpdateAutoScalingGroupOutput, error)
-	DescribeAutoScalingGroups(*autoscaling.DescribeAutoScalingGroupsInput) (*autoscaling.DescribeAutoScalingGroupsOutput, error)
 }

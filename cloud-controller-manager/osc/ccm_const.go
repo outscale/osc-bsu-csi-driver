@@ -159,23 +159,7 @@ const ServiceAnnotationLoadBalancerHCTimeout = "service.beta.kubernetes.io/aws-l
 // service to specify, in seconds, the interval between health checks.
 const ServiceAnnotationLoadBalancerHCInterval = "service.beta.kubernetes.io/aws-load-balancer-healthcheck-interval"
 
-// Event key when a volume is stuck on attaching state when being attached to a volume
-const volumeAttachmentStuck = "VolumeAttachmentStuck"
-
-// Indicates that a node has volumes stuck in attaching state and hence it is not fit for scheduling more pods
-const nodeWithImpairedVolumes = "NodeWithImpairedVolumes"
-
 const (
-	// volumeAttachmentConsecutiveErrorLimit is the number of consecutive errors we will ignore when waiting for a volume to attach/detach
-	volumeAttachmentStatusConsecutiveErrorLimit = 10
-	// most attach/detach operations on AWS finish within 1-4 seconds
-	// By using 1 second starting interval with a backoff of 1.8
-	// we get -  [1, 1.8, 3.24, 5.832000000000001, 10.4976]
-	// in total we wait for 2601 seconds
-	volumeAttachmentStatusInitialDelay = 1 * time.Second
-	volumeAttachmentStatusFactor       = 1.8
-	volumeAttachmentStatusSteps        = 13
-
 	// createTag* is configuration of exponential backoff for CreateTag call. We
 	// retry mainly because if we create an object, we cannot tag it until it is
 	// "fully created" (eventual consistency). Starting with 1 second, doubling
@@ -184,13 +168,6 @@ const (
 	createTagInitialDelay = 1 * time.Second
 	createTagFactor       = 2.0
 	createTagSteps        = 9
-
-	// volumeCreate* is configuration of exponential backoff for created volume.
-	// On a random AWS account (shared among several developers) it took 4s on
-	// average, 8s max.
-	volumeCreateInitialDelay  = 5 * time.Second
-	volumeCreateBackoffFactor = 1.2
-	volumeCreateBackoffSteps  = 10
 
 	// Number of node names that can be added to a filter. The AWS limit is 200
 	// but we are using a lower limit on purpose
@@ -214,30 +191,6 @@ var backendProtocolMapping = map[string]string{
 // This can fail once in a consistent system if done in parallel
 // In an eventually consistent system, it could fail unboundedly
 const MaxReadThenCreateRetries = 30
-
-// DefaultVolumeType specifies which storage to use for newly created Volumes
-// TODO: Remove when user/admin can configure volume types and thus we don't
-// need hardcoded defaults.
-const DefaultVolumeType = "gp2"
-
-// AWS volume types
-const (
-	// Provisioned IOPS SSD
-	VolumeTypeIO1 = "io1"
-	// General Purpose SSD
-	VolumeTypeGP2 = "gp2"
-	// Cold HDD (sc1)
-	VolumeTypeSC1 = "sc1"
-	// Throughput Optimized HDD
-	VolumeTypeST1 = "st1"
-)
-
-// AWS provisioning limits.
-// Source: http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/EBSVolumeTypes.html
-const (
-	MinTotalIOPS = 100
-	MaxTotalIOPS = 20000
-)
 
 // TagNameClusterNode logically independent clusters running in the same AZ.
 // The tag key = OscK8sNodeName

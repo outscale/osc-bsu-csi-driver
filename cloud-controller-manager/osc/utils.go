@@ -24,7 +24,6 @@ import (
 	"strings"
 
 	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/ec2metadata"
 	"github.com/aws/aws-sdk-go/aws/endpoints"
@@ -137,18 +136,6 @@ func newEc2Filter(name string, values ...string) *ec2.Filter {
 		filter.Values = append(filter.Values, aws.String(value))
 	}
 	return filter
-}
-
-func setNodeDisk(nodeDiskMap map[types.NodeName]map[KubernetesVolumeID]bool, volumeID KubernetesVolumeID,
-	nodeName types.NodeName, check bool) {
-
-	volumeMap := nodeDiskMap[nodeName]
-
-	if volumeMap == nil {
-		volumeMap = make(map[KubernetesVolumeID]bool)
-		nodeDiskMap[nodeName] = volumeMap
-	}
-	volumeMap[volumeID] = check
 }
 
 // mapNodeNameToPrivateDNSName maps a k8s NodeName to an AWS Instance PrivateDNSName
@@ -467,51 +454,6 @@ func isRegionValid(region string, metadata EC2Metadata) bool {
 		}
 	}
 
-	return false
-}
-
-// wrapAttachError wraps the error returned by an AttachVolume request with
-// additional information, if needed and possible.
-func wrapAttachError(err error, disk *awsDisk, instance string) error {
-	if awsError, ok := err.(awserr.Error); ok {
-		if awsError.Code() == "VolumeInUse" {
-			info, err := disk.describeVolume()
-			if err != nil {
-				klog.Errorf("Error describing volume %q: %q", disk.awsID, err)
-			} else {
-				for _, a := range info.Attachments {
-					if disk.awsID != EBSVolumeID(aws.StringValue(a.VolumeId)) {
-						klog.Warningf("Expected to get attachment info of volume %q but instead got info of %q", disk.awsID, aws.StringValue(a.VolumeId))
-					} else if aws.StringValue(a.State) == "attached" {
-						return fmt.Errorf("error attaching EBS volume %q to instance %q: %q. The volume is currently attached to instance %q", disk.awsID, instance, awsError, aws.StringValue(a.InstanceId))
-					}
-				}
-			}
-		}
-	}
-	return fmt.Errorf("error attaching EBS volume %q to instance %q: %q", disk.awsID, instance, err)
-}
-
-func newAWSDisk(aws *Cloud, name KubernetesVolumeID) (*awsDisk, error) {
-	awsID, err := name.MapToAWSVolumeID()
-	if err != nil {
-		return nil, err
-	}
-	disk := &awsDisk{ec2: aws.ec2, name: name, awsID: awsID}
-	return disk, nil
-}
-
-// Helper function for describeVolume callers. Tries to retype given error to AWS error
-// and returns true in case the AWS error is "InvalidVolume.NotFound", false otherwise
-func isAWSErrorVolumeNotFound(err error) bool {
-	if err != nil {
-		if awsError, ok := err.(awserr.Error); ok {
-			// https://docs.aws.amazon.com/AWSEC2/latest/APIReference/errors-overview.html
-			if awsError.Code() == "InvalidVolume.NotFound" {
-				return true
-			}
-		}
-	}
 	return false
 }
 

@@ -153,31 +153,6 @@ func (ec2i *FakeEC2Impl) DescribeInstances(request *ec2.DescribeInstancesInput) 
 	return matches, nil
 }
 
-// AttachVolume is not implemented but is required for interface conformance
-func (ec2i *FakeEC2Impl) AttachVolume(request *ec2.AttachVolumeInput) (resp *ec2.VolumeAttachment, err error) {
-	panic("Not implemented")
-}
-
-// DetachVolume is not implemented but is required for interface conformance
-func (ec2i *FakeEC2Impl) DetachVolume(request *ec2.DetachVolumeInput) (resp *ec2.VolumeAttachment, err error) {
-	panic("Not implemented")
-}
-
-// DescribeVolumes is not implemented but is required for interface conformance
-func (ec2i *FakeEC2Impl) DescribeVolumes(request *ec2.DescribeVolumesInput) ([]*ec2.Volume, error) {
-	panic("Not implemented")
-}
-
-// CreateVolume is not implemented but is required for interface conformance
-func (ec2i *FakeEC2Impl) CreateVolume(request *ec2.CreateVolumeInput) (resp *ec2.Volume, err error) {
-	panic("Not implemented")
-}
-
-// DeleteVolume is not implemented but is required for interface conformance
-func (ec2i *FakeEC2Impl) DeleteVolume(request *ec2.DeleteVolumeInput) (resp *ec2.DeleteVolumeOutput, err error) {
-	panic("Not implemented")
-}
-
 // DescribeSecurityGroups is not implemented but is required for interface
 // conformance
 func (ec2i *FakeEC2Impl) DescribeSecurityGroups(request *ec2.DescribeSecurityGroupsInput) ([]*ec2.SecurityGroup, error) {
@@ -205,17 +180,6 @@ func (ec2i *FakeEC2Impl) AuthorizeSecurityGroupIngress(*ec2.AuthorizeSecurityGro
 // RevokeSecurityGroupIngress is not implemented but is required for interface
 // conformance
 func (ec2i *FakeEC2Impl) RevokeSecurityGroupIngress(*ec2.RevokeSecurityGroupIngressInput) (*ec2.RevokeSecurityGroupIngressOutput, error) {
-	panic("Not implemented")
-}
-
-// DescribeVolumeModifications is not implemented but is required for interface
-// conformance
-func (ec2i *FakeEC2Impl) DescribeVolumeModifications(*ec2.DescribeVolumesModificationsInput) ([]*ec2.VolumeModification, error) {
-	panic("Not implemented")
-}
-
-// ModifyVolume is not implemented but is required for interface conformance
-func (ec2i *FakeEC2Impl) ModifyVolume(*ec2.ModifyVolumeInput) (*ec2.ModifyVolumeOutput, error) {
 	panic("Not implemented")
 }
 

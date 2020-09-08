@@ -18,48 +18,7 @@ package osc
 
 import (
 	"github.com/aws/aws-sdk-go/aws/endpoints"
-
-	"k8s.io/apimachinery/pkg/api/resource"
-	"k8s.io/apimachinery/pkg/types"
 )
-
-// ********************* CCM Object Interface *********************
-
-// Volumes is an interface for managing cloud-provisioned volumes
-// TODO: Allow other clouds to implement this
-type Volumes interface {
-	// Attach the disk to the node with the specified NodeName
-	// nodeName can be empty to mean "the instance on which we are running"
-	// Returns the device (e.g. /dev/xvdf) where we attached the volume
-	AttachDisk(diskName KubernetesVolumeID, nodeName types.NodeName) (string, error)
-	// Detach the disk from the node with the specified NodeName
-	// nodeName can be empty to mean "the instance on which we are running"
-	// Returns the device where the volume was attached
-	DetachDisk(diskName KubernetesVolumeID, nodeName types.NodeName) (string, error)
-
-	// Create a volume with the specified options
-	CreateDisk(volumeOptions *VolumeOptions) (volumeName KubernetesVolumeID, err error)
-	// Delete the specified volume
-	// Returns true iff the volume was deleted
-	// If the was not found, returns (false, nil)
-	DeleteDisk(volumeName KubernetesVolumeID) (bool, error)
-
-	// Get labels to apply to volume on creation
-	GetVolumeLabels(volumeName KubernetesVolumeID) (map[string]string, error)
-
-	// Get volume's disk path from volume name
-	// return the device path where the volume is attached
-	GetDiskPath(volumeName KubernetesVolumeID) (string, error)
-
-	// Check if the volume is already attached to the node with the specified NodeName
-	DiskIsAttached(diskName KubernetesVolumeID, nodeName types.NodeName) (bool, error)
-
-	// Check if disks specified in argument map are still attached to their respective nodes.
-	DisksAreAttached(map[types.NodeName][]KubernetesVolumeID) (map[types.NodeName]map[KubernetesVolumeID]bool, error)
-
-	// Expand the disk to new size
-	ResizeDisk(diskName KubernetesVolumeID, oldSize resource.Quantity, newSize resource.Quantity) (resource.Quantity, error)
-}
 
 // Interface to make the CloudConfig immutable for awsSDKProvider
 type awsCloudConfigProvider interface {

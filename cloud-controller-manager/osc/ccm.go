@@ -23,24 +23,19 @@ import (
 	"io"
 
 	"github.com/aws/aws-sdk-go/aws/credentials"
-
 	"gopkg.in/gcfg.v1"
-	"k8s.io/klog"
 
-	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/cloud-provider"
+	"k8s.io/klog"
 )
 
 // ********************* CCM Object Init *********************
-
-var _ Volumes = &Cloud{}
 
 var _ cloudprovider.Interface = (*Cloud)(nil)
 var _ cloudprovider.Instances = (*Cloud)(nil)
 var _ cloudprovider.LoadBalancer = (*Cloud)(nil)
 var _ cloudprovider.Routes = (*Cloud)(nil)
 var _ cloudprovider.Zones = (*Cloud)(nil)
-var _ cloudprovider.PVLabeler = (*Cloud)(nil)
 
 // ********************* CCM entry point function *********************
 
@@ -116,9 +111,6 @@ func newAWSCloud(cfg CloudConfig, awsServices Services) (*Cloud, error) {
 		metadata: metadata,
 		cfg:      &cfg,
 		region:   regionName,
-
-		attaching:        make(map[types.NodeName]map[mountDevice]EBSVolumeID),
-		deviceAllocators: make(map[types.NodeName]DeviceAllocator),
 	}
 	awsCloud.instanceCache.cloud = awsCloud
 

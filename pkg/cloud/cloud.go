@@ -16,11 +16,15 @@ limitations under the License.
 
 package cloud
 
+
 import (
 	"context"
 	"errors"
 	"fmt"
 	"time"
+
+    //"github.com/antihax/optional"
+    "github.com/outscale/osc-sdk-go/osc"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
@@ -30,7 +34,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/endpoints"
 	"github.com/aws/aws-sdk-go/aws/request"
 	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/ec2"
+	//"github.com/aws/aws-sdk-go/service/ec2"
 	dm "github.com/kubernetes-sigs/aws-ebs-csi-driver/pkg/cloud/devicemanager"
 	"github.com/kubernetes-sigs/aws-ebs-csi-driver/pkg/util"
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -198,11 +202,17 @@ type Cloud interface {
 	ListSnapshots(ctx context.Context, volumeID string, maxResults int64, nextToken string) (listSnapshotsResponse *ListSnapshotsResponse, err error)
 }
 
+type OscClient struct {
+        config *osc.Configuration
+        auth context.Context
+        api *osc.APIClient
+}
+
 type cloud struct {
 	region   string
 	metadata MetadataService
-	ec2      EC2
 	dm       dm.DeviceManager
+	client   *OscClient
 }
 
 var _ Cloud = &cloud{}
@@ -220,31 +230,29 @@ func newEC2Cloud(region string) (Cloud, error) {
 	if err != nil {
 		return nil, fmt.Errorf("could not get metadata from AWS: %v", err)
 	}
-
-	provider := []credentials.Provider{
-		&credentials.EnvProvider{},
-		&ec2rolecreds.EC2RoleProvider{Client: svc},
-		&credentials.SharedCredentialsProvider{},
-	}
-
 	useRegion := region
 	if len(useRegion) == 0 {
 		useRegion = metadata.GetRegion()
 	}
 
-	awsConfig := &aws.Config{
-		Region:                        aws.String(useRegion),
-		Credentials:                   credentials.NewChainCredentials(provider),
-		CredentialsChainVerboseErrors: aws.Bool(true),
-		EndpointResolver: endpoints.ResolverFunc(
-			util.OscSetupServiceResolver(metadata.GetRegion())),
-	}
+
+
+	client := &OscClient{}
+    client.config = osc.NewConfiguration()
+    client.config.BasePath, _ = client.config.ServerUrl(0, map[string]string{"region": useRegion})
+    client.api = osc.NewAPIClient(client.config)
+    client.auth = context.WithValue(context.Background(), osc.ContextAWSv4, osc.AWSv4{
+        AccessKey: os.Getenv("OSC_ACCESS_KEY"),
+        SecretKey: os.Getenv("OSC_SECRET_KEY"),
+    })
+
+
 
 	return &cloud{
 		region:   useRegion,
 		metadata: metadata,
 		dm:       dm.NewDeviceManager(),
-		ec2:      ec2.New(session.Must(session.NewSession(awsConfig))),
+		client:      client,
 	}, nil
 }
 
@@ -287,11 +295,11 @@ func (c *cloud) CreateDisk(ctx context.Context, volumeName string, diskOptions *
 		return nil, fmt.Errorf("invalid AWS VolumeType %q", diskOptions.VolumeType)
 	}
 
-	var tags []*ec2.Tag
+	var tags []*osc.Tag
 	for key, value := range diskOptions.Tags {
 		copiedKey := key
 		copiedValue := value
-		tags = append(tags, &ec2.Tag{Key: &copiedKey, Value: &copiedValue})
+		tags = append(tags, &osc.Tag{Key: &copiedKey, Value: &copiedValue})
 	}
 
 	tagSpec := ec2.TagSpecification{
@@ -316,10 +324,12 @@ func (c *cloud) CreateDisk(ctx context.Context, volumeName string, diskOptions *
 		TagSpecifications: []*ec2.TagSpecification{&tagSpec},
 		Encrypted:         aws.Bool(diskOptions.Encrypted),
 	}
-	if len(diskOptions.KmsKeyID) > 0 {
-		request.KmsKeyId = aws.String(diskOptions.KmsKeyID)
-		request.Encrypted = aws.Bool(true)
-	}
+	// NOT SUPPORTED YET BY OSC API
+	//if len(diskOptions.KmsKeyID) > 0 {
+	//	request.KmsKeyId = aws.String(diskOptions.KmsKeyID)
+	//	request.Encrypted = aws.Bool(true)
+	//}
+
 	if iops > 0 {
 		request.Iops = aws.Int64(iops)
 	}
@@ -802,15 +812,16 @@ func keepRetryWithError(requestStr string,
 	return false
 }
 
-func (c *cloud) getVolume(ctx context.Context, request *ec2.DescribeVolumesInput) (*ec2.Volume, error) {
+func (c *cloud) getVolume(ctx context.Context, request *osc.ReadVolumesOpts) (*osc.Volume, error) {
 	fmt.Printf("Debug getVolume : %+v\n", request)
-	var volume *ec2.Volume
+	var volume *osc.Volume
 	getVolumeCallback := func() (bool, error) {
-		var volumes []*ec2.Volume
+		var volumes []*osc.Volume
 		var nextToken *string
 
 		for {
-			response, err := c.ec2.DescribeVolumesWithContext(ctx, request)
+		    response, httpRes, err = c.client.api.VolumeApi.ReadVolumes(client.auth, request)
+
 			if err != nil {
 				requestStr := fmt.Sprintf("%v", request)
 				if keepRetryWithError(
@@ -849,17 +860,23 @@ func (c *cloud) getVolume(ctx context.Context, request *ec2.DescribeVolumesInput
 	return volume, nil
 }
 
-func (c *cloud) getInstance(ctx context.Context, nodeID string) (*ec2.Instance, error) {
+func (c *cloud) getInstance(ctx context.Context, VMID string) (*osc.Vm, error) {
 	fmt.Printf("Debug  getInstance : %+v\n", nodeID)
-	instances := []*ec2.Instance{}
-	request := &ec2.DescribeInstancesInput{
-		InstanceIds: []*string{&nodeID},
+	instances := []*osc.Vm{}
+
+	request := osc.ReadVmsOpts{
+		ReadVmsRequest: optional.NewInterface(
+			osc.ReadVmsRequest{
+				Filters: osc.FiltersVm{
+					VmIds: []string{VMID},
+				},
+			}),
 	}
 
 	getInstanceCallback := func() (bool, error) {
 		var nextToken *string
 		for {
-			response, err := c.ec2.DescribeInstancesWithContext(ctx, request)
+			response, httpRes, err := c.client.VmApi.ReadVms(c.client.auth, &request)
 			if err != nil {
 				requestStr := fmt.Sprintf("%v", request)
 				if keepRetryWithError(

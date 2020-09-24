@@ -25,6 +25,7 @@ import (
 
     //"github.com/antihax/optional"
     "github.com/outscale/osc-sdk-go/osc"
+    "os"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
@@ -273,7 +274,7 @@ func (c *cloud) CreateDisk(ctx context.Context, volumeName string, diskOptions *
 	fmt.Printf("Debug CreateDisk: %+v, %v\n", volumeName, diskOptions)
 	var (
 		createType string
-		iops       int64
+		iops       int32
 	)
 	capacityGiB := util.BytesToGiB(diskOptions.CapacityBytes)
 
@@ -309,7 +310,7 @@ func (c *cloud) CreateDisk(ctx context.Context, volumeName string, diskOptions *
 
 	zone := diskOptions.AvailabilityZone
 	if zone == "" {
-		klog.V(5).Infof("AZ is not provided. Using node AZ [%s]", zone)
+		klog.V(5).Infof("AZ is not provided. Using node AZ [%s]", zone@)
 		var err error
 		zone, err = c.randomAvailabilityZone(ctx, c.region)
 		if err != nil {
@@ -330,15 +331,26 @@ func (c *cloud) CreateDisk(ctx context.Context, volumeName string, diskOptions *
 	//	request.Encrypted = aws.Bool(true)
 	//}
 
+    request := osc.CreateVolumeOpts{
+		CreateVolumeRequest: optional.NewInterface(
+			osc.CreateVolumeRequest{
+				Size:          10,
+				VolumeType:    createType,
+				SubregionName: "eu-west-2a",
+			}),
+	}
+
 	if iops > 0 {
-		request.Iops = aws.Int64(iops)
+		request.Iops = iops
 	}
 	snapshotID := diskOptions.SnapshotID
 	if len(snapshotID) > 0 {
-		request.SnapshotId = aws.String(snapshotID)
+		request.SnapshotId = snapshotID
 	}
 
-	response, err := c.ec2.CreateVolumeWithContext(ctx, request)
+	creation, httpRes, err := c.client.VolumeApi.CreateVolume(c.client.auth, &request)
+
+
 	if err != nil {
 		if isAWSErrorSnapshotNotFound(err) {
 			return nil, ErrNotFound
@@ -380,10 +392,16 @@ func (c *cloud) CreateDisk(ctx context.Context, volumeName string, diskOptions *
 
 func (c *cloud) DeleteDisk(ctx context.Context, volumeID string) (bool, error) {
 	fmt.Printf("Debug DeleteDisk: %+v\n", volumeID)
-	request := &ec2.DeleteVolumeInput{VolumeId: &volumeID}
-	if _, err := c.ec2.DeleteVolumeWithContext(ctx, request); err != nil {
-		if isAWSErrorVolumeNotFound(err) {
-			return false, ErrNotFound
+	deletionOpts := osc.DeleteVolumeOpts{
+		DeleteVolumeRequest: optional.NewInterface(
+			osc.DeleteVolumeRequest{
+				VolumeId: volumeID,
+			}),
+	}
+	_, httpRes, err = client.VolumeApi.DeleteVolume(c.client.auth, &deletionOpts)
+    if err != nil {
+		if httpRes != nil {
+			fmt.Fprintln(os.Stderr, httpRes.Status)
 		}
 		return false, fmt.Errorf("DeleteDisk could not delete volume: %v", err)
 	}
@@ -402,6 +420,23 @@ func (c *cloud) AttachDisk(ctx context.Context, volumeID, nodeID string) (string
 		return "", err
 	}
 	defer device.Release(false)
+
+    if !device.IsAlreadyAssigned {
+        linkVolumeOpts := osc.LinkVolumeOpts{
+		    LinkVolumeRequest: optional.NewInterface(
+		        osc.LinkVolumeRequest{
+			            DeviceName: device.Path,
+			            VmId: nodeID,
+			            VolumeId: volumeID,
+		        }),
+	    }
+
+        resp, err := c.client.api.LinkVolume(c.client.auth, &linkVolumeOpts)
+
+		klog.V(5).Infof("AttachVolume volume=%q instance=%q request returned %v", volumeID, nodeID, resp)
+
+	}
+
 
 	if !device.IsAlreadyAssigned {
 		request := &ec2.AttachVolumeInput{
@@ -833,6 +868,8 @@ func (c *cloud) getVolume(ctx context.Context, request *osc.ReadVolumesOpts) (*o
 				return false, err
 			}
 			volumes = append(volumes, response.Volumes...)
+
+
 			nextToken = response.NextToken
 			if aws.StringValue(nextToken) == "" {
 				break

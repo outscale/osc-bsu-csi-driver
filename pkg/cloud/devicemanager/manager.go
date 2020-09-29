@@ -21,15 +21,17 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/service/ec2"
+	"github.com/outscale/osc-sdk-go/osc"
+
+	//"github.com/aws/aws-sdk-go/aws"
+	//"github.com/aws/aws-sdk-go/service/ec2"
 	"k8s.io/klog"
 )
 
 const devPreffix = "/dev/xvd"
 
 type Device struct {
-	Instance          *ec2.Instance
+	Instance          *osc.Vm
 	Path              string
 	VolumeID          string
 	IsAlreadyAssigned bool
@@ -55,10 +57,12 @@ type DeviceManager interface {
 	// NewDevice retrieves the device if the device is already assigned.
 	// Otherwise it creates a new device with next available device name
 	// and mark it as unassigned device.
-	NewDevice(instance *ec2.Instance, volumeID string) (device *Device, err error)
+	//NewDevice(instance *ec2.Instance, volumeID string) (device *Device, err error)
+	NewDevice(instance *osc.Vm, volumeID string) (device *Device, err error)
 
 	// GetDevice returns the device already assigned to the volume.
-	GetDevice(instance *ec2.Instance, volumeID string) (device *Device, err error)
+	//GetDevice(instance *ec2.Instance, volumeID string) (device *Device, err error)
+	GetDevice(instance *osc.Vm, volumeID string) (device *Device, err error)
 }
 
 type deviceManager struct {
@@ -106,7 +110,7 @@ func NewDeviceManager() DeviceManager {
 	}
 }
 
-func (d *deviceManager) NewDevice(instance *ec2.Instance, volumeID string) (*Device, error) {
+func (d *deviceManager) NewDevice(instance *osc.Vm, volumeID string) (*Device, error) {
 	d.mux.Lock()
 	defer d.mux.Unlock()
 
@@ -138,7 +142,7 @@ func (d *deviceManager) NewDevice(instance *ec2.Instance, volumeID string) (*Dev
 	return d.newBlockDevice(instance, volumeID, devPreffix+name, false), nil
 }
 
-func (d *deviceManager) GetDevice(instance *ec2.Instance, volumeID string) (*Device, error) {
+func (d *deviceManager) GetDevice(instance *osc.Vm, volumeID string) (*Device, error) {
 	d.mux.Lock()
 	defer d.mux.Unlock()
 
@@ -151,7 +155,7 @@ func (d *deviceManager) GetDevice(instance *ec2.Instance, volumeID string) (*Dev
 	return d.newBlockDevice(instance, volumeID, "", false), nil
 }
 
-func (d *deviceManager) newBlockDevice(instance *ec2.Instance, volumeID string, path string, isAlreadyAssigned bool) *Device {
+func (d *deviceManager) newBlockDevice(instance *osc.Vm, volumeID string, path string, isAlreadyAssigned bool) *Device {
 	device := &Device{
 		Instance:          instance,
 		Path:              path,
@@ -202,19 +206,19 @@ func (d *deviceManager) release(device *Device) error {
 
 // getDeviceNamesInUse returns the device to volume ID mapping
 // the mapping includes both already attached and being attached volumes
-func (d *deviceManager) getDeviceNamesInUse(instance *ec2.Instance) map[string]string {
-	nodeID := aws.StringValue(instance.InstanceId)
+func (d *deviceManager) getDeviceNamesInUse(instance *osc.Vm) map[string]string {
+	nodeID := instance.VmId
 	inUse := map[string]string{}
 	for _, blockDevice := range instance.BlockDeviceMappings {
-		name := aws.StringValue(blockDevice.DeviceName)
+		name := blockDevice.DeviceName
 		// trims /dev/sd or /dev/xvd from device name
 		name = strings.TrimPrefix(name, "/dev/sd")
 		name = strings.TrimPrefix(name, "/dev/xvd")
 
 		if len(name) < 1 || len(name) > 2 {
-			klog.Warningf("Unexpected EBS DeviceName: %q", aws.StringValue(blockDevice.DeviceName))
+			klog.Warningf("Unexpected EBS DeviceName: %q", blockDevice.DeviceName)
 		}
-		inUse[name] = aws.StringValue(blockDevice.Ebs.VolumeId)
+		inUse[name] = blockDevice.Bsu.VolumeId
 	}
 
 	for name, volumeID := range d.inFlight.GetNames(nodeID) {
@@ -233,9 +237,9 @@ func (d *deviceManager) getPath(inUse map[string]string, volumeID string) string
 	return ""
 }
 
-func getInstanceID(instance *ec2.Instance) (string, error) {
+func getInstanceID(instance *osc.Vm) (string, error) {
 	if instance == nil {
 		return "", fmt.Errorf("can't get ID from a nil instance")
 	}
-	return aws.StringValue(instance.InstanceId), nil
+	return instance.VmId, nil
 }

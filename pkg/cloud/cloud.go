@@ -26,19 +26,20 @@ import (
 	"github.com/outscale/osc-sdk-go/osc"
 	"os"
 
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/awserr"
-	//"github.com/aws/aws-sdk-go/aws/credentials"
-	//"github.com/aws/aws-sdk-go/aws/credentials/ec2rolecreds"
-	"github.com/aws/aws-sdk-go/aws/ec2metadata"
-	"github.com/aws/aws-sdk-go/aws/endpoints"
-	"github.com/aws/aws-sdk-go/aws/request"
-	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/ec2"
+// 	"github.com/aws/aws-sdk-go/aws"
+// 	"github.com/aws/aws-sdk-go/aws/awserr"
+// 	//"github.com/aws/aws-sdk-go/aws/credentials"
+// 	//"github.com/aws/aws-sdk-go/aws/credentials/ec2rolecreds"
+// 	"github.com/aws/aws-sdk-go/aws/ec2metadata"
+// 	"github.com/aws/aws-sdk-go/aws/endpoints"
+// 	"github.com/aws/aws-sdk-go/aws/request"
+// 	"github.com/aws/aws-sdk-go/aws/session"
+// 	"github.com/aws/aws-sdk-go/service/ec2"
 	dm "github.com/kubernetes-sigs/aws-ebs-csi-driver/pkg/cloud/devicemanager"
 	"github.com/kubernetes-sigs/aws-ebs-csi-driver/pkg/util"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/klog"
+	_nethttp "net/http"
 )
 
 // AWS volume types
@@ -168,21 +169,21 @@ type ec2ListSnapshotsResponse struct {
 
 // EC2 abstracts aws.EC2 to facilitate its mocking.
 // See https://docs.aws.amazon.com/sdk-for-go/api/service/ec2/ for details
-type EC2 interface {
-	DescribeVolumesWithContext(ctx aws.Context, input *ec2.DescribeVolumesInput, opts ...request.Option) (*ec2.DescribeVolumesOutput, error)
-	CreateVolumeWithContext(ctx aws.Context, input *ec2.CreateVolumeInput, opts ...request.Option) (*ec2.Volume, error)
-	DeleteVolumeWithContext(ctx aws.Context, input *ec2.DeleteVolumeInput, opts ...request.Option) (*ec2.DeleteVolumeOutput, error)
-	DetachVolumeWithContext(ctx aws.Context, input *ec2.DetachVolumeInput, opts ...request.Option) (*ec2.VolumeAttachment, error)
-	AttachVolumeWithContext(ctx aws.Context, input *ec2.AttachVolumeInput, opts ...request.Option) (*ec2.VolumeAttachment, error)
-	DescribeInstancesWithContext(ctx aws.Context, input *ec2.DescribeInstancesInput, opts ...request.Option) (*ec2.DescribeInstancesOutput, error)
-	CreateSnapshotWithContext(ctx aws.Context, input *ec2.CreateSnapshotInput, opts ...request.Option) (*ec2.Snapshot, error)
-	DeleteSnapshotWithContext(ctx aws.Context, input *ec2.DeleteSnapshotInput, opts ...request.Option) (*ec2.DeleteSnapshotOutput, error)
-	DescribeSnapshotsWithContext(ctx aws.Context, input *ec2.DescribeSnapshotsInput, opts ...request.Option) (*ec2.DescribeSnapshotsOutput, error)
-	ModifyVolumeWithContext(ctx aws.Context, input *ec2.ModifyVolumeInput, opts ...request.Option) (*ec2.ModifyVolumeOutput, error)
-	DescribeVolumesModificationsWithContext(ctx aws.Context, input *ec2.DescribeVolumesModificationsInput, opts ...request.Option) (*ec2.DescribeVolumesModificationsOutput, error)
-	CreateTagsWithContext(ctx aws.Context, input *ec2.CreateTagsInput, opts ...request.Option) (*ec2.CreateTagsOutput, error)
-	DescribeAvailabilityZonesWithContext(ctx aws.Context, input *ec2.DescribeAvailabilityZonesInput, opts ...request.Option) (*ec2.DescribeAvailabilityZonesOutput, error)
-}
+// type EC2 interface {
+// 	DescribeVolumesWithContext(ctx aws.Context, input *ec2.DescribeVolumesInput, opts ...request.Option) (*ec2.DescribeVolumesOutput, error)
+// 	CreateVolumeWithContext(ctx aws.Context, input *ec2.CreateVolumeInput, opts ...request.Option) (*ec2.Volume, error)
+// 	DeleteVolumeWithContext(ctx aws.Context, input *ec2.DeleteVolumeInput, opts ...request.Option) (*ec2.DeleteVolumeOutput, error)
+// 	DetachVolumeWithContext(ctx aws.Context, input *ec2.DetachVolumeInput, opts ...request.Option) (*ec2.VolumeAttachment, error)
+// 	AttachVolumeWithContext(ctx aws.Context, input *ec2.AttachVolumeInput, opts ...request.Option) (*ec2.VolumeAttachment, error)
+// 	DescribeInstancesWithContext(ctx aws.Context, input *ec2.DescribeInstancesInput, opts ...request.Option) (*ec2.DescribeInstancesOutput, error)
+// 	CreateSnapshotWithContext(ctx aws.Context, input *ec2.CreateSnapshotInput, opts ...request.Option) (*ec2.Snapshot, error)
+// 	DeleteSnapshotWithContext(ctx aws.Context, input *ec2.DeleteSnapshotInput, opts ...request.Option) (*ec2.DeleteSnapshotOutput, error)
+// 	DescribeSnapshotsWithContext(ctx aws.Context, input *ec2.DescribeSnapshotsInput, opts ...request.Option) (*ec2.DescribeSnapshotsOutput, error)
+// 	ModifyVolumeWithContext(ctx aws.Context, input *ec2.ModifyVolumeInput, opts ...request.Option) (*ec2.ModifyVolumeOutput, error)
+// 	DescribeVolumesModificationsWithContext(ctx aws.Context, input *ec2.DescribeVolumesModificationsInput, opts ...request.Option) (*ec2.DescribeVolumesModificationsOutput, error)
+// 	CreateTagsWithContext(ctx aws.Context, input *ec2.CreateTagsInput, opts ...request.Option) (*ec2.CreateTagsOutput, error)
+// 	DescribeAvailabilityZonesWithContext(ctx aws.Context, input *ec2.DescribeAvailabilityZonesInput, opts ...request.Option) (*ec2.DescribeAvailabilityZonesOutput, error)
+// }
 
 type Cloud interface {
 	GetMetadata() MetadataService
@@ -502,7 +503,8 @@ func (c *cloud) DetachDisk(ctx context.Context, volumeID, nodeID string) error {
 	            }),
 	}
 
-	_, _, err = c.client.api.VolumeApi.UnlinkVolume(ctx, &request)
+	var httpRes *_nethttp.Response
+	_, httpRes, err = c.client.api.VolumeApi.UnlinkVolume(ctx, &request)
 	if err != nil {
 		return fmt.Errorf("could not detach volume %q from node %q: %v", volumeID, nodeID, err)
 	}
@@ -648,8 +650,9 @@ func (c *cloud) CreateSnapshot(ctx context.Context, volumeID string, snapshotOpt
 
 	fmt.Printf("Debug request := &ec2.CreateSnapshotInput{: %+v  \n", request)
 	var res osc.CreateSnapshotResponse
+	var httpRes *_nethttp.Response
 	createSnapshotCallBack := func() (bool, error) {
-		res, _, err = c.client.api.SnapshotApi.CreateSnapshot(ctx, &request)
+		res, httpRes, err = c.client.api.SnapshotApi.CreateSnapshot(ctx, &request)
 		if err != nil {
 			requestStr := fmt.Sprintf("%v", request)
 			if keepRetryWithError(
@@ -718,7 +721,7 @@ func (c *cloud) CreateSnapshot(ctx context.Context, volumeID string, snapshotOpt
 		return nil, fmt.Errorf("nil CreateTags")
 	}
 	fmt.Printf("Debug resTag, err := c.ec2.CreateTagsWithContext(ctx, requestTag) %+v\n", resTag)
-	return c.ec2SnapshotResponseToStruct(res), nil
+	return c.oscSnapshotResponseToStruct(res), nil
 }
 
 func (c *cloud) DeleteSnapshot(ctx context.Context, snapshotID string) (success bool, err error) {
@@ -731,7 +734,9 @@ func (c *cloud) DeleteSnapshot(ctx context.Context, snapshotID string) (success 
 			}),
 	}
 
-	_, _, err = c.client.api.SnapshotApi.DeleteSnapshot(c.client.auth, &request)
+	var httpRes *_nethttp.Response
+
+	_, httpRes, err = c.client.api.SnapshotApi.DeleteSnapshot(c.client.auth, &request)
 	if err != nil {
 		return false, fmt.Errorf("DeleteSnapshot could not delete volume: %v", err)
 	}
@@ -756,7 +761,7 @@ func (c *cloud) GetSnapshotByName(ctx context.Context, name string) (snapshot *S
 		return nil, err
 	}
 
-	return c.ec2SnapshotResponseToStruct(oscsnapshot), nil
+	return c.oscSnapshotResponseToStruct(oscsnapshot), nil
 }
 
 func (c *cloud) GetSnapshotByID(ctx context.Context, snapshotID string) (snapshot *Snapshot, err error) {
@@ -771,12 +776,12 @@ func (c *cloud) GetSnapshotByID(ctx context.Context, snapshotID string) (snapsho
 			}),
 	}
 
-	ec2snapshot, err := c.getSnapshot(ctx, &request)
+	oscsnapshot, err := c.getSnapshot(ctx, &request)
 	if err != nil {
 		return nil, err
 	}
 
-	return c.ec2SnapshotResponseToStruct(ec2snapshot), nil
+	return c.oscSnapshotResponseToStruct(oscsnapshot), nil
 }
 
 // ListSnapshots retrieves AWS EBS snapshots for an optionally specified volume ID.  If maxResults is set, it will return up to maxResults snapshots.  If there are more snapshots than maxResults,
@@ -824,19 +829,41 @@ func (c *cloud) ListSnapshots(ctx context.Context, volumeID string, maxResults i
 }
 
 // Helper method converting EC2 snapshot type to the internal struct
-func (c *cloud) ec2SnapshotResponseToStruct(ec2Snapshot *ec2.Snapshot) *Snapshot {
-	fmt.Printf("Debug ec2SnapshotResponseToStruct : %+v\n", ec2Snapshot)
-	if ec2Snapshot == nil {
+// func (c *cloud) ec2SnapshotResponseToStruct(ec2Snapshot *ec2.Snapshot) *Snapshot {
+// 	fmt.Printf("Debug ec2SnapshotResponseToStruct : %+v\n", ec2Snapshot)
+// 	if ec2Snapshot == nil {
+// 		return nil
+// 	}
+// 	snapshotSize := util.GiBToBytes(aws.Int64Value(ec2Snapshot.VolumeSize))
+// 	snapshot := &Snapshot{
+// 		SnapshotID:     ec2Snapshot.SnapshotId,
+// 		SourceVolumeID: ec2Snapshot.VolumeId,
+// 		Size:           snapshotSize,
+// 		CreationTime:   ec2Snapshot.StartTime,
+// 	}
+// 	if ec2Snapshot.State == "completed" {
+// 		snapshot.ReadyToUse = true
+// 	} else {
+// 		snapshot.ReadyToUse = false
+// 	}
+//
+// 	return snapshot
+// }
+
+func (c *cloud) oscSnapshotResponseToStruct(oscSnapshot *osc.Snapshot) *Snapshot {
+	fmt.Printf("Debug oscSnapshotResponseToStruct : %+v\n", oscSnapshot)
+	if oscSnapshot == nil {
 		return nil
 	}
-	snapshotSize := util.GiBToBytes(aws.Int64Value(ec2Snapshot.VolumeSize))
+	snapshotSize := util.GiBToBytes(oscSnapshot.VolumeSize)
 	snapshot := &Snapshot{
-		SnapshotID:     ec2Snapshot.SnapshotId,
-		SourceVolumeID: ec2Snapshot.VolumeId,
+		SnapshotID:     oscSnapshot.SnapshotId,
+		SourceVolumeID: oscSnapshot.VolumeId,
 		Size:           snapshotSize,
-		CreationTime:   ec2Snapshot.StartTime,
+		//No StartTime for osc.Snapshot
+		//CreationTime:   oscSnapshot.StartTime,
 	}
-	if ec2Snapshot.State == "completed" {
+	if oscSnapshot.State == "completed" {
 		snapshot.ReadyToUse = true
 	} else {
 		snapshot.ReadyToUse = false
@@ -844,6 +871,7 @@ func (c *cloud) ec2SnapshotResponseToStruct(ec2Snapshot *ec2.Snapshot) *Snapshot
 
 	return snapshot
 }
+
 
 func keepRetryWithError(requestStr string,
 	err error,
@@ -868,6 +896,10 @@ func (c *cloud) getVolume(ctx context.Context, request *osc.ReadVolumesOpts) (*o
 	getVolumeCallback := func() (bool, error) {
 		var volumes []*osc.Volume
 		var nextToken *string
+
+        var response osc.CreateVolumeResponse
+		var httpRes *_nethttp.Response
+		var err error
 
 		for {
 			response, httpRes, err = c.client.api.VolumeApi.ReadVolumes(client.auth, request)
@@ -1014,7 +1046,7 @@ func (c *cloud) getSnapshot(ctx context.Context, request *osc.ReadSnapshotsOpts)
 }
 
 // listSnapshots returns all snapshots based from a request
-func (c *cloud) listSnapshots(ctx context.Context, request *ec2.DescribeSnapshotsInput) (*ec2ListSnapshotsResponse, error) {
+func (c *cloud) listSnapshots(ctx context.Context, request *osc.DescribeSnapshotsInput) (*ec2ListSnapshotsResponse, error) {
 	fmt.Printf("Debug listSnapshots : %+v\n", request)
 
 	var snapshots []*ec2.Snapshot

@@ -631,6 +631,9 @@ func (c *cloud) CreateSnapshot(ctx context.Context, volumeID string, snapshotOpt
 	createSnapshotCallBack := func() (bool, error) {
 		res, httpRes, err = c.client.api.SnapshotApi.CreateSnapshot(ctx, &request)
 		if err != nil {
+		    if httpRes != nil {
+			    fmt.Errorf(httpRes.Status)
+		    }
 			requestStr := fmt.Sprintf("%v", request)
 			if keepRetryWithError(
 				requestStr,

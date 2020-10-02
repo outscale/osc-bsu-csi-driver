@@ -26,15 +26,11 @@ import (
 	"github.com/outscale/osc-sdk-go/osc"
 	"os"
 
-	 	"github.com/aws/aws-sdk-go/aws"
-	 	"github.com/aws/aws-sdk-go/aws/awserr"
-	// 	//"github.com/aws/aws-sdk-go/aws/credentials"
-	// 	//"github.com/aws/aws-sdk-go/aws/credentials/ec2rolecreds"
+    "github.com/aws/aws-sdk-go/aws"
+    "github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/aws/ec2metadata"
-	 	"github.com/aws/aws-sdk-go/aws/endpoints"
-	// 	"github.com/aws/aws-sdk-go/aws/request"
-	 	"github.com/aws/aws-sdk-go/aws/session"
-	// 	"github.com/aws/aws-sdk-go/service/ec2"
+	"github.com/aws/aws-sdk-go/aws/endpoints"
+	"github.com/aws/aws-sdk-go/aws/session"
 	dm "github.com/kubernetes-sigs/aws-ebs-csi-driver/pkg/cloud/devicemanager"
 	"github.com/kubernetes-sigs/aws-ebs-csi-driver/pkg/util"
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -457,13 +453,13 @@ func (c *cloud) DetachDisk(ctx context.Context, volumeID, nodeID string) error {
 		volume, err := c.getVolume(ctx, &request)
 		klog.Infof("Check Volume state before detaching volume: %+v err: %+v",
 			volume, err)
-		//if err == nil && volume != nil {
-		//	if &volume.State != nil && volume.State == "available" {
-		//		klog.Warningf("Tolerate DetachDisk called on available volume: %s on %s",
-		//			volumeID, nodeID)
-		//		return nil
-		//	}
-		//}
+		if err == nil && &volume != nil {
+			if &volume.State != nil && volume.State == "available" {
+				klog.Warningf("Tolerate DetachDisk called on available volume: %s on %s",
+					volumeID, nodeID)
+				return nil
+			}
+		}
 	}
 	klog.Infof("Debug Continue DetachDisk: %+v, %v\n", volumeID, nodeID)
 	instance, err := c.getInstance(ctx, nodeID)
@@ -604,7 +600,7 @@ func (c *cloud) GetDiskByID(ctx context.Context, volumeID string) (Disk, error) 
  func (c *cloud) IsExistInstance(ctx context.Context, nodeID string) bool {
 	fmt.Printf("Debug IsExistInstance : %+v\n", nodeID)
 	instance, err := c.getInstance(ctx, nodeID)
-	if err != nil || instance.VmId == "" {
+	if err != nil || &instance == nil {
 		return false
 	}
 	return true
@@ -700,9 +696,9 @@ func (c *cloud) CreateSnapshot(ctx context.Context, volumeID string, snapshotOpt
 	if err != nil {
 		return Snapshot{}, fmt.Errorf("error creating tags of snapshot %v: %v", res.Snapshot.SnapshotId, err)
 	}
-	//if resTag == nil {
-	//	return Snapshot{}, fmt.Errorf("nil CreateTags")
-	//}
+	if &resTag == nil {
+		return Snapshot{}, fmt.Errorf("nil CreateTags")
+	}
 	fmt.Printf("Debug resTag, err := c.ec2.CreateTagsWithContext(ctx, requestTag) %+v\n", resTag)
 	return c.oscSnapshotResponseToStruct(res.Snapshot), nil
 }
@@ -821,9 +817,9 @@ func (c *cloud) ListSnapshots(ctx context.Context, volumeID string, maxResults i
 
 func (c *cloud) oscSnapshotResponseToStruct(oscSnapshot osc.Snapshot) Snapshot {
 	fmt.Printf("Debug oscSnapshotResponseToStruct : %+v\n", oscSnapshot)
-	//if oscSnapshot == nil {
-	//	return Snapshot{}
-	//}
+	if &oscSnapshot == nil {
+		return Snapshot{}
+	}
 	snapshotSize := util.GiBToBytes(oscSnapshot.VolumeSize)
 	snapshot := Snapshot{
 		SnapshotID:     oscSnapshot.SnapshotId,

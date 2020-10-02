@@ -22,7 +22,6 @@ import (
 	"strconv"
 	"strings"
 
-
 	csi "github.com/container-storage-interface/spec/lib/go/csi"
 	"github.com/golang/protobuf/ptypes"
 	"github.com/kubernetes-sigs/aws-ebs-csi-driver/pkg/cloud"
@@ -169,7 +168,7 @@ func (d *controllerService) CreateVolume(ctx context.Context, req *csi.CreateVol
 	}
 
 	// volume exists already
-	if disk != (cloud.Disk{}) {
+	if &disk != nil {
 		if disk.SnapshotID != snapshotID {
 			return nil, status.Errorf(codes.AlreadyExists, "Volume already exists, but was restored from a different snapshot than %s", snapshotID)
 		}
@@ -349,33 +348,35 @@ func (d *controllerService) ValidateVolumeCapabilities(ctx context.Context, req 
 	}, nil
 }
 
+// Expand not implemented
 func (d *controllerService) ControllerExpandVolume(ctx context.Context, req *csi.ControllerExpandVolumeRequest) (*csi.ControllerExpandVolumeResponse, error) {
-	klog.V(4).Infof("ControllerExpandVolume: called with args %+v", *req)
-	volumeID := req.GetVolumeId()
-	if len(volumeID) == 0 {
-		return nil, status.Error(codes.InvalidArgument, "Volume ID not provided")
-	}
+	return nil, nil
+	//	klog.V(4).Infof("ControllerExpandVolume: called with args %+v", *req)
+	//	volumeID := req.GetVolumeId()
+	//	if len(volumeID) == 0 {
+	//		return nil, status.Error(codes.InvalidArgument, "Volume ID not provided")
+	//	}
 
-	capRange := req.GetCapacityRange()
-	if capRange == nil {
-		return nil, status.Error(codes.InvalidArgument, "Capacity range not provided")
-	}
+	//	capRange := req.GetCapacityRange()
+	//	if capRange == nil {
+	//		return nil, status.Error(codes.InvalidArgument, "Capacity range not provided")
+	//	}
 
-	newSize := util.RoundUpBytes(int32(capRange.GetRequiredBytes()))
-	maxVolSize := int32(capRange.GetLimitBytes())
-	if maxVolSize > 0 && maxVolSize < newSize {
-		return nil, status.Error(codes.InvalidArgument, "After round-up, volume size exceeds the limit specified")
-	}
+	//	newSize := util.RoundUpBytes(int32(capRange.GetRequiredBytes()))
+	//	maxVolSize := int32(capRange.GetLimitBytes())
+	//	if maxVolSize > 0 && maxVolSize < newSize {
+	//		return nil, status.Error(codes.InvalidArgument, "After round-up, volume size exceeds the limit specified")
+	//	}
+	//
+	//	actualSizeGiB, err := d.cloud.ResizeDisk(ctx, volumeID, newSize)
+	//	if err != nil {
+	//		return nil, status.Errorf(codes.Internal, "Could not resize volume %q: %v", volumeID, err)
+	//	}
 
-	actualSizeGiB, err := d.cloud.ResizeDisk(ctx, volumeID, newSize)
-	if err != nil {
-		return nil, status.Errorf(codes.Internal, "Could not resize volume %q: %v", volumeID, err)
-	}
-
-	return &csi.ControllerExpandVolumeResponse{
-		CapacityBytes:         int64(util.GiBToBytes(actualSizeGiB)),
-		NodeExpansionRequired: true,
-	}, nil
+	//	return &csi.ControllerExpandVolumeResponse{
+	//		CapacityBytes:         int64(util.GiBToBytes(actualSizeGiB)),
+	//		NodeExpansionRequired: true,
+	//	}, nil
 }
 
 func isValidVolumeCapabilities(volCaps []*csi.VolumeCapability) bool {
@@ -569,7 +570,7 @@ func newListSnapshotsResponse(cloudResponse cloud.ListSnapshotsResponse) (*csi.L
 		entries = append(entries, snapshotResponseEntry)
 	}
 	return &csi.ListSnapshotsResponse{
-		Entries:   entries,
+		Entries: entries,
 	}, nil
 }
 

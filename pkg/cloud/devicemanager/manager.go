@@ -114,7 +114,7 @@ func (d *deviceManager) NewDevice(instance osc.Vm, volumeID string) (Device, err
 	d.mux.Lock()
 	defer d.mux.Unlock()
 
-	if instance.VmId == "" {
+	if &instance == nil {
 		return Device{}, fmt.Errorf("instance is nil")
 	}
 
@@ -238,7 +238,7 @@ func (d *deviceManager) getPath(inUse map[string]string, volumeID string) string
 }
 
 func getInstanceID(instance osc.Vm) (string, error) {
-	if reflect.DeepEqual(instance, nil) {
+	if &instance == nil {
 		return "", fmt.Errorf("can't get ID from a nil instance")
 	}
 	return instance.VmId, nil

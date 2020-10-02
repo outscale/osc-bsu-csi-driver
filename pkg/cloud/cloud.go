@@ -27,7 +27,7 @@ import (
 	"os"
 
 	 	"github.com/aws/aws-sdk-go/aws"
-	// 	"github.com/aws/aws-sdk-go/aws/awserr"
+	 	"github.com/aws/aws-sdk-go/aws/awserr"
 	// 	//"github.com/aws/aws-sdk-go/aws/credentials"
 	// 	//"github.com/aws/aws-sdk-go/aws/credentials/ec2rolecreds"
 	"github.com/aws/aws-sdk-go/aws/ec2metadata"
@@ -152,7 +152,7 @@ type Snapshot struct {
 
 // ListSnapshotsResponse is the container for our snapshots along with a pagination token to pass back to the caller
 type ListSnapshotsResponse struct {
-	Snapshots []*Snapshot
+	Snapshots []Snapshot
 }
 
 // SnapshotOptions represents parameters to create an EBS volume
@@ -162,7 +162,7 @@ type SnapshotOptions struct {
 
 // oscListSnapshotsResponse is a helper struct returned from the AWS API calling function to the main ListSnapshots function
 type oscListSnapshotsResponse struct {
-	Snapshots []*osc.Snapshot
+	Snapshots []osc.Snapshot
 }
 
 // EC2 abstracts aws.EC2 to facilitate its mocking.
@@ -185,20 +185,20 @@ type oscListSnapshotsResponse struct {
 
 type Cloud interface {
 	GetMetadata() MetadataService
-	CreateDisk(ctx context.Context, volumeName string, diskOptions *DiskOptions) (disk *Disk, err error)
+	CreateDisk(ctx context.Context, volumeName string, diskOptions *DiskOptions) (disk Disk, err error)
 	DeleteDisk(ctx context.Context, volumeID string) (success bool, err error)
 	AttachDisk(ctx context.Context, volumeID string, nodeID string) (devicePath string, err error)
 	DetachDisk(ctx context.Context, volumeID string, nodeID string) (err error)
 	//ResizeDisk(ctx context.Context, volumeID string, reqSize int64) (newSize int64, err error)
 	WaitForAttachmentState(ctx context.Context, volumeID, state string) error
-	GetDiskByName(ctx context.Context, name string, capacityBytes int32) (disk *Disk, err error)
-	GetDiskByID(ctx context.Context, volumeID string) (disk *Disk, err error)
+	GetDiskByName(ctx context.Context, name string, capacityBytes int32) (disk Disk, err error)
+	GetDiskByID(ctx context.Context, volumeID string) (disk Disk, err error)
 	IsExistInstance(ctx context.Context, nodeID string) (success bool)
-	CreateSnapshot(ctx context.Context, volumeID string, snapshotOptions *SnapshotOptions) (snapshot *Snapshot, err error)
+	CreateSnapshot(ctx context.Context, volumeID string, snapshotOptions *SnapshotOptions) (snapshot Snapshot, err error)
 	DeleteSnapshot(ctx context.Context, snapshotID string) (success bool, err error)
-	GetSnapshotByName(ctx context.Context, name string) (snapshot *Snapshot, err error)
-	GetSnapshotByID(ctx context.Context, snapshotID string) (snapshot *Snapshot, err error)
-	ListSnapshots(ctx context.Context, volumeID string, maxResults int64, nextToken string) (listSnapshotsResponse *ListSnapshotsResponse, err error)
+	GetSnapshotByName(ctx context.Context, name string) (snapshot Snapshot, err error)
+	GetSnapshotByID(ctx context.Context, snapshotID string) (snapshot Snapshot, err error)
+	ListSnapshots(ctx context.Context, volumeID string, maxResults int64, nextToken string) (listSnapshotsResponse ListSnapshotsResponse, err error)
 }
 
 type OscClient struct {
@@ -264,7 +264,7 @@ func (c *cloud) GetMetadata() MetadataService {
 	return c.metadata
 }
 
-func (c *cloud) CreateDisk(ctx context.Context, volumeName string, diskOptions *DiskOptions) (*Disk, error) {
+func (c *cloud) CreateDisk(ctx context.Context, volumeName string, diskOptions *DiskOptions) (Disk, error) {
 	fmt.Printf("Debug CreateDisk: %+v, %v\n", volumeName, diskOptions)
 	var (
 		createType string
@@ -287,20 +287,8 @@ func (c *cloud) CreateDisk(ctx context.Context, volumeName string, diskOptions *
 	case "":
 		createType = DefaultVolumeType
 	default:
-		return nil, fmt.Errorf("invalid AWS VolumeType %q", diskOptions.VolumeType)
+		return Disk{}, fmt.Errorf("invalid AWS VolumeType %q", diskOptions.VolumeType)
 	}
-
-	//  var tags []*ec2.Tag
-	// 	for key, value := range diskOptions.Tags {
-	// 		copiedKey := key
-	// 		copiedValue := value
-	// 		tags = append(tags, &ec2.Tag{Key: &copiedKey, Value: &copiedValue})
-	// 	}
-	//
-	// 	tagSpec := ec2.TagSpecification{
-	// 		ResourceType: aws.String("volume"),
-	// 		Tags:         tags,
-	// 	}
 
 	var resourceTag []osc.ResourceTag
 	for key, value := range diskOptions.Tags {
@@ -315,7 +303,7 @@ func (c *cloud) CreateDisk(ctx context.Context, volumeName string, diskOptions *
 		var err error
 		zone, err = c.randomAvailabilityZone(ctx, c.region)
 		if err != nil {
-			return nil, fmt.Errorf("failed to get availability zone %s", err)
+			return Disk{}, fmt.Errorf("failed to get availability zone %s", err)
 		}
 	}
 
@@ -346,19 +334,19 @@ func (c *cloud) CreateDisk(ctx context.Context, volumeName string, diskOptions *
 
 	if err != nil {
 		if httpRes != nil {
-			return nil, fmt.Errorf(httpRes.Status)
+			return Disk{}, fmt.Errorf(httpRes.Status)
 		}
-		return nil, fmt.Errorf("could not create volume in EC2: %v", err)
+		return Disk{}, fmt.Errorf("could not create volume in EC2: %v", err)
 	}
 
 	volumeID := creation.Volume.VolumeId
 	if len(volumeID) == 0 {
-		return nil, fmt.Errorf("volume ID was not returned by CreateVolume")
+		return Disk{}, fmt.Errorf("volume ID was not returned by CreateVolume")
 	}
 
 	size := creation.Volume.Size
 	if size == 0 {
-		return nil, fmt.Errorf("disk size was not returned by CreateVolume")
+		return Disk{}, fmt.Errorf("disk size was not returned by CreateVolume")
 	}
 
 	requestTag := osc.CreateTagsOpts{
@@ -374,17 +362,17 @@ func (c *cloud) CreateDisk(ctx context.Context, volumeName string, diskOptions *
 	resTag, httpRes, err := c.client.api.TagApi.CreateTags(ctx, &requestTag)
 
 	if err != nil {
-		return nil, fmt.Errorf("error creating tags of volume %v: %v", volumeID, err)
+		return Disk{}, fmt.Errorf("error creating tags of volume %v: %v", volumeID, err)
 	}
 	if &resTag == nil {
-		return nil, fmt.Errorf("nil CreateTags")
+		return Disk{}, fmt.Errorf("nil CreateTags")
 	}
 
 	if err := c.waitForVolume(ctx, volumeID); err != nil {
-		return nil, fmt.Errorf("failed to get an available volume in EC2: %v", err)
+		return Disk{}, fmt.Errorf("failed to get an available volume in EC2: %v", err)
 	}
 
-	return &Disk{CapacityGiB: size, VolumeID: volumeID, AvailabilityZone: zone, SnapshotID: snapshotID}, nil
+	return Disk{CapacityGiB: size, VolumeID: volumeID, AvailabilityZone: zone, SnapshotID: snapshotID}, nil
 }
 
 func (c *cloud) DeleteDisk(ctx context.Context, volumeID string) (bool, error) {
@@ -469,13 +457,13 @@ func (c *cloud) DetachDisk(ctx context.Context, volumeID, nodeID string) error {
 		volume, err := c.getVolume(ctx, &request)
 		klog.Infof("Check Volume state before detaching volume: %+v err: %+v",
 			volume, err)
-		if err == nil && volume != nil {
-			if &volume.State != nil && volume.State == "available" {
-				klog.Warningf("Tolerate DetachDisk called on available volume: %s on %s",
-					volumeID, nodeID)
-				return nil
-			}
-		}
+		//if err == nil && volume != nil {
+		//	if &volume.State != nil && volume.State == "available" {
+		//		klog.Warningf("Tolerate DetachDisk called on available volume: %s on %s",
+		//			volumeID, nodeID)
+		//		return nil
+		//	}
+		//}
 	}
 	klog.Infof("Debug Continue DetachDisk: %+v, %v\n", volumeID, nodeID)
 	instance, err := c.getInstance(ctx, nodeID)
@@ -504,6 +492,9 @@ func (c *cloud) DetachDisk(ctx context.Context, volumeID, nodeID string) error {
 	var httpRes *_nethttp.Response
 	_, httpRes, err = c.client.api.VolumeApi.UnlinkVolume(ctx, &request)
 	if err != nil {
+	    if httpRes != nil {
+			fmt.Errorf(httpRes.Status)
+		}
 		return fmt.Errorf("could not detach volume %q from node %q: %v", volumeID, nodeID, err)
 	}
 
@@ -558,7 +549,7 @@ func (c *cloud) WaitForAttachmentState(ctx context.Context, volumeID, state stri
 	return wait.ExponentialBackoff(backoff, verifyVolumeFunc)
 }
 
-func (c *cloud) GetDiskByName(ctx context.Context, name string, capacityBytes int32) (*Disk, error) {
+func (c *cloud) GetDiskByName(ctx context.Context, name string, capacityBytes int32) (Disk, error) {
 	request := osc.ReadVolumesOpts{
 		ReadVolumesRequest: optional.NewInterface(
 			osc.ReadVolumesRequest{
@@ -571,22 +562,22 @@ func (c *cloud) GetDiskByName(ctx context.Context, name string, capacityBytes in
 
 	volume, err := c.getVolume(ctx, &request)
 	if err != nil {
-		return nil, err
+		return Disk{}, err
 	}
 
 	volSizeBytes := volume.Size
 	if volSizeBytes != util.BytesToGiB(capacityBytes) {
-		return nil, ErrDiskExistsDiffSize
+		return Disk{}, ErrDiskExistsDiffSize
 	}
 
-	return &Disk{
+	return Disk{
 		VolumeID:         volume.VolumeId,
 		CapacityGiB:      volSizeBytes,
 		AvailabilityZone: volume.SubregionName,
 	}, nil
 }
 
-func (c *cloud) GetDiskByID(ctx context.Context, volumeID string) (*Disk, error) {
+func (c *cloud) GetDiskByID(ctx context.Context, volumeID string) (Disk, error) {
 	fmt.Printf("Debug GetDiskByID : %+v\n", volumeID)
 
 	request := osc.ReadVolumesOpts{
@@ -600,26 +591,26 @@ func (c *cloud) GetDiskByID(ctx context.Context, volumeID string) (*Disk, error)
 
 	volume, err := c.getVolume(ctx, &request)
 	if err != nil {
-		return nil, err
+		return Disk{}, err
 	}
 
-	return &Disk{
+	return Disk{
 		VolumeID:         volume.VolumeId,
 		CapacityGiB:      volume.Size,
 		AvailabilityZone: volume.SubregionName,
 	}, nil
 }
 
-func (c *cloud) IsExistInstance(ctx context.Context, nodeID string) bool {
+ func (c *cloud) IsExistInstance(ctx context.Context, nodeID string) bool {
 	fmt.Printf("Debug IsExistInstance : %+v\n", nodeID)
 	instance, err := c.getInstance(ctx, nodeID)
-	if err != nil || instance == nil {
+	if err != nil || instance.VmId == "" {
 		return false
 	}
 	return true
 }
 
-func (c *cloud) CreateSnapshot(ctx context.Context, volumeID string, snapshotOptions *SnapshotOptions) (snapshot *Snapshot, err error) {
+func (c *cloud) CreateSnapshot(ctx context.Context, volumeID string, snapshotOptions *SnapshotOptions) (snapshot Snapshot, err error) {
 	descriptions := "Created by AWS EBS CSI driver for volume " + volumeID
 	fmt.Printf("Debug CreateSnapshot : %+v, %+v\n", volumeID, snapshotOptions)
 
@@ -628,13 +619,6 @@ func (c *cloud) CreateSnapshot(ctx context.Context, volumeID string, snapshotOpt
 		resourceTag = append(resourceTag, osc.ResourceTag{Key: key, Value: value})
 	}
 	fmt.Printf("Debug tags = append( : %+v  \n", resourceTag)
-
-	// 	request := &ec2.CreateSnapshotInput{
-	// 		VolumeId:          aws.String(volumeID),
-	// 		DryRun:            aws.Bool(false),
-	// 		TagSpecifications: []*ec2.TagSpecification{&tagSpec},
-	// 		Description:       aws.String(descriptions),
-	// 	}
 
 	request := osc.CreateSnapshotOpts{
 		CreateSnapshotRequest: optional.NewInterface(
@@ -666,15 +650,15 @@ func (c *cloud) CreateSnapshot(ctx context.Context, volumeID string, snapshotOpt
 	backoff := util.EnvBackoff()
 	waitErr := wait.ExponentialBackoff(backoff, createSnapshotCallBack)
 	if waitErr != nil {
-		return nil, waitErr
+		return Snapshot{}, waitErr
 	}
 
 	err = waitErr
 	if err != nil {
-		return nil, fmt.Errorf("error creating snapshot of volume %s: %v", volumeID, err)
+		return Snapshot{}, fmt.Errorf("error creating snapshot of volume %s: %v", volumeID, err)
 	}
 	if &res == nil {
-		return nil, fmt.Errorf("nil CreateSnapshotResponse")
+		return Snapshot{}, fmt.Errorf("nil CreateSnapshotResponse")
 	}
 	fmt.Printf("Debug res, err := c.ec2.CreateSnapshotWithContext(ctx, request) : %+v\n", res)
 
@@ -687,11 +671,14 @@ func (c *cloud) CreateSnapshot(ctx context.Context, volumeID string, snapshotOpt
 	}
 
 	fmt.Printf("Debug requestTag := &ec2.CreateTagsInput{ : %+v\n", requestTag)
-	var resTag *osc.CreateTagsResponse
+	var resTag osc.CreateTagsResponse
 	createTagCallback := func() (bool, error) {
 		resTag, httpRes, err := c.client.api.TagApi.CreateTags(ctx, &requestTag)
 		if err != nil {
-			requestStr := fmt.Sprintf("%v", requestTag)
+		    if httpRes != nil {
+			    fmt.Errorf(httpRes.Status)
+		    }
+			requestStr := fmt.Sprintf("%v", resTag)
 			if keepRetryWithError(
 				requestStr,
 				err,
@@ -706,18 +693,18 @@ func (c *cloud) CreateSnapshot(ctx context.Context, volumeID string, snapshotOpt
 	backoff = util.EnvBackoff()
 	waitErr = wait.ExponentialBackoff(backoff, createTagCallback)
 	if waitErr != nil {
-		return nil, waitErr
+		return Snapshot{}, waitErr
 	}
 
 	err = waitErr
 	if err != nil {
-		return nil, fmt.Errorf("error creating tags of snapshot %v: %v", res.Snapshot.SnapshotId, err)
+		return Snapshot{}, fmt.Errorf("error creating tags of snapshot %v: %v", res.Snapshot.SnapshotId, err)
 	}
-	if &resTag == nil {
-		return nil, fmt.Errorf("nil CreateTags")
-	}
+	//if resTag == nil {
+	//	return Snapshot{}, fmt.Errorf("nil CreateTags")
+	//}
 	fmt.Printf("Debug resTag, err := c.ec2.CreateTagsWithContext(ctx, requestTag) %+v\n", resTag)
-	return c.oscSnapshotResponseToStruct(&res.Snapshot), nil
+	return c.oscSnapshotResponseToStruct(res.Snapshot), nil
 }
 
 func (c *cloud) DeleteSnapshot(ctx context.Context, snapshotID string) (success bool, err error) {
@@ -734,12 +721,15 @@ func (c *cloud) DeleteSnapshot(ctx context.Context, snapshotID string) (success 
 
 	_, httpRes, err = c.client.api.SnapshotApi.DeleteSnapshot(c.client.auth, &request)
 	if err != nil {
+	    if httpRes != nil {
+			fmt.Errorf(httpRes.Status)
+		}
 		return false, fmt.Errorf("DeleteSnapshot could not delete volume: %v", err)
 	}
 	return true, nil
 }
 
-func (c *cloud) GetSnapshotByName(ctx context.Context, name string) (snapshot *Snapshot, err error) {
+func (c *cloud) GetSnapshotByName(ctx context.Context, name string) (snapshot Snapshot, err error) {
 	fmt.Printf("Debug GetSnapshotByName : %+v\n", name)
 
 	request := osc.ReadSnapshotsOpts{
@@ -754,13 +744,13 @@ func (c *cloud) GetSnapshotByName(ctx context.Context, name string) (snapshot *S
 
 	oscsnapshot, err := c.getSnapshot(ctx, &request)
 	if err != nil {
-		return nil, err
+		return Snapshot{}, err
 	}
 
 	return c.oscSnapshotResponseToStruct(oscsnapshot), nil
 }
 
-func (c *cloud) GetSnapshotByID(ctx context.Context, snapshotID string) (snapshot *Snapshot, err error) {
+func (c *cloud) GetSnapshotByID(ctx context.Context, snapshotID string) (snapshot Snapshot, err error) {
 	fmt.Printf("Debug GetSnapshotByID : %+v\n", snapshotID)
 
 	request := osc.ReadSnapshotsOpts{
@@ -774,7 +764,7 @@ func (c *cloud) GetSnapshotByID(ctx context.Context, snapshotID string) (snapsho
 
 	oscsnapshot, err := c.getSnapshot(ctx, &request)
 	if err != nil {
-		return nil, err
+		return Snapshot{}, err
 	}
 
 	return c.oscSnapshotResponseToStruct(oscsnapshot), nil
@@ -784,72 +774,58 @@ func (c *cloud) GetSnapshotByID(ctx context.Context, snapshotID string) (snapsho
 // a next token value will be returned to the client as well.  They can use this token with subsequent calls to retrieve the next page of results.  If maxResults is not set (0),
 // there will be no restriction up to 1000 results (https://docs.aws.amazon.com/sdk-for-go/api/service/ec2/#DescribeSnapshotsInput).
 // Pagination not supported
-func (c *cloud) ListSnapshots(ctx context.Context, volumeID string, maxResults int64, nextToken string) (listSnapshotsResponse *ListSnapshotsResponse, err error) {
+func (c *cloud) ListSnapshots(ctx context.Context, volumeID string, maxResults int64, nextToken string) (listSnapshotsResponse ListSnapshotsResponse, err error) {
 	fmt.Printf("Debug ListSnapshots : %+v, %+v, %+v\n", volumeID, maxResults, nextToken)
 	if maxResults > 0 && maxResults < 5 {
-		return nil, ErrInvalidMaxResults
+		return ListSnapshotsResponse{}, ErrInvalidMaxResults
 	}
 
 
-	var request *osc.ReadSnapshotsRequest
+	request := osc.ReadSnapshotsOpts{
+	            ReadSnapshotsRequest: optional.NewInterface(
+			    osc.ReadSnapshotsRequest{
+				    Filters: osc.FiltersSnapshot{
+				        VolumeIds: []string{},
+				    },
+			    }),
+		}
+
 	if len(volumeID) != 0 {
-	    request := osc.ReadSnapshotsOpts{
-            ReadSnapshotsRequest: optional.NewInterface(
+		request = osc.ReadSnapshotsOpts{
+	            ReadSnapshotsRequest: optional.NewInterface(
 			    osc.ReadSnapshotsRequest{
 				    Filters: osc.FiltersSnapshot{
 				        VolumeIds: []string{volumeID},
 				    },
 			    }),
 	    }
- 	}
-
-	oscSnapshotsResponse, err := c.listSnapshots(ctx, request)
-	if err != nil {
-		return nil, err
 	}
-	var snapshots []*Snapshot
+
+	oscSnapshotsResponse, err := c.listSnapshots(ctx, &request)
+	if err != nil {
+		return ListSnapshotsResponse{}, err
+	}
+	var snapshots []Snapshot
 	for _, oscSnapshot := range oscSnapshotsResponse.Snapshots {
 		snapshots = append(snapshots, c.oscSnapshotResponseToStruct(oscSnapshot))
 	}
 
 	if len(snapshots) == 0 {
-		return nil, ErrNotFound
+		return ListSnapshotsResponse{}, ErrNotFound
 	}
 
-	return &ListSnapshotsResponse{
+	return ListSnapshotsResponse{
 		Snapshots: snapshots,
 	}, nil
 }
 
-// Helper method converting EC2 snapshot type to the internal struct
-// func (c *cloud) ec2SnapshotResponseToStruct(ec2Snapshot *ec2.Snapshot) *Snapshot {
-// 	fmt.Printf("Debug ec2SnapshotResponseToStruct : %+v\n", ec2Snapshot)
-// 	if ec2Snapshot == nil {
-// 		return nil
-// 	}
-// 	snapshotSize := util.GiBToBytes(aws.Int64Value(ec2Snapshot.VolumeSize))
-// 	snapshot := &Snapshot{
-// 		SnapshotID:     ec2Snapshot.SnapshotId,
-// 		SourceVolumeID: ec2Snapshot.VolumeId,
-// 		Size:           snapshotSize,
-// 		CreationTime:   ec2Snapshot.StartTime,
-// 	}
-// 	if ec2Snapshot.State == "completed" {
-// 		snapshot.ReadyToUse = true
-// 	} else {
-// 		snapshot.ReadyToUse = false
-// 	}
-//
-// 	return snapshot
-// }
-
-func (c *cloud) oscSnapshotResponseToStruct(oscSnapshot *osc.Snapshot) *Snapshot {
+func (c *cloud) oscSnapshotResponseToStruct(oscSnapshot osc.Snapshot) Snapshot {
 	fmt.Printf("Debug oscSnapshotResponseToStruct : %+v\n", oscSnapshot)
-	if oscSnapshot == nil {
-		return nil
-	}
+	//if oscSnapshot == nil {
+	//	return Snapshot{}
+	//}
 	snapshotSize := util.GiBToBytes(oscSnapshot.VolumeSize)
-	snapshot := &Snapshot{
+	snapshot := Snapshot{
 		SnapshotID:     oscSnapshot.SnapshotId,
 		SourceVolumeID: oscSnapshot.VolumeId,
 		Size:           snapshotSize,
@@ -881,12 +857,11 @@ func keepRetryWithError(requestStr string, err error, allowedErrors []string) bo
 }
 
 // Pagination not supported
-func (c *cloud) getVolume(ctx context.Context, request *osc.ReadVolumesOpts) (*osc.Volume, error) {
+func (c *cloud) getVolume(ctx context.Context, request *osc.ReadVolumesOpts) (osc.Volume, error) {
 	fmt.Printf("Debug getVolume : %+v\n", request)
-	var volume *osc.Volume
+	var volume osc.Volume
 	getVolumeCallback := func() (bool, error) {
-		var volumes []*osc.Volume
-		var nextToken *string
+		var volumes []osc.Volume
 
 		var response osc.ReadVolumesResponse
 		var httpRes *_nethttp.Response
@@ -897,6 +872,9 @@ func (c *cloud) getVolume(ctx context.Context, request *osc.ReadVolumesOpts) (*o
 			response, httpRes, err = c.client.api.VolumeApi.ReadVolumes(c.client.auth, request)
 
 			if err != nil {
+			    if httpRes != nil {
+		        	fmt.Errorf(httpRes.Status)
+		        }
 				requestStr := fmt.Sprintf("%v", request)
 				if keepRetryWithError(
 					requestStr,
@@ -924,16 +902,16 @@ func (c *cloud) getVolume(ctx context.Context, request *osc.ReadVolumesOpts) (*o
 	waitErr := wait.ExponentialBackoff(backoff, getVolumeCallback)
 
 	if waitErr != nil {
-		return nil, waitErr
+		return osc.Volume{}, waitErr
 	}
 
 	return volume, nil
 }
 
 // Pagination not supported
-func (c *cloud) getInstance(ctx context.Context, vmID string) (*osc.Vm, error) {
+func (c *cloud) getInstance(ctx context.Context, vmID string) (osc.Vm, error) {
 	fmt.Printf("Debug  getInstance : %+v\n", vmID)
-	instances := []*osc.Vm{}
+	var instances []osc.Vm
 
 	request := osc.ReadVmsOpts{
 		ReadVmsRequest: optional.NewInterface(
@@ -945,10 +923,12 @@ func (c *cloud) getInstance(ctx context.Context, vmID string) (*osc.Vm, error) {
 	}
 
 	getInstanceCallback := func() (bool, error) {
-		var nextToken *string
 		for {
 			response, httpRes, err := c.client.api.VmApi.ReadVms(c.client.auth, &request)
 			if err != nil {
+			    if httpRes != nil {
+		        	fmt.Errorf(httpRes.Status)
+		        }
 				requestStr := fmt.Sprintf("%v", request)
 				if keepRetryWithError(
 					requestStr,
@@ -959,9 +939,7 @@ func (c *cloud) getInstance(ctx context.Context, vmID string) (*osc.Vm, error) {
 				return false, fmt.Errorf("error listing AWS instances: %q", err)
 			}
 
-			for _, reservation := range response.Reservations {
-				instances = append(instances, reservation.Instances...)
-			}
+			instances = append(instances, response.Vms...)
 
 
 		}
@@ -971,28 +949,30 @@ func (c *cloud) getInstance(ctx context.Context, vmID string) (*osc.Vm, error) {
 	backoff := util.EnvBackoff()
 	waitErr := wait.ExponentialBackoff(backoff, getInstanceCallback)
 	if waitErr != nil {
-		return nil, waitErr
+		return osc.Vm{}, waitErr
 	}
 
 	if l := len(instances); l > 1 {
-		return nil, fmt.Errorf("found %d instances with ID %q", l, vmID)
+		return osc.Vm{}, fmt.Errorf("found %d instances with ID %q", l, vmID)
 	} else if l < 1 {
-		return nil, ErrNotFound
+		return osc.Vm{}, ErrNotFound
 	}
 
 	return instances[0], nil
 }
 
 // Pagination not supported
-func (c *cloud) getSnapshot(ctx context.Context, request *osc.ReadSnapshotsOpts) (*osc.Snapshot, error) {
+func (c *cloud) getSnapshot(ctx context.Context, request *osc.ReadSnapshotsOpts) (osc.Snapshot, error) {
 	fmt.Printf("Debug  getSnapshot(ctx context.Context : %+v\n", request)
-	var snapshots []*osc.Snapshot
+	var snapshots []osc.Snapshot
 
 	getSnapshotsCallback := func() (bool, error) {
-		// 		var nextToken *string
 		for {
 			response, httpRes, err := c.client.api.SnapshotApi.ReadSnapshots(ctx, request)
 			if err != nil {
+			    if httpRes != nil {
+		        	fmt.Errorf(httpRes.Status)
+		        }
 				requestStr := fmt.Sprintf("%v", request)
 				if keepRetryWithError(
 					requestStr,
@@ -1010,16 +990,16 @@ func (c *cloud) getSnapshot(ctx context.Context, request *osc.ReadSnapshotsOpts)
 	backoff := util.EnvBackoff()
 	waitErr := wait.ExponentialBackoff(backoff, getSnapshotsCallback)
 	if waitErr != nil {
-		return nil, waitErr
+		return osc.Snapshot{}, waitErr
 	}
 
 	fmt.Printf("Debug  len(snapshots): %+v\n", len(snapshots))
-	fmt.Printf("Debug  (snapshots): %+v\n", snapshots)
+	fmt.Printf("Debug  (snapshots): %+v\n", &snapshots)
 
 	if l := len(snapshots); l > 1 {
-		return nil, ErrMultiSnapshots
+		return osc.Snapshot{}, ErrMultiSnapshots
 	} else if l < 1 {
-		return nil, ErrNotFound
+		return osc.Snapshot{}, ErrNotFound
 	}
 	fmt.Printf("Debug  (snapshots[0]): %+v\n", snapshots[0])
 	return snapshots[0], nil
@@ -1027,17 +1007,19 @@ func (c *cloud) getSnapshot(ctx context.Context, request *osc.ReadSnapshotsOpts)
 
 // listSnapshots returns all snapshots based from a request
 // Pagination not supported
-func (c *cloud) listSnapshots(ctx context.Context, request *osc.ReadSnapshotsRequest) (*oscListSnapshotsResponse, error) {
+func (c *cloud) listSnapshots(ctx context.Context, request *osc.ReadSnapshotsOpts) (oscListSnapshotsResponse, error) {
 	fmt.Printf("Debug listSnapshots : %+v\n", request)
 
-	var snapshots []*osc.Snapshot
+	var snapshots []osc.Snapshot
 	fmt.Printf("Debug  listSnapshots(ctx context.Context : %+v\n", request)
 
-	var response *osc.ReadSnapshotsResponse
-	var err error
+	var response osc.ReadSnapshotsResponse
 	listSnapshotsCallBack := func() (bool, error) {
 		response, httpRes, err := c.client.api.SnapshotApi.ReadSnapshots(ctx, request)
 		if err != nil {
+		    if httpRes != nil {
+			    fmt.Errorf(httpRes.Status)
+		    }
 			requestStr := fmt.Sprintf("%v", request)
 			if keepRetryWithError(
 				requestStr,
@@ -1047,19 +1029,20 @@ func (c *cloud) listSnapshots(ctx context.Context, request *osc.ReadSnapshotsReq
 			}
 			return false, err
 		}
+		fmt.Printf("Debug  response : %+v\n", response)
 		return true, nil
 	}
 	backoff := util.EnvBackoff()
 	waitErr := wait.ExponentialBackoff(backoff, listSnapshotsCallBack)
 
 	if waitErr != nil {
-		return nil, waitErr
+		return oscListSnapshotsResponse{}, waitErr
 	}
 
 	fmt.Printf("Debug  response.Snapshots : %+v\n", response.Snapshots)
 	snapshots = append(snapshots, response.Snapshots...)
 
-	return &oscListSnapshotsResponse{
+	return oscListSnapshotsResponse{
 		Snapshots: snapshots,
 	}, nil
 }
@@ -1097,40 +1080,6 @@ func (c *cloud) waitForVolume(ctx context.Context, volumeID string) error {
 
 	return err
 }
-
-// isAWSError returns a boolean indicating whether the error is AWS-related
-// and has the given code. More information on AWS error codes at:
-// https://docs.aws.amazon.com/AWSEC2/latest/APIReference/errors-overview.html
-func isAWSError(err error, code string) bool {
-	if awsError, ok := err.(awserr.Error); ok {
-		if awsError.Code() == code {
-			return true
-		}
-	}
-	return false
-}
-
-// isAWSErrorIncorrectModification returns a boolean indicating whether the given error
-// is an AWS IncorrectModificationState error. This error means that a modification action
-// on an EBS volume cannot occur because the volume is currently being modified.
-func isAWSErrorIncorrectModification(err error) bool {
-	return isAWSError(err, "IncorrectModificationState")
-}
-
-// isAWSErrorVolumeNotFound returns a boolean indicating whether the
-// given error is an AWS InvalidVolume.NotFound error. This error is
-// reported when the specified volume doesn't exist.
-func isAWSErrorVolumeNotFound(err error) bool {
-	return isAWSError(err, "InvalidVolume.NotFound")
-}
-
-// isAWSErrorSnapshotNotFound returns a boolean indicating whether the
-// given error is an AWS InvalidSnapshot.NotFound error. This error is
-// reported when the specified snapshot doesn't exist.
-func isAWSErrorSnapshotNotFound(err error) bool {
-	return isAWSError(err, "InvalidSnapshot.NotFound")
-}
-
 
 
 //MODIFICATION NOT SUPPORTED
@@ -1272,6 +1221,9 @@ func (c *cloud) randomAvailabilityZone(ctx context.Context, region string) (stri
 	response, httpRes, err := c.client.api.SubregionApi.ReadSubregions(c.client.auth, nil)
 
 	if err != nil {
+	    if httpRes != nil {
+			fmt.Errorf(httpRes.Status)
+		}
 		return "", err
 	}
 

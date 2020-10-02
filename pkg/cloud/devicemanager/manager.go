@@ -31,7 +31,7 @@ import (
 const devPreffix = "/dev/xvd"
 
 type Device struct {
-	Instance          *osc.Vm
+	Instance          osc.Vm
 	Path              string
 	VolumeID          string
 	IsAlreadyAssigned bool
@@ -58,11 +58,11 @@ type DeviceManager interface {
 	// Otherwise it creates a new device with next available device name
 	// and mark it as unassigned device.
 	//NewDevice(instance *ec2.Instance, volumeID string) (device *Device, err error)
-	NewDevice(instance *osc.Vm, volumeID string) (device *Device, err error)
+	NewDevice(instance osc.Vm, volumeID string) (device Device, err error)
 
 	// GetDevice returns the device already assigned to the volume.
 	//GetDevice(instance *ec2.Instance, volumeID string) (device *Device, err error)
-	GetDevice(instance *osc.Vm, volumeID string) (device *Device, err error)
+	GetDevice(instance osc.Vm, volumeID string) (device Device, err error)
 }
 
 type deviceManager struct {
@@ -110,12 +110,12 @@ func NewDeviceManager() DeviceManager {
 	}
 }
 
-func (d *deviceManager) NewDevice(instance *osc.Vm, volumeID string) (*Device, error) {
+func (d *deviceManager) NewDevice(instance osc.Vm, volumeID string) (Device, error) {
 	d.mux.Lock()
 	defer d.mux.Unlock()
 
-	if instance == nil {
-		return nil, fmt.Errorf("instance is nil")
+	if instance.VmId == "" {
+		return Device{}, fmt.Errorf("instance is nil")
 	}
 
 	// Get device names being attached and already attached to this instance
@@ -128,12 +128,12 @@ func (d *deviceManager) NewDevice(instance *osc.Vm, volumeID string) (*Device, e
 
 	nodeID, err := getInstanceID(instance)
 	if err != nil {
-		return nil, err
+		return Device{}, err
 	}
 
 	name, err := d.nameAllocator.GetNext(inUse)
 	if err != nil {
-		return nil, fmt.Errorf("could not get a free device name to assign to node %s", nodeID)
+		return Device{}, fmt.Errorf("could not get a free device name to assign to node %s", nodeID)
 	}
 
 	// Add the chosen device and volume to the "attachments in progress" map
@@ -142,7 +142,7 @@ func (d *deviceManager) NewDevice(instance *osc.Vm, volumeID string) (*Device, e
 	return d.newBlockDevice(instance, volumeID, devPreffix+name, false), nil
 }
 
-func (d *deviceManager) GetDevice(instance *osc.Vm, volumeID string) (*Device, error) {
+func (d *deviceManager) GetDevice(instance osc.Vm, volumeID string) (Device, error) {
 	d.mux.Lock()
 	defer d.mux.Unlock()
 
@@ -155,8 +155,8 @@ func (d *deviceManager) GetDevice(instance *osc.Vm, volumeID string) (*Device, e
 	return d.newBlockDevice(instance, volumeID, "", false), nil
 }
 
-func (d *deviceManager) newBlockDevice(instance *osc.Vm, volumeID string, path string, isAlreadyAssigned bool) *Device {
-	device := &Device{
+func (d *deviceManager) newBlockDevice(instance osc.Vm, volumeID string, path string, isAlreadyAssigned bool) Device {
+	device := Device{
 		Instance:          instance,
 		Path:              path,
 		VolumeID:          volumeID,
@@ -170,7 +170,7 @@ func (d *deviceManager) newBlockDevice(instance *osc.Vm, volumeID string, path s
 	return device
 }
 
-func (d *deviceManager) release(device *Device) error {
+func (d *deviceManager) release(device Device) error {
 	nodeID, err := getInstanceID(device.Instance)
 	if err != nil {
 		return err
@@ -206,7 +206,7 @@ func (d *deviceManager) release(device *Device) error {
 
 // getDeviceNamesInUse returns the device to volume ID mapping
 // the mapping includes both already attached and being attached volumes
-func (d *deviceManager) getDeviceNamesInUse(instance *osc.Vm) map[string]string {
+func (d *deviceManager) getDeviceNamesInUse(instance osc.Vm) map[string]string {
 	nodeID := instance.VmId
 	inUse := map[string]string{}
 	for _, blockDevice := range instance.BlockDeviceMappings {
@@ -237,8 +237,8 @@ func (d *deviceManager) getPath(inUse map[string]string, volumeID string) string
 	return ""
 }
 
-func getInstanceID(instance *osc.Vm) (string, error) {
-	if instance == nil {
+func getInstanceID(instance osc.Vm) (string, error) {
+	if reflect.DeepEqual(instance, nil) {
 		return "", fmt.Errorf("can't get ID from a nil instance")
 	}
 	return instance.VmId, nil

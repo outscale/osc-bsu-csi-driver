@@ -26,6 +26,7 @@ import (
 	//"github.com/aws/aws-sdk-go/aws"
 	//"github.com/aws/aws-sdk-go/service/ec2"
 	"k8s.io/klog"
+	"reflect"
 )
 
 const devPreffix = "/dev/xvd"
@@ -114,7 +115,7 @@ func (d *deviceManager) NewDevice(instance osc.Vm, volumeID string) (Device, err
 	d.mux.Lock()
 	defer d.mux.Unlock()
 
-	if &instance == nil {
+	if reflect.DeepEqual(instance, osc.Vm{}) {
 		return Device{}, fmt.Errorf("instance is nil")
 	}
 
@@ -238,7 +239,7 @@ func (d *deviceManager) getPath(inUse map[string]string, volumeID string) string
 }
 
 func getInstanceID(instance osc.Vm) (string, error) {
-	if &instance == nil {
+	if reflect.DeepEqual(instance, osc.Vm{}) {
 		return "", fmt.Errorf("can't get ID from a nil instance")
 	}
 	return instance.VmId, nil

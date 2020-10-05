@@ -37,23 +37,23 @@ const (
 
 // RoundUpBytes rounds up the volume size in bytes upto multiplications of GiB
 // in the unit of Bytes
-func RoundUpBytes(volumeSizeBytes int32) int32 {
+func RoundUpBytes(volumeSizeBytes int64) int64 {
 	return roundUpSize(volumeSizeBytes, GiB) * GiB
 }
 
 // RoundUpGiB rounds up the volume size in bytes upto multiplications of GiB
 // in the unit of GiB
-func RoundUpGiB(volumeSizeBytes int32) int32 {
+func RoundUpGiB(volumeSizeBytes int64) int64 {
 	return roundUpSize(volumeSizeBytes, GiB)
 }
 
 // BytesToGiB converts Bytes to GiB
-func BytesToGiB(volumeSizeBytes int32) int32 {
+func BytesToGiB(volumeSizeBytes int64) int64 {
 	return volumeSizeBytes / GiB
 }
 
 // GiBToBytes converts GiB to Bytes
-func GiBToBytes(volumeSizeGiB int32) int32 {
+func GiBToBytes(volumeSizeGiB int64) int64 {
 	return volumeSizeGiB * GiB
 }
 
@@ -81,7 +81,7 @@ func ParseEndpoint(endpoint string) (string, string, error) {
 }
 
 // TODO: check division by zero and int overflow
-func roundUpSize(volumeSizeBytes int32, allocationUnitBytes int32) int32 {
+func roundUpSize(volumeSizeBytes int64, allocationUnitBytes int64) int64 {
 	return (volumeSizeBytes + allocationUnitBytes - 1) / allocationUnitBytes
 }
 

@@ -181,6 +181,17 @@ func newFakeInstance(instanceID, volumeID, devicePath string) *ec2.Instance {
 	}
 }
 
+func newFakeInstance(instanceID, volumeID, devicePath string) osc.Vm {
+	return osc.Vm{
+		InstanceId: instanceID,
+		BlockDeviceMappings: []osc.Vm.BlockDeviceMappingCreated{
+				DeviceName: devicePath,
+				Bsu:        osc.BsuCreated{VolumeId: volumeID},
+		},
+	}
+}
+
+
 func assertDevice(t *testing.T, d *Device, assigned bool, err error) {
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)

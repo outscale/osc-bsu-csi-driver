@@ -475,9 +475,9 @@ func (d *controllerService) ListSnapshots(ctx context.Context, req *csi.ListSnap
 	}
 
 	volumeID := req.GetSourceVolumeId()
-	maxEntries := int64(req.GetMaxEntries())
+	maxEntries := req.GetMaxEntries()
 
-	cloudSnapshots, err := d.cloud.ListSnapshots(ctx, volumeID, maxEntries, "")
+	cloudSnapshots, err := d.cloud.ListSnapshots(ctx, volumeID, int64(maxEntries), "")
 	if err != nil {
 		if err == cloud.ErrNotFound {
 			klog.V(4).Info("ListSnapshots: snapshot not found, returning with success")
@@ -531,7 +531,7 @@ func newCreateVolumeResponse(disk cloud.Disk) *csi.CreateVolumeResponse {
 	return &csi.CreateVolumeResponse{
 		Volume: &csi.Volume{
 			VolumeId:      disk.VolumeID,
-			CapacityBytes: int64(util.GiBToBytes(disk.CapacityGiB)),
+			CapacityBytes: util.GiBToBytes(disk.CapacityGiB),
 			VolumeContext: map[string]string{},
 			AccessibleTopology: []*csi.Topology{
 				{
@@ -590,17 +590,17 @@ func newListSnapshotsResponseEntry(snapshot cloud.Snapshot) (*csi.ListSnapshotsR
 	}, nil
 }
 
-func getVolSizeBytes(req *csi.CreateVolumeRequest) (int32, error) {
+func getVolSizeBytes(req *csi.CreateVolumeRequest) (int64, error) {
 	var volSizeBytes int64
 	capRange := req.GetCapacityRange()
 	if capRange == nil {
 		volSizeBytes = cloud.DefaultVolumeSize
 	} else {
-		volSizeBytes = int64(util.RoundUpBytes(int32(capRange.GetRequiredBytes())))
-		maxVolSize := int64(capRange.GetLimitBytes())
+		volSizeBytes = util.RoundUpBytes(capRange.GetRequiredBytes())
+		maxVolSize := capRange.GetLimitBytes()
 		if maxVolSize > 0 && maxVolSize < volSizeBytes {
 			return 0, status.Error(codes.InvalidArgument, "After round-up, volume size exceeds the limit specified")
 		}
 	}
-	return int32(volSizeBytes), nil
+	return volSizeBytes, nil
 }

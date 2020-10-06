@@ -25,11 +25,16 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
-	"github.com/aws/aws-sdk-go/service/ec2"
+	//"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/golang/mock/gomock"
-	dm "github.com/kubernetes-sigs/aws-ebs-csi-driver/pkg/cloud/devicemanager"
-	"github.com/kubernetes-sigs/aws-ebs-csi-driver/pkg/cloud/mocks"
-	"github.com/kubernetes-sigs/aws-ebs-csi-driver/pkg/util"
+
+	"github.com/outscale/osc-sdk-go/osc"
+	dm "github.com/outscale-dev/osc-bsu-csi-driver/pkg/cloud/devicemanager"
+	"github.com/outscale-dev/osc-bsu-csi-driver/pkg/cloud/mocks"
+	"github.com/outscale-dev/osc-bsu-csi-driver/pkg/util"
+	//dm "github.com/kubernetes-sigs/aws-ebs-csi-driver/pkg/cloud/devicemanager"
+	//"github.com/kubernetes-sigs/aws-ebs-csi-driver/pkg/cloud/mocks"
+	//"github.com/kubernetes-sigs/aws-ebs-csi-driver/pkg/util"
 )
 
 const (
@@ -149,32 +154,32 @@ func TestCreateDisk(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			mockCtrl := gomock.NewController(t)
-			mockEC2 := mocks.NewMockEC2(mockCtrl)
-			c := newCloud(mockEC2)
+			mockOsc := mocks.NewMockOsc(mockCtrl)
+			c := newCloud(mockOsc)
 
 			volState := tc.volState
 			if volState == "" {
 				volState = "available"
 			}
 
-			vol := &ec2.Volume{
-				VolumeId:         aws.String(tc.diskOptions.Tags[VolumeNameTagKey]),
-				Size:             aws.Int64(util.BytesToGiB(tc.diskOptions.CapacityBytes)),
-				State:            aws.String(volState),
-				AvailabilityZone: aws.String(tc.diskOptions.AvailabilityZone),
+			vol := &osc.Volume{
+				VolumeId:         tc.diskOptions.Tags[VolumeNameTagKey],
+				Size:             util.BytesToGiB(tc.diskOptions.CapacityBytes),
+				State:            volState,
+				AvailabilityZone: tc.diskOptions.AvailabilityZone,
 			}
-			snapshot := &ec2.Snapshot{
-				SnapshotId: aws.String(tc.diskOptions.SnapshotID),
-				VolumeId:   aws.String("snap-test-volume"),
-				State:      aws.String("completed"),
+			snapshot := &osc.Snapshot{
+				SnapshotId: tc.diskOptions.SnapshotID,
+				VolumeId:   "snap-test-volume",
+				State:      "completed",
 			}
-			tag := &ec2.CreateTagsOutput{}
+			tag := &osc.CreateTagsResponse{}
 			ctx := context.Background()
-			mockEC2.EXPECT().CreateVolumeWithContext(gomock.Eq(ctx), gomock.Any()).Return(vol, tc.expCreateVolumeErr)
-			mockEC2.EXPECT().CreateTagsWithContext(gomock.Eq(ctx), gomock.Any()).Return(tag, nil).AnyTimes()
-			mockEC2.EXPECT().DescribeVolumesWithContext(gomock.Eq(ctx), gomock.Any()).Return(&ec2.DescribeVolumesOutput{Volumes: []*ec2.Volume{vol}}, tc.expDescVolumeErr).AnyTimes()
+			mockOsc.EXPECT().CreateVolumeWithContext(gomock.Eq(ctx), gomock.Any()).Return(vol, tc.expCreateVolumeErr)
+			mockOsc.EXPECT().CreateTagsWithContext(gomock.Eq(ctx), gomock.Any()).Return(tag, nil).AnyTimes()
+			mockOsc.EXPECT().DescribeVolumesWithContext(gomock.Eq(ctx), gomock.Any()).Return(&osc.ReadVolumesResponse{Volumes: []osc.Volume{vol}}, tc.expDescVolumeErr).AnyTimes()
 			if len(tc.diskOptions.SnapshotID) > 0 {
-				mockEC2.EXPECT().DescribeSnapshotsWithContext(gomock.Eq(ctx), gomock.Any()).Return(&ec2.DescribeSnapshotsOutput{Snapshots: []*ec2.Snapshot{snapshot}}, nil).AnyTimes()
+				mockOsc.EXPECT().DescribeSnapshotsWithContext(gomock.Eq(ctx), gomock.Any()).Return(&osc.ReadSnapshotsResponse{Snapshots: []osc.Snapshot{snapshot}}, nil).AnyTimes()
 			}
 
 			disk, err := c.CreateDisk(ctx, tc.volumeName, tc.diskOptions)
@@ -235,11 +240,11 @@ func TestDeleteDisk(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			mockCtrl := gomock.NewController(t)
-			mockEC2 := mocks.NewMockEC2(mockCtrl)
-			c := newCloud(mockEC2)
+			mockOsc := mocks.NewMockEC2(mockCtrl)
+			c := newCloud(mockOsc)
 
 			ctx := context.Background()
-			mockEC2.EXPECT().DeleteVolumeWithContext(gomock.Eq(ctx), gomock.Any()).Return(&ec2.DeleteVolumeOutput{}, tc.expErr)
+			mockOsc.EXPECT().DeleteVolumeWithContext(gomock.Eq(ctx), gomock.Any()).Return(&osc.DeleteVolumeResponse{}, tc.expErr)
 
 			ok, err := c.DeleteDisk(ctx, tc.volumeID)
 			if err != nil && tc.expErr == nil {
@@ -283,18 +288,18 @@ func TestAttachDisk(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			mockCtrl := gomock.NewController(t)
-			mockEC2 := mocks.NewMockEC2(mockCtrl)
-			c := newCloud(mockEC2)
+			mockOsc := mocks.NewMockEC2(mockCtrl)
+			c := newCloud(mockOsc)
 
-			vol := &ec2.Volume{
+			vol := &osc.Volume{
 				VolumeId:    aws.String(tc.volumeID),
-				Attachments: []*ec2.VolumeAttachment{{State: aws.String("attached")}},
+				LinkedVolume: []*osc.LinkedVolume{{State: "attached"}},
 			}
 
 			ctx := context.Background()
-			mockEC2.EXPECT().DescribeVolumesWithContext(gomock.Eq(ctx), gomock.Any()).Return(&ec2.DescribeVolumesOutput{Volumes: []*ec2.Volume{vol}}, nil).AnyTimes()
-			mockEC2.EXPECT().DescribeInstancesWithContext(gomock.Eq(ctx), gomock.Any()).Return(newDescribeInstancesOutput(tc.nodeID), nil)
-			mockEC2.EXPECT().AttachVolumeWithContext(gomock.Eq(ctx), gomock.Any()).Return(&ec2.VolumeAttachment{}, tc.expErr)
+			mockOsc.EXPECT().DescribeVolumesWithContext(gomock.Eq(ctx), gomock.Any()).Return(&osc.ReadVolumesResponse{Volumes: []osc.Volume{vol}}, nil).AnyTimes()
+			mockOsc.EXPECT().DescribeInstancesWithContext(gomock.Eq(ctx), gomock.Any()).Return(newDescribeInstancesOutput(tc.nodeID), nil)
+			mockOsc.EXPECT().AttachVolumeWithContext(gomock.Eq(ctx), gomock.Any()).Return(&osc.LinkedVolume{}, tc.expErr)
 
 			devicePath, err := c.AttachDisk(ctx, tc.volumeID, tc.nodeID)
 			if err != nil {
@@ -339,18 +344,18 @@ func TestDetachDisk(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			mockCtrl := gomock.NewController(t)
-			mockEC2 := mocks.NewMockEC2(mockCtrl)
-			c := newCloud(mockEC2)
+			mockOsc := mocks.NewMockEC2(mockCtrl)
+			c := newCloud(mockOsc)
 
-			vol := &ec2.Volume{
+			vol := &osc.Volume{
 				VolumeId:    aws.String(tc.volumeID),
-				Attachments: nil,
+				LinkedVolume: nil,
 			}
 
 			ctx := context.Background()
-			mockEC2.EXPECT().DescribeVolumesWithContext(gomock.Eq(ctx), gomock.Any()).Return(&ec2.DescribeVolumesOutput{Volumes: []*ec2.Volume{vol}}, nil).AnyTimes()
-			mockEC2.EXPECT().DescribeInstancesWithContext(gomock.Eq(ctx), gomock.Any()).Return(newDescribeInstancesOutput(tc.nodeID), nil)
-			mockEC2.EXPECT().DetachVolumeWithContext(gomock.Eq(ctx), gomock.Any()).Return(&ec2.VolumeAttachment{}, tc.expErr)
+			mockOsc.EXPECT().DescribeVolumesWithContext(gomock.Eq(ctx), gomock.Any()).Return(&osc.ReadVolumesResponse{Volumes: []osc.Volume{vol}}, nil).AnyTimes()
+			mockOsc.EXPECT().DescribeInstancesWithContext(gomock.Eq(ctx), gomock.Any()).Return(newDescribeInstancesOutput(tc.nodeID), nil)
+			mockOsc.EXPECT().DetachVolumeWithContext(gomock.Eq(ctx), gomock.Any()).Return(&osc.LinkedVolume{}, tc.expErr)
 
 			err := c.DetachDisk(ctx, tc.volumeID, tc.nodeID)
 			if err != nil {
@@ -394,17 +399,17 @@ func TestGetDiskByName(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			mockCtrl := gomock.NewController(t)
-			mockEC2 := mocks.NewMockEC2(mockCtrl)
-			c := newCloud(mockEC2)
+			mockOsc := mocks.NewMockEC2(mockCtrl)
+			c := newCloud(mockOsc)
 
-			vol := &ec2.Volume{
-				VolumeId:         aws.String(tc.volumeName),
-				Size:             aws.Int64(util.BytesToGiB(tc.volumeCapacity)),
-				AvailabilityZone: aws.String(tc.availabilityZone),
+			vol := &osc.Volume{
+				VolumeId:         tc.volumeName,
+				Size:             util.BytesToGiB(tc.volumeCapacity),
+				SubregionName:    tc.availabilityZone,
 			}
 
 			ctx := context.Background()
-			mockEC2.EXPECT().DescribeVolumesWithContext(gomock.Eq(ctx), gomock.Any()).Return(&ec2.DescribeVolumesOutput{Volumes: []*ec2.Volume{vol}}, tc.expErr)
+			mockOsc.EXPECT().DescribeVolumesWithContext(gomock.Eq(ctx), gomock.Any()).Return(&osc.ReadVolumesResponse{Volumes: []osc.Volume{vol}}, tc.expErr)
 
 			disk, err := c.GetDiskByName(ctx, tc.volumeName, tc.volumeCapacity)
 			if err != nil {
@@ -451,16 +456,16 @@ func TestGetDiskByID(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			mockCtrl := gomock.NewController(t)
-			mockEC2 := mocks.NewMockEC2(mockCtrl)
-			c := newCloud(mockEC2)
+			mockOsc := mocks.NewMockEC2(mockCtrl)
+			c := newCloud(mockOsc)
 
 			ctx := context.Background()
-			mockEC2.EXPECT().DescribeVolumesWithContext(gomock.Eq(ctx), gomock.Any()).Return(
-				&ec2.DescribeVolumesOutput{
-					Volumes: []*ec2.Volume{
+			mockOsc.EXPECT().DescribeVolumesWithContext(gomock.Eq(ctx), gomock.Any()).Return(
+				&osc.ReadVolumesResponse{
+					Volumes: []osc.Volume{
 						{
-							VolumeId:         aws.String(tc.volumeID),
-							AvailabilityZone: aws.String(tc.availabilityZone),
+							VolumeId:         tc.volumeID,
+							SubregionName:    tc.availabilityZone,
 						},
 					},
 				},
@@ -515,20 +520,20 @@ func TestCreateSnapshot(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			mockCtrl := gomock.NewController(t)
-			mockEC2 := mocks.NewMockEC2(mockCtrl)
-			c := newCloud(mockEC2)
+			mockOsc := mocks.NewMockEC2(mockCtrl)
+			c := newCloud(mockOsc)
 
-			ec2snapshot := &ec2.Snapshot{
-				SnapshotId: aws.String(tc.snapshotOptions.Tags[SnapshotNameTagKey]),
-				VolumeId:   aws.String("snap-test-volume"),
-				State:      aws.String("completed"),
+			oscsnapshot := &osc.Snapshot{
+				SnapshotId: tc.snapshotOptions.Tags[SnapshotNameTagKey],
+				VolumeId:   "snap-test-volume",
+				State:      "completed",
 			}
 
-			tag := &ec2.CreateTagsOutput{}
+			tag := &osc.CreateTagsResponse{}
 			ctx := context.Background()
-			mockEC2.EXPECT().CreateSnapshotWithContext(gomock.Eq(ctx), gomock.Any()).Return(ec2snapshot, tc.expErr)
-			mockEC2.EXPECT().CreateTagsWithContext(gomock.Eq(ctx), gomock.Any()).Return(tag, nil).AnyTimes()
-			mockEC2.EXPECT().DescribeSnapshotsWithContext(gomock.Eq(ctx), gomock.Any()).Return(&ec2.DescribeSnapshotsOutput{Snapshots: []*ec2.Snapshot{ec2snapshot}}, nil).AnyTimes()
+			mockOsc.EXPECT().CreateSnapshotWithContext(gomock.Eq(ctx), gomock.Any()).Return(oscsnapshot, tc.expErr)
+			mockOsc.EXPECT().CreateTagsWithContext(gomock.Eq(ctx), gomock.Any()).Return(tag, nil).AnyTimes()
+			mockOsc.EXPECT().DescribeSnapshotsWithContext(gomock.Eq(ctx), gomock.Any()).Return(&osc.ReadSnapshotsResponse{Snapshots: []osc.Snapshot{oscsnapshot}}, nil).AnyTimes()
 
 			snapshot, err := c.CreateSnapshot(ctx, tc.expSnapshot.SourceVolumeID, tc.snapshotOptions)
 			if err != nil {
@@ -576,11 +581,11 @@ func TestDeleteSnapshot(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			mockCtrl := gomock.NewController(t)
-			mockEC2 := mocks.NewMockEC2(mockCtrl)
-			c := newCloud(mockEC2)
+			mockOsc := mocks.NewMockOsc(mockCtrl)
+			c := newCloud(mockOsc)
 
 			ctx := context.Background()
-			mockEC2.EXPECT().DeleteSnapshotWithContext(gomock.Eq(ctx), gomock.Any()).Return(&ec2.DeleteSnapshotOutput{}, tc.expErr)
+			mockOsc.EXPECT().DeleteSnapshotWithContext(gomock.Eq(ctx), gomock.Any()).Return(&osc.DeleteSnapshotResponse{}, tc.expErr)
 
 			_, err := c.DeleteSnapshot(ctx, tc.snapshotName)
 			if err != nil {
@@ -598,132 +603,133 @@ func TestDeleteSnapshot(t *testing.T) {
 	}
 }
 
-func TestResizeDisk(t *testing.T) {
-	testCases := []struct {
-		name                string
-		volumeID            string
-		existingVolume      *ec2.Volume
-		existingVolumeError awserr.Error
-		modifiedVolume      *ec2.ModifyVolumeOutput
-		modifiedVolumeError awserr.Error
-		descModVolume       *ec2.DescribeVolumesModificationsOutput
-		reqSizeGiB          int64
-		expErr              error
-	}{
-		{
-			name:     "success: normal",
-			volumeID: "vol-test",
-			existingVolume: &ec2.Volume{
-				VolumeId:         aws.String("vol-test"),
-				Size:             aws.Int64(1),
-				AvailabilityZone: aws.String(defaultZone),
-			},
-			modifiedVolume: &ec2.ModifyVolumeOutput{
-				VolumeModification: &ec2.VolumeModification{
-					VolumeId:          aws.String("vol-test"),
-					TargetSize:        aws.Int64(2),
-					ModificationState: aws.String(ec2.VolumeModificationStateOptimizing),
-				},
-			},
-			reqSizeGiB: 2,
-			expErr:     nil,
-		},
-		{
-			name:     "success: normal modifying state",
-			volumeID: "vol-test",
-			existingVolume: &ec2.Volume{
-				VolumeId:         aws.String("vol-test"),
-				Size:             aws.Int64(1),
-				AvailabilityZone: aws.String(defaultZone),
-			},
-			modifiedVolume: &ec2.ModifyVolumeOutput{
-				VolumeModification: &ec2.VolumeModification{
-					VolumeId:          aws.String("vol-test"),
-					TargetSize:        aws.Int64(2),
-					ModificationState: aws.String(ec2.VolumeModificationStateModifying),
-				},
-			},
-			descModVolume: &ec2.DescribeVolumesModificationsOutput{
-				VolumesModifications: []*ec2.VolumeModification{
-					{
-						VolumeId:          aws.String("vol-test"),
-						TargetSize:        aws.Int64(2),
-						ModificationState: aws.String(ec2.VolumeModificationStateCompleted),
-					},
-				},
-			},
-			reqSizeGiB: 2,
-			expErr:     nil,
-		},
-		{
-			name:                "fail: volume doesn't exist",
-			volumeID:            "vol-test",
-			existingVolumeError: awserr.New("InvalidVolume.NotFound", "", nil),
-			reqSizeGiB:          2,
-			expErr:              fmt.Errorf("ResizeDisk generic error"),
-		},
-		{
-			name:     "success: there is a resizing in progress",
-			volumeID: "vol-test",
-			existingVolume: &ec2.Volume{
-				VolumeId:         aws.String("vol-test"),
-				Size:             aws.Int64(1),
-				AvailabilityZone: aws.String(defaultZone),
-			},
-			modifiedVolumeError: awserr.New("IncorrectModificationState", "", nil),
-			descModVolume: &ec2.DescribeVolumesModificationsOutput{
-				VolumesModifications: []*ec2.VolumeModification{
-					{
-						VolumeId:          aws.String("vol-test"),
-						TargetSize:        aws.Int64(2),
-						ModificationState: aws.String(ec2.VolumeModificationStateCompleted),
-					},
-				},
-			},
-			reqSizeGiB: 2,
-			expErr:     nil,
-		},
-	}
-
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			mockCtrl := gomock.NewController(t)
-			mockEC2 := mocks.NewMockEC2(mockCtrl)
-			c := newCloud(mockEC2)
-
-			ctx := context.Background()
-			if tc.existingVolume != nil || tc.existingVolumeError != nil {
-				mockEC2.EXPECT().DescribeVolumesWithContext(gomock.Eq(ctx), gomock.Any()).Return(
-					&ec2.DescribeVolumesOutput{
-						Volumes: []*ec2.Volume{tc.existingVolume},
-					}, tc.existingVolumeError).AnyTimes()
-			}
-			if tc.modifiedVolume != nil || tc.modifiedVolumeError != nil {
-				mockEC2.EXPECT().ModifyVolumeWithContext(gomock.Eq(ctx), gomock.Any()).Return(tc.modifiedVolume, tc.modifiedVolumeError).AnyTimes()
-			}
-			if tc.descModVolume != nil {
-				mockEC2.EXPECT().DescribeVolumesModificationsWithContext(gomock.Eq(ctx), gomock.Any()).Return(tc.descModVolume, nil).AnyTimes()
-			}
-
-			newSize, err := c.ResizeDisk(ctx, tc.volumeID, util.GiBToBytes(tc.reqSizeGiB))
-			if err != nil {
-				if tc.expErr == nil {
-					t.Fatalf("ResizeDisk() failed: expected no error, got: %v", err)
-				}
-			} else {
-				if tc.expErr != nil {
-					t.Fatal("ResizeDisk() failed: expected error, got nothing")
-				} else {
-					if tc.reqSizeGiB != newSize {
-						t.Fatalf("ResizeDisk() failed: expected capacity %d, got %d", tc.reqSizeGiB, newSize)
-					}
-				}
-			}
-
-			mockCtrl.Finish()
-		})
-	}
-}
+// Volume Modification not implemented
+// func TestResizeDisk(t *testing.T) {
+// 	testCases := []struct {
+// 		name                string
+// 		volumeID            string
+// 		existingVolume      *osc.Volume
+// 		existingVolumeError awserr.Error
+// 		modifiedVolume      *osc.ModifyVolumeOutput
+// 		modifiedVolumeError awserr.Error
+// 		descModVolume       *osc.DescribeVolumesModificationsOutput
+// 		reqSizeGiB          int64
+// 		expErr              error
+// 	}{
+// 		{
+// 			name:     "success: normal",
+// 			volumeID: "vol-test",
+// 			existingVolume: &osc.Volume{
+// 				VolumeId:         "vol-test",
+// 				Size:             1,
+// 				SubregionName: defaultZone,
+// 			},
+// 			modifiedVolume: &osc.ModifyVolumeOutput{
+// 				VolumeModification: &ec2.VolumeModification{
+// 					VolumeId:          aws.String("vol-test"),
+// 					TargetSize:        aws.Int64(2),
+// 					ModificationState: aws.String(ec2.VolumeModificationStateOptimizing),
+// 				},
+// 			},
+// 			reqSizeGiB: 2,
+// 			expErr:     nil,
+// 		},
+// 		{
+// 			name:     "success: normal modifying state",
+// 			volumeID: "vol-test",
+// 			existingVolume: &ec2.Volume{
+// 				VolumeId:         aws.String("vol-test"),
+// 				Size:             aws.Int64(1),
+// 				AvailabilityZone: aws.String(defaultZone),
+// 			},
+// 			modifiedVolume: &ec2.ModifyVolumeOutput{
+// 				VolumeModification: &ec2.VolumeModification{
+// 					VolumeId:          aws.String("vol-test"),
+// 					TargetSize:        aws.Int64(2),
+// 					ModificationState: aws.String(ec2.VolumeModificationStateModifying),
+// 				},
+// 			},
+// 			descModVolume: &ec2.DescribeVolumesModificationsOutput{
+// 				VolumesModifications: []*ec2.VolumeModification{
+// 					{
+// 						VolumeId:          aws.String("vol-test"),
+// 						TargetSize:        aws.Int64(2),
+// 						ModificationState: aws.String(ec2.VolumeModificationStateCompleted),
+// 					},
+// 				},
+// 			},
+// 			reqSizeGiB: 2,
+// 			expErr:     nil,
+// 		},
+// 		{
+// 			name:                "fail: volume doesn't exist",
+// 			volumeID:            "vol-test",
+// 			existingVolumeError: awserr.New("InvalidVolume.NotFound", "", nil),
+// 			reqSizeGiB:          2,
+// 			expErr:              fmt.Errorf("ResizeDisk generic error"),
+// 		},
+// 		{
+// 			name:     "success: there is a resizing in progress",
+// 			volumeID: "vol-test",
+// 			existingVolume: &ec2.Volume{
+// 				VolumeId:         aws.String("vol-test"),
+// 				Size:             aws.Int64(1),
+// 				AvailabilityZone: aws.String(defaultZone),
+// 			},
+// 			modifiedVolumeError: awserr.New("IncorrectModificationState", "", nil),
+// 			descModVolume: &ec2.DescribeVolumesModificationsOutput{
+// 				VolumesModifications: []*ec2.VolumeModification{
+// 					{
+// 						VolumeId:          aws.String("vol-test"),
+// 						TargetSize:        aws.Int64(2),
+// 						ModificationState: aws.String(ec2.VolumeModificationStateCompleted),
+// 					},
+// 				},
+// 			},
+// 			reqSizeGiB: 2,
+// 			expErr:     nil,
+// 		},
+// 	}
+//
+// 	for _, tc := range testCases {
+// 		t.Run(tc.name, func(t *testing.T) {
+// 			mockCtrl := gomock.NewController(t)
+// 			mockOsc := mocks.NewMockEC2(mockCtrl)
+// 			c := newCloud(mockOsc)
+//
+// 			ctx := context.Background()
+// 			if tc.existingVolume != nil || tc.existingVolumeError != nil {
+// 				mockOsc.EXPECT().DescribeVolumesWithContext(gomock.Eq(ctx), gomock.Any()).Return(
+// 					&ec2.DescribeVolumesOutput{
+// 						Volumes: []*ec2.Volume{tc.existingVolume},
+// 					}, tc.existingVolumeError).AnyTimes()
+// 			}
+// 			if tc.modifiedVolume != nil || tc.modifiedVolumeError != nil {
+// 				mockOsc.EXPECT().ModifyVolumeWithContext(gomock.Eq(ctx), gomock.Any()).Return(tc.modifiedVolume, tc.modifiedVolumeError).AnyTimes()
+// 			}
+// 			if tc.descModVolume != nil {
+// 				mockOsc.EXPECT().DescribeVolumesModificationsWithContext(gomock.Eq(ctx), gomock.Any()).Return(tc.descModVolume, nil).AnyTimes()
+// 			}
+//
+// 			newSize, err := c.ResizeDisk(ctx, tc.volumeID, util.GiBToBytes(tc.reqSizeGiB))
+// 			if err != nil {
+// 				if tc.expErr == nil {
+// 					t.Fatalf("ResizeDisk() failed: expected no error, got: %v", err)
+// 				}
+// 			} else {
+// 				if tc.expErr != nil {
+// 					t.Fatal("ResizeDisk() failed: expected error, got nothing")
+// 				} else {
+// 					if tc.reqSizeGiB != newSize {
+// 						t.Fatalf("ResizeDisk() failed: expected capacity %d, got %d", tc.reqSizeGiB, newSize)
+// 					}
+// 				}
+// 			}
+//
+// 			mockCtrl.Finish()
+// 		})
+// 	}
+// }
 
 func TestGetSnapshotByName(t *testing.T) {
 	testCases := []struct {
@@ -751,17 +757,17 @@ func TestGetSnapshotByName(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			mockCtrl := gomock.NewController(t)
-			mockEC2 := mocks.NewMockEC2(mockCtrl)
-			c := newCloud(mockEC2)
+			mockOsc := mocks.NewMockEC2(mockCtrl)
+			c := newCloud(mockOsc)
 
-			ec2snapshot := &ec2.Snapshot{
-				SnapshotId: aws.String(tc.snapshotOptions.Tags[SnapshotNameTagKey]),
-				VolumeId:   aws.String("snap-test-volume"),
-				State:      aws.String("completed"),
+			oscsnapshot := &osc.Snapshot{
+				SnapshotId: tc.snapshotOptions.Tags[SnapshotNameTagKey],
+				VolumeId:   "snap-test-volume",
+				State:      "completed",
 			}
 
 			ctx := context.Background()
-			mockEC2.EXPECT().DescribeSnapshotsWithContext(gomock.Eq(ctx), gomock.Any()).Return(&ec2.DescribeSnapshotsOutput{Snapshots: []*ec2.Snapshot{ec2snapshot}}, nil)
+			mockOsc.EXPECT().DescribeSnapshotsWithContext(gomock.Eq(ctx), gomock.Any()).Return(&osc.ReadSnapshotsResponse{Snapshots: []osc.Snapshot{oscsnapshot}}, nil)
 
 			_, err := c.GetSnapshotByName(ctx, tc.snapshotOptions.Tags[SnapshotNameTagKey])
 			if err != nil {
@@ -805,17 +811,17 @@ func TestGetSnapshotByID(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			mockCtrl := gomock.NewController(t)
-			mockEC2 := mocks.NewMockEC2(mockCtrl)
-			c := newCloud(mockEC2)
+			mockOsc := mocks.NewMockEC2(mockCtrl)
+			c := newCloud(mockOsc)
 
-			ec2snapshot := &ec2.Snapshot{
-				SnapshotId: aws.String(tc.snapshotOptions.Tags[SnapshotNameTagKey]),
-				VolumeId:   aws.String("snap-test-volume"),
-				State:      aws.String("completed"),
+			oscsnapshot := &osc.Snapshot{
+				SnapshotId: tc.snapshotOptions.Tags[SnapshotNameTagKey],
+				VolumeId:   "snap-test-volume",
+				State:      "completed",
 			}
 
 			ctx := context.Background()
-			mockEC2.EXPECT().DescribeSnapshotsWithContext(gomock.Eq(ctx), gomock.Any()).Return(&ec2.DescribeSnapshotsOutput{Snapshots: []*ec2.Snapshot{ec2snapshot}}, nil)
+			mockOsc.EXPECT().DescribeSnapshotsWithContext(gomock.Eq(ctx), gomock.Any()).Return(&osc.ReadSnapshotsResponse{Snapshots: []osc.Snapshot{oscsnapshot}}, nil)
 
 			_, err := c.GetSnapshotByID(ctx, tc.snapshotOptions.Tags[SnapshotNameTagKey])
 			if err != nil {
@@ -850,27 +856,27 @@ func TestListSnapshots(t *testing.T) {
 						SnapshotID:     "snap-test-name2",
 					},
 				}
-				ec2Snapshots := []*ec2.Snapshot{
+				oscsnapshot := []*osc.Snapshot{
 					{
-						SnapshotId: aws.String(expSnapshots[0].SnapshotID),
-						VolumeId:   aws.String("snap-test-volume1"),
-						State:      aws.String("completed"),
+						SnapshotId: expSnapshots[0].SnapshotID,
+						VolumeId:   "snap-test-volume1",
+						State:      "completed",
 					},
 					{
-						SnapshotId: aws.String(expSnapshots[1].SnapshotID),
-						VolumeId:   aws.String("snap-test-volume2"),
-						State:      aws.String("completed"),
+						SnapshotId: expSnapshots[1].SnapshotID,
+						VolumeId:   "snap-test-volume2",
+						State:      "completed",
 					},
 				}
 
 				mockCtl := gomock.NewController(t)
 				defer mockCtl.Finish()
-				mockEC2 := mocks.NewMockEC2(mockCtl)
-				c := newCloud(mockEC2)
+				mockOsc := mocks.NewMockEC2(mockCtl)
+				c := newCloud(mockOsc)
 
 				ctx := context.Background()
 
-				mockEC2.EXPECT().DescribeSnapshotsWithContext(gomock.Eq(ctx), gomock.Any()).Return(&ec2.DescribeSnapshotsOutput{Snapshots: ec2Snapshots}, nil)
+				mockOsc.EXPECT().DescribeSnapshotsWithContext(gomock.Eq(ctx), gomock.Any()).Return(&osc.ReadSnapshotsResponse{Snapshots: oscsnapshot}, nil)
 
 				_, err := c.ListSnapshots(ctx, "", 0, "")
 				if err != nil {
@@ -892,27 +898,27 @@ func TestListSnapshots(t *testing.T) {
 						SnapshotID:     "snap-test-name2",
 					},
 				}
-				ec2Snapshots := []*ec2.Snapshot{
+				oscsnapshot := []*osc.Snapshot{
 					{
-						SnapshotId: aws.String(expSnapshots[0].SnapshotID),
-						VolumeId:   aws.String(sourceVolumeID),
-						State:      aws.String("completed"),
+						SnapshotId: expSnapshots[0].SnapshotID,
+						VolumeId:   sourceVolumeID,
+						State:      "completed",
 					},
 					{
-						SnapshotId: aws.String(expSnapshots[1].SnapshotID),
-						VolumeId:   aws.String(sourceVolumeID),
-						State:      aws.String("completed"),
+						SnapshotId: expSnapshots[1].SnapshotID,
+						VolumeId:   sourceVolumeID,
+						State:      "completed",
 					},
 				}
 
 				mockCtl := gomock.NewController(t)
 				defer mockCtl.Finish()
-				mockEC2 := mocks.NewMockEC2(mockCtl)
-				c := newCloud(mockEC2)
+				mockOsc := mocks.NewMockEC2(mockCtl)
+				c := newCloud(mockOsc)
 
 				ctx := context.Background()
 
-				mockEC2.EXPECT().DescribeSnapshotsWithContext(gomock.Eq(ctx), gomock.Any()).Return(&ec2.DescribeSnapshotsOutput{Snapshots: ec2Snapshots}, nil)
+				mockOsc.EXPECT().DescribeSnapshotsWithContext(gomock.Eq(ctx), gomock.Any()).Return(&osc.ReadSnapshotsResponse{Snapshots: oscsnapshot}, nil)
 
 				resp, err := c.ListSnapshots(ctx, sourceVolumeID, 0, "")
 				if err != nil {
@@ -943,28 +949,28 @@ func TestListSnapshots(t *testing.T) {
 					})
 				}
 
-				var ec2Snapshots []*ec2.Snapshot
+				var oscsnapshots []osc.Snapshot
 				for i := 0; i < maxResults*2; i++ {
-					ec2Snapshots = append(ec2Snapshots, &ec2.Snapshot{
-						SnapshotId: aws.String(expSnapshots[i].SnapshotID),
-						VolumeId:   aws.String(fmt.Sprintf("snap-test-volume%d", i)),
-						State:      aws.String("completed"),
+					oscsnapshot = append(oscsnapshots, &osc.Snapshot{
+						SnapshotId: expSnapshots[i].SnapshotID,
+						VolumeId:   fmt.Sprintf("snap-test-volume%d", i),
+						State:      "completed",
 					})
 				}
 
 				mockCtl := gomock.NewController(t)
 				defer mockCtl.Finish()
-				mockEC2 := mocks.NewMockEC2(mockCtl)
-				c := newCloud(mockEC2)
+				mockOsc := mocks.NewMockEC2(mockCtl)
+				c := newCloud(mockOsc)
 
 				ctx := context.Background()
 
-				firstCall := mockEC2.EXPECT().DescribeSnapshotsWithContext(gomock.Eq(ctx), gomock.Any()).Return(&ec2.DescribeSnapshotsOutput{
-					Snapshots: ec2Snapshots[:maxResults],
+				firstCall := mockOsc.EXPECT().DescribeSnapshotsWithContext(gomock.Eq(ctx), gomock.Any()).Return(&osc.ReadSnapshotsResponse{
+					Snapshots: oscsnapshots[:maxResults],
 					NextToken: aws.String(nextTokenValue),
 				}, nil)
-				secondCall := mockEC2.EXPECT().DescribeSnapshotsWithContext(gomock.Eq(ctx), gomock.Any()).Return(&ec2.DescribeSnapshotsOutput{
-					Snapshots: ec2Snapshots[maxResults:],
+				secondCall := mockOsc.EXPECT().DescribeSnapshotsWithContext(gomock.Eq(ctx), gomock.Any()).Return(&osc.ReadSnapshotsResponse{
+					Snapshots: oscsnapshots[maxResults:],
 				}, nil)
 				gomock.InOrder(
 					firstCall,
@@ -1003,12 +1009,12 @@ func TestListSnapshots(t *testing.T) {
 			testFunc: func(t *testing.T) {
 				mockCtl := gomock.NewController(t)
 				defer mockCtl.Finish()
-				mockEC2 := mocks.NewMockEC2(mockCtl)
-				c := newCloud(mockEC2)
+				mockOsc := mocks.NewMockEC2(mockCtl)
+				c := newCloud(mockOsc)
 
 				ctx := context.Background()
 
-				mockEC2.EXPECT().DescribeSnapshotsWithContext(gomock.Eq(ctx), gomock.Any()).Return(nil, errors.New("test error"))
+				mockOsc.EXPECT().DescribeSnapshotsWithContext(gomock.Eq(ctx), gomock.Any()).Return(nil, errors.New("test error"))
 
 				if _, err := c.ListSnapshots(ctx, "", 0, ""); err == nil {
 					t.Fatalf("ListSnapshots() failed: expected an error, got none")
@@ -1020,12 +1026,12 @@ func TestListSnapshots(t *testing.T) {
 			testFunc: func(t *testing.T) {
 				mockCtl := gomock.NewController(t)
 				defer mockCtl.Finish()
-				mockEC2 := mocks.NewMockEC2(mockCtl)
-				c := newCloud(mockEC2)
+				mockOsc := mocks.NewMockEC2(mockCtl)
+				c := newCloud(mockOsc)
 
 				ctx := context.Background()
 
-				mockEC2.EXPECT().DescribeSnapshotsWithContext(gomock.Eq(ctx), gomock.Any()).Return(&ec2.DescribeSnapshotsOutput{}, nil)
+				mockOsc.EXPECT().DescribeSnapshotsWithContext(gomock.Eq(ctx), gomock.Any()).Return(&osc.ReadSnapshotsResponse{}, nil)
 
 				if _, err := c.ListSnapshots(ctx, "", 0, ""); err != nil {
 					if err != ErrNotFound {
@@ -1043,11 +1049,11 @@ func TestListSnapshots(t *testing.T) {
 	}
 }
 
-func newCloud(mockEC2 EC2) Cloud {
+func newCloud(mockOsc OscClient) Cloud {
 	return &cloud{
 		region: "test-region",
 		dm:     dm.NewDeviceManager(),
-		ec2:    mockEC2,
+		client:    mockOsc,
 		metadata: &Metadata{
 			InstanceID:       "test-instance",
 			Region:           "test-region",
@@ -1056,12 +1062,20 @@ func newCloud(mockEC2 EC2) Cloud {
 	}
 }
 
-func newDescribeInstancesOutput(nodeID string) *ec2.DescribeInstancesOutput {
-	return &ec2.DescribeInstancesOutput{
-		Reservations: []*ec2.Reservation{{
-			Instances: []*ec2.Instance{
-				{InstanceId: aws.String(nodeID)},
-			},
-		}},
+// func newDescribeInstancesOutput(nodeID string) *ec2.DescribeInstancesOutput {
+// 	return &ec2.DescribeInstancesOutput{
+// 		Reservations: []*ec2.Reservation{{
+// 			Instances: []*ec2.Instance{
+// 				{InstanceId: aws.String(nodeID)},
+// 			},
+// 		}},
+// 	}
+// }
+
+func newDescribeInstancesOutput(nodeID string) osc.ReadVmsResponse {
+	return osc.ReadVmsResponse{
+		Vms: []osc.Vms{
+				{VmId: nodeID},
+		},
 	}
 }

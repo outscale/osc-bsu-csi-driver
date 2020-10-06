@@ -19,8 +19,11 @@ package devicemanager
 import (
 	"testing"
 
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/service/ec2"
+	//"github.com/aws/aws-sdk-go/aws"
+	//"github.com/aws/aws-sdk-go/service/ec2"
+
+    "github.com/outscale/osc-sdk-go/osc"
+	"reflect"
 )
 
 func TestNewDevice(t *testing.T) {
@@ -59,11 +62,11 @@ func TestNewDevice(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			// Should fail if instance is nil
-			dev1, err := dm.NewDevice(nil, tc.volumeID)
+			dev1, err := dm.NewDevice((osc.Vm{}), tc.volumeID)
 			if err == nil {
 				t.Fatalf("Expected error when nil instance is passed in, got nothing")
 			}
-			if dev1 != nil {
+			if reflect.DeepEqual(dev1, Device{}) {
 				t.Fatalf("Expected nil device, got %v", dev1)
 			}
 
@@ -169,35 +172,25 @@ func TestReleaseDevice(t *testing.T) {
 	}
 }
 
-func newFakeInstance(instanceID, volumeID, devicePath string) *ec2.Instance {
-	return &ec2.Instance{
-		InstanceId: aws.String(instanceID),
-		BlockDeviceMappings: []*ec2.InstanceBlockDeviceMapping{
-			{
-				DeviceName: aws.String(devicePath),
-				Ebs:        &ec2.EbsInstanceBlockDevice{VolumeId: aws.String(volumeID)},
+func newFakeInstance(instanceID, volumeID, devicePath string) osc.Vm {
+	return osc.Vm{
+		VmId: instanceID,
+		BlockDeviceMappings: []osc.BlockDeviceMappingCreated {
+		    {
+				DeviceName: devicePath,
+				Bsu:        osc.BsuCreated{VolumeId: volumeID},
 			},
 		},
 	}
 }
 
-func newFakeInstance(instanceID, volumeID, devicePath string) osc.Vm {
-	return osc.Vm{
-		InstanceId: instanceID,
-		BlockDeviceMappings: []osc.Vm.BlockDeviceMappingCreated{
-				DeviceName: devicePath,
-				Bsu:        osc.BsuCreated{VolumeId: volumeID},
-		},
-	}
-}
 
-
-func assertDevice(t *testing.T, d *Device, assigned bool, err error) {
+func assertDevice(t *testing.T, d Device, assigned bool, err error) {
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}
 
-	if d == nil {
+	if reflect.DeepEqual(d, Device{}) {
 		t.Fatalf("Expected valid device, got nil")
 	}
 

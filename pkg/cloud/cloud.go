@@ -20,11 +20,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	_nethttp "net/http"
 	"time"
+
+	"os"
 
 	"github.com/antihax/optional"
 	"github.com/outscale/osc-sdk-go/osc"
-	"os"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
@@ -35,7 +37,6 @@ import (
 	"github.com/kubernetes-sigs/aws-ebs-csi-driver/pkg/util"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/klog"
-	_nethttp "net/http"
 
 	"reflect"
 )
@@ -199,17 +200,39 @@ type Cloud interface {
 	ListSnapshots(ctx context.Context, volumeID string, maxResults int64, nextToken string) (listSnapshotsResponse ListSnapshotsResponse, err error)
 }
 
+type OscInterface interface {
+	CreateVolume(ctx context.Context, localVarOptionals *osc.CreateVolumeOpts) (osc.CreateVolumeResponse, *_nethttp.Response, error)
+	CreateTags(ctx context.Context, localVarOptionals *osc.CreateTagsOpts) (osc.CreateTagsResponse, *_nethttp.Response, error)
+	ReadVolumes(ctx context.Context, localVarOptionals *osc.ReadVolumesOpts) (osc.ReadVolumesResponse, *_nethttp.Response, error)
+}
+
 type OscClient struct {
 	config *osc.Configuration
 	auth   context.Context
 	api    *osc.APIClient
 }
 
+func (client *OscClient) CreateVolume(ctx context.Context, localVarOptionals *osc.CreateVolumeOpts) (osc.CreateVolumeResponse, *_nethttp.Response, error) {
+	return client.api.VolumeApi.CreateVolume(client.auth, localVarOptionals)
+}
+func (client *OscClient) CreateTags(ctx context.Context, localVarOptionals *osc.CreateTagsOpts) (osc.CreateTagsResponse, *_nethttp.Response, error) {
+	return client.api.TagApi.CreateTags(client.auth, localVarOptionals)
+}
+
+func (client *OscClient) ReadVolumes(ctx context.Context, localVarOptionals *osc.ReadVolumesOpts) (osc.ReadVolumesResponse, *_nethttp.Response, error){
+	return client.api.VolumeApi.ReadVolumes(client.auth, localVarOptionals)
+}
+
+var _ OscInterface = &OscClient{}
+
 type cloud struct {
 	region   string
 	metadata MetadataService
 	dm       dm.DeviceManager
-	client   *OscClient
+	clientIf OscInterface
+
+	//To Remove
+	client *OscClient
 }
 
 var _ Cloud = &cloud{}
@@ -245,7 +268,11 @@ func newEC2Cloud(region string) (Cloud, error) {
 		region:   useRegion,
 		metadata: metadata,
 		dm:       dm.NewDeviceManager(),
+		clientIf: client,
+
+		//TO REMOVE
 		client:   client,
+
 	}, nil
 }
 
@@ -311,24 +338,20 @@ func (c *cloud) CreateDisk(ctx context.Context, volumeName string, diskOptions *
 	//	request.Encrypted = aws.Bool(true)
 	//}
 
+	snapshotID := diskOptions.SnapshotID
 	request := osc.CreateVolumeOpts{
 		CreateVolumeRequest: optional.NewInterface(
 			osc.CreateVolumeRequest{
 				Size:          int32(capacityGiB),
 				VolumeType:    createType,
 				SubregionName: zone,
+				Iops: int32(iops),
+				SnapshotId: snapshotID,
 			}),
 	}
 
-	// 	if iops > 0 {
-	// 		request.CreateVolumeRequest.Iops = iops
-	// 	}
-	snapshotID := diskOptions.SnapshotID
-	// 	if len(snapshotID) > 0 {
-	// 		request.SnapshotId = snapshotID
-	// 	}
-
-	creation, httpRes, err := c.client.api.VolumeApi.CreateVolume(c.client.auth, &request)
+	//creation, httpRes, err := c.client.api.VolumeApi.CreateVolume(c.client.auth, &request)
+	creation, httpRes, err := c.clientIf.CreateVolume(ctx, &request)
 
 	if err != nil {
 		if httpRes != nil {
@@ -357,18 +380,21 @@ func (c *cloud) CreateDisk(ctx context.Context, volumeName string, diskOptions *
 
 	fmt.Printf("Debug requestTag := osc.CreateTagsOpts{ : %+v\n", requestTag)
 
-	resTag, httpRes, err := c.client.api.TagApi.CreateTags(ctx, &requestTag)
-
+	//resTag, httpRes, err := c.client.api.TagApi.CreateTags(ctx, &requestTag)
+	resTag, httpRes, err := c.clientIf.CreateTags(ctx, &requestTag)
 	if err != nil {
 		return Disk{}, fmt.Errorf("error creating tags of volume %v: %v", volumeID, err)
 	}
+
+	// TO UPDATE resTag == nil
 	if (resTag == osc.CreateTagsResponse{}) {
-		return Disk{}, fmt.Errorf("nil CreateTags")
+		fmt.Printf("resTag: %+v\n", resTag)
+		//return Disk{}, fmt.Errorf("nil CreateTags")
 	}
 
-	if err := c.waitForVolume(ctx, volumeID); err != nil {
+	 if err := c.waitForVolume(ctx, volumeID); err != nil {
 		return Disk{}, fmt.Errorf("failed to get an available volume in EC2: %v", err)
-	}
+	 }
 
 	return Disk{CapacityGiB: int64(size), VolumeID: volumeID, AvailabilityZone: zone, SnapshotID: snapshotID}, nil
 }
@@ -869,7 +895,8 @@ func (c *cloud) getVolume(ctx context.Context, request *osc.ReadVolumesOpts) (os
 
 		for {
 
-			response, httpRes, err = c.client.api.VolumeApi.ReadVolumes(c.client.auth, request)
+			response, httpRes, err = c.clientIf.ReadVolumes(ctx, request)
+			//response, httpRes, err = c.client.api.VolumeApi.ReadVolumes(c.client.auth, request)
 
 			if err != nil {
 				if httpRes != nil {

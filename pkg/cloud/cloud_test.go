@@ -29,12 +29,12 @@ import (
 	"github.com/golang/mock/gomock"
 
 	"github.com/outscale/osc-sdk-go/osc"
-	dm "github.com/outscale-dev/osc-bsu-csi-driver/pkg/cloud/devicemanager"
-	"github.com/outscale-dev/osc-bsu-csi-driver/pkg/cloud/mocks"
-	"github.com/outscale-dev/osc-bsu-csi-driver/pkg/util"
-	//dm "github.com/kubernetes-sigs/aws-ebs-csi-driver/pkg/cloud/devicemanager"
-	//"github.com/kubernetes-sigs/aws-ebs-csi-driver/pkg/cloud/mocks"
-	//"github.com/kubernetes-sigs/aws-ebs-csi-driver/pkg/util"
+// 	dm "github.com/outscale-dev/osc-bsu-csi-driver/pkg/cloud/devicemanager"
+// 	"github.com/outscale-dev/osc-bsu-csi-driver/pkg/cloud/mocks"
+// 	"github.com/outscale-dev/osc-bsu-csi-driver/pkg/util"
+	dm "github.com/kubernetes-sigs/aws-ebs-csi-driver/pkg/cloud/devicemanager"
+	"github.com/kubernetes-sigs/aws-ebs-csi-driver/pkg/cloud/mocks"
+	"github.com/kubernetes-sigs/aws-ebs-csi-driver/pkg/util"
 )
 
 const (
@@ -153,9 +153,13 @@ func TestCreateDisk(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
+			//mockCtrl := gomock.NewController(t)
+			//mockOsc := mocks.NewMockOsc(mockCtrl)
+			//c := newCloud(mockOsc)
+
 			mockCtrl := gomock.NewController(t)
-			mockOsc := mocks.NewMockOsc(mockCtrl)
-			c := newCloud(mockOsc)
+			mockVolumeAPI := mocks.NewMockVolumeAPI(mockCtrl)
+			c := newCloud(mockVolumeAPI)
 
 			volState := tc.volState
 			if volState == "" {
@@ -1049,18 +1053,54 @@ func TestListSnapshots(t *testing.T) {
 	}
 }
 
-func newCloud(mockOsc OscClient) Cloud {
+
+//func newCloud(mock *mocks.MockVolumeAPI) Cloud {
+// 	client := &OscClient{}
+// 	client.config = osc.NewConfiguration()
+// 	client.auth = context.WithValue(context.Background(), osc.ContextAWSv4, osc.AWSv4{
+// 		AccessKey: ("OSC_ACCESS_KEY"),
+// 		SecretKey: ("OSC_SECRET_KEY"),
+// 	})
+// 	client.api = osc.NewAPIClient(client.config)
+//
+// 	client.api.VolumeApi = mock
+//
+// 	return &cloud{
+// 		region: "test-region",
+// 		dm:     dm.NewDeviceManager(),
+// 		client: OscClient,
+// 		metadata: &Metadata{
+// 			InstanceID:       "test-instance",
+// 			Region:           "test-region",
+// 			AvailabilityZone: defaultZone,
+// 		},
+// 	}
+// }
+func newCloud(mockOscInterface OscInterface) *cloud {
+	client := &OscClient{}
+	client.config = osc.NewConfiguration()
+	client.api = osc.NewAPIClient(client.config)
+	client.auth = context.WithValue(context.Background(), osc.ContextAWSv4, osc.AWSv4{
+		AccessKey: "OSC_ACCESS_KEY",
+		SecretKey: "OSC_SECRET_KEY",
+	})
+
+
 	return &cloud{
-		region: "test-region",
-		dm:     dm.NewDeviceManager(),
-		client:    mockOsc,
+		region:   "test-region",
+		dm:       dm.NewDeviceManager(),
+		clientIf: mockOscInterface,
 		metadata: &Metadata{
 			InstanceID:       "test-instance",
 			Region:           "test-region",
 			AvailabilityZone: defaultZone,
 		},
+		//Remove when compile pass
+		client:   client,
+
 	}
 }
+
 
 // func newDescribeInstancesOutput(nodeID string) *ec2.DescribeInstancesOutput {
 // 	return &ec2.DescribeInstancesOutput{

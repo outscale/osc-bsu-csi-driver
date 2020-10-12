@@ -6,6 +6,7 @@ package mocks
 
 import (
 	context "context"
+	http "net/http"
 	reflect "reflect"
 
 	//aws "github.com/aws/aws-sdk-go/aws"
@@ -77,7 +78,7 @@ func (mr *MockOscInterfaceMockRecorder) CreateTags(ctx, localVarOptionals interf
 // ReadVolumes mocks base method
 func (m *MockOscInterface) ReadVolumes(ctx context.Context, localVarOptionals *osc.ReadVolumesOpts) (osc.ReadVolumesResponse, *http.Response, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CreateTags", ctx, localVarOptionals)
+	ret := m.ctrl.Call(m, "ReadVolumes", ctx, localVarOptionals)
 	ret0, _ := ret[0].(osc.ReadVolumesResponse)
 	ret1, _ := ret[1].(*http.Response)
 	ret2, _ := ret[2].(error)
@@ -87,7 +88,55 @@ func (m *MockOscInterface) ReadVolumes(ctx context.Context, localVarOptionals *o
 // ReadVolumes indicates an expected call of ReadVolumes
 func (mr *MockOscInterfaceMockRecorder) ReadVolumes(ctx, localVarOptionals interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateTags", reflect.TypeOf((*MockOscInterface)(nil).ReadVolumes), ctx, localVarOptionals)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ReadVolumes", reflect.TypeOf((*MockOscInterface)(nil).ReadVolumes), ctx, localVarOptionals)
+}
+
+// DeleteVolume mocks base method
+func (m *MockOscInterface) DeleteVolume(ctx context.Context, localVarOptionals *osc.DeleteVolumeOpts) (osc.DeleteVolumeResponse, *http.Response, error){
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteVolume", ctx, localVarOptionals)
+	ret0, _ := ret[0].(osc.DeleteVolumeResponse)
+	ret1, _ := ret[1].(*http.Response)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
+}
+
+// DeleteVolume indicates an expected call of DeleteVolume
+func (mr *MockOscInterfaceMockRecorder) DeleteVolume(ctx, localVarOptionals interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteVolume", reflect.TypeOf((*MockOscInterface)(nil).DeleteVolume), ctx, localVarOptionals)
+}
+
+// ReadSnapshots mocks base method
+func (m *MockOscInterface) ReadSnapshots(ctx context.Context, localVarOptionals *osc.ReadSnapshotsOpts) (osc.ReadSnapshotsResponse, *http.Response, error){
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ReadSnapshots", ctx, localVarOptionals)
+	ret0, _ := ret[0].(osc.ReadSnapshotsResponse)
+	ret1, _ := ret[1].(*http.Response)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
+}
+
+// ReadSnapshots indicates an expected call of ReadSnapshots
+func (mr *MockOscInterfaceMockRecorder) ReadSnapshots(ctx, localVarOptionals interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ReadSnapshots", reflect.TypeOf((*MockOscInterface)(nil).ReadSnapshots), ctx, localVarOptionals)
+}
+
+// ReadSubregions mocks base method
+func (m *MockOscInterface) ReadSubregions(ctx context.Context, localVarOptionals *osc.ReadSubregionsOpts) (osc.ReadSubregionsResponse, *http.Response, error){
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ReadSubregions", ctx, localVarOptionals)
+	ret0, _ := ret[0].(osc.ReadSubregionsResponse)
+	ret1, _ := ret[1].(*http.Response)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
+}
+
+// ReadSubregions indicates an expected call of ReadSubregions
+func (mr *MockOscInterfaceMockRecorder) ReadSubregions(ctx, localVarOptionals interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ReadSnapshots", reflect.TypeOf((*MockOscInterface)(nil).ReadSnapshots), ctx, localVarOptionals)
 }
 
 

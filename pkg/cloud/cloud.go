@@ -204,6 +204,9 @@ type OscInterface interface {
 	CreateVolume(ctx context.Context, localVarOptionals *osc.CreateVolumeOpts) (osc.CreateVolumeResponse, *_nethttp.Response, error)
 	CreateTags(ctx context.Context, localVarOptionals *osc.CreateTagsOpts) (osc.CreateTagsResponse, *_nethttp.Response, error)
 	ReadVolumes(ctx context.Context, localVarOptionals *osc.ReadVolumesOpts) (osc.ReadVolumesResponse, *_nethttp.Response, error)
+	DeleteVolume(ctx context.Context, localVarOptionals *osc.DeleteVolumeOpts) (osc.DeleteVolumeResponse, *_nethttp.Response, error)
+	ReadSnapshots(ctx context.Context, localVarOptionals *osc.ReadSnapshotsOpts) (osc.ReadSnapshotsResponse, *_nethttp.Response, error)
+	ReadSubregions(ctx context.Context, localVarOptionals *osc.ReadSubregionsOpts) (osc.ReadSubregionsResponse, *_nethttp.Response, error)
 }
 
 type OscClient struct {
@@ -223,6 +226,18 @@ func (client *OscClient) ReadVolumes(ctx context.Context, localVarOptionals *osc
 	return client.api.VolumeApi.ReadVolumes(client.auth, localVarOptionals)
 }
 
+func(client *OscClient) DeleteVolume(ctx context.Context, localVarOptionals *osc.DeleteVolumeOpts) (osc.DeleteVolumeResponse, *_nethttp.Response, error){
+    return client.api.VolumeApi.DeleteVolume(client.auth, localVarOptionals)
+}
+
+func(client *OscClient) ReadSnapshots(ctx context.Context, localVarOptionals *osc.ReadSnapshotsOpts) (osc.ReadSnapshotsResponse, *_nethttp.Response, error){
+    return client.api.SnapshotApi.ReadSnapshots(client.auth, localVarOptionals)
+}
+
+func (client *OscClient) ReadSubregions(ctx context.Context, localVarOptionals *osc.ReadSubregionsOpts) (osc.ReadSubregionsResponse, *_nethttp.Response, error){
+    return client.api.SubregionApi.ReadSubregions(client.auth, localVarOptionals)
+}
+
 var _ OscInterface = &OscClient{}
 
 type cloud struct {
@@ -231,7 +246,7 @@ type cloud struct {
 	dm       dm.DeviceManager
 	clientIf OscInterface
 
-	//To Remove
+	//To remove
 	client *OscClient
 }
 
@@ -240,10 +255,10 @@ var _ Cloud = &cloud{}
 // NewCloud returns a new instance of AWS cloud
 // It panics if session is invalid
 func NewCloud(region string) (Cloud, error) {
-	return newEC2Cloud(region)
+	return newOscCloud(region)
 }
 
-func newEC2Cloud(region string) (Cloud, error) {
+func newOscCloud(region string) (Cloud, error) {
 	svc := newEC2MetadataSvc()
 
 	metadata, err := NewMetadataService(svc)
@@ -407,7 +422,7 @@ func (c *cloud) DeleteDisk(ctx context.Context, volumeID string) (bool, error) {
 				VolumeId: volumeID,
 			}),
 	}
-	if _, httpRes, err := c.client.api.VolumeApi.DeleteVolume(ctx, &request); err != nil {
+	if _, httpRes, err := c.clientIf.DeleteVolume(ctx, &request); err != nil {
 		fmt.Errorf("Error while deleting volume ")
 		if httpRes != nil {
 			fmt.Errorf(httpRes.Status)
@@ -994,7 +1009,7 @@ func (c *cloud) getSnapshot(ctx context.Context, request *osc.ReadSnapshotsOpts)
 
 	getSnapshotsCallback := func() (bool, error) {
 		for {
-			response, httpRes, err := c.client.api.SnapshotApi.ReadSnapshots(ctx, request)
+			response, httpRes, err := c.clientIf.ReadSnapshots(ctx, request)
 			if err != nil {
 				if httpRes != nil {
 					fmt.Errorf(httpRes.Status)
@@ -1041,7 +1056,7 @@ func (c *cloud) listSnapshots(ctx context.Context, request *osc.ReadSnapshotsOpt
 
 	var response osc.ReadSnapshotsResponse
 	listSnapshotsCallBack := func() (bool, error) {
-		response, httpRes, err := c.client.api.SnapshotApi.ReadSnapshots(ctx, request)
+		response, httpRes, err := c.clientIf.ReadSnapshots(ctx, request)
 		if err != nil {
 			if httpRes != nil {
 				fmt.Errorf(httpRes.Status)
@@ -1242,7 +1257,7 @@ func (c *cloud) randomAvailabilityZone(ctx context.Context, region string) (stri
 		return zone, nil
 	}
 
-	response, httpRes, err := c.client.api.SubregionApi.ReadSubregions(c.client.auth, nil)
+	response, httpRes, err := c.clientIf.ReadSubregions(ctx, nil)
 
 	if err != nil {
 		if httpRes != nil {

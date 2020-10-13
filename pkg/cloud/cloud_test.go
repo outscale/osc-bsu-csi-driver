@@ -266,7 +266,7 @@ func TestDeleteDisk(t *testing.T) {
 			c := newCloud(mockOscInterface)
 
 			ctx := context.Background()
-			mockOsc.EXPECT().DeleteVolumeWithContext(gomock.Eq(ctx), gomock.Any()).Return(osc.DeleteVolumeResponse{}, tc.expErr)
+			mockOscInterface.EXPECT().DeleteVolume(gomock.Eq(ctx), gomock.Any()).Return(osc.DeleteVolumeResponse{}, nil, tc.expErr)
 
 			ok, err := c.DeleteDisk(ctx, tc.volumeID)
 			if err != nil && tc.expErr == nil {
@@ -285,6 +285,7 @@ func TestDeleteDisk(t *testing.T) {
 		})
 	}
 }
+
 
 func TestAttachDisk(t *testing.T) {
 	testCases := []struct {
@@ -310,18 +311,18 @@ func TestAttachDisk(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			mockCtrl := gomock.NewController(t)
-			mockOsc := mocks.NewMockEC2(mockCtrl)
-			c := newCloud(mockOsc)
+			mockOscInterface := mocks.NewMockOscInterface(mockCtrl)
+			c := newCloud(mockOscInterface)
 
-			vol := &osc.Volume{
-				VolumeId:    aws.String(tc.volumeID),
-				LinkedVolume: []*osc.LinkedVolume{{State: "attached"}},
+			vol := osc.Volume{
+				VolumeId:    tc.volumeID,
+				LinkedVolumes: []osc.LinkedVolume{State: "attached"},
 			}
 
 			ctx := context.Background()
-			mockOsc.EXPECT().DescribeVolumesWithContext(gomock.Eq(ctx), gomock.Any()).Return(&osc.ReadVolumesResponse{Volumes: []osc.Volume{vol}}, nil).AnyTimes()
-			mockOsc.EXPECT().DescribeInstancesWithContext(gomock.Eq(ctx), gomock.Any()).Return(newDescribeInstancesOutput(tc.nodeID), nil)
-			mockOsc.EXPECT().AttachVolumeWithContext(gomock.Eq(ctx), gomock.Any()).Return(&osc.LinkedVolume{}, tc.expErr)
+			mockOscInterface.EXPECT().ReadVolumes(gomock.Eq(ctx), gomock.Any()).Return(osc.ReadVolumesResponse{Volumes: []osc.Volume{vol}}, nil).AnyTimes()
+			mockOscInterface.EXPECT().ReadVms(gomock.Eq(ctx), gomock.Any()).Return(osc.ReadVmsResponse{[]osc.Vm{tc.nodeID}}, nil, nil)
+			mockOscInterface.EXPECT().LinkVolume(gomock.Eq(ctx), gomock.Any()).Return(osc.LinkedVolume{}, tc.expErr)
 
 			devicePath, err := c.AttachDisk(ctx, tc.volumeID, tc.nodeID)
 			if err != nil {

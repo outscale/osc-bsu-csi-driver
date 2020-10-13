@@ -140,274 +140,52 @@ func (mr *MockOscInterfaceMockRecorder) ReadSubregions(ctx, localVarOptionals in
 }
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-// AttachVolumeWithContext mocks base method
-func (m *MockVolumeAPI) LinkVolume(arg0 context.Context, arg1 *osc.LinkVolumeOpts, arg2 ...request.Option) (osc.LinkVolumeResponse, error) {
+// LinkVolume mocks base method
+func (m *MockOscInterface) LinkVolume(ctx context.Context, localVarOptionals *osc.LinkVolumeOpts) (osc.LinkVolumeResponse, *http.Response, error){
 	m.ctrl.T.Helper()
-	varargs := []interface{}{arg0, arg1}
-	for _, a := range arg2 {
-		varargs = append(varargs, a)
-	}
-	ret := m.ctrl.Call(m, "AttachVolumeWithContext", varargs...)
+	ret := m.ctrl.Call(m, "LinkVolume", ctx, localVarOptionals)
 	ret0, _ := ret[0].(osc.LinkVolumeResponse)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	ret1, _ := ret[1].(*http.Response)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
 }
 
-// AttachVolumeWithContext indicates an expected call of AttachVolumeWithContext
-func (mr *MockVolumeAPIMockRecorder) LinkVolume(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+// LinkVolume indicates an expected call of LinkVolume
+func (mr *MockOscInterfaceMockRecorder) LinkVolume(ctx, localVarOptionals interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	varargs := append([]interface{}{arg0, arg1}, arg2...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AttachVolumeWithContext", reflect.TypeOf((*MockVolumeAPI)(nil).LinkVolume), varargs...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "LinkVolume", reflect.TypeOf((*MockOscInterface)(nil).LinkVolume), ctx, localVarOptionals)
 }
 
-// CreateSnapshotWithContext mocks base method
-func (m *MockOsc) CreateSnapshot(arg0 context.Context, arg1 *osc.CreateSnapshotOpts, arg2 ...request.Option) (osc.Snapshot, error) {
+
+// UnlinkVolume mocks base method
+func (m *MockOscInterface) UnlinkVolume(ctx context.Context, localVarOptionals *osc.UnlinkVolumeOpts) (osc.UnlinkVolumeResponse, *http.Response, error){
 	m.ctrl.T.Helper()
-	varargs := []interface{}{arg0, arg1}
-	for _, a := range arg2 {
-		varargs = append(varargs, a)
-	}
-	ret := m.ctrl.Call(m, "CreateSnapshotWithContext", varargs...)
-	ret0, _ := ret[0].(osc.Snapshot)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// CreateSnapshotWithContext indicates an expected call of CreateSnapshotWithContext
-func (mr *MockOscMockRecorder) CreateSnapshot(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	varargs := append([]interface{}{arg0, arg1}, arg2...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateSnapshotWithContext", reflect.TypeOf((*MockOsc)(nil).CreateSnapshot), varargs...)
-}
-
-// CreateVolumeWithContext mocks base method
-func (m *MockVolumeAPI) CreateVolume(arg0 context.Context, arg1 *osc.CreateVolumeOpts, arg2 ...request.Option) (osc.Volume, error) {
-	m.ctrl.T.Helper()
-	varargs := []interface{}{arg0, arg1}
-	for _, a := range arg2 {
-		varargs = append(varargs, a)
-	}
-	ret := m.ctrl.Call(m, "CreateVolumeWithContext", varargs...)
-	ret0, _ := ret[0].(osc.Volume)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// CreateVolumeWithContext indicates an expected call of CreateVolumeWithContext
-func (mr *MockVolumeAPIMockRecorder) CreateVolume(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	varargs := append([]interface{}{arg0, arg1}, arg2...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateVolumeWithContext", reflect.TypeOf((*MockVolumeAPI)(nil).CreateVolume), varargs...)
-}
-
-// DeleteSnapshotWithContext mocks base method
-func (m *MockOsc) DeleteSnapshot(arg0 context.Context, arg1 *osc.DeleteSnapshotOpts, arg2 ...request.Option) (osc.DeleteSnapshotResponse, error) {
-	m.ctrl.T.Helper()
-	varargs := []interface{}{arg0, arg1}
-	for _, a := range arg2 {
-		varargs = append(varargs, a)
-	}
-	ret := m.ctrl.Call(m, "DeleteSnapshotWithContext", varargs...)
-	ret0, _ := ret[0].(osc.DeleteSnapshotResponse)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// DeleteSnapshotWithContext indicates an expected call of DeleteSnapshotWithContext
-func (mr *MockOscMockRecorder) DeleteSnapshot(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	varargs := append([]interface{}{arg0, arg1}, arg2...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteSnapshotWithContext", reflect.TypeOf((*MockOsc)(nil).DeleteSnapshot), varargs...)
-}
-
-// DeleteVolumeWithContext mocks base method
-func (m *MockVolumeAPI) DeleteVolume(arg0 context.Context, arg1 *osc.DeleteVolumeOpts, arg2 ...request.Option) (osc.DeleteVolumeResponse, error) {
-	m.ctrl.T.Helper()
-	varargs := []interface{}{arg0, arg1}
-	for _, a := range arg2 {
-		varargs = append(varargs, a)
-	}
-	ret := m.ctrl.Call(m, "DeleteVolumeWithContext", varargs...)
-	ret0, _ := ret[0].(osc.DeleteVolumeResponse)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// DeleteVolumeWithContext indicates an expected call of DeleteVolumeWithContext
-func (mr *MockVolumeAPIMockRecorder) DeleteVolume(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	varargs := append([]interface{}{arg0, arg1}, arg2...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteVolumeWithContext", reflect.TypeOf((*MockVolumeAPI)(nil).DeleteVolume), varargs...)
-}
-
-// DescribeAvailabilityZonesWithContext mocks base method
-func (m *MockOsc) ReadSubregions(arg0 context.Context, arg1 *osc.ReadSubregionsOpts, arg2 ...request.Option) (osc.ReadSubregionsResponse, error) {
-	m.ctrl.T.Helper()
-	varargs := []interface{}{arg0, arg1}
-	for _, a := range arg2 {
-		varargs = append(varargs, a)
-	}
-	ret := m.ctrl.Call(m, "DescribeAvailabilityZonesWithContext", varargs...)
-	ret0, _ := ret[0].(osc.ReadSubregionsResponse)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// DescribeAvailabilityZonesWithContext indicates an expected call of DescribeAvailabilityZonesWithContext
-func (mr *MockOscMockRecorder) ReadSubregions(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	varargs := append([]interface{}{arg0, arg1}, arg2...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DescribeAvailabilityZonesWithContext", reflect.TypeOf((*MockOsc)(nil).ReadSubregions), varargs...)
-}
-
-// DescribeInstancesWithContext mocks base method
-func (m *MockOsc) ReadVms(arg0 context.Context, arg1 *osc.ReadVmsOpts, arg2 ...request.Option) (osc.ReadVmsResponse, error) {
-	m.ctrl.T.Helper()
-	varargs := []interface{}{arg0, arg1}
-	for _, a := range arg2 {
-		varargs = append(varargs, a)
-	}
-	ret := m.ctrl.Call(m, "DescribeInstancesWithContext", varargs...)
-	ret0, _ := ret[0].(osc.ReadVmsResponse)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// DescribeInstancesWithContext indicates an expected call of DescribeInstancesWithContext
-func (mr *MockOscMockRecorder) ReadVms(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	varargs := append([]interface{}{arg0, arg1}, arg2...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DescribeInstancesWithContext", reflect.TypeOf((*MockOsc)(nil).ReadVms), varargs...)
-}
-
-// DescribeSnapshotsWithContext mocks base method
-func (m *MockOsc) ReadSnapshots(arg0 context.Context, arg1 *osc.ReadSnapshotsOpts, arg2 ...request.Option) (osc.ReadSnapshotsResponse, error) {
-	m.ctrl.T.Helper()
-	varargs := []interface{}{arg0, arg1}
-	for _, a := range arg2 {
-		varargs = append(varargs, a)
-	}
-	ret := m.ctrl.Call(m, "DescribeSnapshotsWithContext", varargs...)
-	ret0, _ := ret[0].(osc.ReadSnapshotsResponse)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// DescribeSnapshotsWithContext indicates an expected call of DescribeSnapshotsWithContext
-func (mr *MockOscMockRecorder) ReadSnapshots(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	varargs := append([]interface{}{arg0, arg1}, arg2...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DescribeSnapshotsWithContext", reflect.TypeOf((*MockOsc)(nil).ReadSnapshots), varargs...)
-}
-
-//Volume modification is not supported
-// DescribeVolumesModificationsWithContext mocks base method
-// func (m *MockOsc) DescribeVolumesModificationsWithContext(arg0 context.Context, arg1 *osc.DescribeVolumesModificationsInput, arg2 ...request.Option) (*ec2.DescribeVolumesModificationsOutput, error) {
-// 	m.ctrl.T.Helper()
-// 	varargs := []interface{}{arg0, arg1}
-// 	for _, a := range arg2 {
-// 		varargs = append(varargs, a)
-// 	}
-// 	ret := m.ctrl.Call(m, "DescribeVolumesModificationsWithContext", varargs...)
-// 	ret0, _ := ret[0].(*ec2.DescribeVolumesModificationsOutput)
-// 	ret1, _ := ret[1].(error)
-// 	return ret0, ret1
-// }
-//
-// // DescribeVolumesModificationsWithContext indicates an expected call of DescribeVolumesModificationsWithContext
-// func (mr *MockOscMockRecorder) DescribeVolumesModificationsWithContext(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
-// 	mr.mock.ctrl.T.Helper()
-// 	varargs := append([]interface{}{arg0, arg1}, arg2...)
-// 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DescribeVolumesModificationsWithContext", reflect.TypeOf((*MockOsc)(nil).DescribeVolumesModificationsWithContext), varargs...)
-// }
-
-// DescribeVolumesWithContext mocks base method
-func (m *MockVolumeAPI) ReadVolumes(arg0 context.Context, arg1 *osc.ReadVolumesOpts, arg2 ...request.Option) (osc.ReadVolumesResponse, error) {
-	m.ctrl.T.Helper()
-	varargs := []interface{}{arg0, arg1}
-	for _, a := range arg2 {
-		varargs = append(varargs, a)
-	}
-	ret := m.ctrl.Call(m, "DescribeVolumesWithContext", varargs...)
-	ret0, _ := ret[0].(osc.ReadVolumesResponse)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// DescribeVolumesWithContext indicates an expected call of DescribeVolumesWithContext
-func (mr *MockVolumeAPIMockRecorder) ReadVolumes(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	varargs := append([]interface{}{arg0, arg1}, arg2...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DescribeVolumesWithContext", reflect.TypeOf((*MockVolumeAPI)(nil).ReadVolumes), varargs...)
-}
-
-// DetachVolumeWithContext mocks base method
-func (m *MockVolumeAPI) UnlinkVolume(arg0 context.Context, arg1 *osc.UnlinkVolumeOpts, arg2 ...request.Option) (osc.UnlinkVolumeResponse, error) {
-	m.ctrl.T.Helper()
-	varargs := []interface{}{arg0, arg1}
-	for _, a := range arg2 {
-		varargs = append(varargs, a)
-	}
-	ret := m.ctrl.Call(m, "DetachVolumeWithContext", varargs...)
+	ret := m.ctrl.Call(m, "UnlinkVolume", ctx, localVarOptionals)
 	ret0, _ := ret[0].(osc.UnlinkVolumeResponse)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	ret1, _ := ret[1].(*http.Response)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
 }
 
-// DetachVolumeWithContext indicates an expected call of DetachVolumeWithContext
-func (mr *MockVolumeAPIMockRecorder) UnlinkVolume(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+// UnlinkVolume indicates an expected call of UnlinkVolume
+func (mr *MockOscInterfaceMockRecorder) UnlinkVolume(ctx, localVarOptionals interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	varargs := append([]interface{}{arg0, arg1}, arg2...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DetachVolumeWithContext", reflect.TypeOf((*MockVolumeAPI)(nil).UnlinkVolume), varargs...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UnlinkVolume", reflect.TypeOf((*MockOscInterface)(nil).UnlinkVolume), ctx, localVarOptionals)
 }
 
-// Volume modification is not supported
-// ModifyVolumeWithContext mocks base method
-// func (m *MockOsc) ModifyVolumeWithContext(arg0 context.Context, arg1 *ec2.ModifyVolumeInput, arg2 ...request.Option) (*ec2.ModifyVolumeOutput, error) {
-// 	m.ctrl.T.Helper()
-// 	varargs := []interface{}{arg0, arg1}
-// 	for _, a := range arg2 {
-// 		varargs = append(varargs, a)
-// 	}
-// 	ret := m.ctrl.Call(m, "ModifyVolumeWithContext", varargs...)
-// 	ret0, _ := ret[0].(*ec2.ModifyVolumeOutput)
-// 	ret1, _ := ret[1].(error)
-// 	return ret0, ret1
-// }
 
-// // ModifyVolumeWithContext indicates an expected call of ModifyVolumeWithContext
-// func (mr *MockOscMockRecorder) ModifyVolumeWithContext(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
-// 	mr.mock.ctrl.T.Helper()
-// 	varargs := append([]interface{}{arg0, arg1}, arg2...)
-// 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ModifyVolumeWithContext", reflect.TypeOf((*MockOsc)(nil).ModifyVolumeWithContext), varargs...)
-// }
-
-// CreateTagsWithContext mocks base method
-func (m *MockOsc) CreateTags(arg0 context.Context, arg1 *osc.CreateTagsOpts, arg2 ...request.Option) (*osc.CreateTagsResponse, error) {
-	varargs := []interface{}{arg0, arg1}
-	for _, a := range arg2 {
-		varargs = append(varargs, a)
-	}
-	ret := m.ctrl.Call(m, "CreateTagsWithContext", varargs...)
-	ret0, _ := ret[0].(*osc.CreateTagsResponse)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+// ReadVms mocks base method
+func (m *MockOscInterface) ReadVms(ctx context.Context, localVarOptionals *osc.ReadVmsOpts) (osc.ReadVmsResponse, *http.Response, error){
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ReadVms", ctx, localVarOptionals)
+	ret0, _ := ret[0].(osc.ReadVmsResponse)
+	ret1, _ := ret[1].(*http.Response)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
 }
 
-// CreateTagsWithContext indicates an expected call of CreateTagsWithContext
-func (mr *MockOscMockRecorder) CreateTags(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
-	varargs := append([]interface{}{arg0, arg1}, arg2...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateTagsWithContext", reflect.TypeOf((*MockOsc)(nil).CreateTags), varargs...)
+// ReadVms indicates an expected call of ReadVms
+func (mr *MockOscInterfaceMockRecorder) ReadVms(ctx, localVarOptionals interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ReadVms", reflect.TypeOf((*MockOscInterface)(nil).ReadVms), ctx, localVarOptionals)
 }

@@ -40,13 +40,13 @@ spec:
       serviceAccountName: cloud-controller-manager
       containers:
         - name: osc-cloud-controller-manager
-          image: outscale/cloud-provider-osc:dev
+          image: outscale/cloud-provider-osc:v0.0.4beta
           imagePullPolicy: Always
           command:
             - /bin/osc-cloud-controller-manager
             - --leader-elect=true
             - --v=10
-            - --cloud-provider=osc
+            - --cloud-provider=external
             - --logtostderr
           env:
             - name: OSC_ACCOUNT_ID

@@ -188,7 +188,7 @@ type Cloud interface {
 	DeleteDisk(ctx context.Context, volumeID string) (success bool, err error)
 	AttachDisk(ctx context.Context, volumeID string, nodeID string) (devicePath string, err error)
 	DetachDisk(ctx context.Context, volumeID string, nodeID string) (err error)
-	//ResizeDisk(ctx context.Context, volumeID string, reqSize int64) (newSize int64, err error)
+	ResizeDisk(ctx context.Context, volumeID string, reqSize int64) (newSize int64, err error)
 	WaitForAttachmentState(ctx context.Context, volumeID, state string) error
 	GetDiskByName(ctx context.Context, name string, capacityBytes int64) (disk Disk, err error)
 	GetDiskByID(ctx context.Context, volumeID string) (disk Disk, err error)
@@ -207,7 +207,9 @@ type OscInterface interface {
 	DeleteVolume(ctx context.Context, localVarOptionals *osc.DeleteVolumeOpts) (osc.DeleteVolumeResponse, *_nethttp.Response, error)
 	LinkVolume(ctx context.Context, localVarOptionals *osc.LinkVolumeOpts) (osc.LinkVolumeResponse, *_nethttp.Response, error)
 	UnlinkVolume(ctx context.Context, localVarOptionals *osc.UnlinkVolumeOpts) (osc.UnlinkVolumeResponse, *_nethttp.Response, error)
+	CreateSnapshot(ctx context.Context, localVarOptionals *osc.CreateSnapshotOpts) (osc.CreateSnapshotResponse, *_nethttp.Response, error)
 	ReadSnapshots(ctx context.Context, localVarOptionals *osc.ReadSnapshotsOpts) (osc.ReadSnapshotsResponse, *_nethttp.Response, error)
+	//DeleteSnapshot(ctx context.Context, localVarOptionals *osc.DeleteSnapshotOpts) (osc.DeleteSnapshotResponse, *_nethttp.Response, error)
 	ReadSubregions(ctx context.Context, localVarOptionals *osc.ReadSubregionsOpts) (osc.ReadSubregionsResponse, *_nethttp.Response, error)
 	ReadVms(ctx context.Context, localVarOptionals *osc.ReadVmsOpts) (osc.ReadVmsResponse, *_nethttp.Response, error)
 }
@@ -241,8 +243,16 @@ func (client *OscClient) UnlinkVolume(ctx context.Context, localVarOptionals *os
     return client.api.VolumeApi.UnlinkVolume(client.auth, localVarOptionals)
 }
 
+func (client *OscClient) CreateSnapshot(ctx context.Context, localVarOptionals *osc.CreateSnapshotOpts) (osc.CreateSnapshotResponse, *_nethttp.Response, error){
+     return client.api.SnapshotApi.CreateSnapshot(client.auth, localVarOptionals)
+}
+
 func(client *OscClient) ReadSnapshots(ctx context.Context, localVarOptionals *osc.ReadSnapshotsOpts) (osc.ReadSnapshotsResponse, *_nethttp.Response, error){
     return client.api.SnapshotApi.ReadSnapshots(client.auth, localVarOptionals)
+}
+
+func (client *OscClient) DeleteSnapshot(ctx context.Context, localVarOptionals *osc.DeleteSnapshotOpts) (osc.DeleteSnapshotResponse, *_nethttp.Response, error){
+    return client.api.SnapshotApi.DeleteSnapshot(client.auth, localVarOptionals)
 }
 
 func (client *OscClient) ReadSubregions(ctx context.Context, localVarOptionals *osc.ReadSubregionsOpts) (osc.ReadSubregionsResponse, *_nethttp.Response, error){
@@ -264,8 +274,8 @@ type cloud struct {
 	dm       dm.DeviceManager
 	clientIf OscInterface
 
-	//To remove
-	client *OscClient
+	//TO REMOVE
+	client OscClient
 }
 
 var _ Cloud = &cloud{}
@@ -304,8 +314,7 @@ func newOscCloud(region string) (Cloud, error) {
 		clientIf: client,
 
 		//TO REMOVE
-		client:   client,
-
+		//client: client,
 	}, nil
 }
 
@@ -471,7 +480,6 @@ func (c *cloud) AttachDisk(ctx context.Context, volumeID, nodeID string) (string
 				}),
 		}
 
-		//resp, httpRes, err := c.client.api.VolumeApi.LinkVolume(c.client.auth, &request)
 		resp, httpRes, err := c.clientIf.LinkVolume(ctx, &request)
 		if err != nil {
 			if httpRes != nil {
@@ -689,7 +697,7 @@ func (c *cloud) CreateSnapshot(ctx context.Context, volumeID string, snapshotOpt
 	var res osc.CreateSnapshotResponse
 	var httpRes *_nethttp.Response
 	createSnapshotCallBack := func() (bool, error) {
-		res, httpRes, err = c.client.api.SnapshotApi.CreateSnapshot(ctx, &request)
+		res, httpRes, err = c.clientIf.CreateSnapshot(ctx, &request)
 		if err != nil {
 			if httpRes != nil {
 				fmt.Errorf(httpRes.Status)
@@ -732,7 +740,7 @@ func (c *cloud) CreateSnapshot(ctx context.Context, volumeID string, snapshotOpt
 	fmt.Printf("Debug requestTag := &ec2.CreateTagsInput{ : %+v\n", requestTag)
 	var resTag osc.CreateTagsResponse
 	createTagCallback := func() (bool, error) {
-		resTag, httpRes, err := c.client.api.TagApi.CreateTags(ctx, &requestTag)
+		resTag, httpRes, err := c.clientIf.CreateTags(ctx, &requestTag)
 		if err != nil {
 			if httpRes != nil {
 				fmt.Errorf(httpRes.Status)
@@ -759,8 +767,10 @@ func (c *cloud) CreateSnapshot(ctx context.Context, volumeID string, snapshotOpt
 	if err != nil {
 		return Snapshot{}, fmt.Errorf("error creating tags of snapshot %v: %v", res.Snapshot.SnapshotId, err)
 	}
+	// TO UPDATE resTag == nil
 	if (resTag == osc.CreateTagsResponse{}) {
-		return Snapshot{}, fmt.Errorf("nil CreateTags")
+		fmt.Printf("resTag: %+v\n", resTag)
+		//return Disk{}, fmt.Errorf("nil CreateTags")
 	}
 	fmt.Printf("Debug resTag, err := c.ec2.CreateTagsWithContext(ctx, requestTag) %+v\n", resTag)
 	return c.oscSnapshotResponseToStruct(res.Snapshot), nil
@@ -778,7 +788,7 @@ func (c *cloud) DeleteSnapshot(ctx context.Context, snapshotID string) (success 
 
 	var httpRes *_nethttp.Response
 
-	_, httpRes, err = c.client.api.SnapshotApi.DeleteSnapshot(c.client.auth, &request)
+	_, httpRes, err = c.clientIf.DeleteSnapshot(ctx, &request)
 	if err != nil {
 		if httpRes != nil {
 			fmt.Errorf(httpRes.Status)
@@ -928,7 +938,6 @@ func (c *cloud) getVolume(ctx context.Context, request *osc.ReadVolumesOpts) (os
 
 
 		response, httpRes, err = c.clientIf.ReadVolumes(ctx, request)
-		//response, httpRes, err = c.client.api.VolumeApi.ReadVolumes(c.client.auth, request)
 		if err != nil {
 			if httpRes != nil {
 				fmt.Errorf(httpRes.Status)
@@ -981,7 +990,7 @@ func (c *cloud) getInstance(ctx context.Context, vmID string) (osc.Vm, error) {
 	}
 
 	getInstanceCallback := func() (bool, error) {
-		response, httpRes, err := c.clientIf.ReadVms(c.client.auth, &request)
+		response, httpRes, err := c.clientIf.ReadVms(ctx, &request)
 		if err != nil {
 			if httpRes != nil {
 				fmt.Errorf(httpRes.Status)
@@ -1139,8 +1148,8 @@ func (c *cloud) waitForVolume(ctx context.Context, volumeID string) error {
 //MODIFICATION NOT SUPPORTED
 // ResizeDisk resizes an EBS volume in GiB increments, rouding up to the next possible allocatable unit.
 // It returns the volume size after this call or an error if the size couldn't be determined.
-//  func (c *cloud) ResizeDisk(ctx context.Context, volumeID string, newSizeBytes int64) (int64, error) {
-//     return 0
+func (c *cloud) ResizeDisk(ctx context.Context, volumeID string, newSizeBytes int64) (int64, error) {
+     return 0, nil
 // 	fmt.Printf("Debug ResizeDisk : %+v\n", volumeID)
 // 	request := &osc.ReadVolumesOpts{
 // 		ReadVolumesRequest: optional.NewInterface(
@@ -1194,11 +1203,11 @@ func (c *cloud) waitForVolume(ctx context.Context, volumeID string) error {
 // 	}
 //
 // 	return c.waitForVolumeSize(ctx, volumeID)
-//}
-//
-// // waitForVolumeSize waits for a volume modification to finish and return its size.
-// func (c *cloud) waitForVolumeSize(ctx context.Context, volumeID string) (int64, error) {
-//     return 0
+}
+
+// waitForVolumeSize waits for a volume modification to finish and return its size.
+func (c *cloud) waitForVolumeSize(ctx context.Context, volumeID string) (int64, error) {
+     return 0, nil
 // 	fmt.Printf("Debug waitForVolumeSize : %+v\n", volumeID)
 // 	var modVolSizeGiB int64
 // 	backoff := util.EnvBackoff()
@@ -1222,11 +1231,11 @@ func (c *cloud) waitForVolume(ctx context.Context, volumeID string) error {
 // 	}
 //
 // 	return modVolSizeGiB, nil
-//}
-//
-// // getLatestVolumeModification returns the last modification of the volume.
-//func (c *cloud) getLatestVolumeModification(ctx context.Context, volumeID string) (*ec2.VolumeModification, error) {
-//    return nil
+}
+
+// getLatestVolumeModification returns the last modification of the volume.
+func (c *cloud) getLatestVolumeModification(ctx context.Context, volumeID string) (int64 /**ec2.VolumeModification*/, error) {
+    return 0, nil
 // 	fmt.Printf("Debug getLatestVolumeModification : %+v\n", volumeID)
 // 	request := &ec2.DescribeVolumesModificationsInput{
 // 		VolumeIds: []*string{
@@ -1263,7 +1272,7 @@ func (c *cloud) waitForVolume(ctx context.Context, volumeID string) error {
 // 	}
 //
 // 	return volumeMods[len(volumeMods)-1], nil
-//}
+}
 
 // randomAvailabilityZone returns a random zone from the given region
 // the randomness relies on the response of DescribeAvailabilityZones

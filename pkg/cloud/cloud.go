@@ -739,20 +739,22 @@ func (c *cloud) CreateSnapshot(ctx context.Context, volumeID string, snapshotOpt
 
 	fmt.Printf("Debug requestTag := &ec2.CreateTagsInput{ : %+v\n", requestTag)
 	var resTag osc.CreateTagsResponse
+	var httpResTag *_nethttp.Response
+	var errTag error
 	createTagCallback := func() (bool, error) {
-		resTag, httpRes, err := c.clientIf.CreateTags(ctx, &requestTag)
-		if err != nil {
-			if httpRes != nil {
+		resTag, httpResTag, errTag = c.clientIf.CreateTags(ctx, &requestTag)
+		if errTag != nil {
+			if httpResTag != nil {
 				fmt.Errorf(httpRes.Status)
 			}
 			requestStr := fmt.Sprintf("%v", resTag)
 			if keepRetryWithError(
 				requestStr,
-				err,
+				errTag,
 				[]string{"RequestLimitExceeded"}) {
 				return false, nil
 			}
-			return false, err
+			return false, errTag
 		}
 		return true, nil
 	}
@@ -767,14 +769,14 @@ func (c *cloud) CreateSnapshot(ctx context.Context, volumeID string, snapshotOpt
 	if err != nil {
 		return Snapshot{}, fmt.Errorf("error creating tags of snapshot %v: %v", res.Snapshot.SnapshotId, err)
 	}
-	// TO UPDATE resTag == nil
 	if (resTag == osc.CreateTagsResponse{}) {
 		fmt.Printf("resTag: %+v\n", resTag)
-		//return Disk{}, fmt.Errorf("nil CreateTags")
+		//return Snapshot{}, fmt.Errorf("nil CreateTags")
 	}
 	fmt.Printf("Debug resTag, err := c.ec2.CreateTagsWithContext(ctx, requestTag) %+v\n", resTag)
 	return c.oscSnapshotResponseToStruct(res.Snapshot), nil
 }
+
 
 func (c *cloud) DeleteSnapshot(ctx context.Context, snapshotID string) (success bool, err error) {
 	fmt.Printf("Debug DeleteSnapshot : %+v\n", snapshotID)
@@ -845,9 +847,9 @@ func (c *cloud) GetSnapshotByID(ctx context.Context, snapshotID string) (snapsho
 // Pagination not supported
 func (c *cloud) ListSnapshots(ctx context.Context, volumeID string, maxResults int64, nextToken string) (listSnapshotsResponse ListSnapshotsResponse, err error) {
 	fmt.Printf("Debug ListSnapshots : %+v, %+v, %+v\n", volumeID, maxResults, nextToken)
-	if maxResults > 0 && maxResults < 5 {
-		return ListSnapshotsResponse{}, ErrInvalidMaxResults
-	}
+// 	if maxResults > 0 && maxResults < 5 {
+// 		return ListSnapshotsResponse{}, ErrInvalidMaxResults
+// 	}
 
 	request := osc.ReadSnapshotsOpts{
 		ReadSnapshotsRequest: optional.NewInterface(
@@ -1078,8 +1080,10 @@ func (c *cloud) listSnapshots(ctx context.Context, request *osc.ReadSnapshotsOpt
 	fmt.Printf("Debug  listSnapshots(ctx context.Context : %+v\n", request)
 
 	var response osc.ReadSnapshotsResponse
+	var httpRes *_nethttp.Response
+	var err error
 	listSnapshotsCallBack := func() (bool, error) {
-		response, httpRes, err := c.clientIf.ReadSnapshots(ctx, request)
+		response, httpRes, err = c.clientIf.ReadSnapshots(ctx, request)
 		if err != nil {
 			if httpRes != nil {
 				fmt.Errorf(httpRes.Status)

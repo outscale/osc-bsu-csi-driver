@@ -185,7 +185,7 @@ func (m *MockOscInterface) DeleteSnapshot(ctx context.Context, localVarOptionals
 // DeleteSnapshot indicates an expected call of DeleteSnapshot
 func (mr *MockOscInterfaceMockRecorder) DeleteSnapshot(ctx, localVarOptionals interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ReadSnapshots", reflect.TypeOf((*MockOscInterface)(nil).DeleteSnapshot), ctx, localVarOptionals)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteSnapshot", reflect.TypeOf((*MockOscInterface)(nil).DeleteSnapshot), ctx, localVarOptionals)
 }
 
 

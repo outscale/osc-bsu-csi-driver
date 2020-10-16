@@ -23,7 +23,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/aws/aws-sdk-go/aws"
+	//"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	//"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/golang/mock/gomock"
@@ -1130,7 +1130,7 @@ func newCloud(mockOscInterface OscInterface) *cloud {
 
 func newDescribeInstancesOutput(nodeID string) osc.ReadVmsResponse {
 	return osc.ReadVmsResponse{
-		Vms: []osc.Vms{
+		Vms: []osc.Vm{
 				{VmId: nodeID},
 		},
 	}

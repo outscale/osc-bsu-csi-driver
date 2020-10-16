@@ -209,7 +209,7 @@ type OscInterface interface {
 	UnlinkVolume(ctx context.Context, localVarOptionals *osc.UnlinkVolumeOpts) (osc.UnlinkVolumeResponse, *_nethttp.Response, error)
 	CreateSnapshot(ctx context.Context, localVarOptionals *osc.CreateSnapshotOpts) (osc.CreateSnapshotResponse, *_nethttp.Response, error)
 	ReadSnapshots(ctx context.Context, localVarOptionals *osc.ReadSnapshotsOpts) (osc.ReadSnapshotsResponse, *_nethttp.Response, error)
-	//DeleteSnapshot(ctx context.Context, localVarOptionals *osc.DeleteSnapshotOpts) (osc.DeleteSnapshotResponse, *_nethttp.Response, error)
+	DeleteSnapshot(ctx context.Context, localVarOptionals *osc.DeleteSnapshotOpts) (osc.DeleteSnapshotResponse, *_nethttp.Response, error)
 	ReadSubregions(ctx context.Context, localVarOptionals *osc.ReadSubregionsOpts) (osc.ReadSubregionsResponse, *_nethttp.Response, error)
 	ReadVms(ctx context.Context, localVarOptionals *osc.ReadVmsOpts) (osc.ReadVmsResponse, *_nethttp.Response, error)
 }
@@ -275,7 +275,7 @@ type cloud struct {
 	clientIf OscInterface
 
 	//TO REMOVE
-	client OscClient
+	client *OscClient
 }
 
 var _ Cloud = &cloud{}

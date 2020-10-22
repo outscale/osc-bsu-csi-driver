@@ -66,7 +66,7 @@ func TestNewDevice(t *testing.T) {
 			if err == nil {
 				t.Fatalf("Expected error when nil instance is passed in, got nothing")
 			}
-			if reflect.DeepEqual(dev1, Device{}) {
+			if !reflect.DeepEqual(dev1, Device{}) {
 				t.Fatalf("Expected nil device, got %v", dev1)
 			}
 

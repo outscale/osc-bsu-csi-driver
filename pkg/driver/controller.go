@@ -168,7 +168,7 @@ func (d *controllerService) CreateVolume(ctx context.Context, req *csi.CreateVol
 	}
 
 	// volume exists already
-	if &disk != nil {
+	if disk != (cloud.Disk{}) {
 		if disk.SnapshotID != snapshotID {
 			return nil, status.Errorf(codes.AlreadyExists, "Volume already exists, but was restored from a different snapshot than %s", snapshotID)
 		}

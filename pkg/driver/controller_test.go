@@ -1700,8 +1700,8 @@ func TestListSnapshots(t *testing.T) {
 	}
 }
 
-    func TestControllerPublishVolume(t *testing.T) {
-	stdVolCap := &csi.VolumeCapability{
+func TestControllerPublishVolume(t *testing.T) {
+    stdVolCap := &csi.VolumeCapability{
 		AccessType: &csi.VolumeCapability_Mount{
 			Mount: &csi.VolumeCapability_MountVolume{},
 		},

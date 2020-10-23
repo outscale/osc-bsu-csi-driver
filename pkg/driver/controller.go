@@ -475,9 +475,10 @@ func (d *controllerService) ListSnapshots(ctx context.Context, req *csi.ListSnap
 	}
 
 	volumeID := req.GetSourceVolumeId()
+	nextToken := req.GetStartingToken()
 	maxEntries := req.GetMaxEntries()
 
-	cloudSnapshots, err := d.cloud.ListSnapshots(ctx, volumeID, int64(maxEntries), "")
+	cloudSnapshots, err := d.cloud.ListSnapshots(ctx, volumeID, int64(maxEntries), nextToken)
 	if err != nil {
 		if err == cloud.ErrNotFound {
 			klog.V(4).Info("ListSnapshots: snapshot not found, returning with success")
@@ -571,6 +572,7 @@ func newListSnapshotsResponse(cloudResponse cloud.ListSnapshotsResponse) (*csi.L
 	}
 	return &csi.ListSnapshotsResponse{
 		Entries: entries,
+		NextToken: cloudResponse.NextToken,
 	}, nil
 }
 

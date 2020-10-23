@@ -152,6 +152,7 @@ type Snapshot struct {
 // ListSnapshotsResponse is the container for our snapshots along with a pagination token to pass back to the caller
 type ListSnapshotsResponse struct {
 	Snapshots []Snapshot
+	NextToken string
 }
 
 // SnapshotOptions represents parameters to create an EBS volume

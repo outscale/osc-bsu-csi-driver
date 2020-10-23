@@ -1515,7 +1515,7 @@ func TestListSnapshots(t *testing.T) {
 							CreationTime:   time.Now(),
 						},
 					},
-					//NextToken: "",
+					NextToken: "",
 				}
 
 				ctx := context.Background()

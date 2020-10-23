@@ -571,6 +571,7 @@ func newListSnapshotsResponse(cloudResponse cloud.ListSnapshotsResponse) (*csi.L
 	}
 	return &csi.ListSnapshotsResponse{
 		Entries: entries,
+		NextToken: cloudResponse.NextToken,
 	}, nil
 }
 

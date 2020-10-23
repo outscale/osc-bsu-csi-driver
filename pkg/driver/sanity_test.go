@@ -260,7 +260,7 @@ func (c *fakeCloudProvider) ListSnapshots(ctx context.Context, volumeID string, 
 	}
 	return cloud.ListSnapshotsResponse{
 		Snapshots: snapshots,
-		//NextToken: retToken,
+		NextToken: retToken,
 	}, nil
 
 }

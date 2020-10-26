@@ -1069,64 +1069,18 @@ func TestListSnapshots(t *testing.T) {
 	}
 }
 
-
-//func newCloud(mock *mocks.MockVolumeAPI) Cloud {
-// 	client := &OscClient{}
-// 	client.config = osc.NewConfiguration()
-// 	client.auth = context.WithValue(context.Background(), osc.ContextAWSv4, osc.AWSv4{
-// 		AccessKey: ("OSC_ACCESS_KEY"),
-// 		SecretKey: ("OSC_SECRET_KEY"),
-// 	})
-// 	client.api = osc.NewAPIClient(client.config)
-//
-// 	client.api.VolumeApi = mock
-//
-// 	return &cloud{
-// 		region: "test-region",
-// 		dm:     dm.NewDeviceManager(),
-// 		client: OscClient,
-// 		metadata: &Metadata{
-// 			InstanceID:       "test-instance",
-// 			Region:           "test-region",
-// 			AvailabilityZone: defaultZone,
-// 		},
-// 	}
-// }
 func newCloud(mockOscInterface OscInterface) *cloud {
-	client := &OscClient{}
-	client.config = osc.NewConfiguration()
-	client.api = osc.NewAPIClient(client.config)
-	client.auth = context.WithValue(context.Background(), osc.ContextAWSv4, osc.AWSv4{
-		AccessKey: "OSC_ACCESS_KEY",
-		SecretKey: "OSC_SECRET_KEY",
-	})
-
-
 	return &cloud{
 		region:   "test-region",
 		dm:       dm.NewDeviceManager(),
-		clientIf: mockOscInterface,
+		client: mockOscInterface,
 		metadata: &Metadata{
 			InstanceID:       "test-instance",
 			Region:           "test-region",
 			AvailabilityZone: defaultZone,
 		},
-		//Remove when compile pass
-		client:   client,
-
 	}
 }
-
-
-// func newDescribeInstancesOutput(nodeID string) *ec2.DescribeInstancesOutput {
-// 	return &ec2.DescribeInstancesOutput{
-// 		Reservations: []*ec2.Reservation{{
-// 			Instances: []*ec2.Instance{
-// 				{InstanceId: aws.String(nodeID)},
-// 			},
-// 		}},
-// 	}
-// }
 
 func newDescribeInstancesOutput(nodeID string) osc.ReadVmsResponse {
 	return osc.ReadVmsResponse{

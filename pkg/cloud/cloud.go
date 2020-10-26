@@ -165,24 +165,6 @@ type oscListSnapshotsResponse struct {
 	Snapshots []osc.Snapshot
 }
 
-// EC2 abstracts aws.EC2 to facilitate its mocking.
-// See https://docs.aws.amazon.com/sdk-for-go/api/service/ec2/ for details
-// type EC2 interface {
-// 	DescribeVolumesWithContext(ctx aws.Context, input *ec2.DescribeVolumesInput, opts ...request.Option) (*ec2.DescribeVolumesOutput, error)
-// 	CreateVolumeWithContext(ctx aws.Context, input *ec2.CreateVolumeInput, opts ...request.Option) (*ec2.Volume, error)
-// 	DeleteVolumeWithContext(ctx aws.Context, input *ec2.DeleteVolumeInput, opts ...request.Option) (*ec2.DeleteVolumeOutput, error)
-// 	DetachVolumeWithContext(ctx aws.Context, input *ec2.DetachVolumeInput, opts ...request.Option) (*ec2.VolumeAttachment, error)
-// 	AttachVolumeWithContext(ctx aws.Context, input *ec2.AttachVolumeInput, opts ...request.Option) (*ec2.VolumeAttachment, error)
-// 	DescribeInstancesWithContext(ctx aws.Context, input *ec2.DescribeInstancesInput, opts ...request.Option) (*ec2.DescribeInstancesOutput, error)
-// 	CreateSnapshotWithContext(ctx aws.Context, input *ec2.CreateSnapshotInput, opts ...request.Option) (*ec2.Snapshot, error)
-// 	DeleteSnapshotWithContext(ctx aws.Context, input *ec2.DeleteSnapshotInput, opts ...request.Option) (*ec2.DeleteSnapshotOutput, error)
-// 	DescribeSnapshotsWithContext(ctx aws.Context, input *ec2.DescribeSnapshotsInput, opts ...request.Option) (*ec2.DescribeSnapshotsOutput, error)
-// 	ModifyVolumeWithContext(ctx aws.Context, input *ec2.ModifyVolumeInput, opts ...request.Option) (*ec2.ModifyVolumeOutput, error)
-// 	DescribeVolumesModificationsWithContext(ctx aws.Context, input *ec2.DescribeVolumesModificationsInput, opts ...request.Option) (*ec2.DescribeVolumesModificationsOutput, error)
-// 	CreateTagsWithContext(ctx aws.Context, input *ec2.CreateTagsInput, opts ...request.Option) (*ec2.CreateTagsOutput, error)
-// 	DescribeAvailabilityZonesWithContext(ctx aws.Context, input *ec2.DescribeAvailabilityZonesInput, opts ...request.Option) (*ec2.DescribeAvailabilityZonesOutput, error)
-// }
-
 type Cloud interface {
 	GetMetadata() MetadataService
 	CreateDisk(ctx context.Context, volumeName string, diskOptions *DiskOptions) (disk Disk, err error)
@@ -273,10 +255,7 @@ type cloud struct {
 	region   string
 	metadata MetadataService
 	dm       dm.DeviceManager
-	clientIf OscInterface
-
-	//TO REMOVE
-	client *OscClient
+	client OscInterface
 }
 
 var _ Cloud = &cloud{}
@@ -312,10 +291,7 @@ func newOscCloud(region string) (Cloud, error) {
 		region:   useRegion,
 		metadata: metadata,
 		dm:       dm.NewDeviceManager(),
-		clientIf: client,
-
-		//TO REMOVE
-		//client: client,
+		client: client,
 	}, nil
 }
 
@@ -393,7 +369,7 @@ func (c *cloud) CreateDisk(ctx context.Context, volumeName string, diskOptions *
 			}),
 	}
 
-	creation, httpRes, err := c.clientIf.CreateVolume(ctx, &request)
+	creation, httpRes, err := c.client.CreateVolume(ctx, &request)
 
 	if err != nil {
 		if httpRes != nil {
@@ -422,7 +398,7 @@ func (c *cloud) CreateDisk(ctx context.Context, volumeName string, diskOptions *
 
 	fmt.Printf("Debug requestTag := osc.CreateTagsOpts{ : %+v\n", requestTag)
 
-	resTag, httpRes, err := c.clientIf.CreateTags(ctx, &requestTag)
+	resTag, httpRes, err := c.client.CreateTags(ctx, &requestTag)
 	if err != nil {
 		return Disk{}, fmt.Errorf("error creating tags of volume %v: %v", volumeID, err)
 	}
@@ -448,7 +424,7 @@ func (c *cloud) DeleteDisk(ctx context.Context, volumeID string) (bool, error) {
 				VolumeId: volumeID,
 			}),
 	}
-	if _, httpRes, err := c.clientIf.DeleteVolume(ctx, &request); err != nil {
+	if _, httpRes, err := c.client.DeleteVolume(ctx, &request); err != nil {
 		fmt.Errorf("Error while deleting volume ")
 		if httpRes != nil {
 			fmt.Errorf(httpRes.Status)
@@ -481,7 +457,7 @@ func (c *cloud) AttachDisk(ctx context.Context, volumeID, nodeID string) (string
 				}),
 		}
 
-		resp, httpRes, err := c.clientIf.LinkVolume(ctx, &request)
+		resp, httpRes, err := c.client.LinkVolume(ctx, &request)
 		if err != nil {
 			if httpRes != nil {
 				return "", fmt.Errorf(httpRes.Status)
@@ -555,7 +531,7 @@ func (c *cloud) DetachDisk(ctx context.Context, volumeID, nodeID string) error {
 	}
 
 	var httpRes *_nethttp.Response
-	_, httpRes, err = c.clientIf.UnlinkVolume(ctx, &request)
+	_, httpRes, err = c.client.UnlinkVolume(ctx, &request)
 	if err != nil {
 		if httpRes != nil {
 			fmt.Errorf(httpRes.Status)
@@ -698,7 +674,7 @@ func (c *cloud) CreateSnapshot(ctx context.Context, volumeID string, snapshotOpt
 	var res osc.CreateSnapshotResponse
 	var httpRes *_nethttp.Response
 	createSnapshotCallBack := func() (bool, error) {
-		res, httpRes, err = c.clientIf.CreateSnapshot(ctx, &request)
+		res, httpRes, err = c.client.CreateSnapshot(ctx, &request)
 		if err != nil {
 			if httpRes != nil {
 				fmt.Errorf(httpRes.Status)
@@ -743,7 +719,7 @@ func (c *cloud) CreateSnapshot(ctx context.Context, volumeID string, snapshotOpt
 	var httpResTag *_nethttp.Response
 	var errTag error
 	createTagCallback := func() (bool, error) {
-		resTag, httpResTag, errTag = c.clientIf.CreateTags(ctx, &requestTag)
+		resTag, httpResTag, errTag = c.client.CreateTags(ctx, &requestTag)
 		if errTag != nil {
 			if httpResTag != nil {
 				fmt.Errorf(httpRes.Status)
@@ -791,7 +767,7 @@ func (c *cloud) DeleteSnapshot(ctx context.Context, snapshotID string) (success 
 
 	var httpRes *_nethttp.Response
 
-	_, httpRes, err = c.clientIf.DeleteSnapshot(ctx, &request)
+	_, httpRes, err = c.client.DeleteSnapshot(ctx, &request)
 	if err != nil {
 		if httpRes != nil {
 			fmt.Errorf(httpRes.Status)
@@ -848,9 +824,6 @@ func (c *cloud) GetSnapshotByID(ctx context.Context, snapshotID string) (snapsho
 // Pagination not supported
 func (c *cloud) ListSnapshots(ctx context.Context, volumeID string, maxResults int64, nextToken string) (listSnapshotsResponse ListSnapshotsResponse, err error) {
 	fmt.Printf("Debug ListSnapshots : %+v, %+v, %+v\n", volumeID, maxResults, nextToken)
-// 	if maxResults > 0 && maxResults < 5 {
-// 		return ListSnapshotsResponse{}, ErrInvalidMaxResults
-// 	}
 
 	request := osc.ReadSnapshotsOpts{
 		ReadSnapshotsRequest: optional.NewInterface(
@@ -941,7 +914,7 @@ func (c *cloud) getVolume(ctx context.Context, request *osc.ReadVolumesOpts) (os
 
 
 
-		response, httpRes, err = c.clientIf.ReadVolumes(ctx, request)
+		response, httpRes, err = c.client.ReadVolumes(ctx, request)
 		if err != nil {
 			if httpRes != nil {
 				fmt.Errorf(httpRes.Status)
@@ -994,7 +967,7 @@ func (c *cloud) getInstance(ctx context.Context, vmID string) (osc.Vm, error) {
 	}
 
 	getInstanceCallback := func() (bool, error) {
-		response, httpRes, err := c.clientIf.ReadVms(ctx, &request)
+		response, httpRes, err := c.client.ReadVms(ctx, &request)
 		if err != nil {
 			if httpRes != nil {
 				fmt.Errorf(httpRes.Status)
@@ -1036,7 +1009,7 @@ func (c *cloud) getSnapshot(ctx context.Context, request *osc.ReadSnapshotsOpts)
 	var snapshots []osc.Snapshot
 
 	getSnapshotsCallback := func() (bool, error) {
-		response, httpRes, err := c.clientIf.ReadSnapshots(ctx, request)
+		response, httpRes, err := c.client.ReadSnapshots(ctx, request)
 		if err != nil {
 			if httpRes != nil {
 				fmt.Errorf(httpRes.Status)
@@ -1085,7 +1058,7 @@ func (c *cloud) listSnapshots(ctx context.Context, request *osc.ReadSnapshotsOpt
 	var httpRes *_nethttp.Response
 	var err error
 	listSnapshotsCallBack := func() (bool, error) {
-		response, httpRes, err = c.clientIf.ReadSnapshots(ctx, request)
+		response, httpRes, err = c.client.ReadSnapshots(ctx, request)
 		if err != nil {
 			if httpRes != nil {
 				fmt.Errorf(httpRes.Status)
@@ -1289,7 +1262,7 @@ func (c *cloud) randomAvailabilityZone(ctx context.Context, region string) (stri
 		return zone, nil
 	}
 
-	response, httpRes, err := c.clientIf.ReadSubregions(ctx, nil)
+	response, httpRes, err := c.client.ReadSubregions(ctx, nil)
 
 	if err != nil {
 		if httpRes != nil {

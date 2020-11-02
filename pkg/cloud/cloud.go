@@ -328,7 +328,7 @@ func (c *cloud) CreateDisk(ctx context.Context, volumeName string, diskOptions *
 	case "":
 		createType = DefaultVolumeType
 	default:
-		return Disk{}, fmt.Errorf("invalid AWS VolumeType %q", diskOptions.VolumeType)
+		return Disk{}, fmt.Errorf("invalid OSC VolumeType %q", diskOptions.VolumeType)
 	}
 
 	var resourceTag []osc.ResourceTag
@@ -372,7 +372,7 @@ func (c *cloud) CreateDisk(ctx context.Context, volumeName string, diskOptions *
 		if httpRes != nil {
 			return Disk{}, fmt.Errorf(httpRes.Status)
 		}
-		return Disk{}, fmt.Errorf("could not create volume in EC2: %v", err)
+		return Disk{}, fmt.Errorf("could not create volume: %v", err)
 	}
 
 	volumeID := creation.Volume.VolumeId
@@ -592,7 +592,7 @@ func (c *cloud) GetDiskByName(ctx context.Context, name string, capacityBytes in
 		ReadVolumesRequest: optional.NewInterface(
 			osc.ReadVolumesRequest{
 				Filters: osc.FiltersVolume{
-					TagKeys:   []string{"tag:" + VolumeNameTagKey},
+					TagKeys:   []string{VolumeNameTagKey},
 					TagValues: []string{name},
 				},
 			}),
@@ -667,7 +667,7 @@ func (c *cloud) CreateSnapshot(ctx context.Context, volumeID string, snapshotOpt
 			}),
 	}
 
-	fmt.Printf("Debug request := &ec2.CreateSnapshotInput{: %+v  \n", request)
+	fmt.Printf("Debug request := osc.CreateSnapshotOpts{: %+v  \n", request)
 	var res osc.CreateSnapshotResponse
 	var httpRes *_nethttp.Response
 	createSnapshotCallBack := func() (bool, error) {
@@ -701,7 +701,7 @@ func (c *cloud) CreateSnapshot(ctx context.Context, volumeID string, snapshotOpt
 	if reflect.DeepEqual(res, osc.CreateSnapshotResponse{}) {
 		return Snapshot{}, fmt.Errorf("nil CreateSnapshotResponse")
 	}
-	fmt.Printf("Debug res, err := c.ec2.CreateSnapshotWithContext(ctx, request) : %+v\n", res)
+	fmt.Printf("Debug res, httpRes, err := c.client.CreateSnapshot(ctx, request) : %+v\n", res)
 
 	requestTag := osc.CreateTagsOpts{
 		CreateTagsRequest: optional.NewInterface(
@@ -711,7 +711,7 @@ func (c *cloud) CreateSnapshot(ctx context.Context, volumeID string, snapshotOpt
 			}),
 	}
 
-	fmt.Printf("Debug requestTag := &ec2.CreateTagsInput{ : %+v\n", requestTag)
+	fmt.Printf("Debug requestTag := osc.CreateTagsOpts{ : %+v\n", requestTag)
 	var resTag osc.CreateTagsResponse
 	var httpResTag *_nethttp.Response
 	var errTag error
@@ -747,7 +747,7 @@ func (c *cloud) CreateSnapshot(ctx context.Context, volumeID string, snapshotOpt
 		fmt.Printf("resTag: %+v\n", resTag)
 		//return Snapshot{}, fmt.Errorf("nil CreateTags")
 	}
-	fmt.Printf("Debug resTag, err := c.ec2.CreateTagsWithContext(ctx, requestTag) %+v\n", resTag)
+	fmt.Printf("Debug resTag, httpResTag, errTag = c.client.CreateTags(ctx, requestTag) %+v\n", resTag)
 	return c.oscSnapshotResponseToStruct(res.Snapshot), nil
 }
 
@@ -780,7 +780,7 @@ func (c *cloud) GetSnapshotByName(ctx context.Context, name string) (snapshot Sn
 		ReadSnapshotsRequest: optional.NewInterface(
 			osc.ReadSnapshotsRequest{
 				Filters: osc.FiltersSnapshot{
-					TagKeys:   []string{"tag:" + SnapshotNameTagKey},
+					TagKeys:   []string{SnapshotNameTagKey},
 					TagValues: []string{name},
 				},
 			}),
@@ -971,7 +971,7 @@ func (c *cloud) getInstance(ctx context.Context, vmID string) (osc.Vm, error) {
 				[]string{"RequestLimitExceeded"}) {
 				return false, nil
 			}
-			return false, fmt.Errorf("error listing AWS instances: %q", err)
+			return false, fmt.Errorf("error listing OSC instances: %q", err)
 		}
 
 		instances = append(instances, response.Vms...)

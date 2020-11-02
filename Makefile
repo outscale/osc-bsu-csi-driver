@@ -145,13 +145,9 @@ test-e2e-single-az:
 		-v ${PWD}:/root/aws-ebs-csi-driver \
 		-v ${HOME}:/e2e-env/ \
 		-v /etc/kubectl/:/etc/kubectl/ \
+		-e OSC_ACCESS_KEY=${OSC_ACCESS_KEY} \
+		-e OSC_SECRET_KEY=${OSC_SECRET_KEY} \
 		-e AWS_AVAILABILITY_ZONES=${E2E_AZ} \
-		-e OSC_ACCOUNT_ID=${OSC_ACCOUNT_ID} \
-		-e OSC_ACCOUNT_IAM=${OSC_ACCOUNT_IAM} \
-		-e OSC_USER_ID=${OSC_USER_ID} \
-		-e OSC_ARN=${OSC_ARN} \
-		-e AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} \
-		-e AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} \
 		--name $(E2E_ENV_RUN) $(E2E_ENV) bash -l
 	until [[ `docker inspect -f '{{.State.Running}}' $(E2E_ENV_RUN)` == "true" ]] ; do  sleep 1 ; done
 	docker exec $(E2E_ENV_RUN) ./tests/e2e/docker/run_e2e_single_az.sh

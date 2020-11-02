@@ -58,17 +58,17 @@ spec:
           env:
             - name: CSI_ENDPOINT
               value: unix:///var/lib/csi/sockets/pluginproxy/csi.sock
-            - name: AWS_ACCESS_KEY_ID
+            - name: OSC_ACCESS_KEY
               valueFrom:
                 secretKeyRef:
                   name: aws-secret
-                  key: key_id
+                  key: access_key
                   optional: true
             - name: AWS_SECRET_ACCESS_KEY
               valueFrom:
                 secretKeyRef:
                   name: aws-secret
-                  key: access_key
+                  key: secret_key
                   optional: true
             {{- if .Values.region }}
             - name: AWS_REGION

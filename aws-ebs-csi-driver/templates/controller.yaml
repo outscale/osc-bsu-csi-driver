@@ -64,7 +64,7 @@ spec:
                   name: aws-secret
                   key: access_key
                   optional: true
-            - name: AWS_SECRET_ACCESS_KEY
+            - name: OSC_SECRET_KEY
               valueFrom:
                 secretKeyRef:
                   name: aws-secret

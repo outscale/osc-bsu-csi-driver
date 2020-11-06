@@ -107,7 +107,7 @@ func TestCreateDisk(t *testing.T) {
 				Tags:             map[string]string{VolumeNameTagKey: "vol-test"},
 				AvailabilityZone: expZone,
 			},
-			expErr:             fmt.Errorf("could not create volume in EC2: CreateVolume generic error"),
+			expErr:             fmt.Errorf("could not create volume in OSC: CreateVolume generic error"),
 			expCreateVolumeErr: fmt.Errorf("CreateVolume generic error"),
 		},
 		{
@@ -119,7 +119,7 @@ func TestCreateDisk(t *testing.T) {
 				Tags:             map[string]string{VolumeNameTagKey: "vol-test"},
 				AvailabilityZone: "",
 			},
-			expErr:             fmt.Errorf("could not create volume in EC2: DescribeVolumes generic error"),
+			expErr:             fmt.Errorf("could not create volume in OSC: DescribeVolumes generic error"),
 			expCreateVolumeErr: fmt.Errorf("DescribeVolumes generic error"),
 		},
 		{
@@ -131,7 +131,7 @@ func TestCreateDisk(t *testing.T) {
 				Tags:             map[string]string{VolumeNameTagKey: "vol-test"},
 				AvailabilityZone: "",
 			},
-			expErr: fmt.Errorf("failed to get an available volume in EC2: timed out waiting for the condition"),
+			expErr: fmt.Errorf("failed to get an available volume in OSC: timed out waiting for the condition"),
 		},
 		{
 			name:       "success: normal from snapshot",

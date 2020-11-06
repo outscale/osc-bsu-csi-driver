@@ -372,7 +372,7 @@ func (c *cloud) CreateDisk(ctx context.Context, volumeName string, diskOptions *
 		if httpRes != nil {
 			return Disk{}, fmt.Errorf(httpRes.Status)
 		}
-		return Disk{}, fmt.Errorf("could not create volume: %v", err)
+		return Disk{}, fmt.Errorf("could not create volume in OSC: %v", err)
 	}
 
 	volumeID := creation.Volume.VolumeId
@@ -398,13 +398,13 @@ func (c *cloud) CreateDisk(ctx context.Context, volumeName string, diskOptions *
 	resTag, httpRes, err := c.client.CreateTags(ctx, &requestTag)
 	if err != nil {
 	    if httpRes != nil {
-			fmt.Errorf("http Status", httpRes.Status)
+			fmt.Fprintln(os.Stderr, httpRes.Status)
 		}
-		return Disk{}, fmt.Errorf("error creating tags of volume %v: %v, http Status: %v", volumeID, err, httpRes)
+		return Disk{}, fmt.Errorf("error creating tags %v of volume %v: %v, http Status: %v", resTag, volumeID, err, httpRes)
 	}
 
 	if err := c.waitForVolume(ctx, volumeID); err != nil {
-		return Disk{}, fmt.Errorf("failed to get an available volume : %v", err)
+		return Disk{}, fmt.Errorf("failed to get an available volume in OSC: %v", err)
 	}
 
 	return Disk{CapacityGiB: int64(size), VolumeID: volumeID, AvailabilityZone: zone, SnapshotID: snapshotID}, nil
@@ -423,7 +423,7 @@ func (c *cloud) DeleteDisk(ctx context.Context, volumeID string) (bool, error) {
 		if httpRes != nil {
 			fmt.Fprintln(os.Stderr, httpRes.Status)
 		}
-		return false, fmt.Errorf("DeleteDisk could not delete volume: %v", err)
+		return false, fmt.Errorf("DeleteDisk could not delete volume in OSC: %v", err)
 	}
 	return true, nil
 }
@@ -739,7 +739,7 @@ func (c *cloud) CreateSnapshot(ctx context.Context, volumeID string, snapshotOpt
 	err = waitErr
 	if err != nil {
 	    if httpRes != nil {
-			fmt.Errorf("http Status", httpRes.Status)
+			fmt.Fprintln(os.Stderr, httpRes.Status)
 		}
 		return Snapshot{}, fmt.Errorf("error creating tags of snapshot %v: %v", res.Snapshot.SnapshotId, err)
 	}

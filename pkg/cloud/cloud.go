@@ -397,17 +397,14 @@ func (c *cloud) CreateDisk(ctx context.Context, volumeName string, diskOptions *
 
 	resTag, httpRes, err := c.client.CreateTags(ctx, &requestTag)
 	if err != nil {
-		return Disk{}, fmt.Errorf("error creating tags of volume %v: %v, httpRes: %v", volumeID, err, httpRes)
-	}
-
-	// TO UPDATE resTag == nil
-	if (resTag == osc.CreateTagsResponse{}) {
-		fmt.Printf("resTag: %+v\n", resTag)
-		//return Disk{}, fmt.Errorf("nil CreateTags")
+	    if httpRes != nil {
+			fmt.Errorf("http Status", httpRes.Status)
+		}
+		return Disk{}, fmt.Errorf("error creating tags of volume %v: %v, http Status: %v", volumeID, err, httpRes)
 	}
 
 	if err := c.waitForVolume(ctx, volumeID); err != nil {
-		return Disk{}, fmt.Errorf("failed to get an available volume in EC2: %v", err)
+		return Disk{}, fmt.Errorf("failed to get an available volume : %v", err)
 	}
 
 	return Disk{CapacityGiB: int64(size), VolumeID: volumeID, AvailabilityZone: zone, SnapshotID: snapshotID}, nil
@@ -741,12 +738,12 @@ func (c *cloud) CreateSnapshot(ctx context.Context, volumeID string, snapshotOpt
 
 	err = waitErr
 	if err != nil {
+	    if httpRes != nil {
+			fmt.Errorf("http Status", httpRes.Status)
+		}
 		return Snapshot{}, fmt.Errorf("error creating tags of snapshot %v: %v", res.Snapshot.SnapshotId, err)
 	}
-	if (resTag == osc.CreateTagsResponse{}) {
-		fmt.Printf("resTag: %+v\n", resTag)
-		//return Snapshot{}, fmt.Errorf("nil CreateTags")
-	}
+
 	fmt.Printf("Debug resTag, httpResTag, errTag = c.client.CreateTags(ctx, requestTag) %+v\n", resTag)
 	return c.oscSnapshotResponseToStruct(res.Snapshot), nil
 }

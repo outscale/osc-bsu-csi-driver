@@ -1,5 +1,9 @@
-FROM golang:1.14.1-stretch as builder
+FROM golang:1.14.1-stretch AS builder
+WORKDIR /go/src/github.com/kubernetes-sigs/aws-ebs-csi-driver
+COPY . .
+RUN make -j 4
 
+FROM  golang:1.14.1-stretch
 ARG DEBUG_IMAGE="disable"
 
 RUN apt-get -y update && \
@@ -14,15 +18,6 @@ RUN apt-get -y update && \
 	apt-get clean && \
 	rm -rf /var/lib/apt/lists/*
 
-WORKDIR /go/src/github.com/kubernetes-sigs/aws-ebs-csi-driver
-COPY go.mod .
-COPY go.sum .
-RUN go mod download -x
-
-COPY . .
-RUN make -j 4  && \
-    cp /go/src/github.com/kubernetes-sigs/aws-ebs-csi-driver/bin/aws-ebs-csi-driver /bin/aws-ebs-csi-driver && \
-    rm -rf /go/pkg/*
+COPY --from=builder /go/src/github.com/kubernetes-sigs/aws-ebs-csi-driver/bin/aws-ebs-csi-driver /bin/aws-ebs-csi-driver
 
 ENTRYPOINT ["/bin/aws-ebs-csi-driver"]
-

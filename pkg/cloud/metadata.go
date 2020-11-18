@@ -25,7 +25,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/endpoints"
 	"github.com/aws/aws-sdk-go/aws/session"
 
-	"github.com/kubernetes-sigs/aws-ebs-csi-driver/pkg/util"
+	"github.com/outscale-dev/osc-bsu-csi-driver/pkg/util"
 )
 
 type EC2Metadata interface {

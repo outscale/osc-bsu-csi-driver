@@ -29,12 +29,10 @@ import (
 	"github.com/golang/mock/gomock"
 
 	"github.com/outscale/osc-sdk-go/osc"
-// 	dm "github.com/outscale-dev/osc-bsu-csi-driver/pkg/cloud/devicemanager"
-// 	"github.com/outscale-dev/osc-bsu-csi-driver/pkg/cloud/mocks"
-// 	"github.com/outscale-dev/osc-bsu-csi-driver/pkg/util"
-	dm "github.com/kubernetes-sigs/aws-ebs-csi-driver/pkg/cloud/devicemanager"
-	"github.com/kubernetes-sigs/aws-ebs-csi-driver/pkg/cloud/mocks"
-	"github.com/kubernetes-sigs/aws-ebs-csi-driver/pkg/util"
+
+	dm "github.com/outscale-dev/osc-bsu-csi-driver/pkg/cloud/devicemanager"
+	"github.com/outscale-dev/osc-bsu-csi-driver/pkg/cloud/mocks"
+	"github.com/outscale-dev/osc-bsu-csi-driver/pkg/util"
 )
 
 const (

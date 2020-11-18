@@ -33,8 +33,8 @@ import (
 	"github.com/aws/aws-sdk-go/aws/ec2metadata"
 	"github.com/aws/aws-sdk-go/aws/endpoints"
 	"github.com/aws/aws-sdk-go/aws/session"
-	dm "github.com/kubernetes-sigs/aws-ebs-csi-driver/pkg/cloud/devicemanager"
-	"github.com/kubernetes-sigs/aws-ebs-csi-driver/pkg/util"
+	dm "github.com/outscale-dev/osc-bsu-csi-driver/pkg/cloud/devicemanager"
+	"github.com/outscale-dev/osc-bsu-csi-driver/pkg/util"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/klog"
 

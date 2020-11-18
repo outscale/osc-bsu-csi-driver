@@ -11,9 +11,9 @@ import (
 	"time"
 
 	"github.com/kubernetes-csi/csi-test/pkg/sanity"
-	"github.com/kubernetes-sigs/aws-ebs-csi-driver/pkg/cloud"
-	"github.com/kubernetes-sigs/aws-ebs-csi-driver/pkg/driver/internal"
-	"github.com/kubernetes-sigs/aws-ebs-csi-driver/pkg/util"
+	"github.com/outscale-dev/osc-bsu-csi-driver/pkg/cloud"
+	"github.com/outscale-dev/osc-bsu-csi-driver/pkg/driver/internal"
+	"github.com/outscale-dev/osc-bsu-csi-driver/pkg/util"
 	"k8s.io/utils/exec"
 	"k8s.io/utils/mount"
 )

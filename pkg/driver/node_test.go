@@ -24,8 +24,8 @@ import (
 
 	"github.com/container-storage-interface/spec/lib/go/csi"
 	"github.com/golang/mock/gomock"
-	"github.com/kubernetes-sigs/aws-ebs-csi-driver/pkg/driver/internal"
-	"github.com/kubernetes-sigs/aws-ebs-csi-driver/pkg/driver/mocks"
+	"github.com/outscale-dev/osc-bsu-csi-driver/pkg/driver/internal"
+	"github.com/outscale-dev/osc-bsu-csi-driver/pkg/driver/mocks"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )

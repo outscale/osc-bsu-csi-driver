@@ -22,8 +22,8 @@ import (
 	"os"
 	"strings"
 
-	"github.com/kubernetes-sigs/aws-ebs-csi-driver/cmd/options"
-	"github.com/kubernetes-sigs/aws-ebs-csi-driver/pkg/driver"
+	"github.com/outscale-dev/osc-bsu-csi-driver/cmd/options"
+	"github.com/outscale-dev/osc-bsu-csi-driver/pkg/driver"
 
 	"k8s.io/klog"
 )

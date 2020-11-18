@@ -10,7 +10,7 @@ import (
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
-	cloud "github.com/kubernetes-sigs/aws-ebs-csi-driver/pkg/cloud"
+	cloud "github.com/outscale-dev/osc-bsu-csi-driver/pkg/cloud"
 	//osc "github.com/outscale/osc-sdk-go/osc"
 )
 

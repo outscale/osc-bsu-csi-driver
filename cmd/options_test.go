@@ -22,7 +22,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/kubernetes-sigs/aws-ebs-csi-driver/pkg/driver"
+	"github.com/outscale-dev/osc-bsu-csi-driver/pkg/driver"
 )
 
 func TestGetOptions(t *testing.T) {

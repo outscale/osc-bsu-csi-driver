@@ -6,12 +6,10 @@ package mocks
 
 import (
 	context "context"
-	//http "net/http"
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
 	cloud "github.com/outscale-dev/osc-bsu-csi-driver/pkg/cloud"
-	//osc "github.com/outscale/osc-sdk-go/osc"
 )
 
 // MockCloud is a mock of Cloud interface.

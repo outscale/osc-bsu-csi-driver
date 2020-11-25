@@ -23,10 +23,7 @@ import (
 
 	"github.com/outscale/osc-sdk-go/osc"
 
-	//"github.com/aws/aws-sdk-go/aws"
-	//"github.com/aws/aws-sdk-go/service/ec2"
 	"k8s.io/klog"
-	"reflect"
 )
 
 const devPreffix = "/dev/xvd"
@@ -54,15 +51,21 @@ func (d *Device) Taint() {
 	d.isTainted = true
 }
 
+func IsNilDevice(d Device)(bool){
+    return d.Instance.VmId == ""
+}
+
+func IsNilVm(vm osc.Vm)(bool){
+    return vm.VmId == ""
+}
+
 type DeviceManager interface {
 	// NewDevice retrieves the device if the device is already assigned.
 	// Otherwise it creates a new device with next available device name
 	// and mark it as unassigned device.
-	//NewDevice(instance *ec2.Instance, volumeID string) (device *Device, err error)
 	NewDevice(instance osc.Vm, volumeID string) (device Device, err error)
 
 	// GetDevice returns the device already assigned to the volume.
-	//GetDevice(instance *ec2.Instance, volumeID string) (device *Device, err error)
 	GetDevice(instance osc.Vm, volumeID string) (device Device, err error)
 }
 
@@ -115,7 +118,7 @@ func (d *deviceManager) NewDevice(instance osc.Vm, volumeID string) (Device, err
 	d.mux.Lock()
 	defer d.mux.Unlock()
 
-	if reflect.DeepEqual(instance, osc.Vm{}) {
+	if IsNilVm(instance) {
 		return Device{}, fmt.Errorf("instance is nil")
 	}
 
@@ -239,7 +242,7 @@ func (d *deviceManager) getPath(inUse map[string]string, volumeID string) string
 }
 
 func getInstanceID(instance osc.Vm) (string, error) {
-	if reflect.DeepEqual(instance, osc.Vm{}) {
+	if IsNilVm(instance) {
 		return "", fmt.Errorf("can't get ID from a nil instance")
 	}
 	return instance.VmId, nil

@@ -18,7 +18,7 @@ import (
 	"fmt"
 
 	"github.com/kubernetes-csi/external-snapshotter/v2/pkg/apis/volumesnapshot/v1beta1"
-	ebscsidriver "github.com/outscale-dev/osc-bsu-csi-driver/pkg/driver"
+	bsucsidriver "github.com/outscale-dev/osc-bsu-csi-driver/pkg/driver"
 	"k8s.io/api/core/v1"
 	storagev1 "k8s.io/api/storage/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -30,18 +30,18 @@ const (
 )
 
 // Implement DynamicPVTestDriver interface
-type ebsCSIDriver struct {
+type bsuCSIDriver struct {
 	driverName string
 }
 
-// InitEbsCSIDriver returns ebsCSIDriver that implements DynamicPVTestDriver interface
+// InitEbsCSIDriver returns bsuCSIDriver that implements DynamicPVTestDriver interface
 func InitEbsCSIDriver() PVTestDriver {
-	return &ebsCSIDriver{
-		driverName: ebscsidriver.DriverName,
+	return &bsuCSIDriver{
+		driverName: bsucsidriver.DriverName,
 	}
 }
 
-func (d *ebsCSIDriver) GetDynamicProvisionStorageClass(parameters map[string]string, mountOptions []string, reclaimPolicy *v1.PersistentVolumeReclaimPolicy, bindingMode *storagev1.VolumeBindingMode, allowedTopologyValues []string, namespace string) *storagev1.StorageClass {
+func (d *bsuCSIDriver) GetDynamicProvisionStorageClass(parameters map[string]string, mountOptions []string, reclaimPolicy *v1.PersistentVolumeReclaimPolicy, bindingMode *storagev1.VolumeBindingMode, allowedTopologyValues []string, namespace string) *storagev1.StorageClass {
 	provisioner := d.driverName
 	generateName := fmt.Sprintf("%s-%s-dynamic-sc-", namespace, provisioner)
 	allowedTopologies := []v1.TopologySelectorTerm{}
@@ -50,7 +50,7 @@ func (d *ebsCSIDriver) GetDynamicProvisionStorageClass(parameters map[string]str
 			{
 				MatchLabelExpressions: []v1.TopologySelectorLabelRequirement{
 					{
-						Key:    ebscsidriver.TopologyKey,
+						Key:    bsucsidriver.TopologyKey,
 						Values: allowedTopologyValues,
 					},
 				},
@@ -60,13 +60,13 @@ func (d *ebsCSIDriver) GetDynamicProvisionStorageClass(parameters map[string]str
 	return getStorageClass(generateName, provisioner, parameters, mountOptions, reclaimPolicy, bindingMode, allowedTopologies)
 }
 
-func (d *ebsCSIDriver) GetVolumeSnapshotClass(namespace string) *v1beta1.VolumeSnapshotClass {
+func (d *bsuCSIDriver) GetVolumeSnapshotClass(namespace string) *v1beta1.VolumeSnapshotClass {
 	provisioner := d.driverName
 	generateName := fmt.Sprintf("%s-%s-dynamic-sc-", namespace, provisioner)
 	return getVolumeSnapshotClass(generateName, provisioner)
 }
 
-func (d *ebsCSIDriver) GetPersistentVolume(volumeID string, fsType string, size string, reclaimPolicy *v1.PersistentVolumeReclaimPolicy, namespace string) *v1.PersistentVolume {
+func (d *bsuCSIDriver) GetPersistentVolume(volumeID string, fsType string, size string, reclaimPolicy *v1.PersistentVolumeReclaimPolicy, namespace string) *v1.PersistentVolume {
 	provisioner := d.driverName
 	generateName := fmt.Sprintf("%s-%s-preprovsioned-pv-", namespace, provisioner)
 	// Default to Retain ReclaimPolicy for pre-provisioned volumes

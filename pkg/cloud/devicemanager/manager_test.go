@@ -19,11 +19,7 @@ package devicemanager
 import (
 	"testing"
 
-	//"github.com/aws/aws-sdk-go/aws"
-	//"github.com/aws/aws-sdk-go/service/ec2"
-
     "github.com/outscale/osc-sdk-go/osc"
-	"reflect"
 )
 
 func TestNewDevice(t *testing.T) {
@@ -66,7 +62,7 @@ func TestNewDevice(t *testing.T) {
 			if err == nil {
 				t.Fatalf("Expected error when nil instance is passed in, got nothing")
 			}
-			if !reflect.DeepEqual(dev1, Device{}) {
+			if !IsNilDevice(dev1) {
 				t.Fatalf("Expected nil device, got %v", dev1)
 			}
 
@@ -190,7 +186,7 @@ func assertDevice(t *testing.T, d Device, assigned bool, err error) {
 		t.Fatalf("Expected no error, got %v", err)
 	}
 
-	if reflect.DeepEqual(d, Device{}) {
+	if IsNilDevice(d) {
 		t.Fatalf("Expected valid device, got nil")
 	}
 

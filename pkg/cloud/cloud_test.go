@@ -23,9 +23,7 @@ import (
 	"strings"
 	"testing"
 
-	//"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
-	//"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/golang/mock/gomock"
 
 	"github.com/outscale/osc-sdk-go/osc"
@@ -151,10 +149,6 @@ func TestCreateDisk(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			//mockCtrl := gomock.NewController(t)
-			//mockOsc := mocks.NewMockOsc(mockCtrl)
-			//c := newCloud(mockOsc)
-
 			mockCtrl := gomock.NewController(t)
 			mockOscInterface := mocks.NewMockOscInterface(mockCtrl)
 			c := newCloud(mockOscInterface)
@@ -245,10 +239,6 @@ func TestDeleteDisk(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			// 			mockCtrl := gomock.NewController(t)
-			// 			mockOsc := mocks.NewMockEC2(mockCtrl)
-			// 			c := newCloud(mockOsc)
-
 			mockCtrl := gomock.NewController(t)
 			mockOscInterface := mocks.NewMockOscInterface(mockCtrl)
 			c := newCloud(mockOscInterface)
@@ -620,134 +610,6 @@ func TestDeleteSnapshot(t *testing.T) {
 	}
 }
 
-// Volume Modification not implemented
-// func TestResizeDisk(t *testing.T) {
-// 	testCases := []struct {
-// 		name                string
-// 		volumeID            string
-// 		existingVolume      *osc.Volume
-// 		existingVolumeError awserr.Error
-// 		modifiedVolume      *osc.ModifyVolumeOutput
-// 		modifiedVolumeError awserr.Error
-// 		descModVolume       *osc.DescribeVolumesModificationsOutput
-// 		reqSizeGiB          int64
-// 		expErr              error
-// 	}{
-// 		{
-// 			name:     "success: normal",
-// 			volumeID: "vol-test",
-// 			existingVolume: &osc.Volume{
-// 				VolumeId:         "vol-test",
-// 				Size:             1,
-// 				SubregionName: defaultZone,
-// 			},
-// 			modifiedVolume: &osc.ModifyVolumeOutput{
-// 				VolumeModification: &ec2.VolumeModification{
-// 					VolumeId:          aws.String("vol-test"),
-// 					TargetSize:        aws.Int64(2),
-// 					ModificationState: aws.String(ec2.VolumeModificationStateOptimizing),
-// 				},
-// 			},
-// 			reqSizeGiB: 2,
-// 			expErr:     nil,
-// 		},
-// 		{
-// 			name:     "success: normal modifying state",
-// 			volumeID: "vol-test",
-// 			existingVolume: &ec2.Volume{
-// 				VolumeId:         aws.String("vol-test"),
-// 				Size:             aws.Int64(1),
-// 				AvailabilityZone: aws.String(defaultZone),
-// 			},
-// 			modifiedVolume: &ec2.ModifyVolumeOutput{
-// 				VolumeModification: &ec2.VolumeModification{
-// 					VolumeId:          aws.String("vol-test"),
-// 					TargetSize:        aws.Int64(2),
-// 					ModificationState: aws.String(ec2.VolumeModificationStateModifying),
-// 				},
-// 			},
-// 			descModVolume: &ec2.DescribeVolumesModificationsOutput{
-// 				VolumesModifications: []*ec2.VolumeModification{
-// 					{
-// 						VolumeId:          aws.String("vol-test"),
-// 						TargetSize:        aws.Int64(2),
-// 						ModificationState: aws.String(ec2.VolumeModificationStateCompleted),
-// 					},
-// 				},
-// 			},
-// 			reqSizeGiB: 2,
-// 			expErr:     nil,
-// 		},
-// 		{
-// 			name:                "fail: volume doesn't exist",
-// 			volumeID:            "vol-test",
-// 			existingVolumeError: awserr.New("InvalidVolume.NotFound", "", nil),
-// 			reqSizeGiB:          2,
-// 			expErr:              fmt.Errorf("ResizeDisk generic error"),
-// 		},
-// 		{
-// 			name:     "success: there is a resizing in progress",
-// 			volumeID: "vol-test",
-// 			existingVolume: &ec2.Volume{
-// 				VolumeId:         aws.String("vol-test"),
-// 				Size:             aws.Int64(1),
-// 				AvailabilityZone: aws.String(defaultZone),
-// 			},
-// 			modifiedVolumeError: awserr.New("IncorrectModificationState", "", nil),
-// 			descModVolume: &ec2.DescribeVolumesModificationsOutput{
-// 				VolumesModifications: []*ec2.VolumeModification{
-// 					{
-// 						VolumeId:          aws.String("vol-test"),
-// 						TargetSize:        aws.Int64(2),
-// 						ModificationState: aws.String(ec2.VolumeModificationStateCompleted),
-// 					},
-// 				},
-// 			},
-// 			reqSizeGiB: 2,
-// 			expErr:     nil,
-// 		},
-// 	}
-//
-// 	for _, tc := range testCases {
-// 		t.Run(tc.name, func(t *testing.T) {
-// 			mockCtrl := gomock.NewController(t)
-// 			mockOsc := mocks.NewMockEC2(mockCtrl)
-// 			c := newCloud(mockOsc)
-//
-// 			ctx := context.Background()
-// 			if tc.existingVolume != nil || tc.existingVolumeError != nil {
-// 				mockOsc.EXPECT().DescribeVolumesWithContext(gomock.Eq(ctx), gomock.Any()).Return(
-// 					&ec2.DescribeVolumesOutput{
-// 						Volumes: []*ec2.Volume{tc.existingVolume},
-// 					}, tc.existingVolumeError).AnyTimes()
-// 			}
-// 			if tc.modifiedVolume != nil || tc.modifiedVolumeError != nil {
-// 				mockOsc.EXPECT().ModifyVolumeWithContext(gomock.Eq(ctx), gomock.Any()).Return(tc.modifiedVolume, tc.modifiedVolumeError).AnyTimes()
-// 			}
-// 			if tc.descModVolume != nil {
-// 				mockOsc.EXPECT().DescribeVolumesModificationsWithContext(gomock.Eq(ctx), gomock.Any()).Return(tc.descModVolume, nil).AnyTimes()
-// 			}
-//
-// 			newSize, err := c.ResizeDisk(ctx, tc.volumeID, util.GiBToBytes(tc.reqSizeGiB))
-// 			if err != nil {
-// 				if tc.expErr == nil {
-// 					t.Fatalf("ResizeDisk() failed: expected no error, got: %v", err)
-// 				}
-// 			} else {
-// 				if tc.expErr != nil {
-// 					t.Fatal("ResizeDisk() failed: expected error, got nothing")
-// 				} else {
-// 					if tc.reqSizeGiB != newSize {
-// 						t.Fatalf("ResizeDisk() failed: expected capacity %d, got %d", tc.reqSizeGiB, newSize)
-// 					}
-// 				}
-// 			}
-//
-// 			mockCtrl.Finish()
-// 		})
-// 	}
-// }
-
 func TestGetSnapshotByName(t *testing.T) {
 	testCases := []struct {
 		name            string
@@ -955,73 +817,6 @@ func TestListSnapshots(t *testing.T) {
 				}
 			},
 		},
-// 		{
-// 			name: "success: max results, next token",
-// 			testFunc: func(t *testing.T) {
-// 				maxResults := 5
-// 				nextTokenValue := "nextTokenValue"
-// 				var expSnapshots []*Snapshot
-// 				for i := 0; i < maxResults*2; i++ {
-// 					expSnapshots = append(expSnapshots, &Snapshot{
-// 						SourceVolumeID: "snap-test-volume1",
-// 						SnapshotID:     fmt.Sprintf("snap-test-name%d", i),
-// 					})
-// 				}
-//
-// 				var oscsnapshots []osc.Snapshot
-// 				for i := 0; i < maxResults*2; i++ {
-// 					oscsnapshot = append(oscsnapshots, &osc.Snapshot{
-// 						SnapshotId: expSnapshots[i].SnapshotID,
-// 						VolumeId:   fmt.Sprintf("snap-test-volume%d", i),
-// 						State:      "completed",
-// 					})
-// 				}
-//
-// 				mockCtl := gomock.NewController(t)
-// 				defer mockCtl.Finish()
-// 			    mockOscInterface := mocks.NewMockOscInterface(mockCtrl)
-// 			    c := newCloud(mockOscInterface)
-//
-// 				ctx := context.Background()
-//
-// 				firstCall := mockOscInterface.EXPECT().ReadSnapshots(gomock.Eq(ctx), gomock.Any()).Return(osc.ReadSnapshotsResponse{
-// 					Snapshots: oscsnapshots[],
-// 				}, nil)
-// 				secondCall := mockOscInterface.EXPECT().ReadSnapshots(gomock.Eq(ctx), gomock.Any()).Return(osc.ReadSnapshotsResponse{
-// 					Snapshots: oscsnapshots[],
-// 				}, nil)
-// 				gomock.InOrder(
-// 					firstCall,
-// 					secondCall,
-// 				)
-//
-// 				firstSnapshotsResponse, err := c.ListSnapshots(ctx, "", 5, "")
-// 				if err != nil {
-// 					t.Fatalf("ListSnapshots() failed: expected no error, got: %v", err)
-// 				}
-//
-// 				if len(firstSnapshotsResponse.Snapshots) != maxResults {
-// 					t.Fatalf("Expected %d snapshots, got %d", maxResults, len(firstSnapshotsResponse.Snapshots))
-// 				}
-//
-// 				if firstSnapshotsResponse.NextToken != nextTokenValue {
-// 					t.Fatalf("Expected next token value '%s' got '%s'", nextTokenValue, firstSnapshotsResponse.NextToken)
-// 				}
-//
-// 				secondSnapshotsResponse, err := c.ListSnapshots(ctx, "", 0, firstSnapshotsResponse.NextToken)
-// 				if err != nil {
-// 					t.Fatalf("CreateSnapshot() failed: expected no error, got: %v", err)
-// 				}
-//
-// 				if len(secondSnapshotsResponse.Snapshots) != maxResults {
-// 					t.Fatalf("Expected %d snapshots, got %d", maxResults, len(secondSnapshotsResponse.Snapshots))
-// 				}
-//
-// 				if secondSnapshotsResponse.NextToken != "" {
-// 					t.Fatalf("Expected next token value to be empty got %s", secondSnapshotsResponse.NextToken)
-// 				}
-// 			},
-// 		},
 		{
 			name: "fail: Osc ReadSnasphot error",
 			testFunc: func(t *testing.T) {

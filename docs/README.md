@@ -72,13 +72,9 @@ Following sections are Kubernetes specific. If you are Kubernetes user, use foll
 
 ```
     # ENV VARS 
-    export OSC_ACCOUNT_ID=XXXXX
-    export OSC_ACCOUNT_IAM=XXXX
-    export OSC_USER_ID=XXXXXX
-    export OSC_ARN="arn:aws:iam::XXXXX:user/XXX"
-    export AWS_ACCESS_KEY_ID="XXXXXXX"
-    export AWS_SECRET_ACCESS_KEY="XXXXXXX"
-    export AWS_DEFAULT_REGION="eu-west-2"
+    export OSC_ACCESS_KEY=XXXXX
+    export OSC_SECRET_KEY=XXXXX
+    export AWS_AVAILABILITY_ZONES="XXXXX"
     
     export IMAGE_NAME=outscale/osc-ebs-csi-driver
     export IMAGE_TAG="v0.0.0beta"
@@ -86,13 +82,8 @@ Following sections are Kubernetes specific. If you are Kubernetes user, use foll
     ## set the secrets
     curl https://raw.githubusercontent.com/kubernetes-sigs/aws-ebs-csi-driver/master/deploy/kubernetes/secret.yaml > $HOME/secret_aws_template.yaml
     cat secret_aws_template.yaml | \
-        sed "s/access_key: \"\"/access_key: \"$AWS_SECRET_ACCESS_KEY\"/g" | \
-        sed "s/key_id: \"\"/key_id: \"$AWS_ACCESS_KEY_ID\"/g" > secret_aws.yaml
-    echo "  aws_default_region: \""$AWS_DEFAULT_REGION"\"" >> secret_aws.yaml
-    echo "  osc_account_id: \""$OSC_ACCOUNT_ID"\"" >> secret_aws.yaml
-    echo "  osc_account_iam: \""$OSC_ACCOUNT_IAM"\"" >> secret_aws.yaml
-    echo "  osc_user_id: \""$OSC_USER_ID"\"" >> secret_aws.yaml
-    echo "  osc_arn: \""$OSC_ARN "\"" >> secret_aws.yaml
+        sed "s/access_key: \"\"/access_key: \"OSC_ACCESS_KEY\"/g" | \
+        sed "s/key_id: \"\"/secret_key: \"OSC_SECRET_KEY\"/g" > secret_aws.yaml
     /usr/local/bin/kubectl delete -f secret_aws.yaml --namespace=kube-system
     /usr/local/bin/kubectl apply -f secret_aws.yaml --namespace=kube-system
     ## deploy the pod
@@ -136,13 +127,9 @@ Dependencies are managed through go module. To build the project, first turn on 
 * To execute sanity test run: `make test-sanity`
 * To execute integration tests, run:
 ```
-export OSC_ACCOUNT_ID=XXXXX : the osc user id
-export OSC_ACCOUNT_IAM=xxxx: eim user name 
-export OSC_USER_ID=XXXX: the eim user id
-export OSC_ARN="XXXXX" : the eim user orn
-export AWS_ACCESS_KEY_ID=XXXX : the  AK
-export AWS_SECRET_ACCESS_KEY=XXXX : the SK
-export AWS_DEFAULT_REGION=XXX: the Region to be used
+export OSC_ACCESS_KEY=XXXXX : the access key
+export OSC_SECRET_KEY=XXXXX : the secret key
+export AWS_AVAILABILITY_ZONES="XXXXX" : the region to be used
 
 ./run_int_test.sh
 

@@ -140,7 +140,7 @@ type DiskOptions struct {
 	SnapshotID string
 }
 
-// Snapshot represents an EBS volume snapshot
+// Snapshot represents an BSU volume snapshot
 type Snapshot struct {
 	SnapshotID     string
 	SourceVolumeID string
@@ -303,6 +303,14 @@ func newEC2MetadataSvc() *ec2metadata.EC2Metadata {
 func (c *cloud) GetMetadata() MetadataService {
 	fmt.Printf("Debug GetMetadata\n")
 	return c.metadata
+}
+
+func IsNilDisk(disk Disk)(bool){
+    return disk.VolumeID == ""
+}
+
+func IsNilSnapshot(snapshot Snapshot)(bool){
+    return snapshot.SnapshotID == ""
 }
 
 func (c *cloud) CreateDisk(ctx context.Context, volumeName string, diskOptions *DiskOptions) (Disk, error) {
@@ -1113,133 +1121,12 @@ func (c *cloud) waitForVolume(ctx context.Context, volumeID string) error {
 }
 
 //MODIFICATION NOT SUPPORTED
-// ResizeDisk resizes an EBS volume in GiB increments, rouding up to the next possible allocatable unit.
+// ResizeDisk resizes an BSU volume in GiB increments, rouding up to the next possible allocatable unit.
 // It returns the volume size after this call or an error if the size couldn't be determined.
 func (c *cloud) ResizeDisk(ctx context.Context, volumeID string, newSizeBytes int64) (int64, error) {
-	return 0, nil
-	// 	fmt.Printf("Debug ResizeDisk : %+v\n", volumeID)
-	// 	request := &osc.ReadVolumesOpts{
-	// 		ReadVolumesRequest: optional.NewInterface(
-	// 			osc.ReadVolumesRequest{
-	// 				Filters: osc.FiltersVolume{
-	// 					VolumeIds: []*string{volumeID},
-	// 				},
-	// 			}),
-	// 	}
-	//
-	// 	volume, err := c.getVolume(ctx, request)
-	// 	if err != nil {
-	// 		return 0, err
-	// 	}
-	//
-	// 	// AWS resizes in chunks of GiB (not GB)
-	// 	newSizeGiB := util.RoundUpGiB(newSizeBytes)
-	// 	oldSizeGiB := aws.Int64Value(volume.Size)
-	//
-	// 	if oldSizeGiB >= newSizeGiB {
-	// 		klog.V(5).Infof("Volume %q's current size (%d GiB) is greater or equal to the new size (%d GiB)", volumeID, oldSizeGiB, newSizeGiB)
-	// 		return oldSizeGiB, nil
-	// 	}
-	//
-	// 	req := &ec2.ModifyVolumeInput{
-	// 		VolumeId: aws.String(volumeID),
-	// 		Size:     aws.Int64(newSizeGiB),
-	// 	}
-	//
-	// 	var mod *ec2.VolumeModification
-	// 	response, err := c.ec2.ModifyVolumeWithContext(ctx, req)
-	// 	if err != nil {
-	// 		if !isAWSErrorIncorrectModification(err) {
-	// 			return 0, fmt.Errorf("could not modify AWS volume %q: %v", volumeID, err)
-	// 		}
-	//
-	// 		m, err := c.getLatestVolumeModification(ctx, volumeID)
-	// 		if err != nil {
-	// 			return 0, err
-	// 		}
-	// 		mod = m
-	// 	}
-	//
-	// 	if mod == nil {
-	// 		mod = response.VolumeModification
-	// 	}
-	//
-	// 	state := aws.StringValue(mod.ModificationState)
-	// 	if state == ec2.VolumeModificationStateCompleted || state == ec2.VolumeModificationStateOptimizing {
-	// 		return aws.Int64Value(mod.TargetSize), nil
-	// 	}
-	//
-	// 	return c.waitForVolumeSize(ctx, volumeID)
+	return 0, fmt.Errorf("could not modify OSC volume, resize is not supported 'https://wiki.outscale.net/display/EN/Extending+the+Storage+Capacity+of+a+Volume'")
 }
 
-// waitForVolumeSize waits for a volume modification to finish and return its size.
-//func (c *cloud) waitForVolumeSize(ctx context.Context, volumeID string) (int64, error) {
-//return 0, nil
-// 	fmt.Printf("Debug waitForVolumeSize : %+v\n", volumeID)
-// 	var modVolSizeGiB int64
-// 	backoff := util.EnvBackoff()
-// 	waitErr := wait.ExponentialBackoff(backoff, func() (bool, error) {
-// 		m, err := c.getLatestVolumeModification(ctx, volumeID)
-// 		if err != nil {
-// 			return false, err
-// 		}
-//
-// 		state := aws.StringValue(m.ModificationState)
-// 		if state == ec2.VolumeModificationStateCompleted || state == ec2.VolumeModificationStateOptimizing {
-// 			modVolSizeGiB = aws.Int64Value(m.TargetSize)
-// 			return true, nil
-// 		}
-//
-// 		return false, nil
-// 	})
-//
-// 	if waitErr != nil {
-// 		return 0, waitErr
-// 	}
-//
-// 	return modVolSizeGiB, nil
-//}
-
-// getLatestVolumeModification returns the last modification of the volume.
-//func (c *cloud) getLatestVolumeModification(ctx context.Context, volumeID string) (int64 /**ec2.VolumeModification*/, error) {
-//	return 0, nil
-// 	fmt.Printf("Debug getLatestVolumeModification : %+v\n", volumeID)
-// 	request := &ec2.DescribeVolumesModificationsInput{
-// 		VolumeIds: []*string{
-// 			aws.String(volumeID),
-// 		},
-// 	}
-// 	var err error
-// 	var mod *ec2.DescribeVolumesModificationsOutput
-// 	describeVolModCallback := func() (bool, error) {
-// 		mod, err = c.ec2.DescribeVolumesModificationsWithContext(ctx, request)
-// 		if err != nil {
-// 			requestStr := fmt.Sprintf("%v", request)
-// 			if keepRetryWithError(
-// 				requestStr,
-// 				err,
-// 				[]string{"RequestLimitExceeded"}) {
-// 				return false, nil
-// 			}
-// 			return false, fmt.Errorf("error describing modifications in volume %q: %v", volumeID, err)
-// 		}
-// 		return true, nil
-// 	}
-//
-// 	backoff := util.EnvBackoff()
-// 	waitErr := wait.ExponentialBackoff(backoff, describeVolModCallback)
-//
-// 	if waitErr != nil {
-// 		return nil, waitErr
-// 	}
-//
-// 	volumeMods := mod.VolumesModifications
-// 	if len(volumeMods) == 0 {
-// 		return nil, fmt.Errorf("could not find any modifications for volume %q", volumeID)
-// 	}
-//
-// 	return volumeMods[len(volumeMods)-1], nil
-//}
 
 // randomAvailabilityZone returns a random zone from the given region
 // the randomness relies on the response of DescribeAvailabilityZones

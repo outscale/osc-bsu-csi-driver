@@ -357,10 +357,9 @@ func (c *cloud) CreateDisk(ctx context.Context, volumeName string, diskOptions *
 	}
 
 	// NOT SUPPORTED YET BY OSC API
-	//if len(diskOptions.KmsKeyID) > 0 {
-	//	request.KmsKeyId = aws.String(diskOptions.KmsKeyID)
-	//	request.Encrypted = aws.Bool(true)
-	//}
+	if len(diskOptions.KmsKeyID) > 0 {
+	    return Disk{}, fmt.Errorf("Encryption is not supported yet by OSC API %s", err)
+	}
 
 	snapshotID := diskOptions.SnapshotID
 	request := osc.CreateVolumeOpts{

@@ -38,7 +38,7 @@ There are several optional parameters that could be passed into `CreateVolumeReq
 Following sections are Kubernetes specific. If you are Kubernetes user, use followings for driver features, installation steps and examples.
 
 ## Kubernetes Version Compability Matrix
-| OSC BSU CSI Driver \ Kubernetes Version|v1.17.4| 
+| OSC BSU CSI Driver \ Kubernetes Version|v1.18.4| 
 |----------------------------------------|-------|
 | OSC-MIGRATION branch                   | yes   |
 
@@ -46,7 +46,7 @@ Following sections are Kubernetes specific. If you are Kubernetes user, use foll
 ## Container Images:
 |OSC BSU CSI Driver Version | Image                                     |
 |---------------------------|-------------------------------------------|
-| OSC-MIGRATION branch      |outscale/osc-ebs-csi-driver:v0.0.2beta     |
+| OSC-MIGRATION branch      |outscale/osc-ebs-csi-driver:v0.0.5beta     |
 
 ## Features
 * **Static Provisioning** - create a new or migrating existing BSU volumes, then create persistence volume (PV) from the BSU volume and consume the PV from container using persistence volume claim (PVC).
@@ -55,6 +55,7 @@ Following sections are Kubernetes specific. If you are Kubernetes user, use foll
 * **Block Volume** (beta since 1.14) - consumes the BSU volume as a raw block device for latency sensitive application eg. MySql
 * **Volume Snapshot** (beta) - creating volume snapshots and restore volume from snapshot.
 * **Volume Resizing**  - Not supported yet.
+* **Volume Encryption** - Not supported yet.
 
 ## Prerequisites
 
@@ -67,18 +68,14 @@ Following sections are Kubernetes specific. If you are Kubernetes user, use foll
 
 ## Installation
 
-- pre-installed k8s platform under outscale cloud with 3 masters and 2 workers on vm with `t2.medium` type
+- pre-installed k8s platform under outscale cloud with 3 masters and 2 workers on vm with `tinav2.c2r4p3` type
 - prepare the machine from which you will run deploy the osc ebs csi plugin
 
 ```
     # ENV VARS 
-    export OSC_ACCOUNT_ID=XXXXX
-    export OSC_ACCOUNT_IAM=XXXX
-    export OSC_USER_ID=XXXXXX
-    export OSC_ARN="arn:aws:iam::XXXXX:user/XXX"
-    export AWS_ACCESS_KEY_ID="XXXXXXX"
-    export AWS_SECRET_ACCESS_KEY="XXXXXXX"
-    export AWS_DEFAULT_REGION="eu-west-2"
+    export OSC_ACCESS_KEY=XXXXX
+    export OSC_SECRET_KEY=XXXXX
+    export AWS_AVAILABILITY_ZONES="XXXXX"
     
     export IMAGE_NAME=outscale/osc-ebs-csi-driver
     export IMAGE_TAG="v0.0.0beta"
@@ -86,13 +83,8 @@ Following sections are Kubernetes specific. If you are Kubernetes user, use foll
     ## set the secrets
     curl https://raw.githubusercontent.com/kubernetes-sigs/aws-ebs-csi-driver/master/deploy/kubernetes/secret.yaml > $HOME/secret_aws_template.yaml
     cat secret_aws_template.yaml | \
-        sed "s/access_key: \"\"/access_key: \"$AWS_SECRET_ACCESS_KEY\"/g" | \
-        sed "s/key_id: \"\"/key_id: \"$AWS_ACCESS_KEY_ID\"/g" > secret_aws.yaml
-    echo "  aws_default_region: \""$AWS_DEFAULT_REGION"\"" >> secret_aws.yaml
-    echo "  osc_account_id: \""$OSC_ACCOUNT_ID"\"" >> secret_aws.yaml
-    echo "  osc_account_iam: \""$OSC_ACCOUNT_IAM"\"" >> secret_aws.yaml
-    echo "  osc_user_id: \""$OSC_USER_ID"\"" >> secret_aws.yaml
-    echo "  osc_arn: \""$OSC_ARN "\"" >> secret_aws.yaml
+        sed "s/access_key: \"\"/access_key: \"OSC_ACCESS_KEY\"/g" | \
+        sed "s/key_id: \"\"/secret_key: \"OSC_SECRET_KEY\"/g" > secret_aws.yaml
     /usr/local/bin/kubectl delete -f secret_aws.yaml --namespace=kube-system
     /usr/local/bin/kubectl apply -f secret_aws.yaml --namespace=kube-system
     ## deploy the pod
@@ -120,10 +112,10 @@ Make sure you follow the [Prerequisites](README.md#Prerequisites) before the exa
 * [Volume Resizing](../examples/kubernetes/resizing)
 
 ## Development
-Please go through [CSI Spec](https://github.com/container-storage-interface/spec/blob/master/spec.md) and [General CSI driver development guideline](https://kubernetes-csi.github.io/docs/Development.html) to get some basic understanding of CSI driver before you start.
+Please go through [CSI Spec](https://github.com/container-storage-interface/spec/blob/master/spec.md) and [General CSI driver development guideline](https://kubernetes-csi.github.io/docs/introduction.html?highlight=Deve#development-and-deployment) to get some basic understanding of CSI driver before you start.
 
 ### Requirements
-* Golang 1.12.7+
+* Golang 1.14.1
 * [Ginkgo](https://github.com/onsi/ginkgo) in your PATH for integration testing and end-to-end testing
 * Docker 18.09.2+ for releasing
 * K8s v1.15.4+
@@ -133,40 +125,8 @@ Dependencies are managed through go module. To build the project, first turn on 
 
 ### Testing
 * To execute all unit tests, run: `make test`
-* To execute sanity test run: `make test-sanity`
-* To execute integration tests, run:
-```
-export OSC_ACCOUNT_ID=XXXXX : the osc user id
-export OSC_ACCOUNT_IAM=xxxx: eim user name 
-export OSC_USER_ID=XXXX: the eim user id
-export OSC_ARN="XXXXX" : the eim user orn
-export AWS_ACCESS_KEY_ID=XXXX : the  AK
-export AWS_SECRET_ACCESS_KEY=XXXX : the SK
-export AWS_DEFAULT_REGION=XXX: the Region to be used
-
-./run_int_test.sh
-
-```
-
 * To execute e2e single az tests, run: 
 ```
     cd osc-ebs-csi-driver
-    wget https://dl.google.com/go/go1.12.7.linux-amd64.tar.gz
-    tar -C /usr/local -xzf go1.12.7.linux-amd64.tar.gz
-    export PATH=$PATH:/usr/local/go/bin
-    export GOPATH="/root/go"
-    
-    go get -v -u github.com/onsi/ginkgo/ginkgo
-    export KUBECONFIG=$HOME/.kube/config
-    export AWS_AVAILABILITY_ZONES=eu-west-2b
-    ARTIFACTS=$PWD/single_az_test_e2e_report
-    mkdir -p $ARTIFACTS
-    export NODES=4
-    $GOPATH/bin/ginkgo -debug -p -nodes=$NODES -v --focus="\[ebs-csi-e2e\] \[single-az\]" tests/e2e -- -report-dir=$ARTIFACTS
-    
+    make test-e2e-single-az E2E_AZ="XXXX"
 ```
-**Notes**:
-* Sanity tests make sure the driver complies with the CSI specification
-* EC2 instance is required to run integration test, since it is exercising the actual flow of creating BSU volume, attaching it and read/write on the disk. See [Ingetration Testing](../tests/integration/README.md) for more details.
-* E22 tests exercises various driver functionalities in Kubernetes cluster. See [E2E Testing](../tests/e2e/README.md) for more details.
-

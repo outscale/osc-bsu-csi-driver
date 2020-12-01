@@ -19,7 +19,7 @@ package options
 import (
 	"flag"
 
-	"github.com/kubernetes-sigs/aws-ebs-csi-driver/pkg/driver"
+	"github.com/outscale-dev/osc-bsu-csi-driver/pkg/driver"
 )
 
 // ServerOptions contains options and configuration settings for the driver server.

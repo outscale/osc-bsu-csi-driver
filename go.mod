@@ -1,4 +1,4 @@
-module github.com/kubernetes-sigs/aws-ebs-csi-driver
+module github.com/outscale-dev/osc-bsu-csi-driver
 
 require (
 	github.com/aws/aws-k8s-tester/e2e/tester v0.0.0-20191204032858-d97ad2e4255e // indirect

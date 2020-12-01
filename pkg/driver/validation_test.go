@@ -23,7 +23,7 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/kubernetes-sigs/aws-ebs-csi-driver/pkg/cloud"
+	"github.com/outscale-dev/osc-bsu-csi-driver/pkg/cloud"
 )
 
 func randomString(n int) string {

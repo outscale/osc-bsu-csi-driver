@@ -24,8 +24,8 @@ import (
 
 	csi "github.com/container-storage-interface/spec/lib/go/csi"
 	"github.com/golang/protobuf/ptypes"
-	"github.com/kubernetes-sigs/aws-ebs-csi-driver/pkg/cloud"
-	"github.com/kubernetes-sigs/aws-ebs-csi-driver/pkg/util"
+	"github.com/outscale-dev/osc-bsu-csi-driver/pkg/cloud"
+	"github.com/outscale-dev/osc-bsu-csi-driver/pkg/util"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"k8s.io/klog"
@@ -168,7 +168,7 @@ func (d *controllerService) CreateVolume(ctx context.Context, req *csi.CreateVol
 	}
 
 	// volume exists already
-	if disk != nil {
+	if !cloud.IsNilDisk(disk) {
 		if disk.SnapshotID != snapshotID {
 			return nil, status.Errorf(codes.AlreadyExists, "Volume already exists, but was restored from a different snapshot than %s", snapshotID)
 		}
@@ -348,33 +348,34 @@ func (d *controllerService) ValidateVolumeCapabilities(ctx context.Context, req 
 	}, nil
 }
 
+// Expand not implemented
 func (d *controllerService) ControllerExpandVolume(ctx context.Context, req *csi.ControllerExpandVolumeRequest) (*csi.ControllerExpandVolumeResponse, error) {
-	klog.V(4).Infof("ControllerExpandVolume: called with args %+v", *req)
-	volumeID := req.GetVolumeId()
-	if len(volumeID) == 0 {
-		return nil, status.Error(codes.InvalidArgument, "Volume ID not provided")
-	}
+    klog.V(4).Infof("ControllerExpandVolume: called with args %+v", *req)
+    volumeID := req.GetVolumeId()
+    if len(volumeID) == 0 {
+        return nil, status.Error(codes.InvalidArgument, "Volume ID not provided")
+    }
 
-	capRange := req.GetCapacityRange()
-	if capRange == nil {
-		return nil, status.Error(codes.InvalidArgument, "Capacity range not provided")
-	}
+    capRange := req.GetCapacityRange()
+    if capRange == nil {
+        return nil, status.Error(codes.InvalidArgument, "Capacity range not provided")
+    }
 
-	newSize := util.RoundUpBytes(capRange.GetRequiredBytes())
-	maxVolSize := capRange.GetLimitBytes()
-	if maxVolSize > 0 && maxVolSize < newSize {
-		return nil, status.Error(codes.InvalidArgument, "After round-up, volume size exceeds the limit specified")
-	}
+    newSize := util.RoundUpBytes(capRange.GetRequiredBytes())
+    maxVolSize := int32(capRange.GetLimitBytes())
+    if maxVolSize > 0 && maxVolSize < int32(newSize) {
+        return nil, status.Error(codes.InvalidArgument, "After round-up, volume size exceeds the limit specified")
+    }
 
-	actualSizeGiB, err := d.cloud.ResizeDisk(ctx, volumeID, newSize)
-	if err != nil {
-		return nil, status.Errorf(codes.Internal, "Could not resize volume %q: %v", volumeID, err)
-	}
+    actualSizeGiB, err := d.cloud.ResizeDisk(ctx, volumeID, newSize)
+    if err != nil {
+        return nil, status.Errorf(codes.Internal, "Could not resize volume %q: %v", volumeID, err)
+    }
 
-	return &csi.ControllerExpandVolumeResponse{
-		CapacityBytes:         util.GiBToBytes(actualSizeGiB),
-		NodeExpansionRequired: true,
-	}, nil
+    return &csi.ControllerExpandVolumeResponse{
+        CapacityBytes:         int64(util.GiBToBytes(actualSizeGiB)),
+        NodeExpansionRequired: true,
+    }, nil
 }
 
 func isValidVolumeCapabilities(volCaps []*csi.VolumeCapability) bool {
@@ -412,7 +413,7 @@ func (d *controllerService) CreateSnapshot(ctx context.Context, req *csi.CreateS
 		klog.Errorf("Error looking for the snapshot %s: %v", snapshotName, err)
 		return nil, err
 	}
-	if snapshot != nil {
+	if !cloud.IsNilSnapshot(snapshot) {
 		if snapshot.SourceVolumeID != volumeID {
 			return nil, status.Errorf(codes.AlreadyExists, "Snapshot %s already exists for different volume (%s)", snapshotName, snapshot.SourceVolumeID)
 		}
@@ -450,7 +451,7 @@ func (d *controllerService) DeleteSnapshot(ctx context.Context, req *csi.DeleteS
 
 func (d *controllerService) ListSnapshots(ctx context.Context, req *csi.ListSnapshotsRequest) (*csi.ListSnapshotsResponse, error) {
 	klog.V(4).Infof("ListSnapshots: called with args %+v", req)
-	var snapshots []*cloud.Snapshot
+	var snapshots []cloud.Snapshot
 
 	snapshotID := req.GetSnapshotId()
 	if len(snapshotID) != 0 {
@@ -463,7 +464,7 @@ func (d *controllerService) ListSnapshots(ctx context.Context, req *csi.ListSnap
 			return nil, status.Errorf(codes.Internal, "Could not get snapshot ID %q: %v", snapshotID, err)
 		}
 		snapshots = append(snapshots, snapshot)
-		if response, err := newListSnapshotsResponse(&cloud.ListSnapshotsResponse{
+		if response, err := newListSnapshotsResponse(cloud.ListSnapshotsResponse{
 			Snapshots: snapshots,
 		}); err != nil {
 			return nil, status.Errorf(codes.Internal, "Could not build ListSnapshotsResponse: %v", err)
@@ -474,9 +475,9 @@ func (d *controllerService) ListSnapshots(ctx context.Context, req *csi.ListSnap
 
 	volumeID := req.GetSourceVolumeId()
 	nextToken := req.GetStartingToken()
-	maxEntries := int64(req.GetMaxEntries())
+	maxEntries := req.GetMaxEntries()
 
-	cloudSnapshots, err := d.cloud.ListSnapshots(ctx, volumeID, maxEntries, nextToken)
+	cloudSnapshots, err := d.cloud.ListSnapshots(ctx, volumeID, int64(maxEntries), nextToken)
 	if err != nil {
 		if err == cloud.ErrNotFound {
 			klog.V(4).Info("ListSnapshots: snapshot not found, returning with success")
@@ -516,7 +517,7 @@ func pickAvailabilityZone(requirement *csi.TopologyRequirement) string {
 	return ""
 }
 
-func newCreateVolumeResponse(disk *cloud.Disk) *csi.CreateVolumeResponse {
+func newCreateVolumeResponse(disk cloud.Disk) *csi.CreateVolumeResponse {
 	var src *csi.VolumeContentSource
 	if disk.SnapshotID != "" {
 		src = &csi.VolumeContentSource{
@@ -542,7 +543,7 @@ func newCreateVolumeResponse(disk *cloud.Disk) *csi.CreateVolumeResponse {
 	}
 }
 
-func newCreateSnapshotResponse(snapshot *cloud.Snapshot) (*csi.CreateSnapshotResponse, error) {
+func newCreateSnapshotResponse(snapshot cloud.Snapshot) (*csi.CreateSnapshotResponse, error) {
 	ts, err := ptypes.TimestampProto(snapshot.CreationTime)
 	if err != nil {
 		return nil, err
@@ -551,14 +552,14 @@ func newCreateSnapshotResponse(snapshot *cloud.Snapshot) (*csi.CreateSnapshotRes
 		Snapshot: &csi.Snapshot{
 			SnapshotId:     snapshot.SnapshotID,
 			SourceVolumeId: snapshot.SourceVolumeID,
-			SizeBytes:      snapshot.Size,
+			SizeBytes:      int64(snapshot.Size),
 			CreationTime:   ts,
 			ReadyToUse:     snapshot.ReadyToUse,
 		},
 	}, nil
 }
 
-func newListSnapshotsResponse(cloudResponse *cloud.ListSnapshotsResponse) (*csi.ListSnapshotsResponse, error) {
+func newListSnapshotsResponse(cloudResponse cloud.ListSnapshotsResponse) (*csi.ListSnapshotsResponse, error) {
 
 	var entries []*csi.ListSnapshotsResponse_Entry
 	for _, snapshot := range cloudResponse.Snapshots {
@@ -569,12 +570,12 @@ func newListSnapshotsResponse(cloudResponse *cloud.ListSnapshotsResponse) (*csi.
 		entries = append(entries, snapshotResponseEntry)
 	}
 	return &csi.ListSnapshotsResponse{
-		Entries:   entries,
+		Entries: entries,
 		NextToken: cloudResponse.NextToken,
 	}, nil
 }
 
-func newListSnapshotsResponseEntry(snapshot *cloud.Snapshot) (*csi.ListSnapshotsResponse_Entry, error) {
+func newListSnapshotsResponseEntry(snapshot cloud.Snapshot) (*csi.ListSnapshotsResponse_Entry, error) {
 	ts, err := ptypes.TimestampProto(snapshot.CreationTime)
 	if err != nil {
 		return nil, err
@@ -583,7 +584,7 @@ func newListSnapshotsResponseEntry(snapshot *cloud.Snapshot) (*csi.ListSnapshots
 		Snapshot: &csi.Snapshot{
 			SnapshotId:     snapshot.SnapshotID,
 			SourceVolumeId: snapshot.SourceVolumeID,
-			SizeBytes:      snapshot.Size,
+			SizeBytes:      int64(snapshot.Size),
 			CreationTime:   ts,
 			ReadyToUse:     snapshot.ReadyToUse,
 		},

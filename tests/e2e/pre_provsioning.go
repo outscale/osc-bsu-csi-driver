@@ -21,20 +21,20 @@ import (
 	"os"
 	"strings"
 
-	awscloud "github.com/kubernetes-sigs/aws-ebs-csi-driver/pkg/cloud"
-	"github.com/kubernetes-sigs/aws-ebs-csi-driver/tests/e2e/driver"
-	"github.com/kubernetes-sigs/aws-ebs-csi-driver/tests/e2e/testsuites"
+	osccloud "github.com/outscale-dev/osc-bsu-csi-driver/pkg/cloud"
+	"github.com/outscale-dev/osc-bsu-csi-driver/tests/e2e/driver"
+	"github.com/outscale-dev/osc-bsu-csi-driver/tests/e2e/testsuites"
 	. "github.com/onsi/ginkgo"
 	v1 "k8s.io/api/core/v1"
 	clientset "k8s.io/client-go/kubernetes"
 	"k8s.io/kubernetes/test/e2e/framework"
 
-	ebscsidriver "github.com/kubernetes-sigs/aws-ebs-csi-driver/pkg/driver"
+	bsucsidriver "github.com/outscale-dev/osc-bsu-csi-driver/pkg/driver"
 )
 
 const (
 	defaultDiskSize   = 4
-	defaultVoluemType = awscloud.VolumeTypeGP2
+	defaultVoluemType = osccloud.VolumeTypeGP2
 
 	awsAvailabilityZonesEnv = "AWS_AVAILABILITY_ZONES"
 
@@ -53,7 +53,7 @@ var _ = Describe("[ebs-csi-e2e] [single-az] Pre-Provisioned", func() {
 		cs        clientset.Interface
 		ns        *v1.Namespace
 		ebsDriver driver.PreProvisionedVolumeTestDriver
-		cloud     awscloud.Cloud
+		cloud     osccloud.Cloud
 		volumeID  string
 		diskSize  string
 		// Set to true if the volume should be deleted automatically after test
@@ -73,14 +73,14 @@ var _ = Describe("[ebs-csi-e2e] [single-az] Pre-Provisioned", func() {
 		availabilityZone := availabilityZones[rand.Intn(len(availabilityZones))]
 		region := availabilityZone[0 : len(availabilityZone)-1]
 
-		diskOptions := &awscloud.DiskOptions{
+		diskOptions := &osccloud.DiskOptions{
 			CapacityBytes:    defaultDiskSizeBytes,
 			VolumeType:       defaultVoluemType,
 			AvailabilityZone: availabilityZone,
-			Tags:             map[string]string{awscloud.VolumeNameTagKey: dummyVolumeName},
+			Tags:             map[string]string{osccloud.VolumeNameTagKey: dummyVolumeName},
 		}
 		var err error
-		cloud, err = awscloud.NewCloud(region)
+		cloud, err = osccloud.NewCloud(region)
 		if err != nil {
 			Fail(fmt.Sprintf("could not get NewCloud: %v", err))
 		}
@@ -115,7 +115,7 @@ var _ = Describe("[ebs-csi-e2e] [single-az] Pre-Provisioned", func() {
 				Volumes: []testsuites.VolumeDetails{
 					{
 						VolumeID:  volumeID,
-						FSType:    ebscsidriver.FSTypeExt4,
+						FSType:    bsucsidriver.FSTypeExt4,
 						ClaimSize: diskSize,
 						VolumeMount: testsuites.VolumeMountDetails{
 							NameGenerate:      "test-volume-",
@@ -139,7 +139,7 @@ var _ = Describe("[ebs-csi-e2e] [single-az] Pre-Provisioned", func() {
 				Volumes: []testsuites.VolumeDetails{
 					{
 						VolumeID:  volumeID,
-						FSType:    ebscsidriver.FSTypeExt4,
+						FSType:    bsucsidriver.FSTypeExt4,
 						ClaimSize: diskSize,
 						VolumeMount: testsuites.VolumeMountDetails{
 							NameGenerate:      "test-volume-",
@@ -162,7 +162,7 @@ var _ = Describe("[ebs-csi-e2e] [single-az] Pre-Provisioned", func() {
 		volumes := []testsuites.VolumeDetails{
 			{
 				VolumeID:      volumeID,
-				FSType:        ebscsidriver.FSTypeExt4,
+				FSType:        bsucsidriver.FSTypeExt4,
 				ClaimSize:     diskSize,
 				ReclaimPolicy: &reclaimPolicy,
 			},
@@ -180,7 +180,7 @@ var _ = Describe("[ebs-csi-e2e] [single-az] Pre-Provisioned", func() {
 		volumes := []testsuites.VolumeDetails{
 			{
 				VolumeID:      volumeID,
-				FSType:        ebscsidriver.FSTypeExt4,
+				FSType:        bsucsidriver.FSTypeExt4,
 				ClaimSize:     diskSize,
 				ReclaimPolicy: &reclaimPolicy,
 			},

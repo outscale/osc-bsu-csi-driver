@@ -15,8 +15,8 @@ limitations under the License.
 package testsuites
 
 import (
-	"github.com/kubernetes-sigs/aws-ebs-csi-driver/pkg/cloud"
-	"github.com/kubernetes-sigs/aws-ebs-csi-driver/tests/e2e/driver"
+	"github.com/outscale-dev/osc-bsu-csi-driver/pkg/cloud"
+	"github.com/outscale-dev/osc-bsu-csi-driver/tests/e2e/driver"
 
 	"k8s.io/api/core/v1"
 	clientset "k8s.io/client-go/kubernetes"

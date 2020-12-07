@@ -1,28 +1,12 @@
-FROM golang:1.14.1-stretch as builder
-
-ARG DEBUG_IMAGE="disable"
-
-RUN apt-get -y update && \
-	apt-get -y --no-install-recommends install ca-certificates=20161130+nmu1+deb9u1 \
-										e2fsprogs=1.43.4-2+deb9u1 \
-										xfsprogs=4.9.0+nmu1 \
-										util-linux=2.29.2-1+deb9u1 && \
-	if [ "${DEBUG_IMAGE}" = "enable" ]; then \
-	 	apt-get -y --no-install-recommends install gdb=7.12-6 jq=1.5+dfsg-1.3; \
-		echo "add-auto-load-safe-path /usr/local/go/src/runtime/runtime-gdb.py" >> /root/.gdbinit; \
-	fi && \
-	apt-get clean && \
-	rm -rf /var/lib/apt/lists/*
-
+FROM k8s.gcr.io/build-image/debian-base:v2.1.3
+RUN echo "deb http://deb.debian.org/debian testing non-free contrib main" >> /etc/apt/sources.list &&\
+    echo "deb http://deb.debian.org/debian unstable non-free contrib main" >> /etc/apt/sources.list && \
+    apt-get -y update
+# TO FIX CVE
+RUN DEBIAN_FRONTEND=noninteractive && clean-install libc-bin=2.31-5 libgnutls30=3.6.15-4 libidn2-0=2.3.0-4 libudev1=247.1-2 udev=247.1-2 libsqlite3-0=3.33.0-1
+RUN export DEBIAN_FRONTEND=noninteractive && clean-install ca-certificates e2fsprogs mount udev util-linux xfsprogs
 WORKDIR /go/src/github.com/kubernetes-sigs/aws-ebs-csi-driver
-COPY go.mod .
-COPY go.sum .
-RUN go mod download -x
-
-COPY . .
-RUN make -j 4  && \
-    cp /go/src/github.com/kubernetes-sigs/aws-ebs-csi-driver/bin/aws-ebs-csi-driver /bin/aws-ebs-csi-driver && \
-    rm -rf /go/pkg/*
+COPY ./bin/aws-ebs-csi-driver /bin/aws-ebs-csi-driver
 
 ENTRYPOINT ["/bin/aws-ebs-csi-driver"]
 

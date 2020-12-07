@@ -80,6 +80,7 @@ image-release:
 
 .PHONY: image
 image:
+	docker exec $(BUILD_ENV_RUN) make aws-ebs-csi-driver
 	docker build -t $(IMAGE):$(IMAGE_TAG) .
 
 .PHONY: image-tag

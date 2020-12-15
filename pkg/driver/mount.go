@@ -17,11 +17,21 @@ limitations under the License.
 package driver
 
 import (
+	"fmt"
 	"os"
+	osexec "os/exec"
+	"strings"
+	"strconv"
 
+	"golang.org/x/sys/unix"
 	"k8s.io/utils/exec"
 	"k8s.io/utils/mount"
 )
+
+type volumeStats struct {
+	availBytes, totalBytes, usedBytes    int64
+	availInodes, totalInodes, usedInodes int64
+}
 
 // Mounter is an interface for mount operations
 type Mounter interface {
@@ -32,12 +42,15 @@ type Mounter interface {
 	MakeFile(pathname string) error
 	MakeDir(pathname string) error
 	ExistsPath(filename string) (bool, error)
+	GetStatistics(filename string) (volumeStats, error)
+	IsBlockDevice(filename string) (bool, error)
 }
 
 type NodeMounter struct {
 	mount.SafeFormatAndMount
 	exec.Interface
 }
+
 
 func newNodeMounter() Mounter {
 	return &NodeMounter{
@@ -81,4 +94,60 @@ func (m *NodeMounter) ExistsPath(filename string) (bool, error) {
 		return false, err
 	}
 	return true, nil
+}
+
+
+func (m *NodeMounter) GetStatistics(filename string) (volumeStats, error) {
+	isBlock, err := m.IsBlockDevice(filename)
+	if err != nil {
+		return volumeStats{}, fmt.Errorf("unable to determine if volume %s is a block device: %v", filename, err)
+	}
+
+	// We'll use the blockdev command to get the block device size.
+	if isBlock {
+		output, err := osexec.Command("blockdev", "getsize64", filename).CombinedOutput()
+		if err != nil {
+			return volumeStats{}, fmt.Errorf("error when getting size of block volume at path %s: output: %s, err: %v", filename, string(output), err)
+		}
+
+		strSize := strings.TrimSpace(string(output))
+		sizeBytes, err := strconv.ParseInt(strSize, 10, 64)
+		if err != nil {
+			return volumeStats{}, fmt.Errorf("size %s is not int", strSize)
+		}
+
+		return volumeStats{
+			totalBytes: sizeBytes,
+		}, nil
+	}
+
+	var statfs unix.Statfs_t
+
+	err = unix.Statfs(filename, &statfs)
+	if err != nil {
+		return volumeStats{}, err
+	}
+
+	volStats := volumeStats{
+		totalBytes:  int64(statfs.Blocks) * int64(statfs.Bsize),
+		availBytes:  int64(statfs.Bavail) * int64(statfs.Bsize),
+		usedBytes:   (int64(statfs.Blocks) - int64(statfs.Bfree)) * int64(statfs.Bsize),
+		totalInodes: int64(statfs.Files),
+		availInodes: int64(statfs.Ffree),
+		usedInodes:  int64(statfs.Files) - int64(statfs.Ffree),
+	}
+
+	return volStats, nil
+}
+
+func (m *NodeMounter) IsBlockDevice(filename string) (bool, error) {
+	// Use stat to determine the kind of file this is.
+	var stat unix.Stat_t
+
+	err := unix.Stat(filename, &stat)
+	if err != nil {
+		return false, err
+	}
+
+	return (stat.Mode & unix.S_IFMT) == unix.S_IFBLK, nil
 }

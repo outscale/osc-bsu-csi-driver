@@ -211,7 +211,7 @@ func TestSyncElbListeners(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			additions, removals := syncElbListeners(test.loadBalancerName, test.listeners, test.listenerDescriptions)
+			additions, removals, _ := syncElbListeners(test.loadBalancerName, test.listeners, test.listenerDescriptions)
 			assert.Equal(t, additions, test.toCreate)
 			assert.Equal(t, removals, test.toDelete)
 		})

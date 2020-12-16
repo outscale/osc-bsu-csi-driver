@@ -377,7 +377,7 @@ func (c *Cloud) ensureLoadBalancer(namespacedName types.NamespacedName, loadBala
 		}
 
 		if proxyProtocol {
-			err = c.createProxyProtocolPolicy(loadBalancerName)
+			err = c.createProxyProtocolPolicy(loadBalancerName, false)
 			if err != nil {
 				return nil, err
 			}
@@ -428,12 +428,28 @@ func (c *Cloud) ensureLoadBalancer(namespacedName types.NamespacedName, loadBala
 					loadBalancer, expected, actual)
 			}
 		}
+
 		{
-			additions, removals := syncElbListeners(loadBalancerName, listeners, loadBalancer.ListenerDescriptions)
+			additions, removals, removalsInstancePorts := syncElbListeners(loadBalancerName, listeners, loadBalancer.ListenerDescriptions)
 			if len(removals) != 0 {
 				request := &elb.DeleteLoadBalancerListenersInput{}
 				request.LoadBalancerName = aws.String(loadBalancerName)
 				request.LoadBalancerPorts = removals
+
+				if proxyProtocol {
+					for _, backendListener := range loadBalancer.BackendServerDescriptions {
+						for _, instancePort := range removalsInstancePorts {
+							if aws.Int64Value(backendListener.InstancePort) == aws.Int64Value(instancePort) {
+								klog.V(2).Infof("Removing backend policies before removing Listener to prevent update error")
+								err := c.setBackendPolicies(loadBalancerName, aws.Int64Value(instancePort), []*string{})
+								if err != nil {
+									return nil, err
+								}
+								break
+							}
+						}
+					}
+				}
 				klog.V(2).Info("Deleting removed load balancer listeners")
 				if _, err := c.elb.DeleteLoadBalancerListeners(request); err != nil {
 					return nil, fmt.Errorf("error deleting OSC loadbalancer listeners: %q", err)
@@ -455,20 +471,13 @@ func (c *Cloud) ensureLoadBalancer(namespacedName types.NamespacedName, loadBala
 
 		{
 			// Sync proxy protocol state for new and existing listeners
-
 			proxyPolicies := make([]*string, 0)
 			if proxyProtocol {
 				// Ensure the backend policy exists
-
-				// NOTE The documentation for the AWS API indicates we could get an HTTP 400
-				// back if a policy of the same name already exists. However, the aws-sdk does not
-				// seem to return an error to us in these cases. Therefore, this will issue an API
-				// request every time.
-				err := c.createProxyProtocolPolicy(loadBalancerName)
+				err := c.createProxyProtocolPolicy(loadBalancerName, true)
 				if err != nil {
 					return nil, err
 				}
-
 				proxyPolicies = append(proxyPolicies, aws.String(ProxyProtocolPolicyName))
 			}
 
@@ -498,20 +507,6 @@ func (c *Cloud) ensureLoadBalancer(namespacedName types.NamespacedName, loadBala
 				if setPolicy {
 					klog.V(2).Infof("Adjusting AWS loadbalancer proxy protocol on node port %d. Setting to %t", instancePort, proxyProtocol)
 					err := c.setBackendPolicies(loadBalancerName, instancePort, proxyPolicies)
-					if err != nil {
-						return nil, err
-					}
-					dirty = true
-				}
-			}
-
-			// We now need to figure out if any backend policies need removed
-			// because these old policies will stick around even if there is no
-			// corresponding listener anymore
-			for instancePort, found := range foundBackends {
-				if !found {
-					klog.V(2).Infof("Adjusting AWS loadbalancer proxy protocol on node port %d. Setting to false", instancePort)
-					err := c.setBackendPolicies(loadBalancerName, instancePort, []*string{})
 					if err != nil {
 						return nil, err
 					}
@@ -576,11 +571,12 @@ func (c *Cloud) ensureLoadBalancer(namespacedName types.NamespacedName, loadBala
 // syncElbListeners computes a plan to reconcile the desired vs actual state of the listeners on an ELB
 // NOTE: there exists an O(nlgn) implementation for this function. However, as the default limit of
 //       listeners per elb is 100, this implementation is reduced from O(m*n) => O(n).
-func syncElbListeners(loadBalancerName string, listeners []*elb.Listener, listenerDescriptions []*elb.ListenerDescription) ([]*elb.Listener, []*int64) {
+func syncElbListeners(loadBalancerName string, listeners []*elb.Listener, listenerDescriptions []*elb.ListenerDescription) ([]*elb.Listener, []*int64, []*int64) {
 	debugPrintCallerFunctionName()
 	klog.V(10).Infof("syncElbListeners(%v,%v,%v)", loadBalancerName, listeners, listenerDescriptions)
 	foundSet := make(map[int]bool)
 	removals := []*int64{}
+	removalsInstancePorts := []*int64{}
 	additions := []*elb.Listener{}
 
 	for _, listenerDescription := range listenerDescriptions {
@@ -606,6 +602,7 @@ func syncElbListeners(loadBalancerName string, listeners []*elb.Listener, listen
 		}
 		if !found {
 			removals = append(removals, actual.LoadBalancerPort)
+			removalsInstancePorts = append(removalsInstancePorts, actual.InstancePort)
 		}
 	}
 
@@ -615,7 +612,7 @@ func syncElbListeners(loadBalancerName string, listeners []*elb.Listener, listen
 		}
 	}
 
-	return additions, removals
+	return additions, removals, removalsInstancePorts
 }
 
 func elbListenersAreEqual(actual, expected *elb.Listener) bool {
@@ -874,9 +871,10 @@ func (c *Cloud) setSSLNegotiationPolicy(loadBalancerName, sslPolicyName string, 
 	return nil
 }
 
-func (c *Cloud) createProxyProtocolPolicy(loadBalancerName string) error {
+func (c *Cloud) createProxyProtocolPolicy(loadBalancerName string, update bool) error {
 	debugPrintCallerFunctionName()
-	klog.V(10).Infof("createProxyProtocolPolicy(%v)", loadBalancerName)
+	klog.V(10).Infof("createProxyProtocolPolicy(%v) updating(%v)",
+		loadBalancerName, update)
 	request := &elb.CreateLoadBalancerPolicyInput{
 		LoadBalancerName: aws.String(loadBalancerName),
 		PolicyName:       aws.String(ProxyProtocolPolicyName),
@@ -891,6 +889,14 @@ func (c *Cloud) createProxyProtocolPolicy(loadBalancerName string) error {
 	klog.V(2).Info("Creating proxy protocol policy on load balancer")
 	_, err := c.elb.CreateLoadBalancerPolicy(request)
 	if err != nil {
+		if update {
+			if aerr, ok := err.(awserr.Error); ok {
+				if aerr.Code() == elb.ErrCodeDuplicatePolicyNameException {
+					klog.V(2).Info("Updating proxy protocol policy on load balancer")
+					return nil
+				}
+			}
+		}
 		return fmt.Errorf("error creating proxy protocol policy on load balancer: %q", err)
 	}
 

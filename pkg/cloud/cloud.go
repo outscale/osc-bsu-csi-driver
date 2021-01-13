@@ -239,7 +239,7 @@ func newEC2Cloud(region string) (Cloud, error) {
 		EndpointResolver: endpoints.ResolverFunc(
 			util.OscSetupServiceResolver(metadata.GetRegion())),
 	}
-
+	awsConfig.WithLogLevel(aws.LogDebugWithSigning | aws.LogDebugWithHTTPBody | aws.LogDebugWithRequestRetries | aws.LogDebugWithRequestErrors)
 	return &cloud{
 		region:   useRegion,
 		metadata: metadata,
@@ -257,12 +257,12 @@ func newEC2MetadataSvc() *ec2metadata.EC2Metadata {
 }
 
 func (c *cloud) GetMetadata() MetadataService {
-	fmt.Printf("Debug GetMetadata\n")
+	klog.Infof("Debug GetMetadata\n")
 	return c.metadata
 }
 
 func (c *cloud) CreateDisk(ctx context.Context, volumeName string, diskOptions *DiskOptions) (*Disk, error) {
-	fmt.Printf("Debug CreateDisk: %+v, %v\n", volumeName, diskOptions)
+	klog.Infof("Debug CreateDisk: %+v, %v\n", volumeName, diskOptions)
 	var (
 		createType string
 		iops       int64
@@ -329,6 +329,8 @@ func (c *cloud) CreateDisk(ctx context.Context, volumeName string, diskOptions *
 	}
 
 	response, err := c.ec2.CreateVolumeWithContext(ctx, request)
+	klog.Infof("Debug response CreateVolume: response(%+v), err(%v)\n", response, err)
+
 	if err != nil {
 		if isAWSErrorSnapshotNotFound(err) {
 			return nil, ErrNotFound
@@ -350,9 +352,9 @@ func (c *cloud) CreateDisk(ctx context.Context, volumeName string, diskOptions *
 		Resources: []*string{response.VolumeId},
 		Tags:      tags,
 	}
-	fmt.Printf("Debug requestTag := &ec2.CreateTagsInput{ : %+v\n", requestTag)
-
+	klog.Infof("Debug requestTag: %+v\n", requestTag)
 	resTag, err := c.ec2.CreateTagsWithContext(ctx, requestTag)
+	klog.Infof("Debug response CreateTags: response(%+v), err(%v)\n", resTag, err)
 
 	if err != nil {
 		return nil, fmt.Errorf("error creating tags of volume %v: %v", response.VolumeId, err)
@@ -369,9 +371,11 @@ func (c *cloud) CreateDisk(ctx context.Context, volumeName string, diskOptions *
 }
 
 func (c *cloud) DeleteDisk(ctx context.Context, volumeID string) (bool, error) {
-	fmt.Printf("Debug DeleteDisk: %+v\n", volumeID)
+	klog.Infof("Debug DeleteDisk: %+v\n", volumeID)
 	request := &ec2.DeleteVolumeInput{VolumeId: &volumeID}
-	if _, err := c.ec2.DeleteVolumeWithContext(ctx, request); err != nil {
+	response, err := c.ec2.DeleteVolumeWithContext(ctx, request)
+	klog.Infof("Debug response DeleteVolume: response(%+v), err(%v)\n", response, err)
+	if err != nil {
 		if isAWSErrorVolumeNotFound(err) {
 			return false, ErrNotFound
 		}
@@ -381,7 +385,7 @@ func (c *cloud) DeleteDisk(ctx context.Context, volumeID string) (bool, error) {
 }
 
 func (c *cloud) AttachDisk(ctx context.Context, volumeID, nodeID string) (string, error) {
-	fmt.Printf("Debug AttachDisk: %+v, %v\n", volumeID, nodeID)
+	klog.Infof("Debug AttachDisk: %+v, %v\n", volumeID, nodeID)
 	instance, err := c.getInstance(ctx, nodeID)
 	if err != nil {
 		return "", err
@@ -401,6 +405,7 @@ func (c *cloud) AttachDisk(ctx context.Context, volumeID, nodeID string) (string
 		}
 
 		resp, err := c.ec2.AttachVolumeWithContext(ctx, request)
+		klog.Infof("Debug response AttachVolume: response(%+v), err(%v)\n", resp, err)
 		if err != nil {
 			if awsErr, ok := err.(awserr.Error); ok {
 				if awsErr.Code() == "VolumeInUse" {
@@ -469,7 +474,9 @@ func (c *cloud) DetachDisk(ctx context.Context, volumeID, nodeID string) error {
 		VolumeId:   aws.String(volumeID),
 	}
 
-	_, err = c.ec2.DetachVolumeWithContext(ctx, request)
+	resp, err := c.ec2.DetachVolumeWithContext(ctx, request)
+	klog.Infof("Debug response DetachVolume: response(%+v), err(%v)\n", resp, err)
+
 	if err != nil {
 		return fmt.Errorf("could not detach volume %q from node %q: %v", volumeID, nodeID, err)
 	}
@@ -483,7 +490,7 @@ func (c *cloud) DetachDisk(ctx context.Context, volumeID, nodeID string) error {
 
 // WaitForAttachmentState polls until the attachment status is the expected value.
 func (c *cloud) WaitForAttachmentState(ctx context.Context, volumeID, state string) error {
-	fmt.Printf("Debug WaitForAttachmentState: %+v, %v\n", volumeID, state)
+	klog.Infof("Debug WaitForAttachmentState: %+v, %v\n", volumeID, state)
 	// Most attach/detach operations on AWS finish within 1-4 seconds.
 	// By using 1 second starting interval with a backoff of 1.8,
 	// we get [1, 1.8, 3.24, 5.832000000000001, 10.4976].
@@ -523,7 +530,7 @@ func (c *cloud) WaitForAttachmentState(ctx context.Context, volumeID, state stri
 }
 
 func (c *cloud) GetDiskByName(ctx context.Context, name string, capacityBytes int64) (*Disk, error) {
-	fmt.Printf("Debug GetDiskByName: %+v, %v\n", name, capacityBytes)
+	klog.Infof("Debug GetDiskByName: %+v, %v\n", name, capacityBytes)
 	request := &ec2.DescribeVolumesInput{
 		Filters: []*ec2.Filter{
 			{
@@ -551,7 +558,7 @@ func (c *cloud) GetDiskByName(ctx context.Context, name string, capacityBytes in
 }
 
 func (c *cloud) GetDiskByID(ctx context.Context, volumeID string) (*Disk, error) {
-	fmt.Printf("Debug GetDiskByID : %+v\n", volumeID)
+	klog.Infof("Debug GetDiskByID : %+v\n", volumeID)
 	request := &ec2.DescribeVolumesInput{
 		VolumeIds: []*string{
 			aws.String(volumeID),
@@ -571,7 +578,7 @@ func (c *cloud) GetDiskByID(ctx context.Context, volumeID string) (*Disk, error)
 }
 
 func (c *cloud) IsExistInstance(ctx context.Context, nodeID string) bool {
-	fmt.Printf("Debug IsExistInstance : %+v\n", nodeID)
+	klog.Infof("Debug IsExistInstance : %+v\n", nodeID)
 	instance, err := c.getInstance(ctx, nodeID)
 	if err != nil || instance == nil {
 		return false
@@ -581,17 +588,17 @@ func (c *cloud) IsExistInstance(ctx context.Context, nodeID string) bool {
 
 func (c *cloud) CreateSnapshot(ctx context.Context, volumeID string, snapshotOptions *SnapshotOptions) (snapshot *Snapshot, err error) {
 	descriptions := "Created by AWS EBS CSI driver for volume " + volumeID
-	fmt.Printf("Debug CreateSnapshot : %+v, %+v\n", volumeID, snapshotOptions)
+	klog.Infof("Debug CreateSnapshot : %+v, %+v\n", volumeID, snapshotOptions)
 	var tags []*ec2.Tag
 	for key, value := range snapshotOptions.Tags {
 		tags = append(tags, &ec2.Tag{Key: &key, Value: &value})
 	}
-	fmt.Printf("Debug tags = append( : %+v  \n", tags)
+	klog.Infof("Debug tags = append( %+v ) \n", tags)
 	tagSpec := ec2.TagSpecification{
 		ResourceType: aws.String("snapshot"),
 		Tags:         tags,
 	}
-	fmt.Printf("Debug tagSpec := ec2.TagSpecification( : %+v  \n", tagSpec)
+	klog.Infof("Debug tagSpec := ec2.TagSpecification : %+v  \n", tagSpec)
 
 	request := &ec2.CreateSnapshotInput{
 		VolumeId:          aws.String(volumeID),
@@ -599,10 +606,11 @@ func (c *cloud) CreateSnapshot(ctx context.Context, volumeID string, snapshotOpt
 		TagSpecifications: []*ec2.TagSpecification{&tagSpec},
 		Description:       aws.String(descriptions),
 	}
-	fmt.Printf("Debug request := &ec2.CreateSnapshotInput{: %+v  \n", request)
+	klog.Infof("Debug request := CreateSnapshotInput %+v  \n", request)
 	var res *ec2.Snapshot
 	createSnapshotCallBack := func() (bool, error) {
 		res, err = c.ec2.CreateSnapshotWithContext(ctx, request)
+		klog.Infof("Debug response CreateSnapshot: response(%+v), err(%v)\n", res, err)
 		if err != nil {
 			requestStr := fmt.Sprintf("%v", request)
 			if keepRetryWithError(
@@ -629,16 +637,17 @@ func (c *cloud) CreateSnapshot(ctx context.Context, volumeID string, snapshotOpt
 	if res == nil {
 		return nil, fmt.Errorf("nil CreateSnapshotResponse")
 	}
-	fmt.Printf("Debug res, err := c.ec2.CreateSnapshotWithContext(ctx, request) : %+v\n", res)
+	klog.Infof("Debug res, err := c.ec2.CreateSnapshotWithContext(ctx, request) : %+v\n", res)
 
 	requestTag := &ec2.CreateTagsInput{
 		Resources: []*string{res.SnapshotId},
 		Tags:      tags,
 	}
-	fmt.Printf("Debug requestTag := &ec2.CreateTagsInput{ : %+v\n", requestTag)
+	klog.Infof("Debug requestTag := &ec2.CreateTagsInput( %+v )\n", requestTag)
 	var resTag *ec2.CreateTagsOutput
 	createTagCallback := func() (bool, error) {
 		resTag, err = c.ec2.CreateTagsWithContext(ctx, requestTag)
+		klog.Infof("Debug response CreateTags: response(%+v), err(%v)\n", resTag, err)
 		if err != nil {
 			requestStr := fmt.Sprintf("%v", request)
 			if keepRetryWithError(
@@ -665,16 +674,18 @@ func (c *cloud) CreateSnapshot(ctx context.Context, volumeID string, snapshotOpt
 	if resTag == nil {
 		return nil, fmt.Errorf("nil CreateTags")
 	}
-	fmt.Printf("Debug resTag, err := c.ec2.CreateTagsWithContext(ctx, requestTag) %+v\n", resTag)
+	klog.Infof("Debug CreateTags response( %+v )\n", resTag)
 	return c.ec2SnapshotResponseToStruct(res), nil
 }
 
 func (c *cloud) DeleteSnapshot(ctx context.Context, snapshotID string) (success bool, err error) {
-	fmt.Printf("Debug DeleteSnapshot : %+v\n", snapshotID)
+	klog.Infof("Debug DeleteSnapshot : %+v\n", snapshotID)
 	request := &ec2.DeleteSnapshotInput{}
 	request.SnapshotId = aws.String(snapshotID)
 	request.DryRun = aws.Bool(false)
-	if _, err := c.ec2.DeleteSnapshotWithContext(ctx, request); err != nil {
+	response, err := c.ec2.DeleteSnapshotWithContext(ctx, request)
+	klog.Infof("Debug response DeleteSnapshot: response(%+v), err(%v)\n", response, err)
+	if err != nil {
 		if isAWSErrorSnapshotNotFound(err) {
 			return false, ErrNotFound
 		}
@@ -684,7 +695,7 @@ func (c *cloud) DeleteSnapshot(ctx context.Context, snapshotID string) (success 
 }
 
 func (c *cloud) GetSnapshotByName(ctx context.Context, name string) (snapshot *Snapshot, err error) {
-	fmt.Printf("Debug GetSnapshotByName : %+v\n", name)
+	klog.Infof("Debug GetSnapshotByName : %+v\n", name)
 	request := &ec2.DescribeSnapshotsInput{
 		Filters: []*ec2.Filter{
 			{
@@ -703,7 +714,7 @@ func (c *cloud) GetSnapshotByName(ctx context.Context, name string) (snapshot *S
 }
 
 func (c *cloud) GetSnapshotByID(ctx context.Context, snapshotID string) (snapshot *Snapshot, err error) {
-	fmt.Printf("Debug GetSnapshotByID : %+v\n", snapshotID)
+	klog.Infof("Debug GetSnapshotByID : %+v\n", snapshotID)
 
 	request := &ec2.DescribeSnapshotsInput{
 		SnapshotIds: []*string{
@@ -723,7 +734,7 @@ func (c *cloud) GetSnapshotByID(ctx context.Context, snapshotID string) (snapsho
 // a next token value will be returned to the client as well.  They can use this token with subsequent calls to retrieve the next page of results.  If maxResults is not set (0),
 // there will be no restriction up to 1000 results (https://docs.aws.amazon.com/sdk-for-go/api/service/ec2/#DescribeSnapshotsInput).
 func (c *cloud) ListSnapshots(ctx context.Context, volumeID string, maxResults int64, nextToken string) (listSnapshotsResponse *ListSnapshotsResponse, err error) {
-	fmt.Printf("Debug ListSnapshots : %+v, %+v, %+v\n", volumeID, maxResults, nextToken)
+	klog.Infof("Debug ListSnapshots : %+v, %+v, %+v\n", volumeID, maxResults, nextToken)
 	if maxResults > 0 && maxResults < 5 {
 		return nil, ErrInvalidMaxResults
 	}
@@ -765,7 +776,7 @@ func (c *cloud) ListSnapshots(ctx context.Context, volumeID string, maxResults i
 
 // Helper method converting EC2 snapshot type to the internal struct
 func (c *cloud) ec2SnapshotResponseToStruct(ec2Snapshot *ec2.Snapshot) *Snapshot {
-	fmt.Printf("Debug ec2SnapshotResponseToStruct : %+v\n", ec2Snapshot)
+	klog.Infof("Debug ec2SnapshotResponseToStruct : %+v\n", ec2Snapshot)
 	if ec2Snapshot == nil {
 		return nil
 	}
@@ -803,7 +814,7 @@ func keepRetryWithError(requestStr string,
 }
 
 func (c *cloud) getVolume(ctx context.Context, request *ec2.DescribeVolumesInput) (*ec2.Volume, error) {
-	fmt.Printf("Debug getVolume : %+v\n", request)
+	klog.Infof("Debug getVolume : %+v\n", request)
 	var volume *ec2.Volume
 	getVolumeCallback := func() (bool, error) {
 		var volumes []*ec2.Volume
@@ -811,6 +822,7 @@ func (c *cloud) getVolume(ctx context.Context, request *ec2.DescribeVolumesInput
 
 		for {
 			response, err := c.ec2.DescribeVolumesWithContext(ctx, request)
+			klog.Infof("Debug response DescribeVolumes: response(%+v), err(%v)\n", response, err)
 			if err != nil {
 				requestStr := fmt.Sprintf("%v", request)
 				if keepRetryWithError(
@@ -850,7 +862,7 @@ func (c *cloud) getVolume(ctx context.Context, request *ec2.DescribeVolumesInput
 }
 
 func (c *cloud) getInstance(ctx context.Context, nodeID string) (*ec2.Instance, error) {
-	fmt.Printf("Debug  getInstance : %+v\n", nodeID)
+	klog.Infof("Debug  getInstance : %+v\n", nodeID)
 	instances := []*ec2.Instance{}
 	request := &ec2.DescribeInstancesInput{
 		InstanceIds: []*string{&nodeID},
@@ -860,6 +872,7 @@ func (c *cloud) getInstance(ctx context.Context, nodeID string) (*ec2.Instance, 
 		var nextToken *string
 		for {
 			response, err := c.ec2.DescribeInstancesWithContext(ctx, request)
+			klog.Infof("Debug response DescribeInstances: response(%+v), err(%v)\n", response, err)
 			if err != nil {
 				requestStr := fmt.Sprintf("%v", request)
 				if keepRetryWithError(
@@ -900,13 +913,14 @@ func (c *cloud) getInstance(ctx context.Context, nodeID string) (*ec2.Instance, 
 }
 
 func (c *cloud) getSnapshot(ctx context.Context, request *ec2.DescribeSnapshotsInput) (*ec2.Snapshot, error) {
-	fmt.Printf("Debug  getSnapshot(ctx context.Context : %+v\n", request)
+	klog.Infof("Debug  getSnapshot: %+v\n", request)
 	var snapshots []*ec2.Snapshot
 
 	getSnapshotsCallback := func() (bool, error) {
 		var nextToken *string
 		for {
 			response, err := c.ec2.DescribeSnapshotsWithContext(ctx, request)
+			klog.Infof("Debug response DescribeSnapshots: response(%+v), err(%v)\n", response, err)
 			if err != nil {
 				requestStr := fmt.Sprintf("%v", request)
 				if keepRetryWithError(
@@ -933,30 +947,29 @@ func (c *cloud) getSnapshot(ctx context.Context, request *ec2.DescribeSnapshotsI
 		return nil, waitErr
 	}
 
-	fmt.Printf("Debug  len(snapshots): %+v\n", len(snapshots))
-	fmt.Printf("Debug  (snapshots): %+v\n", snapshots)
+	klog.Infof("Debug snapshots: %+v, len(snapshots): %+v\n", snapshots, len(snapshots))
 
 	if l := len(snapshots); l > 1 {
 		return nil, ErrMultiSnapshots
 	} else if l < 1 {
 		return nil, ErrNotFound
 	}
-	fmt.Printf("Debug  (snapshots[0]): %+v\n", snapshots[0])
+	klog.Infof("Debug (snapshots[0]): %+v\n", snapshots[0])
 	return snapshots[0], nil
 }
 
 // listSnapshots returns all snapshots based from a request
 func (c *cloud) listSnapshots(ctx context.Context, request *ec2.DescribeSnapshotsInput) (*ec2ListSnapshotsResponse, error) {
-	fmt.Printf("Debug listSnapshots : %+v\n", request)
+	klog.Infof("Debug listSnapshots : %+v\n", request)
 
 	var snapshots []*ec2.Snapshot
 	var nextToken *string
-	fmt.Printf("Debug  listSnapshots(ctx context.Context : %+v\n", request)
 
 	var response *ec2.DescribeSnapshotsOutput
 	var err error
 	listSnapshotsCallBack := func() (bool, error) {
 		response, err = c.ec2.DescribeSnapshotsWithContext(ctx, request)
+		klog.Infof("Debug response DescribeSnapshots: response(%+v), err(%v)\n", response, err)
 		if err != nil {
 			requestStr := fmt.Sprintf("%v", request)
 			if keepRetryWithError(
@@ -976,7 +989,7 @@ func (c *cloud) listSnapshots(ctx context.Context, request *ec2.DescribeSnapshot
 		return nil, waitErr
 	}
 
-	fmt.Printf("Debug  response.Snapshots : %+v\n", response.Snapshots)
+	klog.Infof("Debug response.Snapshots : %+v\n", response.Snapshots)
 	snapshots = append(snapshots, response.Snapshots...)
 	if response.NextToken != nil {
 		nextToken = response.NextToken
@@ -991,7 +1004,7 @@ func (c *cloud) listSnapshots(ctx context.Context, request *ec2.DescribeSnapshot
 // waitForVolume waits for volume to be in the "available" state.
 // On a random AWS account (shared among several developers) it took 4s on average.
 func (c *cloud) waitForVolume(ctx context.Context, volumeID string) error {
-	fmt.Printf("Debug waitForVolume : %+v\n", volumeID)
+	klog.Infof("Debug waitForVolume : %+v\n", volumeID)
 	var (
 		checkInterval = 3 * time.Second
 		// This timeout can be "ovewritten" if the value returned by ctx.Deadline()
@@ -1055,7 +1068,7 @@ func isAWSErrorSnapshotNotFound(err error) bool {
 // ResizeDisk resizes an EBS volume in GiB increments, rouding up to the next possible allocatable unit.
 // It returns the volume size after this call or an error if the size couldn't be determined.
 func (c *cloud) ResizeDisk(ctx context.Context, volumeID string, newSizeBytes int64) (int64, error) {
-	fmt.Printf("Debug ResizeDisk : %+v\n", volumeID)
+	klog.Infof("Debug ResizeDisk : %+v\n", volumeID)
 	request := &ec2.DescribeVolumesInput{
 		VolumeIds: []*string{
 			aws.String(volumeID),
@@ -1082,6 +1095,7 @@ func (c *cloud) ResizeDisk(ctx context.Context, volumeID string, newSizeBytes in
 
 	var mod *ec2.VolumeModification
 	response, err := c.ec2.ModifyVolumeWithContext(ctx, req)
+	klog.Infof("Debug response ModifyVolume: response(%+v), err(%v)\n", response, err)
 	if err != nil {
 		if !isAWSErrorIncorrectModification(err) {
 			return 0, fmt.Errorf("could not modify AWS volume %q: %v", volumeID, err)
@@ -1108,7 +1122,7 @@ func (c *cloud) ResizeDisk(ctx context.Context, volumeID string, newSizeBytes in
 
 // waitForVolumeSize waits for a volume modification to finish and return its size.
 func (c *cloud) waitForVolumeSize(ctx context.Context, volumeID string) (int64, error) {
-	fmt.Printf("Debug waitForVolumeSize : %+v\n", volumeID)
+	klog.Infof("Debug waitForVolumeSize : %+v\n", volumeID)
 	var modVolSizeGiB int64
 	backoff := util.EnvBackoff()
 	waitErr := wait.ExponentialBackoff(backoff, func() (bool, error) {
@@ -1135,7 +1149,7 @@ func (c *cloud) waitForVolumeSize(ctx context.Context, volumeID string) (int64, 
 
 // getLatestVolumeModification returns the last modification of the volume.
 func (c *cloud) getLatestVolumeModification(ctx context.Context, volumeID string) (*ec2.VolumeModification, error) {
-	fmt.Printf("Debug getLatestVolumeModification : %+v\n", volumeID)
+	klog.Infof("Debug getLatestVolumeModification : %+v\n", volumeID)
 	request := &ec2.DescribeVolumesModificationsInput{
 		VolumeIds: []*string{
 			aws.String(volumeID),
@@ -1145,6 +1159,7 @@ func (c *cloud) getLatestVolumeModification(ctx context.Context, volumeID string
 	var mod *ec2.DescribeVolumesModificationsOutput
 	describeVolModCallback := func() (bool, error) {
 		mod, err = c.ec2.DescribeVolumesModificationsWithContext(ctx, request)
+		klog.Infof("Debug response DescribeVolumesModifications: response(%+v), err(%v)\n", mod, err)
 		if err != nil {
 			requestStr := fmt.Sprintf("%v", request)
 			if keepRetryWithError(
@@ -1176,7 +1191,7 @@ func (c *cloud) getLatestVolumeModification(ctx context.Context, volumeID string
 // randomAvailabilityZone returns a random zone from the given region
 // the randomness relies on the response of DescribeAvailabilityZones
 func (c *cloud) randomAvailabilityZone(ctx context.Context, region string) (string, error) {
-	fmt.Printf("Debug randomAvailabilityZone: %+v\n", region)
+	klog.Infof("Debug randomAvailabilityZone: %+v\n", region)
 	zone := c.metadata.GetAvailabilityZone()
 	if zone != "" {
 		return zone, nil
@@ -1184,6 +1199,7 @@ func (c *cloud) randomAvailabilityZone(ctx context.Context, region string) (stri
 
 	request := &ec2.DescribeAvailabilityZonesInput{}
 	response, err := c.ec2.DescribeAvailabilityZonesWithContext(ctx, request)
+	klog.Infof("Debug response DescribeAvailabilityZones: response(%+v), err(%v)\n", response, err)
 	if err != nil {
 		return "", err
 	}

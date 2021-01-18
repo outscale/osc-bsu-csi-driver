@@ -13,7 +13,7 @@
 # limitations under the License.
 
 # Docker env
-DOCKERFILES := $(shell find . -name '*Dockerfile*')
+DOCKERFILES := $(shell find . -type f -name '*Dockerfile*' !  -path "./debug/*" )
 LINTER_VERSION := v1.17.5
 BUILD_ENV := "buildenv/osc-bsu-csi-driver:0.0"
 BUILD_ENV_RUN := "build-osc-bsu-csi-driver"
@@ -22,7 +22,7 @@ OSC_BSU_WORKDIR := /go/src/github.com/kubernetes-sigs/aws-ebs-csi-driver
 
 E2E_ENV := "e2e/osc-bsu-csi-driver:0.0"
 E2E_ENV_RUN := "e2e-osc-bsu-csi-driver"
-E2E_AZ := "eu-west-2b"
+E2E_AZ := "eu-west-2a"
 
 PKG := github.com/kubernetes-sigs/aws-ebs-csi-driver
 IMAGE := osc/osc-ebs-csi-driver
@@ -80,6 +80,7 @@ image-release:
 
 .PHONY: image
 image:
+	docker exec $(BUILD_ENV_RUN) make aws-ebs-csi-driver
 	docker build -t $(IMAGE):$(IMAGE_TAG) .
 
 .PHONY: image-tag

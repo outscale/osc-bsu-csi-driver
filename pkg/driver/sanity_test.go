@@ -329,3 +329,11 @@ func (f *fakeMounter) MakeDir(pathname string) error {
 func (f *fakeMounter) ExistsPath(filename string) (bool, error) {
 	return true, nil
 }
+
+func (f *fakeMounter) GetDiskFormat(disk string) (string, error) {
+	return "", nil
+}
+
+func (f *fakeMounter) MountSensitive(source string, target string, fstype string, options []string, sensitiveOptions []string) error {
+	return nil
+}

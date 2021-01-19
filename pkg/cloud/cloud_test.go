@@ -93,7 +93,7 @@ func TestCreateDisk(t *testing.T) {
 				CapacityGiB:      1,
 				AvailabilityZone: expZone,
 			},
-			expErr: nil,
+			expErr: fmt.Errorf("Encryption is not supported yet by OSC API"),
 		},
 		{
 			name:       "fail: CreateVolume returned CreateVolume error",
@@ -166,7 +166,6 @@ func TestCreateDisk(t *testing.T) {
 				},
 			}
 
-
 			readSnapshot := osc.Snapshot{
 				SnapshotId: tc.diskOptions.SnapshotID,
 				VolumeId:   "snap-test-volume",
@@ -175,11 +174,13 @@ func TestCreateDisk(t *testing.T) {
 
 			tag := osc.CreateTagsResponse{}
 			ctx := context.Background()
-			mockOscInterface.EXPECT().CreateVolume(gomock.Eq(ctx), gomock.Any()).Return(vol, nil, tc.expCreateVolumeErr)
-			mockOscInterface.EXPECT().CreateTags(gomock.Eq(ctx), gomock.Any()).Return(tag, nil, nil).AnyTimes()
-			mockOscInterface.EXPECT().ReadVolumes(gomock.Eq(ctx), gomock.Any()).Return(osc.ReadVolumesResponse{Volumes: []osc.Volume{vol.Volume}}, nil, tc.expDescVolumeErr).AnyTimes()
-			if len(tc.diskOptions.SnapshotID) > 0 {
-				mockOscInterface.EXPECT().ReadSnapshots(gomock.Eq(ctx), gomock.Any()).Return(osc.ReadSnapshotsResponse{Snapshots: []osc.Snapshot{readSnapshot}}, nil, nil).AnyTimes()
+			if tc.diskOptions.Encrypted == false {
+				mockOscInterface.EXPECT().CreateVolume(gomock.Eq(ctx), gomock.Any()).Return(vol, nil, tc.expCreateVolumeErr)
+				mockOscInterface.EXPECT().CreateTags(gomock.Eq(ctx), gomock.Any()).Return(tag, nil, nil).AnyTimes()
+				mockOscInterface.EXPECT().ReadVolumes(gomock.Eq(ctx), gomock.Any()).Return(osc.ReadVolumesResponse{Volumes: []osc.Volume{vol.Volume}}, nil, tc.expDescVolumeErr).AnyTimes()
+				if len(tc.diskOptions.SnapshotID) > 0 {
+					mockOscInterface.EXPECT().ReadSnapshots(gomock.Eq(ctx), gomock.Any()).Return(osc.ReadSnapshotsResponse{Snapshots: []osc.Snapshot{readSnapshot}}, nil, nil).AnyTimes()
+				}
 			}
 
 			disk, err := c.CreateDisk(ctx, tc.volumeName, tc.diskOptions)
@@ -293,7 +294,7 @@ func TestAttachDisk(t *testing.T) {
 
 			vol := osc.Volume{
 				VolumeId:      tc.volumeID,
-				LinkedVolumes: []osc.LinkedVolume{osc.LinkedVolume{State: "attached",}},
+				LinkedVolumes: []osc.LinkedVolume{{State: "attached"}},
 			}
 
 			ctx := context.Background()
@@ -348,7 +349,7 @@ func TestDetachDisk(t *testing.T) {
 			c := newCloud(mockOscInterface)
 
 			vol := osc.Volume{
-				VolumeId:     tc.volumeID,
+				VolumeId:      tc.volumeID,
 				LinkedVolumes: nil,
 			}
 
@@ -372,7 +373,6 @@ func TestDetachDisk(t *testing.T) {
 		})
 	}
 }
-
 
 func TestGetDiskByName(t *testing.T) {
 	testCases := []struct {
@@ -404,9 +404,9 @@ func TestGetDiskByName(t *testing.T) {
 			c := newCloud(mockOscInterface)
 
 			vol := osc.Volume{
-				VolumeId:         tc.volumeName,
-				Size:             int32(util.BytesToGiB(tc.volumeCapacity)),
-				SubregionName:    tc.availabilityZone,
+				VolumeId:      tc.volumeName,
+				Size:          int32(util.BytesToGiB(tc.volumeCapacity)),
+				SubregionName: tc.availabilityZone,
 			}
 
 			ctx := context.Background()
@@ -465,8 +465,8 @@ func TestGetDiskByID(t *testing.T) {
 				osc.ReadVolumesResponse{
 					Volumes: []osc.Volume{
 						{
-							VolumeId:         tc.volumeID,
-							SubregionName:    tc.availabilityZone,
+							VolumeId:      tc.volumeID,
+							SubregionName: tc.availabilityZone,
 						},
 					},
 				},
@@ -495,7 +495,6 @@ func TestGetDiskByID(t *testing.T) {
 		})
 	}
 }
-
 
 func TestCreateSnapshot(t *testing.T) {
 	testCases := []struct {
@@ -528,12 +527,11 @@ func TestCreateSnapshot(t *testing.T) {
 
 			oscsnapshot := osc.CreateSnapshotResponse{
 				Snapshot: osc.Snapshot{
-				        SnapshotId: tc.snapshotOptions.Tags[SnapshotNameTagKey],
-				        VolumeId:   "snap-test-volume",
-				        State:      "completed",
-			    },
+					SnapshotId: tc.snapshotOptions.Tags[SnapshotNameTagKey],
+					VolumeId:   "snap-test-volume",
+					State:      "completed",
+				},
 			}
-
 
 			tag := osc.CreateTagsResponse{}
 			ctx := context.Background()
@@ -560,7 +558,6 @@ func TestCreateSnapshot(t *testing.T) {
 		})
 	}
 }
-
 
 func TestDeleteSnapshot(t *testing.T) {
 	testCases := []struct {
@@ -644,7 +641,6 @@ func TestGetSnapshotByName(t *testing.T) {
 				VolumeId:   "snap-test-volume",
 				State:      "completed",
 			}
-
 
 			ctx := context.Background()
 			mockOscInterface.EXPECT().ReadSnapshots(gomock.Eq(ctx), gomock.Any()).Return(osc.ReadSnapshotsResponse{Snapshots: []osc.Snapshot{oscsnapshot}}, nil, nil)
@@ -752,8 +748,8 @@ func TestListSnapshots(t *testing.T) {
 
 				mockCtrl := gomock.NewController(t)
 				defer mockCtrl.Finish()
-			        mockOscInterface := mocks.NewMockOscInterface(mockCtrl)
-			        c := newCloud(mockOscInterface)
+				mockOscInterface := mocks.NewMockOscInterface(mockCtrl)
+				c := newCloud(mockOscInterface)
 
 				ctx := context.Background()
 				fmt.Printf("Read snapshot :\n")
@@ -794,8 +790,8 @@ func TestListSnapshots(t *testing.T) {
 
 				mockCtrl := gomock.NewController(t)
 				defer mockCtrl.Finish()
-                                mockOscInterface := mocks.NewMockOscInterface(mockCtrl)
-			        c := newCloud(mockOscInterface)
+				mockOscInterface := mocks.NewMockOscInterface(mockCtrl)
+				c := newCloud(mockOscInterface)
 
 				ctx := context.Background()
 
@@ -822,8 +818,8 @@ func TestListSnapshots(t *testing.T) {
 			testFunc: func(t *testing.T) {
 				mockCtrl := gomock.NewController(t)
 				defer mockCtrl.Finish()
-                                mockOscInterface := mocks.NewMockOscInterface(mockCtrl)
-			        c := newCloud(mockOscInterface)
+				mockOscInterface := mocks.NewMockOscInterface(mockCtrl)
+				c := newCloud(mockOscInterface)
 
 				ctx := context.Background()
 
@@ -839,8 +835,8 @@ func TestListSnapshots(t *testing.T) {
 			testFunc: func(t *testing.T) {
 				mockCtrl := gomock.NewController(t)
 				defer mockCtrl.Finish()
-			        mockOscInterface := mocks.NewMockOscInterface(mockCtrl)
-			        c := newCloud(mockOscInterface)
+				mockOscInterface := mocks.NewMockOscInterface(mockCtrl)
+				c := newCloud(mockOscInterface)
 
 				ctx := context.Background()
 
@@ -864,8 +860,8 @@ func TestListSnapshots(t *testing.T) {
 
 func newCloud(mockOscInterface OscInterface) *cloud {
 	return &cloud{
-		region:   "test-region",
-		dm:       dm.NewDeviceManager(),
+		region: "test-region",
+		dm:     dm.NewDeviceManager(),
 		client: mockOscInterface,
 		metadata: &Metadata{
 			InstanceID:       "test-instance",
@@ -878,7 +874,7 @@ func newCloud(mockOscInterface OscInterface) *cloud {
 func newDescribeInstancesOutput(nodeID string) osc.ReadVmsResponse {
 	return osc.ReadVmsResponse{
 		Vms: []osc.Vm{
-				{VmId: nodeID},
+			{VmId: nodeID},
 		},
 	}
 }

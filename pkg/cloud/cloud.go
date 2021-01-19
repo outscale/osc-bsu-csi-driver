@@ -274,7 +274,7 @@ func newOscCloud(region string) (Cloud, error) {
 	if len(useRegion) == 0 {
 		useRegion = metadata.GetRegion()
 	}
-	
+
 	client := &OscClient{}
 	client.config = osc.NewConfiguration()
 	client.config.Debug = true
@@ -284,7 +284,7 @@ func newOscCloud(region string) (Cloud, error) {
 		AccessKey: os.Getenv("OSC_ACCESS_KEY"),
 		SecretKey: os.Getenv("OSC_SECRET_KEY"),
 	})
-	
+
 	return &cloud{
 		region:   useRegion,
 		metadata: metadata,
@@ -306,12 +306,12 @@ func (c *cloud) GetMetadata() MetadataService {
 	return c.metadata
 }
 
-func IsNilDisk(disk Disk)(bool){
-    return disk.VolumeID == ""
+func IsNilDisk(disk Disk) bool {
+	return disk.VolumeID == ""
 }
 
-func IsNilSnapshot(snapshot Snapshot)(bool){
-    return snapshot.SnapshotID == ""
+func IsNilSnapshot(snapshot Snapshot) bool {
+	return snapshot.SnapshotID == ""
 }
 
 func (c *cloud) CreateDisk(ctx context.Context, volumeName string, diskOptions *DiskOptions) (Disk, error) {
@@ -359,7 +359,7 @@ func (c *cloud) CreateDisk(ctx context.Context, volumeName string, diskOptions *
 
 	// NOT SUPPORTED YET BY OSC API
 	if len(diskOptions.KmsKeyID) > 0 {
-	    return Disk{}, fmt.Errorf("Encryption is not supported yet by OSC API")
+		return Disk{}, fmt.Errorf("Encryption is not supported yet by OSC API")
 	}
 
 	snapshotID := diskOptions.SnapshotID
@@ -404,7 +404,7 @@ func (c *cloud) CreateDisk(ctx context.Context, volumeName string, diskOptions *
 	resTag, httpRes, err := c.client.CreateTags(ctx, &requestTag)
 	klog.Infof("Debug response CreateTags: response(%+v), err(%v), httpRes(%v)", resTag, err, httpRes)
 	if err != nil {
-	    if httpRes != nil {
+		if httpRes != nil {
 			fmt.Fprintln(os.Stderr, httpRes.Status)
 		}
 		return Disk{}, fmt.Errorf("error creating tags %v of volume %v: %v, http Status: %v", resTag, volumeID, err, httpRes)
@@ -425,7 +425,7 @@ func (c *cloud) DeleteDisk(ctx context.Context, volumeID string) (bool, error) {
 				VolumeId: volumeID,
 			}),
 	}
-	if response, httpRes, err := c.client.DeleteVolume(ctx, &request)
+	response, httpRes, err := c.client.DeleteVolume(ctx, &request)
 	klog.Infof("Debug response DeleteVolume: response(%+v), err(%v), httpRes(%v)", response, err, httpRes)
 	if err != nil {
 		fmt.Fprint(os.Stderr, "Error while creating volume ")
@@ -532,9 +532,9 @@ func (c *cloud) DetachDisk(ctx context.Context, volumeID, nodeID string) error {
 				VolumeId: volumeID,
 			}),
 	}
-	
+
 	var httpRes *_nethttp.Response
-	resp, httpRes, err = c.client.UnlinkVolume(ctx, &request)
+	resp, httpRes, err := c.client.UnlinkVolume(ctx, &request)
 	klog.Infof("Debug response DetachVolume: response(%+v), err(%v) httpRes(%v)\n", resp, err, httpRes)
 	if err != nil {
 		if httpRes != nil {
@@ -664,7 +664,7 @@ func (c *cloud) CreateSnapshot(ctx context.Context, volumeID string, snapshotOpt
 		resourceTag = append(resourceTag, osc.ResourceTag{Key: key, Value: value})
 	}
 	klog.Infof("Debug tags = append( %+v ) \n", resourceTag)
-	
+
 	request := osc.CreateSnapshotOpts{
 		CreateSnapshotRequest: optional.NewInterface(
 			osc.CreateSnapshotRequest{
@@ -750,7 +750,7 @@ func (c *cloud) CreateSnapshot(ctx context.Context, volumeID string, snapshotOpt
 
 	err = waitErr
 	if err != nil {
-	    if httpRes != nil {
+		if httpRes != nil {
 			fmt.Fprintln(os.Stderr, httpRes.Status)
 		}
 		return Snapshot{}, fmt.Errorf("error creating tags of snapshot %v: %v", res.Snapshot.SnapshotId, err)
@@ -770,7 +770,7 @@ func (c *cloud) DeleteSnapshot(ctx context.Context, snapshotID string) (success 
 
 	var httpRes *_nethttp.Response
 
-	response, httpRes, err = c.client.DeleteSnapshot(ctx, &request)
+	response, httpRes, err := c.client.DeleteSnapshot(ctx, &request)
 	klog.Infof("Debug response DeleteSnapshot: response(%+v), err(%v), httpRes(%v)\n", response, err, httpRes)
 	if err != nil {
 		if httpRes != nil {
@@ -867,7 +867,7 @@ func (c *cloud) ListSnapshots(ctx context.Context, volumeID string, maxResults i
 }
 
 func (c *cloud) oscSnapshotResponseToStruct(oscSnapshot osc.Snapshot) Snapshot {
-	klog.Infof("Debug ec2SnapshotResponseToStruct : %+v\n", ec2Snapshot)
+	klog.Infof("Debug ec2SnapshotResponseToStruct : %+v\n", oscSnapshot)
 	if reflect.DeepEqual(oscSnapshot, osc.Snapshot{}) {
 		return Snapshot{}
 	}
@@ -954,7 +954,7 @@ func (c *cloud) getVolume(ctx context.Context, request *osc.ReadVolumesOpts) (os
 
 // Pagination not supported
 func (c *cloud) getInstance(ctx context.Context, vmID string) (osc.Vm, error) {
-	klog.Infof("Debug  getInstance : %+v\n", nodeID)
+	klog.Infof("Debug  getInstance : %+v\n", vmID)
 	var instances []osc.Vm
 
 	request := osc.ReadVmsOpts{

@@ -1701,7 +1701,7 @@ func TestListSnapshots(t *testing.T) {
 }
 
 func TestControllerPublishVolume(t *testing.T) {
-    stdVolCap := &csi.VolumeCapability{
+	stdVolCap := &csi.VolumeCapability{
 		AccessType: &csi.VolumeCapability_Mount{
 			Mount: &csi.VolumeCapability_MountVolume{},
 		},
@@ -1994,7 +1994,6 @@ func TestControllerPublishVolume(t *testing.T) {
 				}
 
 				ctx := context.Background()
-
 
 				mockCtl := gomock.NewController(t)
 				defer mockCtl.Finish()

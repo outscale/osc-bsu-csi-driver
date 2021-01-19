@@ -51,12 +51,12 @@ func (d *Device) Taint() {
 	d.isTainted = true
 }
 
-func IsNilDevice(d Device)(bool){
-    return d.Instance.VmId == ""
+func IsNilDevice(d Device) bool {
+	return d.Instance.VmId == ""
 }
 
-func IsNilVm(vm osc.Vm)(bool){
-    return vm.VmId == ""
+func IsNilVm(vm osc.Vm) bool {
+	return vm.VmId == ""
 }
 
 type DeviceManager interface {

@@ -2,10 +2,6 @@
 
 set -euo pipefail
 
-IMAGE_SECRET=registry-dockerconfigjson
-SECRET_NAME=osc-secret
-
-
 if [[ "${IMAGE_NAME}" == "" ]]; then
 	IMAGE_NAME=registry.kube-system:5001/osc/osc-ebs-csi-driver
 fi
@@ -13,14 +9,12 @@ fi
 if [[ "${IMAGE_TAG}" == "" ]]; then
 	IMAGE_TAG=latest
 fi
-IMAGE_NAME=
 
-helm del --purge aws-ebs-csi-driver --tls
-helm install --name aws-ebs-csi-driver \
-            --set enableVolumeScheduling=true \
-            --set enableVolumeResizing=true \
-            --set enableVolumeSnapshot=true \
-            --set image.repository=$IMAGE_NAME \
-            --set image.tag=$IMAGE_TAG \
-            --set image.pullPolicy=Always\
-            ./aws-ebs-csi-driver --tls 
+helm uninstall osc-bsu-csi-driver  --namespace kube-system
+
+helm install osc-bsu-csi-driver ./aws-ebs-csi-driver \
+     --namespace kube-system --set enableVolumeScheduling=true \
+     --set enableVolumeResizing=true --set enableVolumeSnapshot=true \
+     --set region=eu-west-2 \
+    --set image.repository=$IMAGE_NAME \
+    --set image.tag=$IMAGE_TAG

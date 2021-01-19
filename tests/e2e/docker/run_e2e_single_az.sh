@@ -2,7 +2,7 @@
 set -eu pipefail
 set -x
 
-MANDATORY_DIR="/e2e-env/.kube/ /etc/kubectl/ /root/aws-ebs-csi-driver"
+MANDATORY_DIR="/e2e-env/.kube/ /root/aws-ebs-csi-driver"
 MANDATORY_DIR=(${MANDATORY_DIR})
 for (( dir=0; dir<${#MANDATORY_DIR[@]}; dir++ )); do
 	dir_name=${MANDATORY_DIR[${dir}]}

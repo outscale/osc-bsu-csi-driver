@@ -14,9 +14,6 @@ import (
 	"github.com/outscale/osc-sdk-go/osc"
 )
 
-
-
-
 // MockOscInterface is a mock of OscInterface interface
 type MockOscInterface struct {
 	ctrl     *gomock.Controller
@@ -89,7 +86,7 @@ func (mr *MockOscInterfaceMockRecorder) ReadVolumes(ctx, localVarOptionals inter
 }
 
 // DeleteVolume mocks base method
-func (m *MockOscInterface) DeleteVolume(ctx context.Context, localVarOptionals *osc.DeleteVolumeOpts) (osc.DeleteVolumeResponse, *http.Response, error){
+func (m *MockOscInterface) DeleteVolume(ctx context.Context, localVarOptionals *osc.DeleteVolumeOpts) (osc.DeleteVolumeResponse, *http.Response, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "DeleteVolume", ctx, localVarOptionals)
 	ret0, _ := ret[0].(osc.DeleteVolumeResponse)
@@ -105,7 +102,7 @@ func (mr *MockOscInterfaceMockRecorder) DeleteVolume(ctx, localVarOptionals inte
 }
 
 // LinkVolume mocks base method
-func (m *MockOscInterface) LinkVolume(ctx context.Context, localVarOptionals *osc.LinkVolumeOpts) (osc.LinkVolumeResponse, *http.Response, error){
+func (m *MockOscInterface) LinkVolume(ctx context.Context, localVarOptionals *osc.LinkVolumeOpts) (osc.LinkVolumeResponse, *http.Response, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "LinkVolume", ctx, localVarOptionals)
 	ret0, _ := ret[0].(osc.LinkVolumeResponse)
@@ -120,9 +117,8 @@ func (mr *MockOscInterfaceMockRecorder) LinkVolume(ctx, localVarOptionals interf
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "LinkVolume", reflect.TypeOf((*MockOscInterface)(nil).LinkVolume), ctx, localVarOptionals)
 }
 
-
 // UnlinkVolume mocks base method
-func (m *MockOscInterface) UnlinkVolume(ctx context.Context, localVarOptionals *osc.UnlinkVolumeOpts) (osc.UnlinkVolumeResponse, *http.Response, error){
+func (m *MockOscInterface) UnlinkVolume(ctx context.Context, localVarOptionals *osc.UnlinkVolumeOpts) (osc.UnlinkVolumeResponse, *http.Response, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UnlinkVolume", ctx, localVarOptionals)
 	ret0, _ := ret[0].(osc.UnlinkVolumeResponse)
@@ -138,7 +134,7 @@ func (mr *MockOscInterfaceMockRecorder) UnlinkVolume(ctx, localVarOptionals inte
 }
 
 // CreateSnapshot mocks base method
-func (m *MockOscInterface) CreateSnapshot(ctx context.Context, localVarOptionals *osc.CreateSnapshotOpts) (osc.CreateSnapshotResponse, *http.Response, error){
+func (m *MockOscInterface) CreateSnapshot(ctx context.Context, localVarOptionals *osc.CreateSnapshotOpts) (osc.CreateSnapshotResponse, *http.Response, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CreateSnapshot", ctx, localVarOptionals)
 	ret0, _ := ret[0].(osc.CreateSnapshotResponse)
@@ -154,7 +150,7 @@ func (mr *MockOscInterfaceMockRecorder) CreateSnapshot(ctx, localVarOptionals in
 }
 
 // ReadSnapshots mocks base method
-func (m *MockOscInterface) ReadSnapshots(ctx context.Context, localVarOptionals *osc.ReadSnapshotsOpts) (osc.ReadSnapshotsResponse, *http.Response, error){
+func (m *MockOscInterface) ReadSnapshots(ctx context.Context, localVarOptionals *osc.ReadSnapshotsOpts) (osc.ReadSnapshotsResponse, *http.Response, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ReadSnapshots", ctx, localVarOptionals)
 	ret0, _ := ret[0].(osc.ReadSnapshotsResponse)
@@ -170,7 +166,7 @@ func (mr *MockOscInterfaceMockRecorder) ReadSnapshots(ctx, localVarOptionals int
 }
 
 // DeleteSnapshot mocks base method
-func (m *MockOscInterface) DeleteSnapshot(ctx context.Context, localVarOptionals *osc.DeleteSnapshotOpts) (osc.DeleteSnapshotResponse, *http.Response, error){
+func (m *MockOscInterface) DeleteSnapshot(ctx context.Context, localVarOptionals *osc.DeleteSnapshotOpts) (osc.DeleteSnapshotResponse, *http.Response, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "DeleteSnapshot", ctx, localVarOptionals)
 	ret0, _ := ret[0].(osc.DeleteSnapshotResponse)
@@ -185,9 +181,8 @@ func (mr *MockOscInterfaceMockRecorder) DeleteSnapshot(ctx, localVarOptionals in
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteSnapshot", reflect.TypeOf((*MockOscInterface)(nil).DeleteSnapshot), ctx, localVarOptionals)
 }
 
-
 // ReadSubregions mocks base method
-func (m *MockOscInterface) ReadSubregions(ctx context.Context, localVarOptionals *osc.ReadSubregionsOpts) (osc.ReadSubregionsResponse, *http.Response, error){
+func (m *MockOscInterface) ReadSubregions(ctx context.Context, localVarOptionals *osc.ReadSubregionsOpts) (osc.ReadSubregionsResponse, *http.Response, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ReadSubregions", ctx, localVarOptionals)
 	ret0, _ := ret[0].(osc.ReadSubregionsResponse)
@@ -202,9 +197,8 @@ func (mr *MockOscInterfaceMockRecorder) ReadSubregions(ctx, localVarOptionals in
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ReadSubregions", reflect.TypeOf((*MockOscInterface)(nil).ReadSubregions), ctx, localVarOptionals)
 }
 
-
 // ReadVms mocks base method
-func (m *MockOscInterface) ReadVms(ctx context.Context, localVarOptionals *osc.ReadVmsOpts) (osc.ReadVmsResponse, *http.Response, error){
+func (m *MockOscInterface) ReadVms(ctx context.Context, localVarOptionals *osc.ReadVmsOpts) (osc.ReadVmsResponse, *http.Response, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ReadVms", ctx, localVarOptionals)
 	ret0, _ := ret[0].(osc.ReadVmsResponse)

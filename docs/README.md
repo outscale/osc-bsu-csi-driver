@@ -116,7 +116,7 @@ Make sure you follow the [Prerequisites](README.md#Prerequisites) before the exa
 Please go through [CSI Spec](https://github.com/container-storage-interface/spec/blob/master/spec.md) and [General CSI driver development guideline](https://kubernetes-csi.github.io/docs/introduction.html?highlight=Deve#development-and-deployment) to get some basic understanding of CSI driver before you start.
 
 ### Requirements
-* Golang 1.14.1
+* Golang 1.15.6
 * [Ginkgo](https://github.com/onsi/ginkgo) in your PATH for integration testing and end-to-end testing
 * Docker 18.09.2+ for releasing
 * K8s v1.15.4+

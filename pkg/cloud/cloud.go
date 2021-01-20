@@ -36,7 +36,7 @@ import (
 	dm "github.com/outscale-dev/osc-bsu-csi-driver/pkg/cloud/devicemanager"
 	"github.com/outscale-dev/osc-bsu-csi-driver/pkg/util"
 	"k8s.io/apimachinery/pkg/util/wait"
-	"k8s.io/klog"
+	"k8s.io/klog/v2"
 
 	"reflect"
 )
@@ -268,7 +268,7 @@ func newOscCloud(region string) (Cloud, error) {
 
 	metadata, err := NewMetadataService(svc)
 	if err != nil {
-		return nil, fmt.Errorf("could not get metadata from AWS: %v", err)
+		return nil, fmt.Errorf("could not get metadata from OSC: %v", err)
 	}
 	useRegion := region
 	if len(useRegion) == 0 {

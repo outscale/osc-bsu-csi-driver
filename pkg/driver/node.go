@@ -29,7 +29,7 @@ import (
 	"github.com/outscale-dev/osc-bsu-csi-driver/pkg/driver/internal"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	"k8s.io/klog"
+	"k8s.io/klog/v2"
 	"k8s.io/kubernetes/pkg/util/resizefs"
 	"k8s.io/utils/exec"
 	"k8s.io/utils/mount"

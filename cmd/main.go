@@ -21,7 +21,7 @@ import (
 
 	"github.com/outscale-dev/osc-bsu-csi-driver/pkg/driver"
 
-	"k8s.io/klog"
+	"k8s.io/klog/v2"
 )
 
 func main() {

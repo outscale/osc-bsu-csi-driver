@@ -23,7 +23,7 @@ import (
 
 	"github.com/outscale/osc-sdk-go/osc"
 
-	"k8s.io/klog"
+	"k8s.io/klog/v2"
 )
 
 const devPreffix = "/dev/xvd"

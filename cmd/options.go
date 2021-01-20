@@ -25,7 +25,7 @@ import (
 	"github.com/outscale-dev/osc-bsu-csi-driver/cmd/options"
 	"github.com/outscale-dev/osc-bsu-csi-driver/pkg/driver"
 
-	"k8s.io/klog"
+	"k8s.io/klog/v2"
 )
 
 // Options is the combined set of options for all operating modes.

@@ -1,16 +1,16 @@
 apiVersion: v1
-appVersion: "0.5.0"
+appVersion: "v0.0.6beta"
 name: aws-ebs-csi-driver
 description: A Helm chart for AWS EBS CSI Driver
-version: 0.4.0
-kubeVersion: ">=1.13.0-0"
-home: https://github.com/kubernetes-sigs/aws-ebs-csi-driver
+version: v0.0.6beta
+kubeVersion: ">=1.14.0-0"
+home: https://github.com/outscale-dev/osc-bsu-csi-driver
 sources:
-  - https://github.com/kubernetes-sigs/aws-ebs-csi-driver
+  - https://github.com/outscale-dev/osc-bsu-csi-driver
 keywords:
-  - aws
-  - ebs
+  - osc
+  - bsu
   - csi
 maintainers:
-  - name: leakingtapan
-    email: chengpan@amazon.com
+  - name: 3DS Outscale
+    email: support@outscale.com

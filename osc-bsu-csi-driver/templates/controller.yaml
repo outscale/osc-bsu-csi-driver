@@ -65,13 +65,13 @@ spec:
             - name: OSC_ACCESS_KEY
               valueFrom:
                 secretKeyRef:
-                  name: aws-secret
+                  name: osc-secret
                   key: access_key
                   optional: true
             - name: OSC_SECRET_KEY
               valueFrom:
                 secretKeyRef:
-                  name: aws-secret
+                  name: osc-secret
                   key: secret_key
                   optional: true
             {{- if .Values.region }}

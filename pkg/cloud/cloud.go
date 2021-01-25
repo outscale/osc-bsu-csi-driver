@@ -867,7 +867,7 @@ func (c *cloud) ListSnapshots(ctx context.Context, volumeID string, maxResults i
 }
 
 func (c *cloud) oscSnapshotResponseToStruct(oscSnapshot osc.Snapshot) Snapshot {
-	klog.Infof("Debug ec2SnapshotResponseToStruct : %+v\n", oscSnapshot)
+	klog.Infof("Debug oscSnapshotResponseToStruct : %+v\n", oscSnapshot)
 	if reflect.DeepEqual(oscSnapshot, osc.Snapshot{}) {
 		return Snapshot{}
 	}

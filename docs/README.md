@@ -76,27 +76,26 @@ Following sections are Kubernetes specific. If you are Kubernetes user, use foll
     # ENV VARS 
     export OSC_ACCESS_KEY=XXXXX
     export OSC_SECRET_KEY=XXXXX
-    export AWS_AVAILABILITY_ZONES="XXXXX"
-    
-    export IMAGE_NAME=outscale/osc-ebs-csi-driver
-    export IMAGE_TAG="v0.0.6beta"
+    export OSC_REGION=eu-west-2
 
     ## set the secrets
-    curl https://raw.githubusercontent.com/kubernetes-sigs/aws-ebs-csi-driver/master/deploy/kubernetes/secret.yaml > secret.yaml
+    curl https://raw.githubusercontent.com/outscale-dev/osc-bsu-csi-driver/OSC-MIGRATION/deploy/kubernetes/secret.yaml > secret.yaml
     cat secret.yaml | \
-        sed "s/key_id: \"\"/key_id: \"$OSC_ACCESS_KEY\"/g" | \
-        sed "s/access_key: \"\"/access_key: \"$OSC_SECRET_KEY\"/g" > secret.yaml
-    /usr/local/bin/kubectl delete -f secret.yaml --namespace=kube-system
-    /usr/local/bin/kubectl apply -f secret.yaml --namespace=kube-system
+        sed "s/secret_key: \"\"/secret_key: \"$OSC_SECRET_KEY\"/g" | \
+        sed "s/access_key: \"\"/access_key: \"$OSC_ACCESS_KEY\"/g" > osc-secret.yaml
+    /usr/local/bin/kubectl delete -f osc-secret.yaml --namespace=kube-system
+    /usr/local/bin/kubectl apply -f osc-secret.yaml --namespace=kube-system
     
     ## deploy the pod
+    export IMAGE_NAME=outscale/osc-ebs-csi-driver
+    export IMAGE_TAG="v0.0.7beta"
     git clone git@github.com:outscale-dev/osc-ebs-csi-driver.git
     cd osc-ebs-csi-driver
     helm uninstall osc-bsu-csi-driver  --namespace kube-system
-    helm install osc-bsu-csi-driver ./aws-ebs-csi-driver \
+    helm install osc-bsu-csi-driver ./osc-bsu-csi-driver \
          --namespace kube-system --set enableVolumeScheduling=true \
          --set enableVolumeResizing=true --set enableVolumeSnapshot=true \
-         --set region=eu-west-2 \
+         --set region=$OSC_REGION \
         --set image.repository=$IMAGE_NAME \
         --set image.tag=$IMAGE_TAG
                 
@@ -119,7 +118,7 @@ Please go through [CSI Spec](https://github.com/container-storage-interface/spec
 * Golang 1.15.6
 * [Ginkgo](https://github.com/onsi/ginkgo) in your PATH for integration testing and end-to-end testing
 * Docker 18.09.2+ for releasing
-* K8s v1.15.4+
+* k8s v1.15.4+
 * helm v3.5.0+
 
 ### Dependency
@@ -130,5 +129,6 @@ Dependencies are managed through go module. To build the project, first turn on 
 * To execute e2e single az tests, run: 
 ```
     cd osc-ebs-csi-driver
+    export OSC_ACCESS_KEY=XXXX ; export OSC_SECRET_KEY=XXX ; export E2E_AZ="eu-west-2a"
     make test-e2e-single-az
 ```

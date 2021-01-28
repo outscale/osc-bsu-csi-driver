@@ -23,7 +23,6 @@ spec:
     spec:
       nodeSelector:
         kubernetes.io/os: linux
-        kubernetes.io/arch: amd64
         {{- with .Values.nodeSelector }}
 {{ toYaml . | indent 8 }}
         {{- end }}
@@ -33,10 +32,12 @@ spec:
       affinity: {{ toYaml . | nindent 8 }}
       {{- end }}
       tolerations:
+        {{- if .Values.tolerateAllTaints }}
         - operator: Exists
-      {{- with .Values.tolerations }}
+        {{- end }}
+        {{- with .Values.tolerations }}
 {{ toYaml . | indent 8 }}
-      {{- end }}
+        {{- end }}
       imagePullSecrets:
         - name: {{ .Values.imagePullSecrets | default "registry-dockerconfigjson" }}
       containers:
@@ -46,12 +47,15 @@ spec:
           args:
             {{- if ne .Release.Name "kustomize" }}
             - controller
-            {{ else }}
+            {{- else }}
             # - {all,controller,node} # specify the driver mode
             {{- end }}
             - --endpoint=$(CSI_ENDPOINT)
             {{- if .Values.extraVolumeTags }}
               {{- include "aws-ebs-csi-driver.extra-volume-tags" . | nindent 12 }}
+            {{- end }}
+            {{- if .Values.k8sTagClusterId }}
+            - --k8s-tag-cluster-id={{ .Values.k8sTagClusterId }}
             {{- end }}
             - --logtostderr
             - --v=10
@@ -61,13 +65,13 @@ spec:
             - name: OSC_ACCESS_KEY
               valueFrom:
                 secretKeyRef:
-                  name: aws-secret
+                  name: osc-secret
                   key: access_key
                   optional: true
             - name: OSC_SECRET_KEY
               valueFrom:
                 secretKeyRef:
-                  name: aws-secret
+                  name: osc-secret
                   key: secret_key
                   optional: true
             {{- if .Values.region }}
@@ -106,6 +110,9 @@ spec:
             {{- if .Values.enableVolumeScheduling }}
             - --feature-gates=Topology=true
             {{- end}}
+            {{- if .Values.extraCreateMetadata }}
+            - --extra-create-metadata
+            {{- end}}
             - --enable-leader-election
             - --leader-election-type=leases
           env:
@@ -114,19 +121,24 @@ spec:
           volumeMounts:
             - name: socket-dir
               mountPath: /var/lib/csi/sockets/pluginproxy/
+          {{- with .Values.resources }}
+          resources: {{ toYaml . | nindent 12 }}
+          {{- end }}
         - name: csi-attacher
           image: {{ printf "%s:%s" .Values.sidecars.attacherImage.repository .Values.sidecars.attacherImage.tag }}
           args:
             - --csi-address=$(ADDRESS)
             - --v=10
             - --leader-election=true
-            - --leader-election-type=leases
           env:
             - name: ADDRESS
               value: /var/lib/csi/sockets/pluginproxy/csi.sock
           volumeMounts:
             - name: socket-dir
               mountPath: /var/lib/csi/sockets/pluginproxy/
+          {{- with .Values.resources }}
+          resources: {{ toYaml . | nindent 12 }}
+          {{- end }}
         {{- if .Values.enableVolumeSnapshot }}
         - name: csi-snapshotter
           image: {{ printf "%s:%s" .Values.sidecars.snapshotterImage.repository .Values.sidecars.snapshotterImage.tag }}
@@ -139,6 +151,9 @@ spec:
           volumeMounts:
             - name: socket-dir
               mountPath: /var/lib/csi/sockets/pluginproxy/
+          {{- with .Values.resources }}
+          resources: {{ toYaml . | nindent 12 }}
+          {{- end }}
         {{- end }}
         {{- if .Values.enableVolumeResizing }}
         - name: csi-resizer
@@ -153,6 +168,9 @@ spec:
           volumeMounts:
             - name: socket-dir
               mountPath: /var/lib/csi/sockets/pluginproxy/
+          {{- with .Values.resources }}
+          resources: {{ toYaml . | nindent 12 }}
+          {{- end }}
         {{- end }}
         - name: liveness-probe
           image: {{ printf "%s:%s" .Values.sidecars.livenessProbeImage.repository .Values.sidecars.livenessProbeImage.tag }}
@@ -161,6 +179,9 @@ spec:
           volumeMounts:
             - name: socket-dir
               mountPath: /csi
+          {{- with .Values.resources }}
+          resources: {{ toYaml . | nindent 12 }}
+          {{- end }}
       volumes:
         - name: socket-dir
           emptyDir: {}

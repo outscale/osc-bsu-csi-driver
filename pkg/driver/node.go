@@ -29,7 +29,7 @@ import (
 	"github.com/outscale-dev/osc-bsu-csi-driver/pkg/driver/internal"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	"k8s.io/klog"
+	"k8s.io/klog/v2"
 	"k8s.io/kubernetes/pkg/util/resizefs"
 	"k8s.io/utils/exec"
 	"k8s.io/utils/mount"
@@ -189,8 +189,24 @@ func (d *nodeService) NodeStageVolume(ctx context.Context, req *csi.NodeStageVol
 		return &csi.NodeStageVolumeResponse{}, nil
 	}
 
-	// FormatAndMount will format only if needed
 	klog.V(5).Infof("NodeStageVolume: formatting %s and mounting at %s with fstype %s", source, target, fsType)
+	if FSTypeXfs == fsType {
+		// Special case for xfs default format and mout fails due to fromat
+		// mkfs -t xfs -m reflink=0 /dev/xvdh
+		// Check if the disk is already formatted
+		existingFormat, err := d.mounter.GetDiskFormat(source)
+		if err == nil && "" == existingFormat {
+			argsXfs := []string{"-t", fsType, "-m", "reflink=0", source}
+			klog.V(5).Infof("NodeStageVolume: xfs case mkfs %v ", argsXfs)
+			cmdOut, cmdErr := d.mounter.Command("mkfs", argsXfs...).CombinedOutput()
+			if cmdErr != nil {
+				klog.V(5).Infof("NodeStageVolume: continue with failed to run mkfs %v, error: %v, output: %v", argsXfs, cmdErr, cmdOut)
+				// but continue with FormatAndMount
+			}
+		}
+	}
+
+	// FormatAndMount will format only if needed
 	err = d.mounter.FormatAndMount(source, target, fsType, mountOptions)
 	if err != nil {
 		msg := fmt.Sprintf("could not format %q and mount it at %q", source, target)

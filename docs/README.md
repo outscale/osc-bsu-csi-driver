@@ -38,7 +38,7 @@ There are several optional parameters that could be passed into `CreateVolumeReq
 Following sections are Kubernetes specific. If you are Kubernetes user, use followings for driver features, installation steps and examples.
 
 ## Kubernetes Version Compability Matrix
-| OSC BSU CSI Driver \ Kubernetes Version|v1.18.4| 
+| OSC BSU CSI Driver \ Kubernetes Version|v1.19.4| 
 |----------------------------------------|-------|
 | OSC-MIGRATION branch                   | yes   |
 
@@ -46,7 +46,7 @@ Following sections are Kubernetes specific. If you are Kubernetes user, use foll
 ## Container Images:
 |OSC BSU CSI Driver Version | Image                                     |
 |---------------------------|-------------------------------------------|
-| OSC-MIGRATION branch      |outscale/osc-ebs-csi-driver:v0.0.5beta     |
+| OSC-MIGRATION branch      |outscale/osc-ebs-csi-driver:v0.0.6beta     |
 
 ## Features
 * **Static Provisioning** - create a new or migrating existing BSU volumes, then create persistence volume (PV) from the BSU volume and consume the PV from container using persistence volume claim (PVC).
@@ -60,11 +60,12 @@ Following sections are Kubernetes specific. If you are Kubernetes user, use foll
 ## Prerequisites
 
 * Get yourself familiar with how to setup Kubernetes on AWS and have a working Kubernetes cluster:
-  * Enable flag `--allow-privileged=true` for `kubelet` and `kube-apiserver`
-  * Enable `kube-apiserver` feature gates `--feature-gates=CSINodeInfo=true,CSIDriverRegistry=true,CSIBlockVolume=true,VolumeSnapshotDataSource=true`
-  * Enable `kubelet` feature gates `--feature-gates=CSINodeInfo=true,CSIDriverRegistry=true,CSIBlockVolume=true`
   * To Enable snapshot.storage.k8s.io/v1beta1 please follow :
     * https://kubernetes.io/blog/2019/12/09/kubernetes-1-17-feature-cis-volume-snapshot-beta/
+  * For k8s version lower than v1.15.4
+   * Enable flag `--allow-privileged=true` for `kubelet` and `kube-apiserver`
+   * Enable `kube-apiserver` feature gates `--feature-gates=CSINodeInfo=true,CSIDriverRegistry=true,CSIBlockVolume=true,VolumeSnapshotDataSource=true`
+   * Enable `kubelet` feature gates `--feature-gates=CSINodeInfo=true,CSIDriverRegistry=true,CSIBlockVolume=true`
 
 ## Installation
 
@@ -75,29 +76,28 @@ Following sections are Kubernetes specific. If you are Kubernetes user, use foll
     # ENV VARS 
     export OSC_ACCESS_KEY=XXXXX
     export OSC_SECRET_KEY=XXXXX
-    export AWS_AVAILABILITY_ZONES="XXXXX"
-    
-    export IMAGE_NAME=outscale/osc-ebs-csi-driver
-    export IMAGE_TAG="v0.0.0beta"
-    
+    export OSC_REGION=eu-west-2
+
     ## set the secrets
-    curl https://raw.githubusercontent.com/kubernetes-sigs/aws-ebs-csi-driver/master/deploy/kubernetes/secret.yaml > $HOME/secret_aws_template.yaml
-    cat secret_aws_template.yaml | \
-        sed "s/access_key: \"\"/access_key: \"OSC_ACCESS_KEY\"/g" | \
-        sed "s/key_id: \"\"/secret_key: \"OSC_SECRET_KEY\"/g" > secret_aws.yaml
-    /usr/local/bin/kubectl delete -f secret_aws.yaml --namespace=kube-system
-    /usr/local/bin/kubectl apply -f secret_aws.yaml --namespace=kube-system
+    curl https://raw.githubusercontent.com/outscale-dev/osc-bsu-csi-driver/OSC-MIGRATION/deploy/kubernetes/secret.yaml > secret.yaml
+    cat secret.yaml | \
+        sed "s/secret_key: \"\"/secret_key: \"$OSC_SECRET_KEY\"/g" | \
+        sed "s/access_key: \"\"/access_key: \"$OSC_ACCESS_KEY\"/g" > osc-secret.yaml
+    /usr/local/bin/kubectl delete -f osc-secret.yaml --namespace=kube-system
+    /usr/local/bin/kubectl apply -f osc-secret.yaml --namespace=kube-system
+    
     ## deploy the pod
+    export IMAGE_NAME=outscale/osc-ebs-csi-driver
+    export IMAGE_TAG="v0.0.7beta"
     git clone git@github.com:outscale-dev/osc-ebs-csi-driver.git
     cd osc-ebs-csi-driver
-    helm del --purge aws-ebs-csi-driver --tls
-    helm install --name aws-ebs-csi-driver \
-                --set enableVolumeScheduling=true \
-                --set enableVolumeResizing=true \
-                --set enableVolumeSnapshot=true \
-                --set image.repository=$IMAGE_NAME \
-                --set image.tag=$IMAGE_TAG \
-                ./aws-ebs-csi-driver --tls
+    helm uninstall osc-bsu-csi-driver  --namespace kube-system
+    helm install osc-bsu-csi-driver ./osc-bsu-csi-driver \
+         --namespace kube-system --set enableVolumeScheduling=true \
+         --set enableVolumeResizing=true --set enableVolumeSnapshot=true \
+         --set region=$OSC_REGION \
+        --set image.repository=$IMAGE_NAME \
+        --set image.tag=$IMAGE_TAG
                 
     ## Check the pod is running
     kubectl get pods -o wide -A  -n kube-system
@@ -115,10 +115,11 @@ Make sure you follow the [Prerequisites](README.md#Prerequisites) before the exa
 Please go through [CSI Spec](https://github.com/container-storage-interface/spec/blob/master/spec.md) and [General CSI driver development guideline](https://kubernetes-csi.github.io/docs/introduction.html?highlight=Deve#development-and-deployment) to get some basic understanding of CSI driver before you start.
 
 ### Requirements
-* Golang 1.14.1
+* Golang 1.15.6
 * [Ginkgo](https://github.com/onsi/ginkgo) in your PATH for integration testing and end-to-end testing
 * Docker 18.09.2+ for releasing
-* K8s v1.15.4+
+* k8s v1.15.4+
+* helm v3.5.0+
 
 ### Dependency
 Dependencies are managed through go module. To build the project, first turn on go mod using `export GO111MODULE=on`, then build the project using: `make`
@@ -128,5 +129,6 @@ Dependencies are managed through go module. To build the project, first turn on 
 * To execute e2e single az tests, run: 
 ```
     cd osc-ebs-csi-driver
-    make test-e2e-single-az E2E_AZ="XXXX"
+    export OSC_ACCESS_KEY=XXXX ; export OSC_SECRET_KEY=XXX ; export E2E_AZ="eu-west-2a"
+    make test-e2e-single-az
 ```

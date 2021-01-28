@@ -28,7 +28,7 @@ import (
 	"github.com/outscale-dev/osc-bsu-csi-driver/pkg/util"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	"k8s.io/klog"
+	"k8s.io/klog/v2"
 )
 
 var (
@@ -350,32 +350,32 @@ func (d *controllerService) ValidateVolumeCapabilities(ctx context.Context, req 
 
 // Expand not implemented
 func (d *controllerService) ControllerExpandVolume(ctx context.Context, req *csi.ControllerExpandVolumeRequest) (*csi.ControllerExpandVolumeResponse, error) {
-    klog.V(4).Infof("ControllerExpandVolume: called with args %+v", *req)
-    volumeID := req.GetVolumeId()
-    if len(volumeID) == 0 {
-        return nil, status.Error(codes.InvalidArgument, "Volume ID not provided")
-    }
+	klog.V(4).Infof("ControllerExpandVolume: called with args %+v", *req)
+	volumeID := req.GetVolumeId()
+	if len(volumeID) == 0 {
+		return nil, status.Error(codes.InvalidArgument, "Volume ID not provided")
+	}
 
-    capRange := req.GetCapacityRange()
-    if capRange == nil {
-        return nil, status.Error(codes.InvalidArgument, "Capacity range not provided")
-    }
+	capRange := req.GetCapacityRange()
+	if capRange == nil {
+		return nil, status.Error(codes.InvalidArgument, "Capacity range not provided")
+	}
 
-    newSize := util.RoundUpBytes(capRange.GetRequiredBytes())
-    maxVolSize := int32(capRange.GetLimitBytes())
-    if maxVolSize > 0 && maxVolSize < int32(newSize) {
-        return nil, status.Error(codes.InvalidArgument, "After round-up, volume size exceeds the limit specified")
-    }
+	newSize := util.RoundUpBytes(capRange.GetRequiredBytes())
+	maxVolSize := int32(capRange.GetLimitBytes())
+	if maxVolSize > 0 && maxVolSize < int32(newSize) {
+		return nil, status.Error(codes.InvalidArgument, "After round-up, volume size exceeds the limit specified")
+	}
 
-    actualSizeGiB, err := d.cloud.ResizeDisk(ctx, volumeID, newSize)
-    if err != nil {
-        return nil, status.Errorf(codes.Internal, "Could not resize volume %q: %v", volumeID, err)
-    }
+	actualSizeGiB, err := d.cloud.ResizeDisk(ctx, volumeID, newSize)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "Could not resize volume %q: %v", volumeID, err)
+	}
 
-    return &csi.ControllerExpandVolumeResponse{
-        CapacityBytes:         int64(util.GiBToBytes(actualSizeGiB)),
-        NodeExpansionRequired: true,
-    }, nil
+	return &csi.ControllerExpandVolumeResponse{
+		CapacityBytes:         int64(util.GiBToBytes(actualSizeGiB)),
+		NodeExpansionRequired: true,
+	}, nil
 }
 
 func isValidVolumeCapabilities(volCaps []*csi.VolumeCapability) bool {
@@ -570,7 +570,7 @@ func newListSnapshotsResponse(cloudResponse cloud.ListSnapshotsResponse) (*csi.L
 		entries = append(entries, snapshotResponseEntry)
 	}
 	return &csi.ListSnapshotsResponse{
-		Entries: entries,
+		Entries:   entries,
 		NextToken: cloudResponse.NextToken,
 	}, nil
 }

@@ -28,6 +28,7 @@ type Mounter interface {
 	mount.Interface
 	exec.Interface
 	FormatAndMount(source string, target string, fstype string, options []string) error
+	GetDiskFormat(disk string) (string, error)
 	GetDeviceName(mountPath string) (string, int, error)
 	MakeFile(pathname string) error
 	MakeDir(pathname string) error

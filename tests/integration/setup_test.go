@@ -28,11 +28,11 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ec2"
 	csi "github.com/container-storage-interface/spec/lib/go/csi"
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 	"github.com/outscale-dev/osc-bsu-csi-driver/pkg/cloud"
 	"github.com/outscale-dev/osc-bsu-csi-driver/pkg/driver"
 	"github.com/outscale-dev/osc-bsu-csi-driver/pkg/util"
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
 	"google.golang.org/grpc"
 )
 

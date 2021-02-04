@@ -22,7 +22,10 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"strconv"
 	"strings"
+
+	"golang.org/x/sys/unix"
 
 	csi "github.com/container-storage-interface/spec/lib/go/csi"
 	"github.com/outscale-dev/osc-bsu-csi-driver/pkg/cloud"
@@ -31,6 +34,7 @@ import (
 	"google.golang.org/grpc/status"
 	"k8s.io/klog/v2"
 	"k8s.io/kubernetes/pkg/util/resizefs"
+	"k8s.io/kubernetes/pkg/volume"
 	"k8s.io/utils/exec"
 	"k8s.io/utils/mount"
 )
@@ -65,6 +69,7 @@ var (
 	nodeCaps = []csi.NodeServiceCapability_RPC_Type{
 		csi.NodeServiceCapability_RPC_STAGE_UNSTAGE_VOLUME,
 		csi.NodeServiceCapability_RPC_EXPAND_VOLUME,
+		csi.NodeServiceCapability_RPC_GET_VOLUME_STATS,
 	}
 )
 
@@ -357,8 +362,125 @@ func (d *nodeService) NodeUnpublishVolume(ctx context.Context, req *csi.NodeUnpu
 	return &csi.NodeUnpublishVolumeResponse{}, nil
 }
 
+func (d *nodeService) isBlockDevice(filename string) (bool, error) {
+	// Use stat to determine the kind of file this is.
+	var stat unix.Stat_t
+
+	err := unix.Stat(filename, &stat)
+	if err != nil {
+		return false, err
+	}
+
+	return (stat.Mode & unix.S_IFMT) == unix.S_IFBLK, nil
+}
+
+func (d *nodeService) getBlockSizeBytes(devicePath string) (int64, error) {
+	cmd := d.mounter.Command("blockdev", "--getsize64", devicePath)
+	output, err := cmd.Output()
+	if err != nil {
+		return -1, fmt.Errorf("error when getting size of block volume at path %s: output: %s, err: %v", devicePath, string(output), err)
+	}
+	strOut := strings.TrimSpace(string(output))
+	gotSizeBytes, err := strconv.ParseInt(strOut, 10, 64)
+	if err != nil {
+		return -1, fmt.Errorf("failed to parse size %s as int", strOut)
+	}
+	return gotSizeBytes, nil
+}
+
 func (d *nodeService) NodeGetVolumeStats(ctx context.Context, req *csi.NodeGetVolumeStatsRequest) (*csi.NodeGetVolumeStatsResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "NodeGetVolumeStats is not implemented yet")
+
+	klog.V(4).Infof("NodeGetVolumeStats: called with args %+v", *req)
+	if len(req.VolumeId) == 0 {
+		klog.V(4).Infof("NodeGetVolumeStats: called with args")
+		return nil, status.Error(codes.InvalidArgument, "NodeGetVolumeStats empty Volume ID")
+	}
+
+	if len(req.VolumePath) == 0 {
+		klog.V(4).Infof("NodeGetVolumeStats empty Volume path")
+		return nil, status.Error(codes.InvalidArgument, "NodeGetVolumeStats empty Volume path")
+	}
+
+	exists, err := d.mounter.ExistsPath(req.VolumePath)
+	if err != nil {
+		klog.V(4).Infof("unknown error when stat")
+		return nil, status.Errorf(codes.Internal, "unknown error when stat on %s: %v", req.VolumePath, err)
+	}
+	if !exists {
+		klog.V(4).Infof("path does not exist")
+		return nil, status.Errorf(codes.NotFound, "path %s does not exist", req.VolumePath)
+	}
+
+	isBlock, err := d.isBlockDevice(req.VolumePath)
+	klog.V(4).Infof("isBlockDevice %v, %v", isBlock, err)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to determine whether %s is block device: %v", req.VolumePath, err)
+	}
+
+	if isBlock {
+		bcap, err := d.getBlockSizeBytes(req.VolumePath)
+		if err != nil {
+			klog.V(4).Infof("failed to get block capacity on path")
+			return nil, status.Errorf(codes.Internal, "failed to get block capacity on path %s: %v", req.VolumePath, err)
+		}
+		klog.V(4).Infof("bcap %+v", csi.NodeGetVolumeStatsResponse{
+			Usage: []*csi.VolumeUsage{
+				{
+					Unit:  csi.VolumeUsage_BYTES,
+					Total: bcap,
+				},
+			},
+		})
+		return &csi.NodeGetVolumeStatsResponse{
+			Usage: []*csi.VolumeUsage{
+				{
+					Unit:  csi.VolumeUsage_BYTES,
+					Total: bcap,
+				},
+			},
+		}, nil
+	}
+
+	metricsProvider := volume.NewMetricsStatFS(req.VolumePath)
+	metrics, err := metricsProvider.GetMetrics()
+	if err != nil {
+		klog.V(4).Infof("failed to get fs info on path %s: %v", req.VolumePath, err)
+		return nil, status.Errorf(codes.Internal, "failed to get fs info on path %s: %v", req.VolumePath, err)
+	}
+
+	klog.V(4).Infof("NodeGetVolumeStatsResponse: %+v", csi.NodeGetVolumeStatsResponse{
+		Usage: []*csi.VolumeUsage{
+			{
+				Unit:      csi.VolumeUsage_BYTES,
+				Available: metrics.Available.AsDec().UnscaledBig().Int64(),
+				Total:     metrics.Capacity.AsDec().UnscaledBig().Int64(),
+				Used:      metrics.Used.AsDec().UnscaledBig().Int64(),
+			},
+			{
+				Unit:      csi.VolumeUsage_INODES,
+				Available: metrics.InodesFree.AsDec().UnscaledBig().Int64(),
+				Total:     metrics.Inodes.AsDec().UnscaledBig().Int64(),
+				Used:      metrics.InodesUsed.AsDec().UnscaledBig().Int64(),
+			},
+		},
+	})
+
+	return &csi.NodeGetVolumeStatsResponse{
+		Usage: []*csi.VolumeUsage{
+			{
+				Unit:      csi.VolumeUsage_BYTES,
+				Available: metrics.Available.AsDec().UnscaledBig().Int64(),
+				Total:     metrics.Capacity.AsDec().UnscaledBig().Int64(),
+				Used:      metrics.Used.AsDec().UnscaledBig().Int64(),
+			},
+			{
+				Unit:      csi.VolumeUsage_INODES,
+				Available: metrics.InodesFree.AsDec().UnscaledBig().Int64(),
+				Total:     metrics.Inodes.AsDec().UnscaledBig().Int64(),
+				Used:      metrics.InodesUsed.AsDec().UnscaledBig().Int64(),
+			},
+		},
+	}, nil
 }
 
 func (d *nodeService) NodeGetCapabilities(ctx context.Context, req *csi.NodeGetCapabilitiesRequest) (*csi.NodeGetCapabilitiesResponse, error) {

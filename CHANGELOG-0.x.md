@@ -7,3 +7,8 @@
 * Use [osc-sdk-go](https://github.com/outscale/osc-sdk-go) instead of aws-sdk-go
 * Update to helm3
 * Update of sidecar images
+
+# v0.0.8beta
+## Notable changes
+* Implement NodeGetVolumeStats
+

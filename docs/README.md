@@ -88,7 +88,7 @@ Following sections are Kubernetes specific. If you are Kubernetes user, use foll
     
     ## deploy the pod
     export IMAGE_NAME=outscale/osc-ebs-csi-driver
-    export IMAGE_TAG="v0.0.7beta"
+    export IMAGE_TAG="v0.0.8beta"
     git clone git@github.com:outscale-dev/osc-ebs-csi-driver.git
     cd osc-ebs-csi-driver
     helm uninstall osc-bsu-csi-driver  --namespace kube-system

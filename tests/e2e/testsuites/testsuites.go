@@ -379,7 +379,11 @@ type TestDeployment struct {
 	podName    string
 }
 
-func NewTestDeployment(c clientset.Interface, ns *v1.Namespace, command string, pvc *v1.PersistentVolumeClaim, volumeName, mountPath string, readOnly bool) *TestDeployment {
+func NewTestDeployment(c clientset.Interface, ns *v1.Namespace, command string, pvc *v1.PersistentVolumeClaim, volumeName, mountPath string, readOnly bool, customImage ...string) *TestDeployment {
+	imageName := imageutils.GetE2EImage(imageutils.BusyBox)
+	if len(customImage) > 0 {
+		imageName = customImage[0]
+	}
 	generateName := "ebs-volume-tester-"
 	selectorValue := fmt.Sprintf("%s%d", generateName, rand.Int())
 	replicas := int32(1)
@@ -403,7 +407,7 @@ func NewTestDeployment(c clientset.Interface, ns *v1.Namespace, command string, 
 						Containers: []v1.Container{
 							{
 								Name:    "volume-tester",
-								Image:   imageutils.GetE2EImage(imageutils.BusyBox),
+								Image:   imageName,
 								Command: []string{"/bin/sh"},
 								Args:    []string{"-c", command},
 								VolumeMounts: []v1.VolumeMount{

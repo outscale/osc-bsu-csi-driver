@@ -6,7 +6,7 @@ replicaCount: 2
 
 image:
   repository: outscale/osc-ebs-csi-driver
-  tag: v0.0.7beta
+  tag: v0.0.8beta
   pullPolicy: IfNotPresent
 
 backoff:

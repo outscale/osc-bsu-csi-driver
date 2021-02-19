@@ -1,8 +1,8 @@
 apiVersion: v1
-appVersion: "v0.0.6beta"
-name: aws-ebs-csi-driver
-description: A Helm chart for AWS EBS CSI Driver
-version: v0.0.6beta
+appVersion: "v0.0.8beta"
+name: osc-bsu-csi-driver
+description: A Helm chart for Outscale BSU CSI Driver
+version: 0.1.0
 kubeVersion: ">=1.14.0-0"
 home: https://github.com/outscale-dev/osc-bsu-csi-driver
 sources:

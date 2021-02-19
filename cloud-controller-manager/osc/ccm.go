@@ -26,7 +26,7 @@ import (
 	"gopkg.in/gcfg.v1"
 
 	"k8s.io/cloud-provider"
-	"k8s.io/klog"
+	"k8s.io/klog/v2"
 )
 
 // ********************* CCM Object Init *********************
@@ -58,7 +58,7 @@ func readAWSCloudConfig(config io.Reader) (*CloudConfig, error) {
 
 // newAWSCloud creates a new instance of AWSCloud.
 // AWSProvider and instanceId are primarily for tests
-func newAWSCloud(cfg CloudConfig, awsServices Services) (*Cloud, error) {
+func newAWSCloud(cfg CloudConfig, awsServices Services) (cloudprovider.Interface, error) {
 	debugPrintCallerFunctionName()
 	klog.V(10).Infof("newAWSCloud(%v,%v)", cfg, awsServices)
 	// We have some state in the Cloud object - in particular the attaching map
@@ -79,6 +79,11 @@ func newAWSCloud(cfg CloudConfig, awsServices Services) (*Cloud, error) {
 		return nil, fmt.Errorf("invalid OSC zone in config file: %s", zone)
 	}
 	regionName, err := azToRegion(zone)
+	if err != nil {
+		return nil, err
+	}
+
+	instances, err := newInstancesV2(zone)
 	if err != nil {
 		return nil, err
 	}
@@ -106,11 +111,12 @@ func newAWSCloud(cfg CloudConfig, awsServices Services) (*Cloud, error) {
 	}
 
 	awsCloud := &Cloud{
-		ec2:      ec2,
-		elb:      elb,
-		metadata: metadata,
-		cfg:      &cfg,
-		region:   regionName,
+		ec2:       ec2,
+		elb:       elb,
+		metadata:  metadata,
+		cfg:       &cfg,
+		region:    regionName,
+		instances: instances,
 	}
 	awsCloud.instanceCache.cloud = awsCloud
 

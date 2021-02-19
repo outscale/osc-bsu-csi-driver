@@ -7,9 +7,9 @@ This project allows a Kubernetes cluster to provision, monitor and remove AWS re
 # Cloud Provider 3DS OSC CCM on Kubernetes
 
 ## Requirements
-* Golang 1.13.7+
+* Golang 1.15.+
 * Docker 18.09.2+ 
-* K8s v1.16.4+
+* K8s v1.17.4+
 
 ## Build image
 
@@ -27,8 +27,8 @@ This project allows a Kubernetes cluster to provision, monitor and remove AWS re
 
 
 ## Flags
-The flag `--cloud-provider=external` `must` be passed to kubelet, kube-apiserver, and kube-controller-manager.
-You  **must** pass the --cloud-provider flag to `osc-cloud-controller-manager`.
+The flag `--cloud-provider=external` `must` be passed to kubelet
+You  **must** pass the --cloud-provider=osc flag to `osc-cloud-controller-manager`.
 
 
 ## Installation
@@ -77,8 +77,6 @@ Please go through [DEPLOY](./deploy/README.md)
 	}
 ```
  > **Else** an LB will be created automatically and attached to all Nodes
-
-
 
 
 ## Examples

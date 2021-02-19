@@ -30,7 +30,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/elb"
 
 	"k8s.io/client-go/pkg/version"
-	"k8s.io/klog"
+	"k8s.io/klog/v2"
 )
 
 // ********************* CCM awsSDKProvider Def & functions *********************
@@ -111,7 +111,7 @@ func (p *awsSDKProvider) Compute(regionName string) (EC2, error) {
 	klog.V(10).Infof("Compute(%v)", regionName)
 	sess, err := NewSession()
 	if err != nil {
-		return nil, fmt.Errorf("unable to initialize AWS session: %v", err)
+		return nil, fmt.Errorf("unable to initialize OSC session: %v", err)
 	}
 	service := ec2.New(sess)
 
@@ -139,9 +139,11 @@ func (p *awsSDKProvider) LoadBalancing(regionName string) (ELB, error) {
 func (p *awsSDKProvider) Metadata() (EC2Metadata, error) {
 	debugPrintCallerFunctionName()
 	klog.V(10).Infof("Metadata()")
-	sess, err := session.NewSession(&aws.Config{
+	awsConfig := &aws.Config{
 		EndpointResolver: endpoints.ResolverFunc(SetupMetadataResolver()),
-	})
+	}
+	awsConfig.WithLogLevel(aws.LogDebugWithSigning | aws.LogDebugWithHTTPBody | aws.LogDebugWithRequestRetries | aws.LogDebugWithRequestErrors)
+	sess, err := session.NewSession(awsConfig)
 	if err != nil {
 		return nil, fmt.Errorf("unable to initialize OSC session: %v", err)
 	}

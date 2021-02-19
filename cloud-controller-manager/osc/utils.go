@@ -34,7 +34,7 @@ import (
 	"k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/sets"
-	"k8s.io/klog"
+	"k8s.io/klog/v2"
 )
 
 // ********************* CCM ServiceResolver functions *********************
@@ -84,10 +84,12 @@ func SetupServiceResolver(region string) endpoints.ResolverFunc {
 
 // Following functions are used to set outscale endpoints
 func newEC2MetadataSvc() *ec2metadata.EC2Metadata {
-
-	sess := session.Must(session.NewSession(&aws.Config{
+	awsConfig := &aws.Config{
 		EndpointResolver: endpoints.ResolverFunc(SetupMetadataResolver()),
-	}))
+	}
+	awsConfig.WithLogLevel(aws.LogDebugWithSigning | aws.LogDebugWithHTTPBody | aws.LogDebugWithRequestRetries | aws.LogDebugWithRequestErrors)
+
+	sess := session.Must(session.NewSession(awsConfig))
 	return ec2metadata.New(sess)
 }
 
@@ -120,7 +122,7 @@ func NewSession() (*session.Session, error) {
 		CredentialsChainVerboseErrors: aws.Bool(true),
 		EndpointResolver:              endpoints.ResolverFunc(SetupServiceResolver(metadata.GetRegion())),
 	}
-
+	awsConfig.WithLogLevel(aws.LogDebugWithSigning | aws.LogDebugWithHTTPBody | aws.LogDebugWithRequestRetries | aws.LogDebugWithRequestErrors)
 	sess, err := session.NewSession(awsConfig)
 	if err != nil {
 		return nil, fmt.Errorf("unable to initialize OSC session: %v", err)
@@ -175,6 +177,9 @@ func findSecurityGroupForInstance(instance *ec2.Instance, taggedSecurityGroups m
 			untagged = append(untagged, group)
 		}
 	}
+
+	klog.V(4).Infof("looking sg tagged: %v", tagged)
+	klog.V(4).Infof("looking sg untagged: %v", untagged)
 
 	if len(tagged) > 0 {
 		// We create instances with one SG

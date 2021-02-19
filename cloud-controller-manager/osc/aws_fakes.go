@@ -25,7 +25,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/ec2metadata"
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/aws/aws-sdk-go/service/elb"
-	"k8s.io/klog"
+	"k8s.io/klog/v2"
 )
 
 // FakeAWSServices is an fake AWS session used for testing

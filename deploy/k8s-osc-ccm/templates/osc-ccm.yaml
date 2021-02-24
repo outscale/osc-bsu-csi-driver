@@ -1,3 +1,99 @@
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: cloud-controller-manager:apiserver-authentication-reader
+  namespace: kube-system
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: extension-apiserver-authentication-reader
+subjects:
+- apiGroup: ""
+  kind: ServiceAccount
+  name: cloud-controller-manager
+  namespace: kube-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: system:cloud-controller-manager
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
+  - update
+- apiGroups:
+  - ""
+  resources:
+  - nodes
+  verbs:
+  - '*'
+- apiGroups:
+  - ""
+  resources:
+  - nodes/status
+  verbs:
+  - patch
+- apiGroups:
+  - ""
+  resources:
+  - services
+  verbs:
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - services/status
+  verbs:
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - serviceaccounts
+  verbs:
+  - create
+- apiGroups:
+  - ""
+  resources:
+  - persistentvolumes
+  verbs:
+  - get
+  - list
+  - update
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - endpoints
+  verbs:
+  - create
+  - get
+  - list
+  - watch
+  - update
+- apiGroups:
+  - coordination.k8s.io
+  resources:
+  - leases
+  verbs:
+  - create
+  - get
+  - list
+  - watch
+  - update
+---
+
 # CCM Service
 ---
 apiVersion: rbac.authorization.k8s.io/v1
@@ -9,9 +105,9 @@ roleRef:
   kind: ClusterRole
   name: cluster-admin
 subjects:
-- kind: ServiceAccount
-  name: cloud-controller-manager
-  namespace: kube-system
+  - kind: ServiceAccount
+    name: cloud-controller-manager
+    namespace: kube-system
 
 ---
 apiVersion: apps/v1
@@ -39,7 +135,7 @@ spec:
         imagePullPolicy: {{ .Values.image.pullPolicy }}
         command:
         - /bin/osc-cloud-controller-manager
-        - --cloud-provider=external
+        - --cloud-provider=osc
         - --leader-elect=true
         - --v={{ .Values.verbose | default "10" }}
         - --logtostderr

@@ -28,19 +28,24 @@
 
 ## Deploy the CCM deamonset
 
+
 ```
+	#Using the manifest
+	kubectl delete -f deploy/osc-ccm-manifest.yml
+	kubectl apply -f deploy/osc-ccm-manifest.yml
+	kubectl get pods -o wide -A -n kube-system | grep osc-cloud-controller-manager
+
+	#Using helm3
+	cd deploy
 	# set the IMAGE_SECRET, IMAGE_NAME, IMAGE_TAG, SECRET_NAME to the right values on your case
-	IMAGE_SECRET=registry-dockerconfigjson && \
-	IMAGE_NAME=registry.kube-system:5001/osc/cloud-provider-osc && \
-	IMAGE_TAG=v1 && \
-	SECRET_NAME=osc-secret 
-	helm del --purge k8s-osc-ccm --tls
-	helm install --name k8s-osc-ccm \
-		--set imagePullSecrets=$IMAGE_SECRET \
+	IMAGE_NAME=outscale/cloud-provider-osc && \
+	IMAGE_TAG=v0.0.6beta && \
+	SECRET_NAME=osc-secret && \
+	helm uninstall k8s-osc-ccm 
+	helm install k8s-osc-ccm deploy/k8s-osc-ccm \
 		--set oscSecretName=$SECRET_NAME \
 		--set image.repository=$IMAGE_NAME \
-		--set image.tag=$IMAGE_TAG \
-		deploy/k8s-osc-ccm --tls
+		--set image.tag=$IMAGE_TAG
 		
 	kubectl get pods -o wide -A -n kube-system | grep osc-cloud-controller-manager
 

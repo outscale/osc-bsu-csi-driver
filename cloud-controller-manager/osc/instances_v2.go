@@ -204,14 +204,14 @@ func nodeAddressesForInstanceV2(instance *ec2.Instance) ([]v1.NodeAddress, error
 			if aws.StringValue(networkInterface.Status) != ec2.NetworkInterfaceStatusInUse {
 				continue
 			}
-	
+
 			for _, privateIP := range networkInterface.PrivateIpAddresses {
 				if ipAddress := aws.StringValue(privateIP.PrivateIpAddress); ipAddress != "" {
 					ip := net.ParseIP(ipAddress)
 					if ip == nil {
 						return nil, fmt.Errorf("invalid IP address %q from instance %q", ipAddress, aws.StringValue(instance.InstanceId))
 					}
-	
+
 					addresses = append(addresses, v1.NodeAddress{
 						Type:    v1.NodeInternalIP,
 						Address: ip.String(),

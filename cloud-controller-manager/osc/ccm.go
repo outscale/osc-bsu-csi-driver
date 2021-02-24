@@ -58,7 +58,7 @@ func readAWSCloudConfig(config io.Reader) (*CloudConfig, error) {
 
 // newAWSCloud creates a new instance of AWSCloud.
 // AWSProvider and instanceId are primarily for tests
-func newAWSCloud(cfg CloudConfig, awsServices Services) (cloudprovider.Interface, error) {
+func newAWSCloud(cfg CloudConfig, awsServices Services) (*Cloud, error) {
 	debugPrintCallerFunctionName()
 	klog.V(10).Infof("newAWSCloud(%v,%v)", cfg, awsServices)
 	// We have some state in the Cloud object - in particular the attaching map

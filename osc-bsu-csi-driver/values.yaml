@@ -92,6 +92,11 @@ k8sTagClusterId: ""
 # region: us-east-1
 region: ""
 
+# Set the verbosity of the various components of the BSU CSI Driver.
+# Please be aware that sensitive information may be present in high
+# verbosity modes.
+verbosity: 2
+
 node:
   podAnnotations: {}
   tolerateAllTaints: true

@@ -25,15 +25,20 @@ func getAnnotations() map[string]string {
 }
 
 //CreateSvc create an svc
-func CreateSvc(client clientset.Interface, namespace *v1.Namespace) *v1.Service {
+func CreateSvc(client clientset.Interface, namespace *v1.Namespace, additional map[string]string) *v1.Service {
 	fmt.Printf("Creating Service...\n")
 	svcClient := client.CoreV1().Services(namespace.Name)
+
+	annotations := getAnnotations()
+	for k, v := range additional {
+		annotations[k] = v
+	}
 
 	service := &v1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        "echoheaders-lb-public",
 			Namespace:   namespace.Name,
-			Annotations: getAnnotations(),
+			Annotations: annotations,
 		},
 		Spec: v1.ServiceSpec{
 			Type: v1.ServiceTypeLoadBalancer,

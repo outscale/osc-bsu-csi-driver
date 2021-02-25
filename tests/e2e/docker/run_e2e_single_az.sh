@@ -26,7 +26,6 @@ go get -v -u github.com/onsi/ginkgo/ginkgo@v1.14.2
 export KUBECONFIG=/e2e-env/.kube/config
 export ARTIFACTS=./single_az_test_e2e_report
 mkdir -p $ARTIFACTS
-export NODES=4
 
-$GOPATH/bin/ginkgo --progress -debug -p -nodes=$NODES \
-					-v tests/e2e -- -report-dir=$ARTIFACTS
+$GOPATH/bin/ginkgo build -r tests/e2e
+$GOPATH/bin/ginkgo --progress -debug -v tests/e2e -- -report-dir=$ARTIFACTS

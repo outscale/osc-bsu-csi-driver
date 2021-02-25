@@ -33,7 +33,7 @@ func ListDeployment(client clientset.Interface, namespace *v1.Namespace) {
 }
 
 // CreateDeployment create a deployement
-func CreateDeployment(client clientset.Interface, namespace *v1.Namespace) *apps.Deployment {
+func CreateDeployment(client clientset.Interface, namespace *v1.Namespace, cmd string) *apps.Deployment {
 	deploymentsClient := client.AppsV1().Deployments(namespace.Name)
 	deployment := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
@@ -69,6 +69,11 @@ func CreateDeployment(client clientset.Interface, namespace *v1.Namespace) *apps
 				},
 			},
 		},
+	}
+
+	if len(cmd) > 0 {
+		deployment.Spec.Template.Spec.Containers[0].Command = []string{"/bin/sh"}
+		deployment.Spec.Template.Spec.Containers[0].Args = []string{"-c", cmd}
 	}
 
 	// Create Deployment

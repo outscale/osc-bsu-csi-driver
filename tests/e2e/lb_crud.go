@@ -24,13 +24,21 @@ import (
 	elbApi "github.com/aws/aws-sdk-go/service/elb"
 	"github.com/onsi/ginkgo"
 	v1 "k8s.io/api/core/v1"
+
 	"k8s.io/apimachinery/pkg/util/intstr"
 	clientset "k8s.io/client-go/kubernetes"
 	"k8s.io/kubernetes/test/e2e/framework"
 	e2esvc "k8s.io/kubernetes/test/e2e/framework/service"
 )
 
-var _ = ginkgo.Describe("[ccm-e2e] Simple-LB", func() {
+// TestParam customize e2e tests and lb annotations
+type TestParam struct {
+	Title       string
+	Annotations map[string]string
+	Cmd         string
+}
+
+var _ = ginkgo.Describe("[ccm-e2e] SVC-LB", func() {
 	f := framework.NewDefaultFramework("ccm")
 
 	var (
@@ -42,94 +50,116 @@ var _ = ginkgo.Describe("[ccm-e2e] Simple-LB", func() {
 		cs = f.ClientSet
 		ns = f.Namespace
 	})
-	//This example creates a deployment named echoheaders on your cluster, which will run a single replica
-	//of the echoserver container, listening on port 8080.
-	//Then create a Service that exposes our new application to the Internet over an Outscale Load Balancer unit (LBU).
 
-	ginkgo.It("Create Simple LB", func() {
-		fmt.Printf("Create Simple LB :  %v\n", ns)
+	params := []TestParam{
+		{
+			Title:       "Create LB",
+			Cmd:         "",
+			Annotations: map[string]string{},
+		},
+		{
+			Title: "Create LB With proxy protocol enabled",
+			Cmd: "sed -i 's/listen 8080 default_server reuseport/listen 8080 default_server reuseport proxy_protocol/g' /etc/nginx/nginx.conf; " +
+				"sed -i 's/listen 8443 default_server ssl http2 reuseport/listen 8443 default_server ssl http2 reuseport proxy_protocol/g' /etc/nginx/nginx.conf ; " +
+				"/usr/local/bin/run.sh",
+			Annotations: map[string]string{
+				"service.beta.kubernetes.io/aws-load-balancer-proxy-protocol": "*"},
+		},
+	}
 
-		ginkgo.By("Create Deployment")
-		deployement := e2eutils.CreateDeployment(cs, ns)
-		defer e2eutils.DeleteDeployment(cs, ns, deployement)
-		defer e2eutils.ListDeployment(cs, ns)
+	for _, param := range params {
+		title := param.Title
+		cmd := param.Cmd
+		annotations := param.Annotations
+		ginkgo.It(title, func() {
+			fmt.Printf("Create Simple LB :  %v\n", ns)
+			fmt.Printf("Cs :  %v\n", cs)
+			fmt.Printf("Params :  %v / %v / %v\n", title, cmd, annotations)
 
-		ginkgo.By("checking that the pod is running")
-		e2eutils.WaitForDeployementReady(cs, ns, deployement)
+			ginkgo.By("Create Deployment")
+			deployement := e2eutils.CreateDeployment(cs, ns, cmd)
+			defer e2eutils.DeleteDeployment(cs, ns, deployement)
+			defer e2eutils.ListDeployment(cs, ns)
 
-		ginkgo.By("listDeployment")
-		e2eutils.ListDeployment(cs, ns)
+			ginkgo.By("checking that the pod is running")
+			e2eutils.WaitForDeployementReady(cs, ns, deployement)
 
-		ginkgo.By("Create Svc")
-		svc := e2eutils.CreateSvc(cs, ns)
-		fmt.Printf("Created Service %q.\n", svc)
-		defer e2eutils.ListSvc(cs, ns)
-		defer e2eutils.DeleteSvc(cs, ns, svc)
+			ginkgo.By("listDeployment")
+			e2eutils.ListDeployment(cs, ns)
 
-		ginkgo.By("checking that the svc is ready")
-		e2eutils.WaitForSvc(cs, ns, svc)
+			ginkgo.By("Create Svc")
+			svc := e2eutils.CreateSvc(cs, ns, annotations)
+			fmt.Printf("Created Service %q.\n", svc)
+			defer e2eutils.ListSvc(cs, ns)
+			defer e2eutils.DeleteSvc(cs, ns, svc)
 
-		ginkgo.By("Listing svc")
-		e2eutils.ListSvc(cs, ns)
+			ginkgo.By("checking that the svc is ready")
+			e2eutils.WaitForSvc(cs, ns, svc)
 
-		ginkgo.By("Get Updated svc")
-		count := 0
-		var updatedSvc *v1.Service
-		for count < 3 {
-			updatedSvc = e2eutils.GetSvc(cs, ns, svc.GetObjectMeta().GetName())
-			fmt.Printf("Ingress:  %v\n", updatedSvc.Status.LoadBalancer.Ingress)
-			if len(updatedSvc.Status.LoadBalancer.Ingress) > 0 {
-				break
+			ginkgo.By("Listing svc")
+			e2eutils.ListSvc(cs, ns)
+
+			ginkgo.By("Get Updated svc")
+			count := 0
+			var updatedSvc *v1.Service
+			for count < 3 {
+				updatedSvc = e2eutils.GetSvc(cs, ns, svc.GetObjectMeta().GetName())
+				fmt.Printf("Ingress:  %v\n", updatedSvc.Status.LoadBalancer.Ingress)
+				if len(updatedSvc.Status.LoadBalancer.Ingress) > 0 {
+					break
+				}
+				count++
+				time.Sleep(30 * time.Second)
 			}
-			count++
-			time.Sleep(30 * time.Second)
-		}
-		address := updatedSvc.Status.LoadBalancer.Ingress[0].Hostname
-		lbName := strings.Split(address, "-")[0]
-		fmt.Printf("address:  %v\n", address)
-		ginkgo.By("Test Connection wait to have endpoint ready")
-		time.Sleep(60 * time.Second)
-		e2esvc.TestReachableHTTP(address, 80, 60*time.Second)
+			address := updatedSvc.Status.LoadBalancer.Ingress[0].Hostname
+			lbName := strings.Split(address, "-")[0]
+			fmt.Printf("address:  %v\n", address)
 
-		ginkgo.By("Remove Instances from lbu")
-		elb, err := e2eutils.ElbAPI()
-		framework.ExpectNoError(err)
+			ginkgo.By("Test Connection wait to have endpoint ready")
+			time.Sleep(60 * time.Second)
+			e2esvc.TestReachableHTTP(address, 80, 60*time.Second)
 
-		lb, err := e2eutils.GetLb(elb, lbName)
-		framework.ExpectNoError(err)
+			ginkgo.By("Remove Instances from lbu")
+			elb, err := e2eutils.ElbAPI()
+			framework.ExpectNoError(err)
 
-		lbInstances := []*elbApi.Instance{}
-		for _, lbInstance := range lb.Instances {
-			lbInstanceItem := &elbApi.Instance{}
-			lbInstanceItem.InstanceId = lbInstance.InstanceId
-			lbInstances = append(lbInstances, lbInstanceItem)
-		}
-		framework.ExpectNotEqual(len(lbInstances), 0)
+			lb, err := e2eutils.GetLb(elb, lbName)
+			framework.ExpectNoError(err)
 
-		err = e2eutils.RemoveLbInst(elb, lbName, lbInstances)
-		framework.ExpectNoError(err)
+			lbInstances := []*elbApi.Instance{}
+			for _, lbInstance := range lb.Instances {
+				lbInstanceItem := &elbApi.Instance{}
+				lbInstanceItem.InstanceId = lbInstance.InstanceId
+				lbInstances = append(lbInstances, lbInstanceItem)
+			}
+			framework.ExpectNotEqual(len(lbInstances), 0)
 
-		lb, err = e2eutils.GetLb(elb, lbName)
-		framework.ExpectNoError(err)
-		framework.ExpectEqual(len(lb.Instances), 0)
+			err = e2eutils.RemoveLbInst(elb, lbName, lbInstances)
+			framework.ExpectNoError(err)
 
-		ginkgo.By("Add port to force update of LB")
-		port := v1.ServicePort{
-			Name:       "tcp2",
-			Protocol:   v1.ProtocolTCP,
-			TargetPort: intstr.FromInt(8081),
-			Port:       81,
-		}
-		svc = e2eutils.UpdateSvcPorts(cs, ns, updatedSvc, port)
-		fmt.Printf("svc updated:  %v\n", svc)
+			lb, err = e2eutils.GetLb(elb, lbName)
+			framework.ExpectNoError(err)
+			framework.ExpectEqual(len(lb.Instances), 0)
 
-		ginkgo.By("Test Connection wait to have endpoint ready")
-		time.Sleep(60 * time.Second)
-		lb, err = e2eutils.GetLb(elb, lbName)
-		framework.ExpectNoError(err)
-		framework.ExpectNotEqual(len(lb.Instances), 0)
+			ginkgo.By("Add port to force update of LB")
+			port := v1.ServicePort{
+				Name:       "tcp2",
+				Protocol:   v1.ProtocolTCP,
+				TargetPort: intstr.FromInt(8443),
+				Port:       443,
+			}
+			svc = e2eutils.UpdateSvcPorts(cs, ns, updatedSvc, port)
+			fmt.Printf("svc updated:  %v\n", svc)
 
-		ginkgo.By("TestReachableHTTP after update")
-		e2esvc.TestReachableHTTP(address, 80, 60*time.Second)
-	})
+			ginkgo.By("Test Connection wait to have endpoint ready")
+			time.Sleep(60 * time.Second)
+			lb, err = e2eutils.GetLb(elb, lbName)
+			framework.ExpectNoError(err)
+			framework.ExpectNotEqual(len(lb.Instances), 0)
+
+			ginkgo.By("TestReachableHTTP after update")
+			e2esvc.TestReachableHTTP(address, 80, 60*time.Second)
+		})
+
+	}
 })

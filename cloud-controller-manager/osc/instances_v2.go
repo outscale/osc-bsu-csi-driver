@@ -18,7 +18,6 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"net"
 	"strings"
 
 	"k8s.io/klog/v2"
@@ -109,7 +108,7 @@ func (i *instancesV2) InstanceMetadata(ctx context.Context, node *v1.Node) (*clo
 		return nil, err
 	}
 
-	nodeAddresses, err := nodeAddressesForInstanceV2(ec2Instance)
+	nodeAddresses, err := extractNodeAddresses(ec2Instance)
 	if err != nil {
 		return nil, err
 	}
@@ -190,49 +189,6 @@ func (i *instancesV2) getInstance(ctx context.Context, node *v1.Node) (*ec2.Inst
 	return instances[0], nil
 }
 
-// nodeAddresses for Instance returns a list of v1.NodeAddress for the give instance.
-// TODO: should we support ExternalIP by default?
-func nodeAddressesForInstanceV2(instance *ec2.Instance) ([]v1.NodeAddress, error) {
-	if instance == nil {
-		return nil, errors.New("provided instances is nil")
-	}
-
-	addresses := []v1.NodeAddress{}
-	if len(instance.NetworkInterfaces) > 0 {
-		for _, networkInterface := range instance.NetworkInterfaces {
-			// skip network interfaces that are not currently in use
-			if aws.StringValue(networkInterface.Status) != ec2.NetworkInterfaceStatusInUse {
-				continue
-			}
-
-			for _, privateIP := range networkInterface.PrivateIpAddresses {
-				if ipAddress := aws.StringValue(privateIP.PrivateIpAddress); ipAddress != "" {
-					ip := net.ParseIP(ipAddress)
-					if ip == nil {
-						return nil, fmt.Errorf("invalid IP address %q from instance %q", ipAddress, aws.StringValue(instance.InstanceId))
-					}
-
-					addresses = append(addresses, v1.NodeAddress{
-						Type:    v1.NodeInternalIP,
-						Address: ip.String(),
-					})
-				}
-			}
-		}
-	} else {
-		privateIPAddress := aws.StringValue(instance.PrivateIpAddress)
-		if privateIPAddress != "" {
-			ip := net.ParseIP(privateIPAddress)
-			if ip == nil {
-				return nil, fmt.Errorf("instance had invalid private address: %s (%s)", aws.StringValue(instance.InstanceId), privateIPAddress)
-			}
-			addresses = append(addresses, v1.NodeAddress{Type: v1.NodeInternalIP, Address: ip.String()})
-		}
-	}
-
-	return addresses, nil
-}
-
 // getInstanceProviderID returns the provider ID of an instance which is ultimately set in the node.Spec.ProviderID field.
 // The well-known format for a node's providerID is:
 //    * aws:///<availability-zone>/<instance-id>
@@ -272,16 +228,4 @@ func parseInstanceIDFromProviderIDV2(providerID string) (string, error) {
 	}
 
 	return instanceID, nil
-}
-
-func newEc2FilterV2(name string, values ...string) *ec2.Filter {
-	filter := &ec2.Filter{
-		Name: aws.String(name),
-	}
-
-	for _, value := range values {
-		filter.Values = append(filter.Values, aws.String(value))
-	}
-
-	return filter
 }

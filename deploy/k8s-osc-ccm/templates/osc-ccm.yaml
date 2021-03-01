@@ -188,6 +188,7 @@ spec:
                 name: {{ .Values.oscSecretName | default "osc-secret" }}
                 key: aws_availability_zones
                 optional: false
+      hostNetwork: true
       tolerations:
       # this taint is set by all kubelets running `--cloud-provider=external`
       # so we should tolerate it to schedule the osc ccm

@@ -63,7 +63,18 @@ var _ = ginkgo.Describe("[ccm-e2e] SVC-LB", func() {
 				"sed -i 's/listen 8443 default_server ssl http2 reuseport/listen 8443 default_server ssl http2 reuseport proxy_protocol/g' /etc/nginx/nginx.conf ; " +
 				"/usr/local/bin/run.sh",
 			Annotations: map[string]string{
-				"service.beta.kubernetes.io/aws-load-balancer-proxy-protocol": "*"},
+				"service.beta.kubernetes.io/aws-load-balancer-proxy-protocol": "*",
+			},
+		},
+		{
+			Title: "Create LB with hc customized",
+			Cmd:   "",
+			Annotations: map[string]string{
+				"service.beta.kubernetes.io/aws-load-balancer-healthcheck-healthy-threshold":   "3",
+				"service.beta.kubernetes.io/aws-load-balancer-healthcheck-unhealthy-threshold": "7",
+				"service.beta.kubernetes.io/aws-load-balancer-healthcheck-timeout":             "6",
+				"service.beta.kubernetes.io/aws-load-balancer-healthcheck-interval":            "11",
+			},
 		},
 	}
 

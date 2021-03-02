@@ -18,7 +18,7 @@ package osc
 
 // ********************* CCM Used Interfaces *********************
 
-// Services is an abstraction over AWS, to allow mocking/other implementations
+// Services is an abstraction over OSC, to allow mocking/other implementations
 type Services interface {
 	Compute(region string) (EC2, error)
 	LoadBalancing(region string) (ELB, error)

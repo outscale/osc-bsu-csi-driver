@@ -2,7 +2,7 @@
 
 # Cloud Provider 3DS Outscale CCM (cloud-provider-osc)
 The OSC cloud provider provides the interface between a Kubernetes cluster and 3DS Outscale service APIs. 
-This project allows a Kubernetes cluster to provision, monitor and remove AWS resources necessary for operation of the cluster.
+This project allows a Kubernetes cluster to provision, monitor and remove Outscale resources necessary for operation of the cluster.
 
 # Cloud Provider 3DS OSC CCM on Kubernetes
 
@@ -21,9 +21,9 @@ This project allows a Kubernetes cluster to provision, monitor and remove AWS re
 
 
 ## Container Images:
-|OSC EBS CSI Driver Version | Image                                     |
+|OSC BSU CSI Driver Version | Image                                     |
 |---------------------------|-------------------------------------------|
-|OSC-MIGRATION branch       |outscale/cloud-provider-osc:v0.0.0beta     |
+|OSC-MIGRATION branch       |outscale/cloud-provider-osc:v0.0.6beta     |
 
 
 ## Flags
@@ -87,4 +87,4 @@ Please go through [DEPLOY](./deploy/README.md)
 
 
 ## Note
-* All the EBS volume plugin related logic will be in maintenance mode. For new feature request or bug fixes, please create issue or pull request in [EBS CSI Driver](https://github.com/outscale-dev/osc-ebs-csi-driver)
+* All the BSU volume plugin related logic will be in maintenance mode. For new feature request or bug fixes, please create issue or pull request in [BSU CSI Driver](https://github.com/outscale-dev/osc-bsu-csi-driver)

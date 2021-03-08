@@ -29,6 +29,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/aws/aws-sdk-go/service/elb"
+
 	"k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/informers"
@@ -38,9 +39,10 @@ import (
 	v1core "k8s.io/client-go/kubernetes/typed/core/v1"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/tools/record"
-	"k8s.io/cloud-provider"
+	"k8s.io/klog/v2"
+
+	cloudprovider "k8s.io/cloud-provider"
 	servicehelpers "k8s.io/cloud-provider/service/helpers"
-	"k8s.io/klog"
 )
 
 // ********************* CCM Cloud Object Def *********************
@@ -53,6 +55,8 @@ type Cloud struct {
 	cfg      *CloudConfig
 	region   string
 	vpcID    string
+
+	instances cloudprovider.InstancesV2
 
 	tagging awsTagging
 
@@ -68,9 +72,8 @@ type Cloud struct {
 	nodeInformer informercorev1.NodeInformer
 	// Extract the function out to make it easier to test
 	nodeInformerHasSynced cache.InformerSynced
-
-	eventBroadcaster record.EventBroadcaster
-	eventRecorder    record.EventRecorder
+	eventBroadcaster      record.EventBroadcaster
+	eventRecorder         record.EventRecorder
 }
 
 // ********************* CCM Cloud Object functions *********************
@@ -167,6 +170,14 @@ func (c *Cloud) Instances() (cloudprovider.Instances, bool) {
 	debugPrintCallerFunctionName()
 	klog.V(10).Infof("Instances()")
 	return c, true
+}
+
+// InstancesV2 is an implementation for instances and should only be implemented by external cloud providers.
+// Implementing InstancesV2 is behaviorally identical to Instances but is optimized to significantly reduce
+// API calls to the cloud provider when registering and syncing nodes.
+// Also returns true if the interface is supported, false otherwise.
+func (c *Cloud) InstancesV2() (cloudprovider.InstancesV2, bool) {
+	return c.instances, true
 }
 
 // Zones returns an implementation of Zones for Amazon Web Services.

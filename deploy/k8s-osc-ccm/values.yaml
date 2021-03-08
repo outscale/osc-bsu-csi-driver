@@ -6,8 +6,8 @@ replicaCount: 1
 
 image:
   repository: outscale/cloud-provider-osc
-  tag: v0.0.1beta
-  pullPolicy: Always
+  tag: v0.0.6beta
+  pullPolicy: IfNotPresent
 
 verbose: ""
 oscSecretName: ""

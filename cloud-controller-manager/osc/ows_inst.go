@@ -20,7 +20,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/ec2"
 
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/klog"
+	"k8s.io/klog/v2"
 )
 
 // ********************* CCM awsInstance Object & functions *********************

@@ -26,7 +26,7 @@ import (
 	"gopkg.in/gcfg.v1"
 
 	"k8s.io/cloud-provider"
-	"k8s.io/klog"
+	"k8s.io/klog/v2"
 )
 
 // ********************* CCM Object Init *********************
@@ -83,6 +83,11 @@ func newAWSCloud(cfg CloudConfig, awsServices Services) (*Cloud, error) {
 		return nil, err
 	}
 
+	instances, err := newInstancesV2(zone)
+	if err != nil {
+		return nil, err
+	}
+
 	if !cfg.Global.DisableStrictZoneCheck {
 		if !isRegionValid(regionName, metadata) {
 			return nil, fmt.Errorf("not a valid AWS zone (unknown region): %s", zone)
@@ -106,11 +111,12 @@ func newAWSCloud(cfg CloudConfig, awsServices Services) (*Cloud, error) {
 	}
 
 	awsCloud := &Cloud{
-		ec2:      ec2,
-		elb:      elb,
-		metadata: metadata,
-		cfg:      &cfg,
-		region:   regionName,
+		ec2:       ec2,
+		elb:       elb,
+		metadata:  metadata,
+		cfg:       &cfg,
+		region:    regionName,
+		instances: instances,
 	}
 	awsCloud.instanceCache.cloud = awsCloud
 

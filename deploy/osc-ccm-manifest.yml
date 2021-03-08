@@ -4,6 +4,101 @@ kind: ServiceAccount
 metadata:
   name: cloud-controller-manager
   namespace: kube-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: cloud-controller-manager:apiserver-authentication-reader
+  namespace: kube-system
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: extension-apiserver-authentication-reader
+subjects:
+- apiGroup: ""
+  kind: ServiceAccount
+  name: cloud-controller-manager
+  namespace: kube-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: system:cloud-controller-manager
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
+  - update
+- apiGroups:
+  - ""
+  resources:
+  - nodes
+  verbs:
+  - '*'
+- apiGroups:
+  - ""
+  resources:
+  - nodes/status
+  verbs:
+  - patch
+- apiGroups:
+  - ""
+  resources:
+  - services
+  verbs:
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - services/status
+  verbs:
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - serviceaccounts
+  verbs:
+  - create
+- apiGroups:
+  - ""
+  resources:
+  - persistentvolumes
+  verbs:
+  - get
+  - list
+  - update
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - endpoints
+  verbs:
+  - create
+  - get
+  - list
+  - watch
+  - update
+- apiGroups:
+  - coordination.k8s.io
+  resources:
+  - leases
+  verbs:
+  - create
+  - get
+  - list
+  - watch
+  - update
+---
 
 # CCM Service
 ---
@@ -40,13 +135,13 @@ spec:
       serviceAccountName: cloud-controller-manager
       containers:
         - name: osc-cloud-controller-manager
-          image: outscale/cloud-provider-osc:v0.0.5beta
+          image: outscale/cloud-provider-osc:v0.0.6beta
           imagePullPolicy: IfNotPresent
           command:
             - /bin/osc-cloud-controller-manager
             - --leader-elect=true
-            - --v=10
-            - --cloud-provider=external
+            - --cloud-provider=osc
+            - -v=10
             - --logtostderr
           env:
             - name: OSC_ACCOUNT_ID
@@ -97,6 +192,7 @@ spec:
                   name: "osc-secret"
                   key: aws_availability_zones
                   optional: false
+      hostNetwork: true
       tolerations:
         # this taint is set by all kubelets running `--cloud-provider=external`
         # so we should tolerate it to schedule the osc ccm

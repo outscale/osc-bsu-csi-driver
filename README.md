@@ -2,14 +2,14 @@
 
 # Cloud Provider 3DS Outscale CCM (cloud-provider-osc)
 The OSC cloud provider provides the interface between a Kubernetes cluster and 3DS Outscale service APIs. 
-This project allows a Kubernetes cluster to provision, monitor and remove AWS resources necessary for operation of the cluster.
+This project allows a Kubernetes cluster to provision, monitor and remove Outscale resources necessary for operation of the cluster.
 
 # Cloud Provider 3DS OSC CCM on Kubernetes
 
 ## Requirements
-* Golang 1.13.7+
+* Golang 1.15.+
 * Docker 18.09.2+ 
-* K8s v1.16.4+
+* K8s v1.17.4+
 
 ## Build image
 
@@ -21,14 +21,14 @@ This project allows a Kubernetes cluster to provision, monitor and remove AWS re
 
 
 ## Container Images:
-|OSC EBS CSI Driver Version | Image                                     |
+|OSC BSU CSI Driver Version | Image                                     |
 |---------------------------|-------------------------------------------|
-|OSC-MIGRATION branch       |outscale/cloud-provider-osc:v0.0.0beta     |
+|OSC-MIGRATION branch       |outscale/cloud-provider-osc:v0.0.6beta     |
 
 
 ## Flags
-The flag `--cloud-provider=external` `must` be passed to kubelet, kube-apiserver, and kube-controller-manager.
-You  **must** pass the --cloud-provider flag to `osc-cloud-controller-manager`.
+The flag `--cloud-provider=external` `must` be passed to kubelet
+You  **must** pass the --cloud-provider=osc flag to `osc-cloud-controller-manager`.
 
 
 ## Installation
@@ -79,8 +79,6 @@ Please go through [DEPLOY](./deploy/README.md)
  > **Else** an LB will be created automatically and attached to all Nodes
 
 
-
-
 ## Examples
 - [simple-lb](./examples/simple-lb)
 - [2048](./examples/2048)
@@ -89,4 +87,4 @@ Please go through [DEPLOY](./deploy/README.md)
 
 
 ## Note
-* All the EBS volume plugin related logic will be in maintenance mode. For new feature request or bug fixes, please create issue or pull request in [EBS CSI Driver](https://github.com/outscale-dev/osc-ebs-csi-driver)
+* All the BSU volume plugin related logic will be in maintenance mode. For new feature request or bug fixes, please create issue or pull request in [BSU CSI Driver](https://github.com/outscale-dev/osc-bsu-csi-driver)

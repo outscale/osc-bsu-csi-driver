@@ -37,6 +37,10 @@ REGISTRY = "registry.kube-system:5001"
 export GO111MODULE=on
 #GOPATH=$(PWD)
 
+E2E_ENV_RUN := "e2e-cloud-provider"
+E2E_ENV := "build-e2e-cloud-provider"
+E2E_AZ := "eu-west-2a"
+E2E_REGION := "eu-west-2"
 
 osc-cloud-controller-manager: $(SOURCES)
 	CGO_ENABLED=0 GOOS=$(GOOS) go build $(GO_ADD_OPTIONS)\
@@ -58,7 +62,7 @@ check: verify-fmt verify-lint vet
 
 .PHONY: test
 test:
-	go test -count=1 -race -v $(shell go list ./...)
+	go test -count=1 -race -v $(shell go list ./cloud-controller-manager/...)
 
 .PHONY: verify-fmt
 verify-fmt:
@@ -113,7 +117,27 @@ build_env:
 
 .PHONY: e2e-test
 e2e-test:
-	. ./tests/e2-tests.sh
+	@echo "e2e-test"
+	docker stop $(E2E_ENV_RUN) || true
+	docker wait $(E2E_ENV_RUN) || true
+	docker rm -f $(E2E_ENV_RUN) || true
+	docker build  -t $(E2E_ENV) -f ./tests/e2e/docker/Dockerfile_e2eTest .
+	mkdir -p ${HOME}/go_cache
+	docker run -it -d --rm \
+		-v ${HOME}/go_cache:/go \
+		-v ${PWD}:/go/src/cloud-provider-osc \
+		-v ${HOME}:/e2e-env/ \
+		-e AWS_ACCESS_KEY_ID=${OSC_ACCESS_KEY} \
+		-e AWS_SECRET_ACCESS_KEY=${OSC_SECRET_KEY} \
+		-e AWS_DEFAULT_REGION=$(E2E_REGION) \
+		-e AWS_AVAILABILITY_ZONES=$(E2E_AZ) \
+		--name $(E2E_ENV_RUN) $(E2E_ENV) bash -l
+	until [[ `docker inspect -f '{{.State.Running}}' $(E2E_ENV_RUN)` == "true" ]] ; do  sleep 1 ; done
+	docker exec $(E2E_ENV_RUN) ./tests/e2e/docker/run_e2e_single_az.sh
+	docker stop $(E2E_ENV_RUN) || true
+	docker wait $(E2E_ENV_RUN) || true
+	docker rm -f $(E2E_ENV_RUN) || true
+
 
 .PHONY: deploy
 deploy:

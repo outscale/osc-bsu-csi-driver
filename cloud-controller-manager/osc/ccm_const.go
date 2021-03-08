@@ -38,7 +38,7 @@ const NLBClientRuleDescription = "kubernetes.io/rule/nlb/client"
 const NLBMtuDiscoveryRuleDescription = "kubernetes.io/rule/nlb/mtu"
 
 // ProviderName is the name of this cloud provider.
-const ProviderName = "aws"
+const ProviderName = "osc"
 
 // TagNameKubernetesService is the tag name we use to differentiate multiple
 // services. Used currently for ELBs only.

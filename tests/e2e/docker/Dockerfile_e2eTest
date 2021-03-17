@@ -1,9 +1,7 @@
-#MAKE sur to map folders :
-#-v ${PWD}:/go/src/github.com/kubernetes-sigs/aws-ebs-csi-driver
-#-v ${HOME}:/e2e-env/
-#-v /etc/kubectl/:/etc/kubectl/
-
 FROM golang:1.15.6-buster
+
+RUN curl -o /usr/local/bin/kubectl -LO https://storage.googleapis.com/kubernetes-release/release/v1.19.4/bin/linux/amd64/kubectl && chmod +x /usr/local/bin/kubectl
+RUN export GO111MODULE=on && export PATH=$PATH:/usr/local/go/bin && export GOPATH="/go" && go get -v -u "github.com/onsi/ginkgo/ginkgo@v1.14.2"
 
 WORKDIR /root/aws-ebs-csi-driver
 

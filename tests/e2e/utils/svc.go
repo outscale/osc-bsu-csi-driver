@@ -78,7 +78,6 @@ func UpdateSvcPorts(client clientset.Interface, namespace *v1.Namespace, service
 	}
 	fmt.Printf("Udpated SVC %q.\n", result.GetObjectMeta().GetName())
 	return result
-
 }
 
 //DeleteSvc delete an svc

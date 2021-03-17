@@ -110,6 +110,9 @@ var _ = ginkgo.Describe("[ccm-e2e] SVC-LB", func() {
 			ginkgo.By("Listing svc")
 			e2eutils.ListSvc(cs, ns)
 
+			fmt.Printf("Wait to have stable sg")
+			time.Sleep(120 * time.Second)
+
 			ginkgo.By("Get Updated svc")
 			count := 0
 			var updatedSvc *v1.Service
@@ -126,9 +129,8 @@ var _ = ginkgo.Describe("[ccm-e2e] SVC-LB", func() {
 			lbName := strings.Split(address, "-")[0]
 			fmt.Printf("address:  %v\n", address)
 
-			ginkgo.By("Test Connection wait to have endpoint ready")
-			time.Sleep(60 * time.Second)
-			e2esvc.TestReachableHTTP(address, 80, 60*time.Second)
+			ginkgo.By("Test Connection (wait to have endpoint ready)")
+			e2esvc.TestReachableHTTP(address, 80, 240*time.Second)
 
 			ginkgo.By("Remove Instances from lbu")
 			elb, err := e2eutils.ElbAPI()
@@ -162,14 +164,17 @@ var _ = ginkgo.Describe("[ccm-e2e] SVC-LB", func() {
 			svc = e2eutils.UpdateSvcPorts(cs, ns, updatedSvc, port)
 			fmt.Printf("svc updated:  %v\n", svc)
 
-			ginkgo.By("Test Connection wait to have endpoint ready")
-			time.Sleep(60 * time.Second)
+			ginkgo.By("Test LB updated(wait to have vm registred)")
+			time.Sleep(120 * time.Second)
 			lb, err = e2eutils.GetLb(elb, lbName)
 			framework.ExpectNoError(err)
 			framework.ExpectNotEqual(len(lb.Instances), 0)
 
+			fmt.Printf("Wait to have stable sg")
+			time.Sleep(120 * time.Second)
+
 			ginkgo.By("TestReachableHTTP after update")
-			e2esvc.TestReachableHTTP(address, 80, 60*time.Second)
+			e2esvc.TestReachableHTTP(address, 80, 240*time.Second)
 		})
 
 	}

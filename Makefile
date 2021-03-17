@@ -122,17 +122,17 @@ e2e-test:
 	docker wait $(E2E_ENV_RUN) || true
 	docker rm -f $(E2E_ENV_RUN) || true
 	docker build  -t $(E2E_ENV) -f ./tests/e2e/docker/Dockerfile_e2eTest .
-	mkdir -p ${HOME}/go_cache
 	docker run -it -d --rm \
-		-v ${HOME}/go_cache:/go \
 		-v ${PWD}:/go/src/cloud-provider-osc \
 		-v ${HOME}:/e2e-env/ \
 		-e AWS_ACCESS_KEY_ID=${OSC_ACCESS_KEY} \
 		-e AWS_SECRET_ACCESS_KEY=${OSC_SECRET_KEY} \
 		-e AWS_DEFAULT_REGION=$(E2E_REGION) \
 		-e AWS_AVAILABILITY_ZONES=$(E2E_AZ) \
+		-e KC="$${KC}" \
 		--name $(E2E_ENV_RUN) $(E2E_ENV) bash -l
-	until [[ `docker inspect -f '{{.State.Running}}' $(E2E_ENV_RUN)` == "true" ]] ; do  sleep 1 ; done
+	docker ps -a
+	bash -c "until [[ `docker inspect -f '{{.State.Running}}' $(E2E_ENV_RUN)` == "true" ]] ; do  sleep 1 ; done"
 	docker exec $(E2E_ENV_RUN) ./tests/e2e/docker/run_e2e_single_az.sh
 	docker stop $(E2E_ENV_RUN) || true
 	docker wait $(E2E_ENV_RUN) || true

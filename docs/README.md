@@ -89,8 +89,8 @@ Following sections are Kubernetes specific. If you are Kubernetes user, use foll
     ## deploy the pod
     export IMAGE_NAME=outscale/osc-ebs-csi-driver
     export IMAGE_TAG="v0.0.8beta"
-    git clone git@github.com:outscale-dev/osc-ebs-csi-driver.git
-    cd osc-ebs-csi-driver
+    git clone git@github.com:outscale-dev/osc-bsu-csi-driver.git
+    cd osc-bsu-csi-driver
     helm uninstall osc-bsu-csi-driver  --namespace kube-system
     helm install osc-bsu-csi-driver ./osc-bsu-csi-driver \
          --namespace kube-system --set enableVolumeScheduling=true \
@@ -128,7 +128,7 @@ Dependencies are managed through go module. To build the project, first turn on 
 * To execute all unit tests, run: `make test`
 * To execute e2e single az tests, run: 
 ```
-    cd osc-ebs-csi-driver
+    cd osc-bsu-csi-driver
     export OSC_ACCESS_KEY=XXXX ; export OSC_SECRET_KEY=XXX ; export E2E_AZ="eu-west-2a"
     make test-e2e-single-az
 ```

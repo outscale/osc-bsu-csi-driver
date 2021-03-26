@@ -23,7 +23,7 @@ spec:
       serviceAccountName: ebs-snapshot-controller
       containers:
         - name: snapshot-controller
-          image: quay.io/k8scsi/snapshot-controller:v2.1.1
+          image: {{ printf "%s:%s" .Values.snapshotController.repository .Values.snapshotController.tag }}
           args:
             - --v=10
             - --leader-election=false

@@ -34,6 +34,12 @@ spec:
       tolerations:
         {{- if .Values.tolerateAllTaints }}
         - operator: Exists
+        {{- else }}
+        - key: CriticalAddonsOnly
+          operator: Exists
+        - operator: Exists
+          effect: NoExecute
+          tolerationSeconds: 300
         {{- end }}
         {{- with .Values.tolerations }}
 {{ toYaml . | indent 8 }}
@@ -99,6 +105,14 @@ spec:
             timeoutSeconds: 3
             periodSeconds: 10
             failureThreshold: 5
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: healthz
+            initialDelaySeconds: 10
+            timeoutSeconds: 3
+            periodSeconds: 10
+            failureThreshold: 5
           {{- with .Values.resources }}
           resources: {{ toYaml . | nindent 12 }}
           {{- end }}
@@ -113,8 +127,8 @@ spec:
             {{- if .Values.extraCreateMetadata }}
             - --extra-create-metadata
             {{- end}}
-            - --enable-leader-election
-            - --leader-election-type=leases
+            - --leader-election=true
+            - --timeout=30s
           env:
             - name: ADDRESS
               value: /var/lib/csi/sockets/pluginproxy/csi.sock
@@ -130,6 +144,7 @@ spec:
             - --csi-address=$(ADDRESS)
             - --v=10
             - --leader-election=true
+            - --timeout=30s
           env:
             - name: ADDRESS
               value: /var/lib/csi/sockets/pluginproxy/csi.sock
@@ -162,6 +177,7 @@ spec:
           args:
             - --csi-address=$(ADDRESS)
             - --v=10
+            - --timeout=30s
           env:
             - name: ADDRESS
               value: /var/lib/csi/sockets/pluginproxy/csi.sock

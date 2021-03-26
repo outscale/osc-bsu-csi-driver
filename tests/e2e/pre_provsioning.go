@@ -80,7 +80,7 @@ var _ = Describe("[ebs-csi-e2e] [single-az] Pre-Provisioned", func() {
 			Tags:             map[string]string{osccloud.VolumeNameTagKey: dummyVolumeName},
 		}
 		var err error
-		cloud, err = osccloud.NewCloud(region)
+		cloud, err = osccloud.NewCloudWithoutMetadata(region)
 		if err != nil {
 			Fail(fmt.Sprintf("could not get NewCloud: %v", err))
 		}

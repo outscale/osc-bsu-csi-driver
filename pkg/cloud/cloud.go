@@ -1151,3 +1151,27 @@ func (c *cloud) randomAvailabilityZone(ctx context.Context, region string) (stri
 
 	return zones[0], nil
 }
+
+// NewCloudWithoutMetadata to instantiate a cloud object outside osc instances
+func NewCloudWithoutMetadata(region string) (Cloud, error) {
+	if len(region) == 0 {
+		return nil, fmt.Errorf("could not get region")
+	}
+
+	client := &OscClient{}
+	client.config = osc.NewConfiguration()
+	client.config.Debug = true
+	client.config.BasePath, _ = client.config.ServerUrl(0, map[string]string{"region": region})
+	client.api = osc.NewAPIClient(client.config)
+	client.auth = context.WithValue(context.Background(), osc.ContextAWSv4, osc.AWSv4{
+		AccessKey: os.Getenv("OSC_ACCESS_KEY"),
+		SecretKey: os.Getenv("OSC_SECRET_KEY"),
+	})
+
+	return &cloud{
+		region:   region,
+		metadata: nil,
+		dm:       dm.NewDeviceManager(),
+		client:   client,
+	}, nil
+}

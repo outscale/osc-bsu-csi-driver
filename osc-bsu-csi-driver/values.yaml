@@ -9,6 +9,9 @@ image:
   tag: v0.0.8beta
   pullPolicy: IfNotPresent
 
+# set the verbosity level of plugins
+verbosity: 2
+
 backoff:
 # integer in second defining initial duration
   duration: "1"

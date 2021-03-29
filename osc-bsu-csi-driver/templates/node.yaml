@@ -58,7 +58,7 @@ spec:
             - node
             - --endpoint=$(CSI_ENDPOINT)
             - --logtostderr
-            - --v=10
+            - --v={{ .Values.verbosity }}
           env:
             - name: CSI_ENDPOINT
               value: unix:/csi/csi.sock
@@ -96,7 +96,7 @@ spec:
           args:
             - --csi-address=$(ADDRESS)
             - --kubelet-registration-path=$(DRIVER_REG_SOCK_PATH)
-            - --v=10
+            - --v={{ .Values.verbosity }}
           env:
             - name: ADDRESS
               value: /csi/csi.sock

@@ -70,7 +70,8 @@ Following sections are Kubernetes specific. If you are Kubernetes user, use foll
 ## Installation
 
 - pre-installed k8s platform under outscale cloud with 3 masters and 2 workers on vm with `tinav2.c2r4p3` type
-- prepare the machine from which you will run deploy the osc ebs csi plugin
+- prepare the machine from which you will run deploy the osc bsu csi plugin
+- The bsu csi plugin needs AK/SK to interact with Outscale BSU API, so you can create an AK/SK using an eim user, for example, with a proper permission by attaching [a policy like]  (./example-eim-policy.json) 
 
 ```
     # ENV VARS 

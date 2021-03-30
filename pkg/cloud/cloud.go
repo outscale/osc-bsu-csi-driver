@@ -501,7 +501,7 @@ func (c *cloud) DetachDisk(ctx context.Context, volumeID, nodeID string) error {
 		volume, err := c.getVolume(ctx, &request)
 		klog.Infof("Check Volume state before detaching volume: %+v err: %+v",
 			volume, err)
-		if err == nil && reflect.DeepEqual(volume, osc.Volume{}) {
+		if err == nil && !reflect.DeepEqual(volume, osc.Volume{}) {
 			if volume.State != "" && volume.State == "available" {
 				klog.Warningf("Tolerate DetachDisk called on available volume: %s on %s",
 					volumeID, nodeID)

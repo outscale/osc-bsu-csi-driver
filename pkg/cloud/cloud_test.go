@@ -20,6 +20,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"reflect"
 	"strings"
 	"testing"
 
@@ -876,5 +877,149 @@ func newDescribeInstancesOutput(nodeID string) osc.ReadVmsResponse {
 		Vms: []osc.Vm{
 			{VmId: nodeID},
 		},
+	}
+}
+
+func TestResizeDisk(t *testing.T) {
+	testCases := []struct {
+		name                string
+		volumeID            string
+		existingVolume      osc.Volume
+		existingVolumeError error
+		modifiedVolume      osc.UpdateVolumeResponse
+		modifiedVolumeError error
+		reqSizeGiB          int32
+		expErr              error
+	}{
+		{
+			name:     "success: normal",
+			volumeID: "vol-test",
+			existingVolume: osc.Volume{
+				VolumeId:      "vol-test",
+				Size:          1,
+				SubregionName: defaultZone,
+				State:         "available",
+			},
+			modifiedVolume: osc.UpdateVolumeResponse{
+				Volume: osc.Volume{
+					VolumeId:      "vol-test",
+					Size:          2,
+					SubregionName: defaultZone,
+				},
+			},
+			reqSizeGiB: 2,
+			expErr:     nil,
+		},
+		{
+			name:     "success: normal modifying state",
+			volumeID: "vol-test",
+			existingVolume: osc.Volume{
+				VolumeId:      "vol-test",
+				Size:          1,
+				SubregionName: defaultZone,
+				State:         "available",
+			},
+			modifiedVolume: osc.UpdateVolumeResponse{
+				Volume: osc.Volume{
+					VolumeId:      "vol-test",
+					Size:          2,
+					SubregionName: defaultZone,
+				},
+			},
+			reqSizeGiB: 2,
+			expErr:     nil,
+		},
+		{
+			name:     "success: with previous expansion",
+			volumeID: "vol-test",
+			existingVolume: osc.Volume{
+				VolumeId:      "vol-test",
+				Size:          2,
+				SubregionName: defaultZone,
+				State:         "available",
+			},
+			reqSizeGiB: 2,
+			expErr:     nil,
+		},
+		{
+			name:                "fail: volume doesn't exist",
+			volumeID:            "vol-test",
+			existingVolumeError: fmt.Errorf("InvalidVolume.NotFound"),
+			reqSizeGiB:          2,
+			expErr:              fmt.Errorf("ResizeDisk generic error"),
+		},
+		{
+			name:     "failure: volume in modifying state",
+			volumeID: "vol-test",
+			existingVolume: osc.Volume{
+				VolumeId:      "vol-test",
+				Size:          1,
+				SubregionName: defaultZone,
+			},
+			reqSizeGiB: 2,
+			expErr:     fmt.Errorf("ResizeDisk generic error"),
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			mockCtrl := gomock.NewController(t)
+			mockEC2 := mocks.NewMockOscInterface(mockCtrl)
+			c := newCloud(mockEC2)
+			ctx := context.Background()
+
+			if !reflect.DeepEqual(tc.existingVolume, osc.Volume{}) || tc.existingVolumeError != nil {
+				mockEC2.EXPECT().ReadVolumes(gomock.Eq(ctx), gomock.Any()).Return(
+					osc.ReadVolumesResponse{
+						Volumes: []osc.Volume{
+							tc.existingVolume,
+						},
+					},
+					nil,
+					tc.existingVolumeError,
+				)
+
+				if tc.expErr == nil && int32(tc.existingVolume.Size) != int32(tc.reqSizeGiB) {
+					resizedVolume := osc.Volume{
+						VolumeId:      "vol-test",
+						Size:          tc.reqSizeGiB,
+						SubregionName: defaultZone,
+						State:         "available",
+					}
+					mockEC2.EXPECT().ReadVolumes(gomock.Eq(ctx), gomock.Any()).Return(
+						osc.ReadVolumesResponse{
+							Volumes: []osc.Volume{
+								resizedVolume,
+							},
+						},
+						nil,
+						tc.existingVolumeError,
+					)
+				}
+			}
+			if !reflect.DeepEqual(tc.modifiedVolume, osc.UpdateVolumeResponse{}) || tc.modifiedVolumeError != nil {
+				mockEC2.EXPECT().UpdateVolume(gomock.Eq(ctx), gomock.Any()).Return(
+					tc.modifiedVolume,
+					nil,
+					tc.modifiedVolumeError).AnyTimes()
+			}
+
+			newSize, err := c.ResizeDisk(ctx, tc.volumeID, util.GiBToBytes(int64(tc.reqSizeGiB)))
+			if err != nil {
+				if tc.expErr == nil {
+					t.Fatalf("ResizeDisk() failed: expected no error, got: %v", err)
+				}
+			} else {
+				if tc.expErr != nil {
+					t.Fatal("ResizeDisk() failed: expected error, got nothing")
+				} else {
+					if int32(tc.reqSizeGiB) != int32(newSize) {
+						t.Fatalf("ResizeDisk() failed: expected capacity %d, got %d", tc.reqSizeGiB, newSize)
+					}
+				}
+			}
+
+			mockCtrl.Finish()
+		})
 	}
 }

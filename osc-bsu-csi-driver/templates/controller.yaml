@@ -128,7 +128,7 @@ spec:
             - --extra-create-metadata
             {{- end}}
             - --leader-election=true
-            - --timeout=30s
+            - --timeout={{ .Values.timeout }}
           env:
             - name: ADDRESS
               value: /var/lib/csi/sockets/pluginproxy/csi.sock
@@ -144,7 +144,7 @@ spec:
             - --csi-address=$(ADDRESS)
             - --v={{ .Values.verbosity }}
             - --leader-election=true
-            - --timeout=30s
+            - --timeout={{ .Values.timeout }}
           env:
             - name: ADDRESS
               value: /var/lib/csi/sockets/pluginproxy/csi.sock
@@ -177,7 +177,7 @@ spec:
           args:
             - --csi-address=$(ADDRESS)
             - --v={{ .Values.verbosity }}
-            - --timeout=30s
+            - --timeout={{ .Values.timeout }}
           env:
             - name: ADDRESS
               value: /var/lib/csi/sockets/pluginproxy/csi.sock

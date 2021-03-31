@@ -12,6 +12,9 @@ image:
 # set the verbosity level of plugins
 verbosity: 2
 
+# Timeout for sidecars
+timeout: 30s
+
 backoff:
 # integer in second defining initial duration
   duration: "1"

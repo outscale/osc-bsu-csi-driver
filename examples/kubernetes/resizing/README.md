@@ -29,7 +29,7 @@ Save the result at the end of the edit.
 ```
 kubectl get pv
 ```
-You should see that both should have the new value relfected in the capacity fields.
+You should see the new value relfected in the capacity fields.
 
 
 7. Cleanup resources:

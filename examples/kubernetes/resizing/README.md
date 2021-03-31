@@ -25,7 +25,7 @@ kubectl get pv
 ```
 Save the result at the end of the edit.
 
-5. Verify that both the persistence volume and persistence volume claim are resized:
+5. Verify that the persistence volume are resized:
 ```
 kubectl get pv
 ```

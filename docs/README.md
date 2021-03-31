@@ -16,8 +16,8 @@ The Outscale Block Storage Unit Container Storage Interface (CSI) Driver provide
 
 ## Features
 The following CSI gRPC calls are implemented:
-* **Controller Service**: CreateVolume, DeleteVolume, ControllerPublishVolume, ControllerUnpublishVolume, ControllerGetCapabilities, ValidateVolumeCapabilities, CreateSnapshot, DeleteSnapshot, ListSnapshots
-* **Node Service**: NodeStageVolume, NodeUnstageVolume, NodePublishVolume, NodeUnpublishVolume, NodeGetCapabilities, NodeGetInfo
+* **Controller Service**: CreateVolume, DeleteVolume, ControllerPublishVolume, ControllerUnpublishVolume, ControllerGetCapabilities, ControllerExpandVolume, ValidateVolumeCapabilities, CreateSnapshot, DeleteSnapshot, ListSnapshots
+* **Node Service**: NodeStageVolume, NodeUnstageVolume, NodePublishVolume, NodeUnpublishVolume, NodeExpandVolume, NodeGetCapabilities, NodeGetInfo, NodeGetVolumeStats
 * **Identity Service**: GetPluginInfo, GetPluginCapabilities, Probe
 
 ### CreateVolume Parameters
@@ -46,7 +46,7 @@ Following sections are Kubernetes specific. If you are Kubernetes user, use foll
 ## Container Images:
 |OSC BSU CSI Driver Version | Image                                     |
 |---------------------------|-------------------------------------------|
-| OSC-MIGRATION branch      |outscale/osc-ebs-csi-driver:v0.0.6beta     |
+| OSC-MIGRATION branch      |outscale/osc-ebs-csi-driver:v0.0.9beta     |
 
 ## Features
 * **Static Provisioning** - create a new or migrating existing BSU volumes, then create persistence volume (PV) from the BSU volume and consume the PV from container using persistence volume claim (PVC).
@@ -71,7 +71,7 @@ Following sections are Kubernetes specific. If you are Kubernetes user, use foll
 
 - pre-installed k8s platform under outscale cloud with 3 masters and 2 workers on vm with `tinav2.c2r4p3` type
 - prepare the machine from which you will run deploy the osc bsu csi plugin
-- The bsu csi plugin needs AK/SK to interact with Outscale BSU API, so you can create an AK/SK using an eim user, for example, with a proper permission by attaching [a policy like]  (./example-eim-policy.json) 
+- The bsu csi plugin needs AK/SK to interact with Outscale BSU API, so you can create an AK/SK using an eim user, for example, with a proper permission by attaching [a policy like](./example-eim-policy.json) 
 
 ```
     # ENV VARS 
@@ -89,7 +89,7 @@ Following sections are Kubernetes specific. If you are Kubernetes user, use foll
     
     ## deploy the pod
     export IMAGE_NAME=outscale/osc-ebs-csi-driver
-    export IMAGE_TAG="v0.0.8beta"
+    export IMAGE_TAG="v0.0.9beta"
     git clone git@github.com:outscale-dev/osc-bsu-csi-driver.git
     cd osc-bsu-csi-driver
     helm uninstall osc-bsu-csi-driver  --namespace kube-system

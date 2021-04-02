@@ -47,7 +47,7 @@ require (
 	github.com/nxadm/tail v1.4.6 // indirect
 	github.com/onsi/ginkgo v1.14.2
 	github.com/onsi/gomega v1.10.1
-	github.com/outscale/osc-sdk-go/osc v0.0.0-20210118165328-5ef9fa15366b
+	github.com/outscale/osc-sdk-go/osc v0.0.0-20210317154930-f27e09c295b2
 	github.com/polyfloyd/go-errorlint v0.0.0-20201006195004-351e25ade6e3 // indirect
 	github.com/ryancurrah/gomodguard v1.1.0 // indirect
 	github.com/ryanrolds/sqlclosecheck v0.3.0 // indirect

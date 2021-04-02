@@ -144,7 +144,7 @@ func (t *DynamicallyProvisionedStatsPodTest) Run(client clientset.Interface, nam
 	stdout := ""
 	stderr := ""
 	metrics_kubelet_volume_stats := ""
-	for i := 0; i < 10; i++ {
+	for i := 0; i < 20; i++ {
 		fmt.Printf("Retries no %d", i)
 		time.Sleep(10 * time.Second)
 		cmd := []string{
@@ -168,7 +168,7 @@ func (t *DynamicallyProvisionedStatsPodTest) Run(client clientset.Interface, nam
 	By("checking volume stats using df ")
 	//df --output=avail,size,itotal,iavail,iused,used --block-size=1 /mnt/test-1 | tail -1 | tr -s ' ' > /metrics.df
 	df_stats := ""
-	for i := 0; i < 3; i++ {
+	for i := 0; i < 10; i++ {
 		fmt.Printf("Retries no %d", i)
 		time.Sleep(10 * time.Second)
 		cmd := []string{

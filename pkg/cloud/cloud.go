@@ -195,6 +195,7 @@ type OscInterface interface {
 	DeleteSnapshot(ctx context.Context, localVarOptionals *osc.DeleteSnapshotOpts) (osc.DeleteSnapshotResponse, *_nethttp.Response, error)
 	ReadSubregions(ctx context.Context, localVarOptionals *osc.ReadSubregionsOpts) (osc.ReadSubregionsResponse, *_nethttp.Response, error)
 	ReadVms(ctx context.Context, localVarOptionals *osc.ReadVmsOpts) (osc.ReadVmsResponse, *_nethttp.Response, error)
+	UpdateVolume(ctx context.Context, localVarOptionals *osc.UpdateVolumeOpts) (osc.UpdateVolumeResponse, *_nethttp.Response, error)
 }
 
 type OscClient struct {
@@ -244,6 +245,10 @@ func (client *OscClient) ReadSubregions(ctx context.Context, localVarOptionals *
 
 func (client *OscClient) ReadVms(ctx context.Context, localVarOptionals *osc.ReadVmsOpts) (osc.ReadVmsResponse, *_nethttp.Response, error) {
 	return client.api.VmApi.ReadVms(client.auth, localVarOptionals)
+}
+
+func (client *OscClient) UpdateVolume(ctx context.Context, localVarOptionals *osc.UpdateVolumeOpts) (osc.UpdateVolumeResponse, *_nethttp.Response, error) {
+	return client.api.VolumeApi.UpdateVolume(client.auth, localVarOptionals)
 }
 
 var _ OscInterface = &OscClient{}
@@ -501,7 +506,7 @@ func (c *cloud) DetachDisk(ctx context.Context, volumeID, nodeID string) error {
 		volume, err := c.getVolume(ctx, &request)
 		klog.Infof("Check Volume state before detaching volume: %+v err: %+v",
 			volume, err)
-		if err == nil && reflect.DeepEqual(volume, osc.Volume{}) {
+		if err == nil && !reflect.DeepEqual(volume, osc.Volume{}) {
 			if volume.State != "" && volume.State == "available" {
 				klog.Warningf("Tolerate DetachDisk called on available volume: %s on %s",
 					volumeID, nodeID)
@@ -1118,11 +1123,85 @@ func (c *cloud) waitForVolume(ctx context.Context, volumeID string) error {
 	return err
 }
 
-//MODIFICATION NOT SUPPORTED
 // ResizeDisk resizes an BSU volume in GiB increments, rouding up to the next possible allocatable unit.
 // It returns the volume size after this call or an error if the size couldn't be determined.
 func (c *cloud) ResizeDisk(ctx context.Context, volumeID string, newSizeBytes int64) (int64, error) {
-	return 0, fmt.Errorf("could not modify OSC volume, resize is not supported 'https://wiki.outscale.net/display/EN/Extending+the+Storage+Capacity+of+a+Volume'")
+	request := osc.ReadVolumesOpts{
+		ReadVolumesRequest: optional.NewInterface(
+			osc.ReadVolumesRequest{
+				Filters: osc.FiltersVolume{
+					VolumeIds: []string{volumeID},
+				},
+			}),
+	}
+	volume, err := c.getVolume(ctx, &request)
+	klog.Infof("Check Volume state before resizing volume: %+v err: %+v", volume, err)
+	if err != nil || reflect.DeepEqual(volume, osc.Volume{}) {
+		klog.Errorf("Empty or error during getting the volume %s", volumeID)
+		return 0, err
+	}
+
+	if volume.State != "available" {
+		return 0, fmt.Errorf("could not modify OSC volume in non 'available' state: %v", volume)
+	}
+
+	//resizes in chunks of GiB (not GB)
+	newSizeGiB := int32(util.RoundUpGiB(newSizeBytes))
+	oldSizeGiB := int32(volume.Size)
+
+	// Even if existing volume size is greater than user requested size, we should ensure that there are no pending
+	// volume modifications objects or volume has completed previously issued modification request.
+	if oldSizeGiB >= newSizeGiB {
+		klog.V(5).Infof("Volume %q current size (%d GiB) is greater or equal to the new size (%d GiB)", volumeID, oldSizeGiB, newSizeGiB)
+		return int64(oldSizeGiB), nil
+	}
+
+	klog.Infof("expanding volume %q to size %d", volumeID, newSizeGiB)
+	req := osc.UpdateVolumeOpts{
+		UpdateVolumeRequest: optional.NewInterface(
+			osc.UpdateVolumeRequest{
+				Size:     int32(newSizeGiB),
+				VolumeId: volumeID,
+			}),
+	}
+
+	response, httpRes, err := c.client.UpdateVolume(ctx, &req)
+	klog.Infof("Debug response UpdateVolume: response(%+v), err(%v), httpRes(%v)", response, err, httpRes)
+	if err != nil {
+		if httpRes != nil {
+			return 0, fmt.Errorf(httpRes.Status)
+		}
+		return 0, fmt.Errorf("could not modify volume %q: %v", volumeID, err)
+	}
+	delay := 5
+	klog.Infof("Waiting %v sec for the effective modification.", delay)
+	time.Sleep(time.Duration(delay) * time.Second)
+	return c.checkDesiredSize(ctx, volumeID, int64(newSizeGiB))
+}
+
+// Checks for desired size on volume by also verifying volume size by describing volume.
+// This is to get around potential eventual consistency problems with describing volume modifications
+// objects and ensuring that we read two different objects to verify volume state.
+func (c *cloud) checkDesiredSize(ctx context.Context, volumeID string, newSizeGiB int64) (int64, error) {
+	request := osc.ReadVolumesOpts{
+		ReadVolumesRequest: optional.NewInterface(
+			osc.ReadVolumesRequest{
+				Filters: osc.FiltersVolume{
+					VolumeIds: []string{volumeID},
+				},
+			}),
+	}
+	volume, err := c.getVolume(ctx, &request)
+	if err != nil {
+		return 0, err
+	}
+
+	//resizes in chunks of GiB (not GB)
+	oldSizeGiB := int32(volume.Size)
+	if oldSizeGiB >= int32(newSizeGiB) {
+		return int64(oldSizeGiB), nil
+	}
+	return int64(oldSizeGiB), fmt.Errorf("volume %q is still being expanded to %d size", volumeID, newSizeGiB)
 }
 
 // randomAvailabilityZone returns a random zone from the given region

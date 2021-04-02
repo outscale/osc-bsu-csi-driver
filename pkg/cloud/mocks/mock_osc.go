@@ -212,3 +212,19 @@ func (mr *MockOscInterfaceMockRecorder) ReadVms(ctx, localVarOptionals interface
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ReadVms", reflect.TypeOf((*MockOscInterface)(nil).ReadVms), ctx, localVarOptionals)
 }
+
+// UpdateVolume mocks base method
+func (m *MockOscInterface) UpdateVolume(ctx context.Context, localVarOptionals *osc.UpdateVolumeOpts) (osc.UpdateVolumeResponse, *http.Response, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateVolume", ctx, localVarOptionals)
+	ret0, _ := ret[0].(osc.UpdateVolumeResponse)
+	ret1, _ := ret[1].(*http.Response)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
+}
+
+// UpdateVolume indicates an expected call of UpdateVolume
+func (mr *MockOscInterfaceMockRecorder) UpdateVolume(ctx, localVarOptionals interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateVolume", reflect.TypeOf((*MockOscInterface)(nil).UpdateVolume), ctx, localVarOptionals)
+}

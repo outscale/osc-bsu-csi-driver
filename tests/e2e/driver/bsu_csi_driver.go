@@ -41,7 +41,7 @@ func InitEbsCSIDriver() PVTestDriver {
 	}
 }
 
-func (d *bsuCSIDriver) GetDynamicProvisionStorageClass(parameters map[string]string, mountOptions []string, reclaimPolicy *v1.PersistentVolumeReclaimPolicy, bindingMode *storagev1.VolumeBindingMode, allowedTopologyValues []string, namespace string) *storagev1.StorageClass {
+func (d *bsuCSIDriver) GetDynamicProvisionStorageClass(parameters map[string]string, mountOptions []string, reclaimPolicy *v1.PersistentVolumeReclaimPolicy, volumeExpansion *bool, bindingMode *storagev1.VolumeBindingMode, allowedTopologyValues []string, namespace string) *storagev1.StorageClass {
 	provisioner := d.driverName
 	generateName := fmt.Sprintf("%s-%s-dynamic-sc-", namespace, provisioner)
 	allowedTopologies := []v1.TopologySelectorTerm{}
@@ -57,7 +57,7 @@ func (d *bsuCSIDriver) GetDynamicProvisionStorageClass(parameters map[string]str
 			},
 		}
 	}
-	return getStorageClass(generateName, provisioner, parameters, mountOptions, reclaimPolicy, bindingMode, allowedTopologies)
+	return getStorageClass(generateName, provisioner, parameters, mountOptions, reclaimPolicy, volumeExpansion, bindingMode, allowedTopologies)
 }
 
 func (d *bsuCSIDriver) GetVolumeSnapshotClass(namespace string) *v1beta1.VolumeSnapshotClass {

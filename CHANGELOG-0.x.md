@@ -12,3 +12,10 @@
 ## Notable changes
 * Implement NodeGetVolumeStats
 
+
+# v0.0.9beta
+## Notable changes
+* Implement ControllerExpandVolume using UpdateVolume api call
+* Fix regression in detach disk toleration
+* customise sidecars conatiner verbosity and timeout
+

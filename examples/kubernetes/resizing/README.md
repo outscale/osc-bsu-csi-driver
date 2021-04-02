@@ -1,41 +1,36 @@
 ## Volume Resizing
-This example shows how to resize EBS persistence volume using volume resizing features.
+This example shows how to resize BSU persistence volume using volume resizing features.
 
 **Note**
-1. CSI volume resizing is still alpha as of Kubernetes 1.15
-2. EBS has a limit of one volume modification every 6 hours. Refer to [EBS documentation](https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_ModifyVolume.html) for more details.
+- BSU has a limitation with volume modification only when state is available. Refer to [API documentation](https://docs.outscale.com/api#updatevolume) for more details.
 
 ## Usage
-1. Add `allowVolumeExpansion: true` in the StorageClass spec in [example manifest](./spec/example.yaml) to enable volume expansion. You can only expand a PVC if its storage class’s allowVolumeExpansion field is set to true
+1. Add `allowVolumeExpansion: true` in the StorageClass spec in [example manifest](./spec/sc.yaml) to enable volume expansion. You can only expand a PVC if its storage class’s allowVolumeExpansion field is set to true
 
 2. Deploy the example:
-```sh
+
+```
 kubectl apply -f specs/
 ``` 
 
-3. Verify the volume is created and Pod is running:
-```sh
-kubectl get pv
-kubectl get po app
+3. Verify the volume is created:
+
+```
+kubectl get pv 
 ```
 
 4. Expand the volume size by increasing the capacity in PVC's `spec.resources.requests.storage`:
-```sh
-kubectl edit pvc ebs-claim
+```
+ kubectl edit pvc -n resizing-p ebs-claim
 ```
 Save the result at the end of the edit.
 
-5. Verify that both the persistence volume and persistence volume claim are resized:
-```sh
+5. Verify that the persistence volume are resized:
+```
 kubectl get pv
-kubectl get pvc
 ```
-You should see that both should have the new value relfected in the capacity fields.
+You should see the new value relfected in the capacity fields.
 
-6. Verify that the application is continuously running without any interruption:
-```sh
-kubectl exec -it app cat /data/out.txt
-```
 
 7. Cleanup resources:
 ```

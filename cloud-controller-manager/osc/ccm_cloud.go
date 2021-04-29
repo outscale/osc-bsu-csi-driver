@@ -1629,9 +1629,11 @@ func (c *Cloud) EnsureLoadBalancerDeleted(ctx context.Context, clusterName strin
 		return nil
 	}
 
-	securityGroupsItem := []string{}
+	loadBalancerSGs := []string{}
 	if len(lb.SecurityGroups) == 0 && c.vpcID == "" {
-		securityGroupsItem = append(securityGroupsItem, DefaultSrcSgName)
+		loadBalancerSGs = append(loadBalancerSGs, DefaultSrcSgName)
+	} else {
+		loadBalancerSGs = aws.StringValueSlice(lb.SecurityGroups)
 	}
 
 	{
@@ -1647,7 +1649,7 @@ func (c *Cloud) EnsureLoadBalancerDeleted(ctx context.Context, clusterName strin
 		}
 
 		// De-authorize the load balancer security group from the instances security group
-		err = c.updateInstanceSecurityGroupsForLoadBalancer(lb, nil, securityGroupsItem)
+		err = c.updateInstanceSecurityGroupsForLoadBalancer(lb, nil, loadBalancerSGs)
 		if err != nil {
 			klog.Errorf("Error deregistering load balancer from instance security groups: %q", err)
 			return err
@@ -1671,8 +1673,6 @@ func (c *Cloud) EnsureLoadBalancerDeleted(ctx context.Context, clusterName strin
 		// Delete the security group(s) for the load balancer
 		// Note that this is annoying: the load balancer disappears from the API immediately, but it is still
 		// deleting in the background.  We get a DependencyViolation until the load balancer has deleted itself
-
-		var loadBalancerSGs = securityGroupsItem
 
 		describeRequest := &ec2.DescribeSecurityGroupsInput{}
 		describeRequest.Filters = []*ec2.Filter{

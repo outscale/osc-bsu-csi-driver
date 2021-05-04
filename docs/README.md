@@ -54,7 +54,6 @@ Following sections are Kubernetes specific. If you are Kubernetes user, use foll
 * **Mount Option** - mount options could be specified in persistence volume (PV) to define how the volume should be mounted.
 * **Block Volume** (beta since 1.14) - consumes the BSU volume as a raw block device for latency sensitive application eg. MySql
 * **Volume Snapshot** (beta) - creating volume snapshots and restore volume from snapshot.
-* **Volume Resizing**  - Not supported yet.
 * **Volume Encryption** - Not supported yet.
 
 ## Prerequisites

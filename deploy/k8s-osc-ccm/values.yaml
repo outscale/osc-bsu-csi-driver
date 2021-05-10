@@ -6,7 +6,7 @@ replicaCount: 1
 
 image:
   repository: outscale/cloud-provider-osc
-  tag: v0.0.6beta
+  tag: v0.0.7beta
   pullPolicy: IfNotPresent
 
 verbose: ""

@@ -5,3 +5,8 @@
 * Support the InstanceV2 interface
 * Add ginkgo e2e tests
 
+# v0.0.7beta
+
+### Notable changes
+* Fix SG removals under vpc
+

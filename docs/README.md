@@ -54,18 +54,18 @@ Following sections are Kubernetes specific. If you are Kubernetes user, use foll
 * **Mount Option** - mount options could be specified in persistence volume (PV) to define how the volume should be mounted.
 * **Block Volume** (beta since 1.14) - consumes the BSU volume as a raw block device for latency sensitive application eg. MySql
 * **Volume Snapshot** (beta) - creating volume snapshots and restore volume from snapshot.
-* **Volume Resizing**  - Not supported yet.
 * **Volume Encryption** - Not supported yet.
 
 ## Prerequisites
 
 * Get yourself familiar with how to setup Kubernetes on AWS and have a working Kubernetes cluster:
+  * To Use fsGroupPolicy field kor k8s version greater than or equal to 1.19.x start `kube-apiserver` and `kubelet` with `CSIVolumeFSGroupPolicy` feature gate enabled `--feature-gates=CSIVolumeFSGroupPolicy=true`
   * To Enable snapshot.storage.k8s.io/v1beta1 please follow :
-    * https://kubernetes.io/blog/2019/12/09/kubernetes-1-17-feature-cis-volume-snapshot-beta/
+   	* https://kubernetes.io/blog/2019/12/09/kubernetes-1-17-feature-cis-volume-snapshot-beta/
   * For k8s version lower than v1.15.4
-   * Enable flag `--allow-privileged=true` for `kubelet` and `kube-apiserver`
-   * Enable `kube-apiserver` feature gates `--feature-gates=CSINodeInfo=true,CSIDriverRegistry=true,CSIBlockVolume=true,VolumeSnapshotDataSource=true`
-   * Enable `kubelet` feature gates `--feature-gates=CSINodeInfo=true,CSIDriverRegistry=true,CSIBlockVolume=true`
+   	* Enable flag `--allow-privileged=true` for `kubelet` and `kube-apiserver`
+   	* Enable `kube-apiserver` feature gates `--feature-gates=CSINodeInfo=true,CSIDriverRegistry=true,CSIBlockVolume=true,VolumeSnapshotDataSource=true`
+   	* Enable `kubelet` feature gates `--feature-gates=CSINodeInfo=true,CSIDriverRegistry=true,CSIBlockVolume=true`
 
 ## Installation
 

@@ -112,3 +112,6 @@ serviceAccount:
     annotations: {}
   snapshot:
     annotations: {}
+
+csiDriver:
+  fsGroupPolicy: File

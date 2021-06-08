@@ -19,3 +19,6 @@
 * Fix regression in detach disk toleration
 * customise sidecars conatiner verbosity and timeout
 
+# v0.0.10beta
+## Notable changes
+* Add fsGroupPolicy field to CSIDriver object and customize it with chart values

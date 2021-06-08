@@ -58,8 +58,8 @@ Following sections are Kubernetes specific. If you are Kubernetes user, use foll
 
 ## Prerequisites
 
-* Get yourself familiar with how to setup Kubernetes on AWS and have a working Kubernetes cluster:
-  * To Use fsGroupPolicy field kor k8s version greater than or equal to 1.19.x start `kube-apiserver` and `kubelet` with `CSIVolumeFSGroupPolicy` feature gate enabled `--feature-gates=CSIVolumeFSGroupPolicy=true`
+* Get yourself familiar with how to setup Kubernetes and have a working Kubernetes cluster:
+  * To Use fsGroupPolicy field kor k8s version greater than or equal to 1.19.x start `kube-apiserver` and `kubelet` with `CSIVolumeFSGroupPolicy` feature gate enabled `--feature-gates=CSIVolumeFSGroupPolicy=true` and to control the behaviour of this field use the [fsGroupPolicy](https://github.com/outscale-dev/osc-bsu-csi-driver/blob/OSC-MIGRATION/osc-bsu-csi-driver/values.yaml#L117) chart values, detailled docs are [here](https://kubernetes-csi.github.io/docs/support-fsgroup.html)
   * To Enable snapshot.storage.k8s.io/v1beta1 please follow :
    	* https://kubernetes.io/blog/2019/12/09/kubernetes-1-17-feature-cis-volume-snapshot-beta/
   * For k8s version lower than v1.15.4

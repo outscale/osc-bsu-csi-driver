@@ -22,3 +22,7 @@
 # v0.0.10beta
 ## Notable changes
 * Add fsGroupPolicy field to CSIDriver object and customize it with chart values
+
+# v0.0.11beta
+## Notable changes
+* Add fsGroupPolicy specific e2e test

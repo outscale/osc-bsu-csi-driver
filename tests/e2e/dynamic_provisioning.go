@@ -16,6 +16,7 @@ package e2e
 
 import (
 	"fmt"
+	"log"
 	"math/rand"
 	"os"
 	"strings"
@@ -425,6 +426,67 @@ var _ = Describe("[ebs-csi-e2e] [single-az] Dynamic Provisioning", func() {
 			Pod:       pod,
 		}
 		test.Run(cs, ns)
+	})
+
+	It("FSGROUP test should create a volume and check if pod security context is applied", func() {
+		fsGroup := int64(5000)
+		runAsGroup := int64(4000)
+		runAsUser := int64(2000)
+		podSecurityContext := v1.PodSecurityContext{
+			RunAsUser:  &runAsUser,
+			RunAsGroup: &runAsGroup,
+			FSGroup:    &fsGroup,
+		}
+		podSc, err := podSecurityContext.Marshal()
+		if err != nil {
+			Fail(fmt.Sprintf("error encoding: %v, %v", podSecurityContext, err))
+		}
+		allowPrivilegeEscalation := false
+		securityContext := v1.SecurityContext{
+			AllowPrivilegeEscalation: &allowPrivilegeEscalation,
+		}
+		sc, err := securityContext.Marshal()
+		if err != nil {
+			Fail(fmt.Sprintf("error encoding: %v, %v", securityContext, err))
+		}
+
+		pod := testsuites.PodDetails{
+			Cmd: "echo 'hello world' > /mnt/test-1/data && grep 'hello world' /mnt/test-1/data && while true; do echo running ; sleep 1; done",
+			Volumes: []testsuites.VolumeDetails{
+				{
+					VolumeType: osccloud.VolumeTypeGP2,
+					FSType:     bsucsidriver.FSTypeExt4,
+					ClaimSize:  driver.MinimumSizeForVolumeType(osccloud.VolumeTypeGP2),
+					VolumeMount: testsuites.VolumeMountDetails{
+						NameGenerate:      "test-volume-",
+						MountPathGenerate: "/mnt/test-",
+					},
+				},
+			},
+			CustomizedPod: []string{
+				string(podSc),
+				string(sc),
+			},
+		}
+		podCmds := []testsuites.PodCmds{
+			{
+				Cmd: []string{
+					"stat",
+					"-c",
+					"%g",
+					"/mnt/test-1",
+				},
+				ExpectedString: fmt.Sprintf("%d", fsGroup),
+			},
+		}
+		test := testsuites.DynamicallyProvisionedCustomPodTest{
+			CSIDriver: ebsDriver,
+			Pod:       pod,
+			PodCmds:   podCmds,
+		}
+		log.Printf("test: %+v\n", test)
+
+		test.Run(cs, ns, f)
 	})
 })
 

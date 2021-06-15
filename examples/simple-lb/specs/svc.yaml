@@ -5,7 +5,9 @@ metadata:
   namespace: simple-lb
   labels:
     app: echoheaders
-
+  annotations:
+    service.beta.kubernetes.io/osc-load-balancer-name-length: "20"
+    service.beta.kubernetes.io/osc-load-balancer-name: "simple-lb-test"
 spec:
   ports:
   - port: 80

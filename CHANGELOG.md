@@ -10,3 +10,7 @@
 ### Notable changes
 * Fix SG removals under vpc
 
+# v0.0.8beta
+
+### Notable changes
+* Make LB name configurable using annotations

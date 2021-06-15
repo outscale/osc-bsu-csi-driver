@@ -13,17 +13,17 @@ This project allows a Kubernetes cluster to provision, monitor and remove Outsca
 
 ## Build image
 
-``` 
+```
 	make build-image  IMAGE=osc/cloud-provider-osc IMAGE_VERSION=version
 	make tag-image	  IMAGE=osc/cloud-provider-osc IMAGE_VERSION=version REGISTRY=registry.hub 
 	make push-release IMAGE=osc/cloud-provider-osc IMAGE_VERSION=version REGISTRY=registry.hub 
-``` 
-
+```
 
 ## Container Images:
+
 |OSC BSU CSI Driver Version | Image                                     |
 |---------------------------|-------------------------------------------|
-|OSC-MIGRATION branch       |outscale/cloud-provider-osc:v0.0.6beta     |
+|OSC-MIGRATION branch       |outscale/cloud-provider-osc:v0.0.8beta     |
 
 
 ## Flags
@@ -78,13 +78,15 @@ Please go through [DEPLOY](./deploy/README.md)
 ```
  > **Else** an LB will be created automatically and attached to all Nodes
 
+## Annotations for Service of type LoadBalancer
+- To customise LB name or LB name len 2 new annotations has be added  service.beta.kubernetes.io/osc-load-balancer-name-length and service.beta.kubernetes.io/osc-load-balancer-name 
+- For detailled doc about annotations please go [through](./docs/annotations.md)
 
 ## Examples
 - [simple-lb](./examples/simple-lb)
 - [2048](./examples/2048)
 - [simple-internal](./examples/simple-internal)
 - [advanced-lb](./examples/advanced-lb)
-
 
 ## Note
 * All the BSU volume plugin related logic will be in maintenance mode. For new feature request or bug fixes, please create issue or pull request in [BSU CSI Driver](https://github.com/outscale-dev/osc-bsu-csi-driver)

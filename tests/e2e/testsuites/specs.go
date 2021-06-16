@@ -28,8 +28,9 @@ import (
 )
 
 type PodDetails struct {
-	Cmd     string
-	Volumes []VolumeDetails
+	Cmd           string
+	Volumes       []VolumeDetails
+	CustomizedPod []string
 }
 
 type VolumeDetails struct {
@@ -131,7 +132,6 @@ func (pod *PodDetails) SetupDeployment(client clientset.Interface, namespace *v1
 	cleanupFuncs = append(cleanupFuncs, tpvc.Cleanup)
 	By("setting up the Deployment")
 	tDeployment := NewTestDeployment(client, namespace, pod.Cmd, tpvc.persistentVolumeClaim, fmt.Sprintf("%s%d", volume.VolumeMount.NameGenerate, 1), fmt.Sprintf("%s%d", volume.VolumeMount.MountPathGenerate, 1), volume.VolumeMount.ReadOnly, customImage...)
-
 	cleanupFuncs = append(cleanupFuncs, tDeployment.Cleanup)
 	return tDeployment, cleanupFuncs
 }

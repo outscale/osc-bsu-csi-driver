@@ -1233,34 +1233,34 @@ func TestDescribeLoadBalancerOnDelete(t *testing.T) {
 	awsServices := newMockedFakeAWSServices(TestClusterID)
 	c, _ := newAWSCloud(CloudConfig{}, awsServices)
 	c.vpcID = "vpc-123456"
-	awsServices.elb.(*MockedFakeELB).expectDescribeLoadBalancers("aid")
+	awsServices.elb.(*MockedFakeELB).expectDescribeLoadBalancers("anuid")
 
-	c.EnsureLoadBalancerDeleted(context.TODO(), TestClusterName, &v1.Service{ObjectMeta: metav1.ObjectMeta{Name: "myservice", UID: "id"}})
+	c.EnsureLoadBalancerDeleted(context.TODO(), TestClusterName, &v1.Service{ObjectMeta: metav1.ObjectMeta{Name: "myservice", UID: "anuid"}})
 }
 
 func TestDescribeLoadBalancerOnUpdate(t *testing.T) {
 	awsServices := newMockedFakeAWSServices(TestClusterID)
 	c, _ := newAWSCloud(CloudConfig{}, awsServices)
 	c.vpcID = "vpc-123456"
-	awsServices.elb.(*MockedFakeELB).expectDescribeLoadBalancers("aid")
+	awsServices.elb.(*MockedFakeELB).expectDescribeLoadBalancers("anuid")
 
-	c.UpdateLoadBalancer(context.TODO(), TestClusterName, &v1.Service{ObjectMeta: metav1.ObjectMeta{Name: "myservice", UID: "id"}}, []*v1.Node{})
+	c.UpdateLoadBalancer(context.TODO(), TestClusterName, &v1.Service{ObjectMeta: metav1.ObjectMeta{Name: "myservice", UID: "anuid"}}, []*v1.Node{})
 }
 
 func TestDescribeLoadBalancerOnGet(t *testing.T) {
 	awsServices := newMockedFakeAWSServices(TestClusterID)
 	c, _ := newAWSCloud(CloudConfig{}, awsServices)
-	awsServices.elb.(*MockedFakeELB).expectDescribeLoadBalancers("aid")
+	awsServices.elb.(*MockedFakeELB).expectDescribeLoadBalancers("anuid")
 
-	c.GetLoadBalancer(context.TODO(), TestClusterName, &v1.Service{ObjectMeta: metav1.ObjectMeta{Name: "myservice", UID: "id"}})
+	c.GetLoadBalancer(context.TODO(), TestClusterName, &v1.Service{ObjectMeta: metav1.ObjectMeta{Name: "myservice", UID: "anuid"}})
 }
 
 func TestDescribeLoadBalancerOnEnsure(t *testing.T) {
 	awsServices := newMockedFakeAWSServices(TestClusterID)
 	c, _ := newAWSCloud(CloudConfig{}, awsServices)
-	awsServices.elb.(*MockedFakeELB).expectDescribeLoadBalancers("aid")
+	awsServices.elb.(*MockedFakeELB).expectDescribeLoadBalancers("anuid")
 
-	c.EnsureLoadBalancer(context.TODO(), TestClusterName, &v1.Service{ObjectMeta: metav1.ObjectMeta{Name: "myservice", UID: "id"}}, []*v1.Node{})
+	c.EnsureLoadBalancer(context.TODO(), TestClusterName, &v1.Service{ObjectMeta: metav1.ObjectMeta{Name: "myservice", UID: "anuid"}}, []*v1.Node{})
 }
 
 func TestBuildListener(t *testing.T) {

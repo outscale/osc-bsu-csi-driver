@@ -52,11 +52,6 @@ const TagNameSubnetInternalELB = "kubernetes.io/role/internal-elb"
 // it should be used for internet ELBs
 const TagNameSubnetPublicELB = "kubernetes.io/role/elb"
 
-// ServiceAnnotationLoadBalancerType is the annotation used on the service
-// to indicate what type of Load Balancer we want. Right now, the only accepted
-// value is "nlb"
-const ServiceAnnotationLoadBalancerType = "service.beta.kubernetes.io/aws-load-balancer-type"
-
 // ServiceAnnotationLoadBalancerInternal is the annotation used on the service
 // to indicate that we want an internal ELB.
 const ServiceAnnotationLoadBalancerInternal = "service.beta.kubernetes.io/aws-load-balancer-internal"
@@ -158,6 +153,17 @@ const ServiceAnnotationLoadBalancerHCTimeout = "service.beta.kubernetes.io/aws-l
 // ServiceAnnotationLoadBalancerHCInterval is the annotation used on the
 // service to specify, in seconds, the interval between health checks.
 const ServiceAnnotationLoadBalancerHCInterval = "service.beta.kubernetes.io/aws-load-balancer-healthcheck-interval"
+
+// ServiceAnnotationLoadBalancerNameLength is the annotation used on the
+// service to specify, the load balancer name length max value is 32.
+const ServiceAnnotationLoadBalancerNameLength = "service.beta.kubernetes.io/osc-load-balancer-name-length"
+
+// ServiceAnnotationLoadBalancerName is the annotation used on the
+// service to specify, the load balancer name max length is 32 else it will be truncated.
+const ServiceAnnotationLoadBalancerName = "service.beta.kubernetes.io/osc-load-balancer-name"
+
+// LbNameMaxLength the load balancer name max length value.
+const LbNameMaxLength = int64(32)
 
 const (
 	// createTag* is configuration of exponential backoff for CreateTag call. We

@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 	"path"
+	"regexp"
 	"sort"
 	"strconv"
 	"strings"
@@ -1412,8 +1413,33 @@ func (c *Cloud) GetLoadBalancer(ctx context.Context, clusterName string, service
 func (c *Cloud) GetLoadBalancerName(ctx context.Context, clusterName string, service *v1.Service) string {
 	debugPrintCallerFunctionName()
 	klog.V(10).Infof("GetLoadBalancerName(%v,%v)", clusterName, service)
-	// TODO: replace DefaultLoadBalancerName to generate more meaningful loadbalancer names.
-	return cloudprovider.DefaultLoadBalancerName(service)
+
+	//The unique name of the load balancer (32 alphanumeric or hyphen characters maximum, but cannot start or end with a hyphen).
+	ret := strings.Replace(string(service.UID), "-", "", -1)
+
+	if s, ok := service.Annotations[ServiceAnnotationLoadBalancerName]; ok {
+		re := regexp.MustCompile("^[a-zA-Z0-9-]+$")
+		fmt.Println("e.MatchString(s): ", s, re.MatchString(s))
+		if len(s) <= 0 || !re.MatchString(s) {
+			klog.Warningf("Ignoring %v annotation, empty string or does not respect lb name constraints: %v", ServiceAnnotationLoadBalancerName, s)
+		} else {
+			ret = s
+		}
+	}
+
+	nameLength := LbNameMaxLength
+	if s, ok := service.Annotations[ServiceAnnotationLoadBalancerNameLength]; ok {
+		var err error
+		nameLength, err = strconv.ParseInt(s, 10, 0)
+		if err != nil || nameLength > LbNameMaxLength {
+			klog.Warningf("Ignoring %v annotation, failed parsing %v value %v or value greater than %v ", ServiceAnnotationLoadBalancerNameLength, s, err, LbNameMaxLength)
+			nameLength = LbNameMaxLength
+		}
+	}
+	if int64(len(ret)) > nameLength {
+		ret = ret[:nameLength]
+	}
+	return strings.Trim(ret, "-")
 }
 
 // Return all the security groups that are tagged as being part of our cluster

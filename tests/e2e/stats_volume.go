@@ -27,19 +27,19 @@ import (
 	bsucsidriver "github.com/outscale-dev/osc-bsu-csi-driver/pkg/driver"
 )
 
-var _ = Describe("[ebs-csi-e2e] [single-az] Stats", func() {
-	f := framework.NewDefaultFramework("ebs")
+var _ = Describe("[bsu-csi-e2e] [single-az] Stats", func() {
+	f := framework.NewDefaultFramework("bsu")
 
 	var (
 		cs        clientset.Interface
 		ns        *v1.Namespace
-		ebsDriver driver.PVTestDriver
+		bsuDriver driver.PVTestDriver
 	)
 
 	BeforeEach(func() {
 		cs = f.ClientSet
 		ns = f.Namespace
-		ebsDriver = driver.InitEbsCSIDriver()
+		bsuDriver = driver.InitBsuCSIDriver()
 	})
 
 	It("Check stats of a volume created from a deployment object, write and read to it", func() {
@@ -58,7 +58,7 @@ var _ = Describe("[ebs-csi-e2e] [single-az] Stats", func() {
 			},
 		}
 		test := testsuites.DynamicallyProvisionedStatsPodTest{
-			CSIDriver: ebsDriver,
+			CSIDriver: bsuDriver,
 			Pod:       pod,
 		}
 		test.Run(cs, ns, f)

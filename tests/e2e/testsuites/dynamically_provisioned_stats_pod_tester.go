@@ -48,12 +48,12 @@ func getDf(data string) string {
 func getMetrics(data string, ns string, pvc string) string {
 	scanner := bufio.NewScanner(strings.NewReader(string(data)))
 	// The target is to find and get data from following lines
-	//kubelet_volume_stats_available_bytes{namespace="dynamic-p",persistentvolumeclaim="ebs-claim"} 4.12649472e+09
-	//kubelet_volume_stats_capacity_bytes{namespace="dynamic-p",persistentvolumeclaim="ebs-claim"} 4.160421888e+09
-	//kubelet_volume_stats_used_bytes{namespace="dynamic-p",persistentvolumeclaim="ebs-claim"} 1.7149952e+07
-	//kubelet_volume_stats_inodes{namespace="dynamic-p",persistentvolumeclaim="ebs-claim"} 262144
-	//kubelet_volume_stats_inodes_free{namespace="dynamic-p",persistentvolumeclaim="ebs-claim"} 262132
-	//kubelet_volume_stats_inodes_used{namespace="dynamic-p",persistentvolumeclaim="ebs-claim"} 12
+	//kubelet_volume_stats_available_bytes{namespace="dynamic-p",persistentvolumeclaim="bsu-claim"} 4.12649472e+09
+	//kubelet_volume_stats_capacity_bytes{namespace="dynamic-p",persistentvolumeclaim="bsu-claim"} 4.160421888e+09
+	//kubelet_volume_stats_used_bytes{namespace="dynamic-p",persistentvolumeclaim="bsu-claim"} 1.7149952e+07
+	//kubelet_volume_stats_inodes{namespace="dynamic-p",persistentvolumeclaim="bsu-claim"} 262144
+	//kubelet_volume_stats_inodes_free{namespace="dynamic-p",persistentvolumeclaim="bsu-claim"} 262132
+	//kubelet_volume_stats_inodes_used{namespace="dynamic-p",persistentvolumeclaim="bsu-claim"} 12
 	KUBELET_VOLUME_PREFIX := "kubelet_volume_stats_"
 	var kubelet_volume_stats_available_bytes,
 		kubelet_volume_stats_capacity_bytes,

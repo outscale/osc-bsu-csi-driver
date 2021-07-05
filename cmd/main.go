@@ -25,7 +25,7 @@ import (
 )
 
 func main() {
-	fs := flag.NewFlagSet("aws-ebs-csi-driver", flag.ExitOnError)
+	fs := flag.NewFlagSet("osc-bsu-csi-driver", flag.ExitOnError)
 	options := GetOptions(fs)
 
 	drv, err := driver.NewDriver(

@@ -26,9 +26,6 @@ import (
 // part of device name should be in the map, e.g. "ba" for "/dev/xvdba".
 type ExistingNames map[string]string
 
-// On AWS, we should assign new (not yet used) device names to attached volumes.
-// If we reuse a previously used name, we may get the volume "attaching" forever,
-// see https://aws.amazon.com/premiumsupport/knowledge-center/ebs-stuck-attaching/.
 // NameAllocator finds available device name, taking into account already
 // assigned device names from ExistingNames map. It tries to find the next
 // device name to the previously assigned one (from previous NameAllocator

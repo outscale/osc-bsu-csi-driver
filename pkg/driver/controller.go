@@ -33,7 +33,7 @@ import (
 
 var (
 	// volumeCaps represents how the volume could be accessed.
-	// It is SINGLE_NODE_WRITER since EBS volume could only be
+	// It is SINGLE_NODE_WRITER since BSU volume could only be
 	// attached to a single node at any given time.
 	volumeCaps = []csi.VolumeCapability_AccessMode{
 		{
@@ -69,7 +69,7 @@ var (
 // newControllerService creates a new controller service
 // it panics if failed to create the service
 func newControllerService(driverOptions *DriverOptions) controllerService {
-	region := os.Getenv("AWS_REGION")
+	region := os.Getenv("OSC_REGION")
 	if region == "" {
 		metadata, err := NewMetadataFunc()
 		if err != nil {
@@ -484,7 +484,7 @@ func (d *controllerService) ListSnapshots(ctx context.Context, req *csi.ListSnap
 			return &csi.ListSnapshotsResponse{}, nil
 		}
 		if err == cloud.ErrInvalidMaxResults {
-			return nil, status.Errorf(codes.InvalidArgument, "Error mapping MaxEntries to AWS MaxResults: %v", err)
+			return nil, status.Errorf(codes.InvalidArgument, "Error mapping MaxEntries to OSC MaxResults: %v", err)
 		}
 		return nil, status.Errorf(codes.Internal, "Could not list snapshots: %v", err)
 	}

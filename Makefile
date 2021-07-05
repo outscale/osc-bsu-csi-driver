@@ -18,15 +18,15 @@ LINTER_VERSION := v1.17.5
 BUILD_ENV := "buildenv/osc-bsu-csi-driver:0.0"
 BUILD_ENV_RUN := "build-osc-bsu-csi-driver"
 
-OSC_BSU_WORKDIR := /go/src/github.com/kubernetes-sigs/aws-ebs-csi-driver
+OSC_BSU_WORKDIR := /go/src/github.com/outscale-dev/osc-bsu-csi-driver
 
 E2E_ENV := "e2e/osc-bsu-csi-driver:0.0"
 E2E_ENV_RUN := "e2e-osc-bsu-csi-driver"
 E2E_AZ := "eu-west-2a"
 E2E_REGION := "eu-west-2"
 
-PKG := github.com/kubernetes-sigs/aws-ebs-csi-driver
-IMAGE := osc/osc-ebs-csi-driver
+PKG := github.com/outscale-dev/osc-bsu-csi-driver
+IMAGE := osc/osc-bsu-csi-driver
 IMAGE_TAG := latest
 REGISTRY := registry.kube-system:5001
 VERSION := 0.5.0-osc
@@ -41,16 +41,16 @@ GO_ADD_OPTIONS := -v -x
 
 .EXPORT_ALL_VARIABLES:
 
-.PHONY: aws-ebs-csi-driver
-aws-ebs-csi-driver:
+.PHONY: osc-bsu-csi-driver
+osc-bsu-csi-driver:
 	mkdir -p bin
 	CGO_ENABLED=0 GOOS=linux go build $(GO_ADD_OPTIONS) \
-		-ldflags ${LDFLAGS}  -o  bin/aws-ebs-csi-driver ./cmd/
+		-ldflags ${LDFLAGS}  -o  bin/osc-bsu-csi-driver ./cmd/
 
 .PHONY: debug
 debug:
 	mkdir -p bin
-	CGO_ENABLED=0 GOOS=linux go build -v -gcflags "-N -l" -ldflags ${LDFLAGS}  -o  bin/aws-ebs-csi-driver ./cmd/
+	CGO_ENABLED=0 GOOS=linux go build -v -gcflags "-N -l" -ldflags ${LDFLAGS}  -o  bin/osc-bsu-csi-driver ./cmd/
 
 .PHONY: verify
 verify:
@@ -71,7 +71,7 @@ test-e2e-multi-az:
 
 .PHONY: test-e2e-migration
 test-e2e-migration:
-	AWS_REGION=us-west-2 AWS_AVAILABILITY_ZONES=us-west-2a GINKGO_FOCUS="\[ebs-csi-migration\]" ./hack/run-e2e-test
+	OSC_REGION=us-west-2 OSC_AVAILABILITY_ZONES=us-west-2a GINKGO_FOCUS="\[bsu-csi-migration\]" ./hack/run-e2e-test
 	# TODO: enable migration test to use new framework
 	#TESTCONFIG=./tester/migration-test-config.yaml go run tester/cmd/main.go
 
@@ -81,7 +81,7 @@ image-release:
 
 .PHONY: image
 image:
-	docker exec $(BUILD_ENV_RUN) make aws-ebs-csi-driver
+	docker exec $(BUILD_ENV_RUN) make osc-bsu-csi-driver
 	docker build -t $(IMAGE):$(IMAGE_TAG) .
 
 .PHONY: image-tag
@@ -130,7 +130,7 @@ run_int_test:
 
 .PHONY: deploy
 deploy:
-	IMAGE_TAG=$(IMAGE_VERSION) IMAGE_NAME=$(REGISTRY)/$(IMAGE) . ./aws-ebs-csi-driver/deploy.sh
+	IMAGE_TAG=$(IMAGE_VERSION) IMAGE_NAME=$(REGISTRY)/$(IMAGE) . ./osc-bsu-csi-driver/deploy.sh
 
 
 
@@ -141,12 +141,12 @@ test-e2e-single-az:
 	docker wait $(E2E_ENV_RUN) || true
 	docker build  -t $(E2E_ENV) -f ./tests/e2e/docker/Dockerfile_e2eTest .
 	docker run -it -d --rm \
-		-v ${PWD}:/root/aws-ebs-csi-driver \
+		-v ${PWD}:/root/osc-bsu-csi-driver \
 		-v ${HOME}:/e2e-env/ \
 		-v /etc/kubectl/:/etc/kubectl/ \
 		-e OSC_ACCESS_KEY=${OSC_ACCESS_KEY} \
 		-e OSC_SECRET_KEY=${OSC_SECRET_KEY} \
-		-e AWS_AVAILABILITY_ZONES=${E2E_AZ} \
+		-e OSC_AVAILABILITY_ZONES=${E2E_AZ} \
 		-e OSC_REGION=${E2E_REGION} \
 		-e KC="$${KC}" \
 		--name $(E2E_ENV_RUN) $(E2E_ENV) bash -l
@@ -193,25 +193,4 @@ kubeval: bin/kubeval
 
 mockgen: bin/mockgen
 	./hack/update-gomock
-
-.PHONY: generate-kustomize
-generate-kustomize: bin/helm
-	cd aws-ebs-csi-driver && ../bin/helm template kustomize . -s templates/clusterrole-attacher.yaml > ../deploy/kubernetes/base/clusterrole-attacher.yaml
-	cd aws-ebs-csi-driver && ../bin/helm template kustomize . -s templates/clusterrole-provisioner.yaml > ../deploy/kubernetes/base/clusterrole-provisioner.yaml
-	cd aws-ebs-csi-driver && ../bin/helm template kustomize . -s templates/clusterrolebinding-attacher.yaml > ../deploy/kubernetes/base/clusterrolebinding-attacher.yaml
-	cd aws-ebs-csi-driver && ../bin/helm template kustomize . -s templates/clusterrolebinding-provisioner.yaml > ../deploy/kubernetes/base/clusterrolebinding-provisioner.yaml
-	cd aws-ebs-csi-driver && ../bin/helm template kustomize . -s templates/controller.yaml -f ../deploy/kubernetes/values/controller.yaml > ../deploy/kubernetes/base/controller.yaml
-	cd aws-ebs-csi-driver && ../bin/helm template kustomize . -s templates/csidriver.yaml > ../deploy/kubernetes/base/csidriver.yaml
-	cd aws-ebs-csi-driver && ../bin/helm template kustomize . -s templates/node.yaml -f ../deploy/kubernetes/values/controller.yaml > ../deploy/kubernetes/base/node.yaml
-	cd aws-ebs-csi-driver && ../bin/helm template kustomize . -s templates/serviceaccount-csi-controller.yaml > ../deploy/kubernetes/base/serviceaccount-csi-controller.yaml
-	cd aws-ebs-csi-driver && ../bin/helm template kustomize . -s templates/clusterrole-resizer.yaml -f ../deploy/kubernetes/values/resizer.yaml > ../deploy/kubernetes/overlays/alpha/rbac_add_resizer_clusterrole.yaml
-	cd aws-ebs-csi-driver && ../bin/helm template kustomize . -s templates/clusterrole-snapshot-controller.yaml -f ../deploy/kubernetes/values/snapshotter.yaml > ../deploy/kubernetes/overlays/alpha/rbac_add_snapshot_controller_clusterrole.yaml
-	cd aws-ebs-csi-driver && ../bin/helm template kustomize . -s templates/clusterrole-snapshotter.yaml -f ../deploy/kubernetes/values/snapshotter.yaml > ../deploy/kubernetes/overlays/alpha/rbac_add_snapshotter_clusterrole.yaml
-	cd aws-ebs-csi-driver && ../bin/helm template kustomize . -s templates/clusterrolebinding-resizer.yaml -f ../deploy/kubernetes/values/resizer.yaml > ../deploy/kubernetes/overlays/alpha/rbac_add_resizer_clusterrolebinding.yaml
-	cd aws-ebs-csi-driver && ../bin/helm template kustomize . -s templates/clusterrolebinding-snapshot-controller.yaml -f ../deploy/kubernetes/values/snapshotter.yaml > ../deploy/kubernetes/overlays/alpha/rbac_add_snapshot_controller_clusterrolebinding.yaml
-	cd aws-ebs-csi-driver && ../bin/helm template kustomize . -s templates/clusterrolebinding-snapshotter.yaml -f ../deploy/kubernetes/values/snapshotter.yaml > ../deploy/kubernetes/overlays/alpha/rbac_add_snapshotter_clusterrolebinding.yaml
-	cd aws-ebs-csi-driver && ../bin/helm template kustomize . -s templates/role-snapshot-controller-leaderelection.yaml -f ../deploy/kubernetes/values/snapshotter.yaml > ../deploy/kubernetes/overlays/alpha/rbac_add_snapshot_controller_leaderelection_role.yaml
-	cd aws-ebs-csi-driver && ../bin/helm template kustomize . -s templates/rolebinding-snapshot-controller-leaderelection.yaml -f ../deploy/kubernetes/values/snapshotter.yaml > ../deploy/kubernetes/overlays/alpha/rbac_add_snapshot_controller_leaderelection_rolebinding.yaml
-	cd aws-ebs-csi-driver && ../bin/helm template kustomize . -s templates/serviceaccount-snapshot-controller.yaml -f ../deploy/kubernetes/values/snapshotter.yaml > ../deploy/kubernetes/overlays/alpha/serviceaccount-snapshot-controller.yaml
-	cd aws-ebs-csi-driver && ../bin/helm template kustomize . -s templates/statefulset.yaml -f ../deploy/kubernetes/values/snapshotter.yaml > ../deploy/kubernetes/overlays/alpha/snapshot_controller.yaml
 

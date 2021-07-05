@@ -3,7 +3,7 @@
 set -euo pipefail
 
 if [[ "${IMAGE_NAME}" == "" ]]; then
-	IMAGE_NAME=registry.kube-system:5001/osc/osc-ebs-csi-driver
+	IMAGE_NAME=outscale/osc-bsu-csi-driver
 fi
 
 if [[ "${IMAGE_TAG}" == "" ]]; then
@@ -16,7 +16,7 @@ fi
 
 helm uninstall osc-bsu-csi-driver  --namespace kube-system
 
-helm install osc-bsu-csi-driver ./aws-ebs-csi-driver \
+helm install osc-bsu-csi-driver ./osc-bsu-csi-driver \
      --namespace kube-system --set enableVolumeScheduling=true \
      --set enableVolumeResizing=true --set enableVolumeSnapshot=true \
      --set region=$REGION \

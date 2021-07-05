@@ -3,24 +3,24 @@
 kind: StatefulSet
 apiVersion: apps/v1
 metadata:
-  name: ebs-snapshot-controller
+  name: bsu-snapshot-controller
   namespace: kube-system
   labels:
-    {{- include "aws-ebs-csi-driver.labels" . | nindent 4 }}
+    {{- include "osc-bsu-csi-driver.labels" . | nindent 4 }}
 spec:
-  serviceName: ebs-snapshot-controller
+  serviceName: bsu-snapshot-controller
   replicas: 1
   selector:
     matchLabels:
-      app: ebs-snapshot-controller
-      {{- include "aws-ebs-csi-driver.selectorLabels" . | nindent 6 }}
+      app: bsu-snapshot-controller
+      {{- include "osc-bsu-csi-driver.selectorLabels" . | nindent 6 }}
   template:
     metadata:
       labels:
-        app: ebs-snapshot-controller
-        {{- include "aws-ebs-csi-driver.labels" . | nindent 8 }}
+        app: bsu-snapshot-controller
+        {{- include "osc-bsu-csi-driver.labels" . | nindent 8 }}
     spec:
-      serviceAccountName: ebs-snapshot-controller
+      serviceAccountName: bsu-snapshot-controller
       containers:
         - name: snapshot-controller
           image: {{ printf "%s:%s" .Values.snapshotController.repository .Values.snapshotController.tag }}

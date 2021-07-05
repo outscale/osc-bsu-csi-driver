@@ -2,21 +2,21 @@
 kind: Deployment
 apiVersion: apps/v1
 metadata:
-  name: ebs-csi-controller
+  name: bsu-csi-controller
   namespace: kube-system
   labels:
-    {{- include "aws-ebs-csi-driver.labels" . | nindent 4 }}
+    {{- include "osc-bsu-csi-driver.labels" . | nindent 4 }}
 spec:
   replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
-      app: ebs-csi-controller
-      {{- include "aws-ebs-csi-driver.selectorLabels" . | nindent 6 }}
+      app: bsu-csi-controller
+      {{- include "osc-bsu-csi-driver.selectorLabels" . | nindent 6 }}
   template:
     metadata:
       labels:
-        app: ebs-csi-controller
-        {{- include "aws-ebs-csi-driver.labels" . | nindent 8 }}
+        app: bsu-csi-controller
+        {{- include "osc-bsu-csi-driver.labels" . | nindent 8 }}
       {{- if .Values.podAnnotations }}
       annotations: {{ toYaml .Values.podAnnotations | nindent 8 }}
       {{- end }}
@@ -26,7 +26,7 @@ spec:
         {{- with .Values.nodeSelector }}
 {{ toYaml . | indent 8 }}
         {{- end }}
-      serviceAccountName: ebs-csi-controller-sa
+      serviceAccountName: bsu-csi-controller-sa
       priorityClassName: system-cluster-critical
       {{- with .Values.affinity }}
       affinity: {{ toYaml . | nindent 8 }}
@@ -47,7 +47,7 @@ spec:
       imagePullSecrets:
         - name: {{ .Values.imagePullSecrets | default "registry-dockerconfigjson" }}
       containers:
-        - name: ebs-plugin
+        - name: bsu-plugin
           image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           args:
@@ -58,7 +58,7 @@ spec:
             {{- end }}
             - --endpoint=$(CSI_ENDPOINT)
             {{- if .Values.extraVolumeTags }}
-              {{- include "aws-ebs-csi-driver.extra-volume-tags" . | nindent 12 }}
+              {{- include "osc-bsu-csi-driver.extra-volume-tags" . | nindent 12 }}
             {{- end }}
             {{- if .Values.k8sTagClusterId }}
             - --k8s-tag-cluster-id={{ .Values.k8sTagClusterId }}
@@ -81,7 +81,7 @@ spec:
                   key: secret_key
                   optional: true
             {{- if .Values.region }}
-            - name: AWS_REGION
+            - name: OSC_REGION
               value: {{ .Values.region }}
             {{- end }}
             - name: BACKOFF_DURATION

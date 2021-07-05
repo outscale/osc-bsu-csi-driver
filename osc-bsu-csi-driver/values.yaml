@@ -1,11 +1,11 @@
-# Default values for aws-ebs-csi-driver.
+# Default values for osc-bsu-csi-driver.
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 
 replicaCount: 2
 
 image:
-  repository: outscale/osc-ebs-csi-driver
+  repository: outscale/osc-bsu-csi-driver
   tag: v0.0.9beta
   pullPolicy: IfNotPresent
 
@@ -93,13 +93,13 @@ extraVolumeTags: {}
 # If set, add pv/pvc metadata to plugin create requests as parameters.
 extraCreateMetadata: false
 
-# ID of the Kubernetes cluster used for tagging provisioned EBS volumes (optional).
+# ID of the Kubernetes cluster used for tagging provisioned BSU volumes (optional).
 k8sTagClusterId: ""
 
-# AWS region to use. If not specified then the region will be looked up via the AWS EC2 metadata
+# OSC region to use. If not specified then the region will be looked up via the osc instance metadata
 # service.
 # ---
-# region: us-east-1
+# region: eu-west-2
 region: ""
 
 node:

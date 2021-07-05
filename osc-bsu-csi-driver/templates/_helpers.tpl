@@ -2,7 +2,7 @@
 {{/*
 Expand the name of the chart.
 */}}
-{{- define "aws-ebs-csi-driver.name" -}}
+{{- define "osc-bsu-csi-driver.name" -}}
 {{- default .Chart.Name .Values.nameOverride | trunc 63 | trimSuffix "-" -}}
 {{- end -}}
 
@@ -11,7 +11,7 @@ Create a default fully qualified app name.
 We truncate at 63 chars because some Kubernetes name fields are limited to this (by the DNS naming spec).
 If release name contains chart name it will be used as a full name.
 */}}
-{{- define "aws-ebs-csi-driver.fullname" -}}
+{{- define "osc-bsu-csi-driver.fullname" -}}
 {{- if .Values.fullnameOverride -}}
 {{- .Values.fullnameOverride | trunc 63 | trimSuffix "-" -}}
 {{- else -}}
@@ -27,17 +27,17 @@ If release name contains chart name it will be used as a full name.
 {{/*
 Create chart name and version as used by the chart label.
 */}}
-{{- define "aws-ebs-csi-driver.chart" -}}
+{{- define "osc-bsu-csi-driver.chart" -}}
 {{- printf "%s-%s" .Chart.Name .Chart.Version | replace "+" "_" | trunc 63 | trimSuffix "-" -}}
 {{- end -}}
 
 {{/*
 Common labels
 */}}
-{{- define "aws-ebs-csi-driver.labels" -}}
-{{ include "aws-ebs-csi-driver.selectorLabels" . }}
+{{- define "osc-bsu-csi-driver.labels" -}}
+{{ include "osc-bsu-csi-driver.selectorLabels" . }}
 {{- if ne .Release.Name "kustomize" }}
-helm.sh/chart: {{ include "aws-ebs-csi-driver.chart" . }}
+helm.sh/chart: {{ include "osc-bsu-csi-driver.chart" . }}
 {{- if .Chart.AppVersion }}
 app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
 {{- end }}
@@ -48,8 +48,8 @@ app.kubernetes.io/managed-by: {{ .Release.Service }}
 {{/*
 Common selector labels
 */}}
-{{- define "aws-ebs-csi-driver.selectorLabels" -}}
-app.kubernetes.io/name: {{ include "aws-ebs-csi-driver.name" . }}
+{{- define "osc-bsu-csi-driver.selectorLabels" -}}
+app.kubernetes.io/name: {{ include "osc-bsu-csi-driver.name" . }}
 {{- if ne .Release.Name "kustomize" }}
 app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}
@@ -58,7 +58,7 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 {{/*
 Convert the `--extra-volume-tags` command line arg from a map.
 */}}
-{{- define "aws-ebs-csi-driver.extra-volume-tags" -}}
+{{- define "osc-bsu-csi-driver.extra-volume-tags" -}}
 {{- $result := dict "pairs" (list) -}}
 {{- range $key, $value := .Values.extraVolumeTags -}}
 {{- $noop := printf "%s=%s" $key $value | append $result.pairs | set $result "pairs" -}}

@@ -14,4 +14,4 @@ spec:
   volumes:
   - name: persistent-storage
     persistentVolumeClaim:
-      claimName: ebs-snapshot-restored-claim
+      claimName: bsu-snapshot-restored-claim

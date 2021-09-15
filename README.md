@@ -14,9 +14,9 @@ This project allows a Kubernetes cluster to provision, monitor and remove Outsca
 ## Build image
 
 ```
-	make build-image  IMAGE=osc/cloud-provider-osc IMAGE_VERSION=version
-	make tag-image	  IMAGE=osc/cloud-provider-osc IMAGE_VERSION=version REGISTRY=registry.hub 
-	make push-release IMAGE=osc/cloud-provider-osc IMAGE_VERSION=version REGISTRY=registry.hub 
+	make build-image  IMAGE=outscale/cloud-provider-osc IMAGE_VERSION=version
+	make tag-image	  IMAGE=outscale/cloud-provider-osc IMAGE_VERSION=version REGISTRY=registry.hub
+	make push-release IMAGE=outscale/cloud-provider-osc IMAGE_VERSION=version REGISTRY=registry.hub
 ```
 
 ## Container Images:

@@ -34,8 +34,8 @@ type bsuCSIDriver struct {
 	driverName string
 }
 
-// InitEbsCSIDriver returns bsuCSIDriver that implements DynamicPVTestDriver interface
-func InitEbsCSIDriver() PVTestDriver {
+// InitBsuCSIDriver returns bsuCSIDriver that implements DynamicPVTestDriver interface
+func InitBsuCSIDriver() PVTestDriver {
 	return &bsuCSIDriver{
 		driverName: bsucsidriver.DriverName,
 	}

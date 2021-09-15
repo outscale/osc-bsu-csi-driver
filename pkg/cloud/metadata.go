@@ -34,7 +34,7 @@ type EC2Metadata interface {
 	GetMetadata(p string) (string, error)
 }
 
-// MetadataService represents AWS metadata service.
+// MetadataService represents OSC metadata service.
 type MetadataService interface {
 	GetInstanceID() string
 	GetInstanceType() string

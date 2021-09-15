@@ -21,7 +21,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"regexp"
 	"strconv"
 	"strings"
 
@@ -52,12 +51,9 @@ const (
 	// default file system type to be used when it is not provided
 	defaultFsType = FSTypeExt4
 
-	// defaultMaxEBSVolumes is the maximum number of volumes that an AWS instance can have attached.
-	// More info at https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/volume_limits.html
-	defaultMaxEBSVolumes = 39
-
-	// defaultMaxEBSNitroVolumes is the limit of volumes for some smaller instances, like c5 and m5.
-	defaultMaxEBSNitroVolumes = 25
+	// defaultMaxBSUVolumes is the maximum number of volumes that an OSC instance can have attached.
+	// https://wiki.outscale.net/display/EN/About+Volumes#AboutVolumes-VolumesInstancesVolumesandInstances
+	defaultMaxBSUVolumes = 25
 )
 
 var (
@@ -647,12 +643,7 @@ func findScsiVolume(findName string) (device string, err error) {
 
 // getVolumesLimit returns the limit of volumes that the node supports
 func (d *nodeService) getVolumesLimit() int64 {
-	ebsNitroInstanceTypeRegex := "^[cmr]5.*|t3|z1d"
-	instanceType := d.metadata.GetInstanceType()
-	if ok, _ := regexp.MatchString(ebsNitroInstanceTypeRegex, instanceType); ok {
-		return defaultMaxEBSNitroVolumes
-	}
-	return defaultMaxEBSVolumes
+	return defaultMaxBSUVolumes
 }
 
 // hasMountOption returns a boolean indicating whether the given

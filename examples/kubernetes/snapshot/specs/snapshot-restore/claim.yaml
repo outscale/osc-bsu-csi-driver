@@ -1,15 +1,15 @@
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: ebs-snapshot-restored-claim
+  name: bsu-snapshot-restored-claim
 spec:
   accessModes:
     - ReadWriteOnce
-  storageClassName: ebs-sc
+  storageClassName: bsu-sc
   resources:
     requests:
       storage: 4Gi
   dataSource:
-    name: ebs-volume-snapshot
+    name: bsu-volume-snapshot
     kind: VolumeSnapshot
     apiGroup: snapshot.storage.k8s.io

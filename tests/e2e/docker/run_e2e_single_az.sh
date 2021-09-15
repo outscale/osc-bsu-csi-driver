@@ -1,14 +1,14 @@
 #!/bin/bash
 set -eu pipefail
 
-MANDATORY_DIR="/e2e-env/.kube/ /root/aws-ebs-csi-driver"
+MANDATORY_DIR="/e2e-env/.kube/ /root/osc-bsu-csi-driver"
 export KUBECONFIG=/e2e-env/.kube/config
 
 if [ ! -z "${KC}"  ];then
       mkdir -p $HOME/.kube
       echo "${KC}" | base64 --decode > $HOME/.kube/config
       export KUBECONFIG=$HOME/.kube/config
-      MANDATORY_DIR="/root/aws-ebs-csi-driver"
+      MANDATORY_DIR="/root/osc-bsu-csi-driver"
 fi
 
 MANDATORY_DIR=(${MANDATORY_DIR})
@@ -20,8 +20,8 @@ for (( dir=0; dir<${#MANDATORY_DIR[@]}; dir++ )); do
 	fi
 done
 
-if [ -z ${AWS_AVAILABILITY_ZONES}  ];then
-	echo "AWS_AVAILABILITY_ZONES is mandatory to make test pass"
+if [ -z ${OSC_AVAILABILITY_ZONES}  ];then
+	echo "OSC_AVAILABILITY_ZONES is mandatory to make test pass"
 	exit 1
 fi
 
@@ -53,7 +53,7 @@ export ARTIFACTS=./single_az_test_e2e_report
 mkdir -p $ARTIFACTS
 export NODES=4
 
-FOCUS_REGEXP="\[ebs-csi-e2e\] \[single-az\]"
+FOCUS_REGEXP="\[bsu-csi-e2e\] \[single-az\]"
 SKIP_REGEXP="and encryption"
 $GOPATH/bin/ginkgo build -r tests/e2e
 $GOPATH/bin/ginkgo --progress -debug -p -nodes=$NODES \

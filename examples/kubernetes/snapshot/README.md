@@ -2,15 +2,13 @@
 
 ## Overview
 
-This driver implements basic volume snapshotting functionality using the [external snapshotter](https://github.com/kubernetes-csi/external-snapshotter) sidecar and creates snapshots of EBS volumes using the `VolumeSnapshot` custom resources.
+This driver implements basic volume snapshotting functionality using the [external snapshotter](https://github.com/kubernetes-csi/external-snapshotter) sidecar and creates snapshots of BSU volumes using the `VolumeSnapshot` custom resources.
 
 ## Prerequisites
 
-1. Kubernetes 1.13+ (CSI 1.0).
+1. Kubernetes 1.15+ (CSI 1.2).
 
-1. The `VolumeSnapshotDataSource` must be set in `--feature-gates=` in the `kube-apiserver`.
-
-1. The [aws-ebs-csi-driver driver](https://github.com/kubernetes-sigs/aws-ebs-csi-driver) is installed.
+2. The [osc-bsu-csi-driver driver](https://github.com/outscale-dev/osc-bsu-csi-driver) is installed.
 
 ### Usage
 
@@ -24,7 +22,7 @@ kubectl apply -f specs/classes/
 kubectl apply -f specs/app/
 ```
 
-3. Validate the volume was created and `volumeHandle` contains an EBS volumeID: 
+3. Validate the volume was created and `volumeHandle` contains a BSU volumeID: 
 ```
 kubectl describe pv
 ```
@@ -41,7 +39,7 @@ kubectl apply -f specs/snapshot/
 
 6. Wait for the `Ready To Use:  true` attribute of the `VolumeSnapshot`: 
 ```
-kubectl describe volumesnapshot.snapshot.storage.k8s.io ebs-volume-snapshot
+kubectl describe volumesnapshot.snapshot.storage.k8s.io bsu-volume-snapshot
 ```
 
 7. Delete the existing app:

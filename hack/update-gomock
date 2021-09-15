@@ -16,7 +16,7 @@
 
 set -euo pipefail
 
-IMPORT_PATH=github.com/kubernetes-sigs/aws-ebs-csi-driver
+IMPORT_PATH=github.com/outscale-dev/osc-bsu-csi-driver
 
 ./bin/mockgen -package=mocks -destination=./pkg/cloud/mocks/mock_ec2.go ${IMPORT_PATH}/pkg/cloud EC2 
 ./bin/mockgen -package=mocks -destination=./pkg/cloud/mocks/mock_ec2metadata.go ${IMPORT_PATH}/pkg/cloud EC2Metadata 

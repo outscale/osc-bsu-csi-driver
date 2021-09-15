@@ -41,7 +41,7 @@ import (
 	"reflect"
 )
 
-// AWS volume types
+// Outscale volume types
 const (
 	// Cold workloads where you do not need to access data frequently
 	// Cases in which the lowest storage cost highly matters.
@@ -60,14 +60,14 @@ var (
 	ValidVolumeTypes = []string{VolumeTypeIO1, VolumeTypeGP2, VolumeTypeSTANDARD}
 )
 
-// AWS provisioning limits.
-// Source: http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/EBSVolumeTypes.html
+// Outscale provisioning limits.
+// Source: https://wiki.outscale.net/display/EN/About+Volumes#AboutVolumes-VolumeTypesVolumeTypesandIOPS
 const (
 	// MinTotalIOPS represents the minimum Input Output per second.
 	MinTotalIOPS = 100
 	// MaxTotalIOPS represents the maximum Input Output per second.
-	MaxTotalIOPS = 20000
-	// MaxNumTagsPerResource represents the maximum number of tags per AWS resource.
+	MaxTotalIOPS = 13000
+	// MaxNumTagsPerResource represents the maximum number of tags per resource.
 	MaxNumTagsPerResource = 50
 	// MaxTagKeyLength represents the maximum key length for a tag.
 	MaxTagKeyLength = 128
@@ -91,8 +91,8 @@ const (
 	SnapshotNameTagKey = "CSIVolumeSnapshotName"
 	// KubernetesTagKeyPrefix is the prefix of the key value that is reserved for Kubernetes.
 	KubernetesTagKeyPrefix = "kubernetes.io"
-	// AWSTagKeyPrefix is the prefix of the key value that is reserved for AWS.
-	AWSTagKeyPrefix = "aws:"
+	// OSCTagKeyPrefix is the prefix of the key value that is reserved for OSC.
+	OSCTagKeyPrefix = "osc:"
 )
 
 var (
@@ -118,7 +118,7 @@ var (
 	ErrInvalidMaxResults = errors.New("MaxResults parameter must be 0 or greater than or equal to 5")
 )
 
-// Disk represents a EBS volume
+// Disk represents a BSU volume
 type Disk struct {
 	VolumeID         string
 	CapacityGiB      int64
@@ -126,7 +126,7 @@ type Disk struct {
 	SnapshotID       string
 }
 
-// DiskOptions represents parameters to create an EBS volume
+// DiskOptions represents parameters to create a BSU volume
 type DiskOptions struct {
 	CapacityBytes    int64
 	Tags             map[string]string
@@ -155,12 +155,12 @@ type ListSnapshotsResponse struct {
 	NextToken string
 }
 
-// SnapshotOptions represents parameters to create an EBS volume
+// SnapshotOptions represents parameters to create a BSU volume
 type SnapshotOptions struct {
 	Tags map[string]string
 }
 
-// oscListSnapshotsResponse is a helper struct returned from the AWS API calling function to the main ListSnapshots function
+// oscListSnapshotsResponse is a helper struct returned from the OSC API calling function to the main ListSnapshots function
 type oscListSnapshotsResponse struct {
 	Snapshots []osc.Snapshot
 }
@@ -262,7 +262,7 @@ type cloud struct {
 
 var _ Cloud = &cloud{}
 
-// NewCloud returns a new instance of AWS cloud
+// NewCloud returns a new instance of OSC cloud
 // It panics if session is invalid
 func NewCloud(region string) (Cloud, error) {
 	return newOscCloud(region)
@@ -558,7 +558,7 @@ func (c *cloud) DetachDisk(ctx context.Context, volumeID, nodeID string) error {
 // WaitForAttachmentState polls until the attachment status is the expected value.
 func (c *cloud) WaitForAttachmentState(ctx context.Context, volumeID, state string) error {
 	klog.Infof("Debug WaitForAttachmentState: %+v, %v\n", volumeID, state)
-	// Most attach/detach operations on AWS finish within 1-4 seconds.
+	// Most attach/detach operations on OSC finish within 1-4 seconds.
 	// By using 1 second starting interval with a backoff of 1.8,
 	// we get [1, 1.8, 3.24, 5.832000000000001, 10.4976].
 	// In total we wait for 2601 seconds.
@@ -661,7 +661,7 @@ func (c *cloud) IsExistInstance(ctx context.Context, nodeID string) bool {
 }
 
 func (c *cloud) CreateSnapshot(ctx context.Context, volumeID string, snapshotOptions *SnapshotOptions) (snapshot Snapshot, err error) {
-	descriptions := "Created by AWS EBS CSI driver for volume " + volumeID
+	descriptions := "Created by OSC BSU CSI driver for volume " + volumeID
 	klog.Infof("Debug CreateSnapshot : %+v, %+v\n", volumeID, snapshotOptions)
 
 	var resourceTag []osc.ResourceTag
@@ -825,10 +825,10 @@ func (c *cloud) GetSnapshotByID(ctx context.Context, snapshotID string) (snapsho
 	return c.oscSnapshotResponseToStruct(oscsnapshot), nil
 }
 
-// ListSnapshots retrieves AWS EBS snapshots for an optionally specified volume ID.  If maxResults is set, it will return up to maxResults snapshots.  If there are more snapshots than maxResults,
-// a next token value will be returned to the client as well.  They can use this token with subsequent calls to retrieve the next page of results.  If maxResults is not set (0),
-// there will be no restriction up to 1000 results (https://docs.aws.amazon.com/sdk-for-go/api/service/ec2/#DescribeSnapshotsInput).
-// Pagination not supported
+// ListSnapshots retrieves OSC BSU snapshots for an optionally specified volume ID.
+// If maxResults is set, it will return up to maxResults snapshots.  If there are more snapshots than maxResults,
+// a next token value will be returned to the client as well. They can use this token with subsequent calls to retrieve the next page of results.  If maxResults is not set (0),
+// there will be no restriction up to 1000 results, Pagination not supported
 func (c *cloud) ListSnapshots(ctx context.Context, volumeID string, maxResults int64, nextToken string) (listSnapshotsResponse ListSnapshotsResponse, err error) {
 	klog.Infof("Debug ListSnapshots : %+v, %+v, %+v\n", volumeID, maxResults, nextToken)
 
@@ -1090,7 +1090,7 @@ func (c *cloud) listSnapshots(ctx context.Context, request *osc.ReadSnapshotsOpt
 }
 
 // waitForVolume waits for volume to be in the "available" state.
-// On a random AWS account (shared among several developers) it took 4s on average.
+// On a random OSC account (shared among several developers) it took 4s on average.
 func (c *cloud) waitForVolume(ctx context.Context, volumeID string) error {
 	klog.Infof("Debug waitForVolume : %+v\n", volumeID)
 	var (

@@ -60,7 +60,7 @@ func TestNodeStageVolume(t *testing.T) {
 				mockMetadata := mocks.NewMockMetadataService(mockCtl)
 				mockMounter := mocks.NewMockMounter(mockCtl)
 
-				awsDriver := &nodeService{
+				oscDriver := &nodeService{
 					metadata: mockMetadata,
 					mounter:  mockMounter,
 					inFlight: internal.NewInFlight(),
@@ -81,7 +81,7 @@ func TestNodeStageVolume(t *testing.T) {
 				mockMounter.EXPECT().MakeDir(targetPath).Return(nil)
 				mockMounter.EXPECT().GetDeviceName(targetPath).Return("", 1, nil)
 				mockMounter.EXPECT().FormatAndMount(gomock.Eq(devicePath), gomock.Eq(targetPath), gomock.Eq(defaultFsType), gomock.Any())
-				_, err := awsDriver.NodeStageVolume(context.TODO(), req)
+				_, err := oscDriver.NodeStageVolume(context.TODO(), req)
 				if err != nil {
 					t.Fatalf("Expect no error but got: %v", err)
 				}
@@ -96,7 +96,7 @@ func TestNodeStageVolume(t *testing.T) {
 				mockMetadata := mocks.NewMockMetadataService(mockCtl)
 				mockMounter := mocks.NewMockMounter(mockCtl)
 
-				awsDriver := nodeService{
+				oscDriver := nodeService{
 					metadata: mockMetadata,
 					mounter:  mockMounter,
 					inFlight: internal.NewInFlight(),
@@ -116,7 +116,7 @@ func TestNodeStageVolume(t *testing.T) {
 					VolumeId: "vol-test",
 				}
 
-				_, err := awsDriver.NodeStageVolume(context.TODO(), req)
+				_, err := oscDriver.NodeStageVolume(context.TODO(), req)
 				if err != nil {
 					t.Fatalf("Expect no error but got: %v", err)
 				}
@@ -131,7 +131,7 @@ func TestNodeStageVolume(t *testing.T) {
 				mockMetadata := mocks.NewMockMetadataService(mockCtl)
 				mockMounter := mocks.NewMockMounter(mockCtl)
 
-				awsDriver := nodeService{
+				oscDriver := nodeService{
 					metadata: mockMetadata,
 					mounter:  mockMounter,
 					inFlight: internal.NewInFlight(),
@@ -161,7 +161,7 @@ func TestNodeStageVolume(t *testing.T) {
 				mockMounter.EXPECT().MakeDir(targetPath).Return(nil)
 				mockMounter.EXPECT().GetDeviceName(targetPath).Return("", 1, nil)
 				mockMounter.EXPECT().FormatAndMount(gomock.Eq(devicePath), gomock.Eq(targetPath), gomock.Eq(FSTypeExt4), gomock.Eq([]string{"dirsync", "noexec"}))
-				_, err := awsDriver.NodeStageVolume(context.TODO(), req)
+				_, err := oscDriver.NodeStageVolume(context.TODO(), req)
 				if err != nil {
 					t.Fatalf("Expect no error but got: %v", err)
 				}
@@ -176,7 +176,7 @@ func TestNodeStageVolume(t *testing.T) {
 				mockMetadata := mocks.NewMockMetadataService(mockCtl)
 				mockMounter := mocks.NewMockMounter(mockCtl)
 
-				awsDriver := nodeService{
+				oscDriver := nodeService{
 					metadata: mockMetadata,
 					mounter:  mockMounter,
 					inFlight: internal.NewInFlight(),
@@ -206,7 +206,7 @@ func TestNodeStageVolume(t *testing.T) {
 				mockMounter.EXPECT().MakeDir(targetPath).Return(nil)
 				mockMounter.EXPECT().GetDeviceName(targetPath).Return("", 1, nil)
 				mockMounter.EXPECT().FormatAndMount(gomock.Eq(devicePath), gomock.Eq(targetPath), gomock.Eq(FSTypeExt3), gomock.Any())
-				_, err := awsDriver.NodeStageVolume(context.TODO(), req)
+				_, err := oscDriver.NodeStageVolume(context.TODO(), req)
 				if err != nil {
 					t.Fatalf("Expect no error but got: %v", err)
 				}
@@ -221,7 +221,7 @@ func TestNodeStageVolume(t *testing.T) {
 				mockMetadata := mocks.NewMockMetadataService(mockCtl)
 				mockMounter := mocks.NewMockMounter(mockCtl)
 
-				awsDriver := nodeService{
+				oscDriver := nodeService{
 					metadata: mockMetadata,
 					mounter:  mockMounter,
 					inFlight: internal.NewInFlight(),
@@ -251,7 +251,7 @@ func TestNodeStageVolume(t *testing.T) {
 				mockMounter.EXPECT().MakeDir(targetPath).Return(nil)
 				mockMounter.EXPECT().GetDeviceName(targetPath).Return("", 1, nil)
 				mockMounter.EXPECT().FormatAndMount(gomock.Eq(devicePath), gomock.Eq(targetPath), gomock.Eq(FSTypeExt4), gomock.Any())
-				_, err := awsDriver.NodeStageVolume(context.TODO(), req)
+				_, err := oscDriver.NodeStageVolume(context.TODO(), req)
 				if err != nil {
 					t.Fatalf("Expect no error but got: %v", err)
 				}
@@ -266,7 +266,7 @@ func TestNodeStageVolume(t *testing.T) {
 				mockMetadata := mocks.NewMockMetadataService(mockCtl)
 				mockMounter := mocks.NewMockMounter(mockCtl)
 
-				awsDriver := nodeService{
+				oscDriver := nodeService{
 					metadata: mockMetadata,
 					mounter:  mockMounter,
 					inFlight: internal.NewInFlight(),
@@ -278,7 +278,7 @@ func TestNodeStageVolume(t *testing.T) {
 					VolumeCapability:  stdVolCap,
 				}
 
-				_, err := awsDriver.NodeStageVolume(context.TODO(), req)
+				_, err := oscDriver.NodeStageVolume(context.TODO(), req)
 				if err == nil {
 					t.Fatalf("Expect error but got no error")
 				}
@@ -295,7 +295,7 @@ func TestNodeStageVolume(t *testing.T) {
 				mockMetadata := mocks.NewMockMetadataService(mockCtl)
 				mockMounter := mocks.NewMockMounter(mockCtl)
 
-				awsDriver := nodeService{
+				oscDriver := nodeService{
 					metadata: mockMetadata,
 					mounter:  mockMounter,
 					inFlight: internal.NewInFlight(),
@@ -312,7 +312,7 @@ func TestNodeStageVolume(t *testing.T) {
 					},
 				}
 
-				_, err := awsDriver.NodeStageVolume(context.TODO(), req)
+				_, err := oscDriver.NodeStageVolume(context.TODO(), req)
 				if err == nil {
 					t.Fatalf("Expect error but got no error")
 				}
@@ -329,7 +329,7 @@ func TestNodeStageVolume(t *testing.T) {
 				mockMetadata := mocks.NewMockMetadataService(mockCtl)
 				mockMounter := mocks.NewMockMounter(mockCtl)
 
-				awsDriver := nodeService{
+				oscDriver := nodeService{
 					metadata: mockMetadata,
 					mounter:  mockMounter,
 					inFlight: internal.NewInFlight(),
@@ -342,7 +342,7 @@ func TestNodeStageVolume(t *testing.T) {
 					VolumeId:         "vol-test",
 				}
 
-				_, err := awsDriver.NodeStageVolume(context.TODO(), req)
+				_, err := oscDriver.NodeStageVolume(context.TODO(), req)
 				if err == nil {
 					t.Fatalf("Expect error but got no error")
 				}
@@ -359,7 +359,7 @@ func TestNodeStageVolume(t *testing.T) {
 				mockMetadata := mocks.NewMockMetadataService(mockCtl)
 				mockMounter := mocks.NewMockMounter(mockCtl)
 
-				awsDriver := nodeService{
+				oscDriver := nodeService{
 					metadata: mockMetadata,
 					mounter:  mockMounter,
 					inFlight: internal.NewInFlight(),
@@ -370,7 +370,7 @@ func TestNodeStageVolume(t *testing.T) {
 					StagingTargetPath: "/test/path",
 					VolumeId:          "vol-test",
 				}
-				_, err := awsDriver.NodeStageVolume(context.TODO(), req)
+				_, err := oscDriver.NodeStageVolume(context.TODO(), req)
 				if err == nil {
 					t.Fatalf("Expect error but got no error")
 				}
@@ -387,7 +387,7 @@ func TestNodeStageVolume(t *testing.T) {
 				mockMetadata := mocks.NewMockMetadataService(mockCtl)
 				mockMounter := mocks.NewMockMounter(mockCtl)
 
-				awsDriver := nodeService{
+				oscDriver := nodeService{
 					metadata: mockMetadata,
 					mounter:  mockMounter,
 					inFlight: internal.NewInFlight(),
@@ -403,7 +403,7 @@ func TestNodeStageVolume(t *testing.T) {
 					},
 					VolumeId: "vol-test",
 				}
-				_, err := awsDriver.NodeStageVolume(context.TODO(), req)
+				_, err := oscDriver.NodeStageVolume(context.TODO(), req)
 				if err == nil {
 					t.Fatalf("Expect error but got no error")
 				}
@@ -420,7 +420,7 @@ func TestNodeStageVolume(t *testing.T) {
 				mockMetadata := mocks.NewMockMetadataService(mockCtl)
 				mockMounter := mocks.NewMockMounter(mockCtl)
 
-				awsDriver := nodeService{
+				oscDriver := nodeService{
 					metadata: mockMetadata,
 					mounter:  mockMounter,
 					inFlight: internal.NewInFlight(),
@@ -431,7 +431,7 @@ func TestNodeStageVolume(t *testing.T) {
 					VolumeCapability:  stdVolCap,
 					VolumeId:          "vol-test",
 				}
-				_, err := awsDriver.NodeStageVolume(context.TODO(), req)
+				_, err := oscDriver.NodeStageVolume(context.TODO(), req)
 				if err == nil {
 					t.Fatalf("Expect error but got no error")
 				}
@@ -449,7 +449,7 @@ func TestNodeStageVolume(t *testing.T) {
 				mockMetadata := mocks.NewMockMetadataService(mockCtl)
 				mockMounter := mocks.NewMockMounter(mockCtl)
 
-				awsDriver := &nodeService{
+				oscDriver := &nodeService{
 					metadata: mockMetadata,
 					mounter:  mockMounter,
 					inFlight: internal.NewInFlight(),
@@ -469,7 +469,7 @@ func TestNodeStageVolume(t *testing.T) {
 
 				mockMounter.EXPECT().MakeDir(targetPath).Return(nil)
 				mockMounter.EXPECT().GetDeviceName(targetPath).Return(devicePath, 1, nil)
-				_, err := awsDriver.NodeStageVolume(context.TODO(), req)
+				_, err := oscDriver.NodeStageVolume(context.TODO(), req)
 				if err != nil {
 					t.Fatalf("Expect no error but got: %v", err)
 				}
@@ -499,7 +499,7 @@ func TestNodeUnstageVolume(t *testing.T) {
 				mockMetadata := mocks.NewMockMetadataService(mockCtl)
 				mockMounter := mocks.NewMockMounter(mockCtl)
 
-				awsDriver := &nodeService{
+				oscDriver := &nodeService{
 					metadata: mockMetadata,
 					mounter:  mockMounter,
 					inFlight: internal.NewInFlight(),
@@ -513,7 +513,7 @@ func TestNodeUnstageVolume(t *testing.T) {
 					VolumeId:          "vol-test",
 				}
 
-				_, err := awsDriver.NodeUnstageVolume(context.TODO(), req)
+				_, err := oscDriver.NodeUnstageVolume(context.TODO(), req)
 				if err != nil {
 					t.Fatalf("Expect no error but got: %v", err)
 				}
@@ -528,7 +528,7 @@ func TestNodeUnstageVolume(t *testing.T) {
 				mockMetadata := mocks.NewMockMetadataService(mockCtl)
 				mockMounter := mocks.NewMockMounter(mockCtl)
 
-				awsDriver := &nodeService{
+				oscDriver := &nodeService{
 					metadata: mockMetadata,
 					mounter:  mockMounter,
 					inFlight: internal.NewInFlight(),
@@ -540,7 +540,7 @@ func TestNodeUnstageVolume(t *testing.T) {
 					StagingTargetPath: targetPath,
 					VolumeId:          "vol-test",
 				}
-				_, err := awsDriver.NodeUnstageVolume(context.TODO(), req)
+				_, err := oscDriver.NodeUnstageVolume(context.TODO(), req)
 				if err != nil {
 					t.Fatalf("Expect no error but got: %v", err)
 				}
@@ -555,7 +555,7 @@ func TestNodeUnstageVolume(t *testing.T) {
 				mockMetadata := mocks.NewMockMetadataService(mockCtl)
 				mockMounter := mocks.NewMockMounter(mockCtl)
 
-				awsDriver := &nodeService{
+				oscDriver := &nodeService{
 					metadata: mockMetadata,
 					mounter:  mockMounter,
 					inFlight: internal.NewInFlight(),
@@ -569,7 +569,7 @@ func TestNodeUnstageVolume(t *testing.T) {
 					VolumeId:          "vol-test",
 				}
 
-				_, err := awsDriver.NodeUnstageVolume(context.TODO(), req)
+				_, err := oscDriver.NodeUnstageVolume(context.TODO(), req)
 				if err != nil {
 					t.Fatalf("Expect no error but got: %v", err)
 				}
@@ -584,7 +584,7 @@ func TestNodeUnstageVolume(t *testing.T) {
 				mockMetadata := mocks.NewMockMetadataService(mockCtl)
 				mockMounter := mocks.NewMockMounter(mockCtl)
 
-				awsDriver := &nodeService{
+				oscDriver := &nodeService{
 					metadata: mockMetadata,
 					mounter:  mockMounter,
 					inFlight: internal.NewInFlight(),
@@ -594,7 +594,7 @@ func TestNodeUnstageVolume(t *testing.T) {
 					StagingTargetPath: targetPath,
 				}
 
-				_, err := awsDriver.NodeUnstageVolume(context.TODO(), req)
+				_, err := oscDriver.NodeUnstageVolume(context.TODO(), req)
 				expectErr(t, err, codes.InvalidArgument)
 			},
 		},
@@ -607,7 +607,7 @@ func TestNodeUnstageVolume(t *testing.T) {
 				mockMetadata := mocks.NewMockMetadataService(mockCtl)
 				mockMounter := mocks.NewMockMounter(mockCtl)
 
-				awsDriver := &nodeService{
+				oscDriver := &nodeService{
 					metadata: mockMetadata,
 					mounter:  mockMounter,
 					inFlight: internal.NewInFlight(),
@@ -616,7 +616,7 @@ func TestNodeUnstageVolume(t *testing.T) {
 				req := &csi.NodeUnstageVolumeRequest{
 					VolumeId: "vol-test",
 				}
-				_, err := awsDriver.NodeUnstageVolume(context.TODO(), req)
+				_, err := oscDriver.NodeUnstageVolume(context.TODO(), req)
 				expectErr(t, err, codes.InvalidArgument)
 			},
 		},
@@ -629,7 +629,7 @@ func TestNodeUnstageVolume(t *testing.T) {
 				mockMetadata := mocks.NewMockMetadataService(mockCtl)
 				mockMounter := mocks.NewMockMounter(mockCtl)
 
-				awsDriver := &nodeService{
+				oscDriver := &nodeService{
 					metadata: mockMetadata,
 					mounter:  mockMounter,
 					inFlight: internal.NewInFlight(),
@@ -642,7 +642,7 @@ func TestNodeUnstageVolume(t *testing.T) {
 					VolumeId:          "vol-test",
 				}
 
-				_, err := awsDriver.NodeUnstageVolume(context.TODO(), req)
+				_, err := oscDriver.NodeUnstageVolume(context.TODO(), req)
 				expectErr(t, err, codes.Internal)
 			},
 		},
@@ -678,7 +678,7 @@ func TestNodePublishVolume(t *testing.T) {
 				mockMetadata := mocks.NewMockMetadataService(mockCtl)
 				mockMounter := mocks.NewMockMounter(mockCtl)
 
-				awsDriver := &nodeService{
+				oscDriver := &nodeService{
 					metadata: mockMetadata,
 					mounter:  mockMounter,
 					inFlight: internal.NewInFlight(),
@@ -695,7 +695,7 @@ func TestNodePublishVolume(t *testing.T) {
 					VolumeId:          "vol-test",
 				}
 
-				_, err := awsDriver.NodePublishVolume(context.TODO(), req)
+				_, err := oscDriver.NodePublishVolume(context.TODO(), req)
 				if err != nil {
 					t.Fatalf("Expect no error but got: %v", err)
 				}
@@ -710,7 +710,7 @@ func TestNodePublishVolume(t *testing.T) {
 				mockMetadata := mocks.NewMockMetadataService(mockCtl)
 				mockMounter := mocks.NewMockMounter(mockCtl)
 
-				awsDriver := &nodeService{
+				oscDriver := &nodeService{
 					metadata: mockMetadata,
 					mounter:  mockMounter,
 					inFlight: internal.NewInFlight(),
@@ -736,7 +736,7 @@ func TestNodePublishVolume(t *testing.T) {
 					VolumeId: "vol-test",
 				}
 
-				_, err := awsDriver.NodePublishVolume(context.TODO(), req)
+				_, err := oscDriver.NodePublishVolume(context.TODO(), req)
 				if err != nil {
 					t.Fatalf("Expect no error but got: %v", err)
 				}
@@ -751,7 +751,7 @@ func TestNodePublishVolume(t *testing.T) {
 				mockMetadata := mocks.NewMockMetadataService(mockCtl)
 				mockMounter := mocks.NewMockMounter(mockCtl)
 
-				awsDriver := &nodeService{
+				oscDriver := &nodeService{
 					metadata: mockMetadata,
 					mounter:  mockMounter,
 					inFlight: internal.NewInFlight(),
@@ -769,7 +769,7 @@ func TestNodePublishVolume(t *testing.T) {
 					VolumeId:          "vol-test",
 				}
 
-				_, err := awsDriver.NodePublishVolume(context.TODO(), req)
+				_, err := oscDriver.NodePublishVolume(context.TODO(), req)
 				if err != nil {
 					t.Fatalf("Expect no error but got: %v", err)
 				}
@@ -784,7 +784,7 @@ func TestNodePublishVolume(t *testing.T) {
 				mockMetadata := mocks.NewMockMetadataService(mockCtl)
 				mockMounter := mocks.NewMockMounter(mockCtl)
 
-				awsDriver := &nodeService{
+				oscDriver := &nodeService{
 					metadata: mockMetadata,
 					mounter:  mockMounter,
 					inFlight: internal.NewInFlight(),
@@ -814,7 +814,7 @@ func TestNodePublishVolume(t *testing.T) {
 					VolumeId: "vol-test",
 				}
 
-				_, err := awsDriver.NodePublishVolume(context.TODO(), req)
+				_, err := oscDriver.NodePublishVolume(context.TODO(), req)
 				if err != nil {
 					t.Fatalf("Expect no error but got: %v", err)
 				}
@@ -829,7 +829,7 @@ func TestNodePublishVolume(t *testing.T) {
 				mockMetadata := mocks.NewMockMetadataService(mockCtl)
 				mockMounter := mocks.NewMockMounter(mockCtl)
 
-				awsDriver := &nodeService{
+				oscDriver := &nodeService{
 					metadata: mockMetadata,
 					mounter:  mockMounter,
 					inFlight: internal.NewInFlight(),
@@ -858,7 +858,7 @@ func TestNodePublishVolume(t *testing.T) {
 					VolumeId: "vol-test",
 				}
 
-				_, err := awsDriver.NodePublishVolume(context.TODO(), req)
+				_, err := oscDriver.NodePublishVolume(context.TODO(), req)
 				if err != nil {
 					t.Fatalf("Expect no error but got: %v", err)
 				}
@@ -873,7 +873,7 @@ func TestNodePublishVolume(t *testing.T) {
 				mockMetadata := mocks.NewMockMetadataService(mockCtl)
 				mockMounter := mocks.NewMockMounter(mockCtl)
 
-				awsDriver := &nodeService{
+				oscDriver := &nodeService{
 					metadata: mockMetadata,
 					mounter:  mockMounter,
 					inFlight: internal.NewInFlight(),
@@ -893,7 +893,7 @@ func TestNodePublishVolume(t *testing.T) {
 					VolumeId: "vol-test",
 				}
 
-				_, err := awsDriver.NodePublishVolume(context.TODO(), req)
+				_, err := oscDriver.NodePublishVolume(context.TODO(), req)
 				expectErr(t, err, codes.InvalidArgument)
 
 			},
@@ -907,7 +907,7 @@ func TestNodePublishVolume(t *testing.T) {
 				mockMetadata := mocks.NewMockMetadataService(mockCtl)
 				mockMounter := mocks.NewMockMounter(mockCtl)
 
-				awsDriver := &nodeService{
+				oscDriver := &nodeService{
 					metadata: mockMetadata,
 					mounter:  mockMounter,
 					inFlight: internal.NewInFlight(),
@@ -930,7 +930,7 @@ func TestNodePublishVolume(t *testing.T) {
 
 				mockMounter.EXPECT().ExistsPath(gomock.Eq(devicePath)).Return(false, errors.New("findDevicePath failed"))
 
-				_, err := awsDriver.NodePublishVolume(context.TODO(), req)
+				_, err := oscDriver.NodePublishVolume(context.TODO(), req)
 				expectErr(t, err, codes.Internal)
 
 			},
@@ -944,7 +944,7 @@ func TestNodePublishVolume(t *testing.T) {
 				mockMetadata := mocks.NewMockMetadataService(mockCtl)
 				mockMounter := mocks.NewMockMounter(mockCtl)
 
-				awsDriver := &nodeService{
+				oscDriver := &nodeService{
 					metadata: mockMetadata,
 					mounter:  mockMounter,
 					inFlight: internal.NewInFlight(),
@@ -957,7 +957,7 @@ func TestNodePublishVolume(t *testing.T) {
 					VolumeCapability:  stdVolCap,
 				}
 
-				_, err := awsDriver.NodePublishVolume(context.TODO(), req)
+				_, err := oscDriver.NodePublishVolume(context.TODO(), req)
 				expectErr(t, err, codes.InvalidArgument)
 
 			},
@@ -971,7 +971,7 @@ func TestNodePublishVolume(t *testing.T) {
 				mockMetadata := mocks.NewMockMetadataService(mockCtl)
 				mockMounter := mocks.NewMockMounter(mockCtl)
 
-				awsDriver := &nodeService{
+				oscDriver := &nodeService{
 					metadata: mockMetadata,
 					mounter:  mockMounter,
 					inFlight: internal.NewInFlight(),
@@ -984,7 +984,7 @@ func TestNodePublishVolume(t *testing.T) {
 					VolumeId:         "vol-test",
 				}
 
-				_, err := awsDriver.NodePublishVolume(context.TODO(), req)
+				_, err := oscDriver.NodePublishVolume(context.TODO(), req)
 				expectErr(t, err, codes.InvalidArgument)
 
 			},
@@ -998,7 +998,7 @@ func TestNodePublishVolume(t *testing.T) {
 				mockMetadata := mocks.NewMockMetadataService(mockCtl)
 				mockMounter := mocks.NewMockMounter(mockCtl)
 
-				awsDriver := &nodeService{
+				oscDriver := &nodeService{
 					metadata: mockMetadata,
 					mounter:  mockMounter,
 					inFlight: internal.NewInFlight(),
@@ -1011,7 +1011,7 @@ func TestNodePublishVolume(t *testing.T) {
 					VolumeId:          "vol-test",
 				}
 
-				_, err := awsDriver.NodePublishVolume(context.TODO(), req)
+				_, err := oscDriver.NodePublishVolume(context.TODO(), req)
 				expectErr(t, err, codes.InvalidArgument)
 
 			},
@@ -1025,7 +1025,7 @@ func TestNodePublishVolume(t *testing.T) {
 				mockMetadata := mocks.NewMockMetadataService(mockCtl)
 				mockMounter := mocks.NewMockMounter(mockCtl)
 
-				awsDriver := &nodeService{
+				oscDriver := &nodeService{
 					metadata: mockMetadata,
 					mounter:  mockMounter,
 					inFlight: internal.NewInFlight(),
@@ -1037,7 +1037,7 @@ func TestNodePublishVolume(t *testing.T) {
 					TargetPath:        targetPath,
 					VolumeId:          "vol-test",
 				}
-				_, err := awsDriver.NodePublishVolume(context.TODO(), req)
+				_, err := oscDriver.NodePublishVolume(context.TODO(), req)
 				expectErr(t, err, codes.InvalidArgument)
 
 			},
@@ -1051,7 +1051,7 @@ func TestNodePublishVolume(t *testing.T) {
 				mockMetadata := mocks.NewMockMetadataService(mockCtl)
 				mockMounter := mocks.NewMockMounter(mockCtl)
 
-				awsDriver := &nodeService{
+				oscDriver := &nodeService{
 					metadata: mockMetadata,
 					mounter:  mockMounter,
 					inFlight: internal.NewInFlight(),
@@ -1069,7 +1069,7 @@ func TestNodePublishVolume(t *testing.T) {
 					},
 				}
 
-				_, err := awsDriver.NodePublishVolume(context.TODO(), req)
+				_, err := oscDriver.NodePublishVolume(context.TODO(), req)
 				expectErr(t, err, codes.InvalidArgument)
 
 			},
@@ -1097,7 +1097,7 @@ func TestNodeUnpublishVolume(t *testing.T) {
 				mockMetadata := mocks.NewMockMetadataService(mockCtl)
 				mockMounter := mocks.NewMockMounter(mockCtl)
 
-				awsDriver := &nodeService{
+				oscDriver := &nodeService{
 					metadata: mockMetadata,
 					mounter:  mockMounter,
 					inFlight: internal.NewInFlight(),
@@ -1109,7 +1109,7 @@ func TestNodeUnpublishVolume(t *testing.T) {
 				}
 
 				mockMounter.EXPECT().Unmount(gomock.Eq(targetPath)).Return(nil)
-				_, err := awsDriver.NodeUnpublishVolume(context.TODO(), req)
+				_, err := oscDriver.NodeUnpublishVolume(context.TODO(), req)
 				if err != nil {
 					t.Fatalf("Expect no error but got: %v", err)
 				}
@@ -1124,7 +1124,7 @@ func TestNodeUnpublishVolume(t *testing.T) {
 				mockMetadata := mocks.NewMockMetadataService(mockCtl)
 				mockMounter := mocks.NewMockMounter(mockCtl)
 
-				awsDriver := &nodeService{
+				oscDriver := &nodeService{
 					metadata: mockMetadata,
 					mounter:  mockMounter,
 					inFlight: internal.NewInFlight(),
@@ -1134,7 +1134,7 @@ func TestNodeUnpublishVolume(t *testing.T) {
 					TargetPath: targetPath,
 				}
 
-				_, err := awsDriver.NodeUnpublishVolume(context.TODO(), req)
+				_, err := oscDriver.NodeUnpublishVolume(context.TODO(), req)
 				expectErr(t, err, codes.InvalidArgument)
 			},
 		},
@@ -1147,7 +1147,7 @@ func TestNodeUnpublishVolume(t *testing.T) {
 				mockMetadata := mocks.NewMockMetadataService(mockCtl)
 				mockMounter := mocks.NewMockMounter(mockCtl)
 
-				awsDriver := &nodeService{
+				oscDriver := &nodeService{
 					metadata: mockMetadata,
 					mounter:  mockMounter,
 					inFlight: internal.NewInFlight(),
@@ -1157,7 +1157,7 @@ func TestNodeUnpublishVolume(t *testing.T) {
 					VolumeId: "vol-test",
 				}
 
-				_, err := awsDriver.NodeUnpublishVolume(context.TODO(), req)
+				_, err := oscDriver.NodeUnpublishVolume(context.TODO(), req)
 				expectErr(t, err, codes.InvalidArgument)
 			},
 		},
@@ -1190,7 +1190,7 @@ func TestNodeGetVolumeStats(t *testing.T) {
 
 				mockMounter.EXPECT().ExistsPath(VolumePath).Return(true, nil)
 
-				awsDriver := nodeService{
+				oscDriver := nodeService{
 					metadata: mockMetadata,
 					mounter:  mockMounter,
 					inFlight: internal.NewInFlight(),
@@ -1200,7 +1200,7 @@ func TestNodeGetVolumeStats(t *testing.T) {
 					VolumeId:   "vol-test",
 					VolumePath: VolumePath,
 				}
-				_, err = awsDriver.NodeGetVolumeStats(context.TODO(), req)
+				_, err = oscDriver.NodeGetVolumeStats(context.TODO(), req)
 				if err != nil {
 					t.Fatalf("Expect no error but got: %v", err)
 				}
@@ -1218,7 +1218,7 @@ func TestNodeGetVolumeStats(t *testing.T) {
 
 				mockMounter.EXPECT().ExistsPath(VolumePath).Return(false, nil)
 
-				awsDriver := nodeService{
+				oscDriver := nodeService{
 					metadata: mockMetadata,
 					mounter:  mockMounter,
 					inFlight: internal.NewInFlight(),
@@ -1228,7 +1228,7 @@ func TestNodeGetVolumeStats(t *testing.T) {
 					VolumeId:   "vol-test",
 					VolumePath: VolumePath,
 				}
-				_, err := awsDriver.NodeGetVolumeStats(context.TODO(), req)
+				_, err := oscDriver.NodeGetVolumeStats(context.TODO(), req)
 				expectErr(t, err, codes.NotFound)
 			},
 		},
@@ -1244,7 +1244,7 @@ func TestNodeGetVolumeStats(t *testing.T) {
 
 				mockMounter.EXPECT().ExistsPath(VolumePath).Return(true, nil)
 
-				awsDriver := nodeService{
+				oscDriver := nodeService{
 					metadata: mockMetadata,
 					mounter:  mockMounter,
 					inFlight: internal.NewInFlight(),
@@ -1254,7 +1254,7 @@ func TestNodeGetVolumeStats(t *testing.T) {
 					VolumeId:   "vol-test",
 					VolumePath: VolumePath,
 				}
-				_, err := awsDriver.NodeGetVolumeStats(context.TODO(), req)
+				_, err := oscDriver.NodeGetVolumeStats(context.TODO(), req)
 				expectErr(t, err, codes.Internal)
 			},
 		},
@@ -1270,7 +1270,7 @@ func TestNodeGetVolumeStats(t *testing.T) {
 
 				mockMounter.EXPECT().ExistsPath(VolumePath).Return(false, errors.New("get existsPath call fail"))
 
-				awsDriver := nodeService{
+				oscDriver := nodeService{
 					metadata: mockMetadata,
 					mounter:  mockMounter,
 					inFlight: internal.NewInFlight(),
@@ -1280,7 +1280,7 @@ func TestNodeGetVolumeStats(t *testing.T) {
 					VolumeId:   "vol-test",
 					VolumePath: VolumePath,
 				}
-				_, err := awsDriver.NodeGetVolumeStats(context.TODO(), req)
+				_, err := oscDriver.NodeGetVolumeStats(context.TODO(), req)
 				expectErr(t, err, codes.Internal)
 			},
 		},
@@ -1299,7 +1299,7 @@ func TestNodeGetCapabilities(t *testing.T) {
 	mockMetadata := mocks.NewMockMetadataService(mockCtl)
 	mockMounter := mocks.NewMockMounter(mockCtl)
 
-	awsDriver := nodeService{
+	oscDriver := nodeService{
 		metadata: mockMetadata,
 		mounter:  mockMounter,
 		inFlight: internal.NewInFlight(),
@@ -1331,7 +1331,7 @@ func TestNodeGetCapabilities(t *testing.T) {
 	expResp := &csi.NodeGetCapabilitiesResponse{Capabilities: caps}
 
 	req := &csi.NodeGetCapabilitiesRequest{}
-	resp, err := awsDriver.NodeGetCapabilities(context.TODO(), req)
+	resp, err := oscDriver.NodeGetCapabilities(context.TODO(), req)
 	if err != nil {
 		srvErr, ok := status.FromError(err)
 		if !ok {
@@ -1357,7 +1357,7 @@ func TestNodeGetInfo(t *testing.T) {
 			instanceID:       "i-123456789abcdef01",
 			instanceType:     "t2.medium",
 			availabilityZone: "us-west-2b",
-			expMaxVolumes:    39,
+			expMaxVolumes:    25,
 		},
 		{
 			name:             "success normal with NVMe",
@@ -1374,18 +1374,17 @@ func TestNodeGetInfo(t *testing.T) {
 
 			mockMetadata := mocks.NewMockMetadataService(mockCtl)
 			mockMetadata.EXPECT().GetInstanceID().Return(tc.instanceID)
-			mockMetadata.EXPECT().GetInstanceType().Return(tc.instanceType)
 			mockMetadata.EXPECT().GetAvailabilityZone().Return(tc.availabilityZone)
 
 			mockMounter := mocks.NewMockMounter(mockCtl)
 
-			awsDriver := &nodeService{
+			oscDriver := &nodeService{
 				metadata: mockMetadata,
 				mounter:  mockMounter,
 				inFlight: internal.NewInFlight(),
 			}
 
-			resp, err := awsDriver.NodeGetInfo(context.TODO(), &csi.NodeGetInfoRequest{})
+			resp, err := oscDriver.NodeGetInfo(context.TODO(), &csi.NodeGetInfoRequest{})
 			if err != nil {
 				srvErr, ok := status.FromError(err)
 				if !ok {

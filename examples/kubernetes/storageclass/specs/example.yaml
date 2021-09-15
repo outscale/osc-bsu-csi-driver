@@ -1,28 +1,27 @@
 kind: StorageClass
 apiVersion: storage.k8s.io/v1
 metadata:
-  name: ebs-sc
-provisioner: ebs.csi.aws.com
+  name: bsu-sc
+provisioner: bsu.csi.osc.com
 volumeBindingMode: WaitForFirstConsumer
 parameters:
   csi.storage.k8s.io/fstype: xfs
   type: io1
   iopsPerGB: "50"
-  encrypted: "true"
 allowedTopologies:
 - matchLabelExpressions:
-  - key: topology.ebs.csi.aws.com/zone
+  - key: topology.bsu.csi.osc.com/zone
     values:
-    - us-east-1a
+    - eu-west-2a
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: ebs-claim
+  name: bsu-claim
 spec:
   accessModes:
     - ReadWriteOnce
-  storageClassName: ebs-sc
+  storageClassName: bsu-sc
   resources:
     requests:
       storage: 4Gi
@@ -43,4 +42,4 @@ spec:
   volumes:
   - name: persistent-storage
     persistentVolumeClaim:
-      claimName: ebs-claim
+      claimName: bsu-claim

@@ -86,11 +86,11 @@ func TestValidateExtraVolumeTags(t *testing.T) {
 			expErr: fmt.Errorf("Volume tag key prefix '%s' is reserved", cloud.KubernetesTagKeyPrefix),
 		},
 		{
-			name: "invalid tag: reserved AWS key prefix",
+			name: "invalid tag: reserved OSC key prefix",
 			tags: map[string]string{
-				cloud.AWSTagKeyPrefix + "foo": "extra-tag-value",
+				cloud.OSCTagKeyPrefix + "foo": "extra-tag-value",
 			},
-			expErr: fmt.Errorf("Volume tag key prefix '%s' is reserved", cloud.AWSTagKeyPrefix),
+			expErr: fmt.Errorf("Volume tag key prefix '%s' is reserved", cloud.OSCTagKeyPrefix),
 		},
 		{
 			name:   "invalid tag: too many volume tags",

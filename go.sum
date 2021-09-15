@@ -689,7 +689,6 @@ github.com/opencontainers/selinux v1.3.1-0.20190929122143-5215b1806f52/go.mod h1
 github.com/opencontainers/selinux v1.5.1/go.mod h1:yTcKuYAh6R95iDpefGLQaPaRwJFwyzAJufJyiTt7s0g=
 github.com/opencontainers/selinux v1.5.2/go.mod h1:yTcKuYAh6R95iDpefGLQaPaRwJFwyzAJufJyiTt7s0g=
 github.com/outscale/osc-sdk-go v1.8.1-0.20210609082153-592f65eab394 h1:7UW9hrwMcLoPUUyQ8sWb+ouHdzJtnEWCwuN4y3Ce59I=
-github.com/outscale/osc-sdk-go v1.9.0 h1:ZbQ5RNjbPfxTO15dHCs4uGdcPr0nzFC6MNth89JneHw=
 github.com/outscale/osc-sdk-go/osc v0.0.0-20210609082153-592f65eab394 h1:YaGlpr7v95PG8Dc1G+FZecetpHe1wo4lHJLN3u2XwbU=
 github.com/outscale/osc-sdk-go/osc v0.0.0-20210609082153-592f65eab394/go.mod h1:5AqqNH1X8zCHescKVlpSHRzrat1KCKDXqZoQPe8fY3A=
 github.com/pascaldekloe/goe v0.0.0-20180627143212-57f6aae5913c/go.mod h1:lzWF7FIEvWOWxwDKqyGYQf6ZUaNfKdP144TG7ZOy1lc=

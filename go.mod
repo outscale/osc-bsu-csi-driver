@@ -4,12 +4,12 @@ go 1.15
 
 require (
 	github.com/aws/aws-sdk-go v1.28.2
-	github.com/onsi/ginkgo v1.11.0
-	github.com/onsi/gomega v1.7.0
+	github.com/onsi/ginkgo v1.16.4
+	github.com/onsi/gomega v1.16.0
 	github.com/prometheus/client_golang v1.7.1
 	github.com/spf13/cobra v1.1.1
 	github.com/spf13/pflag v1.0.5
-	github.com/stretchr/testify v1.4.0
+	github.com/stretchr/testify v1.5.1
 	gopkg.in/gcfg.v1 v1.2.0
 	k8s.io/api v0.19.7
 	k8s.io/apimachinery v0.19.7

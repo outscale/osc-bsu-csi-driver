@@ -25,7 +25,7 @@ require (
 	google.golang.org/grpc v1.29.0
 	gopkg.in/check.v1 v1.0.0-20200227125254-8fa46927fb4f // indirect
 	k8s.io/api v0.22.1
-	k8s.io/apimachinery v0.19.7
+	k8s.io/apimachinery v0.22.1
 	k8s.io/client-go v0.22.1
 	k8s.io/component-base v0.19.7
 	k8s.io/klog/v2 v2.20.0

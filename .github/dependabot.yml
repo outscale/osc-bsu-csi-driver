@@ -1,0 +1,14 @@
+# https://help.github.com/github/administering-a-repository/configuration-options-for-dependency-updates
+
+version: 2
+updates:
+  - package-ecosystem: "gomod"
+    directory: "/"
+    target-branch: "OSC-MIGRATION"
+    schedule:
+      interval: "daily"
+  - package-ecosystem: "gomod"
+    directory: "/"
+    target-branch: "osc-sdk"
+    schedule:
+      interval: "daily"

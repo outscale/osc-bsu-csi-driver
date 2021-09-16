@@ -1,0 +1,25 @@
+name: Build
+
+on:
+  pull_request:
+    branches:
+      - OSC-MIGRATION
+  push:
+    branches: [ OSC-MIGRATION ]
+jobs:
+  Build:
+    if: github.repository == 'outscale-dev/osc-bsu-csi-driver'
+    runs-on: ubuntu-20.04
+    steps:
+    - uses: actions/checkout@v2
+    - name: Docker Lint
+      run: bash -c "make dockerlint"
+    - name: Build Env
+      run: bash -c "make build_env"
+    - name: Build
+      run: bash -c "make run_cmd RUN_CMD=aws-ebs-csi-driver"
+    - name: Verify
+      run: bash -c "make run_cmd RUN_CMD=verify"
+    - name: Test
+      run: bash -c "make run_cmd RUN_CMD=test"
+

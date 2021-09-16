@@ -1811,5 +1811,6 @@ func newMockedFakeAWSServices(id string) *FakeAWSServices {
 	s := NewFakeAWSServices(id)
 	s.ec2 = &MockedFakeEC2{FakeEC2Impl: s.ec2.(*FakeEC2Impl)}
 	s.elb = &MockedFakeELB{FakeELB: s.elb.(*FakeELB)}
+	s.metadata = &FakeMetadata{aws: s}
 	return s
 }

@@ -1,0 +1,24 @@
+name: Build
+
+on:
+  pull_request:
+    branches:
+      - OSC-MIGRATION
+  push:
+    branches: [ OSC-MIGRATION ]
+jobs:
+  Build:
+    if: github.repository == 'aniszosc/cloud-provider-osc'
+    runs-on: ubuntu-20.04
+    steps:
+    - uses: actions/checkout@v2
+    - name: Docker Lint
+      run: bash -c "make dockerlint"
+    - name: Build Env
+      run: bash -c "make build_env"
+    - name: Build
+      run: bash -c "make run_cmd RUN_CMD=osc-cloud-controller-manager"
+    - name: Check
+      run: bash -c "make run_cmd RUN_CMD=check"
+    - name: Test
+      run: bash -c "make run_cmd RUN_CMD=test"

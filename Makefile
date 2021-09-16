@@ -62,7 +62,7 @@ check: verify-fmt verify-lint vet
 
 .PHONY: test
 test:
-	go test -count=1 -race -v $(shell go list ./cloud-controller-manager/...)
+	CGO_ENABLED=1 go test -count=1  -v $(shell go list ./cloud-controller-manager/...)
 
 .PHONY: verify-fmt
 verify-fmt:
@@ -113,7 +113,7 @@ build_env:
 	docker rm -f $(BUILD_ENV_RUN) || true
 	docker build  -t $(BUILD_ENV) -f ./debug/Dockerfile_debug .
 	docker run -d -v $(PWD):/go/src/cloud-provider-osc --rm -it --name $(BUILD_ENV_RUN) $(BUILD_ENV)  bash -l
-	until [[ `docker inspect -f '{{.State.Running}}' $(BUILD_ENV_RUN)` == "true" ]] ; do  sleep 1 ; done
+	bash -c "until [[ `docker inspect -f '{{.State.Running}}' $(BUILD_ENV_RUN)` == "true" ]] ; do  sleep 1 ; done"
 
 .PHONY: e2e-test
 e2e-test:
@@ -150,3 +150,6 @@ clean_build_env:
 	docker rm -f ${BUILD_ENV_RUN} || true
 	helm del --purge ${DEPLOY_NAME} --tls || true
 
+.PHONY: run_cmd
+run_cmd:
+	docker exec $(BUILD_ENV_RUN) make $(RUN_CMD)

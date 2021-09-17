@@ -22,7 +22,8 @@ require (
 	github.com/sirupsen/logrus v1.7.0 // indirect
 	github.com/stretchr/testify v1.6.1 // indirect
 	golang.org/x/sys v0.0.0-20210510120138-977fb7262007
-	google.golang.org/grpc v1.29.0
+	google.golang.org/grpc v1.40.0
+	google.golang.org/grpc/examples v0.0.0-20210917050107-e469f0d5f5bc // indirect
 	gopkg.in/check.v1 v1.0.0-20200227125254-8fa46927fb4f // indirect
 	k8s.io/api v0.22.1
 	k8s.io/apimachinery v0.22.1

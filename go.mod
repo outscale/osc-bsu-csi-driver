@@ -5,7 +5,7 @@ go 1.15
 require (
 	github.com/antihax/optional v1.0.0
 	github.com/aws/aws-sdk-go v1.40.43
-	github.com/container-storage-interface/spec v1.2.0
+	github.com/container-storage-interface/spec v1.5.0
 	github.com/docker/spdystream v0.0.0-20181023171402-6480d4af844c // indirect
 	github.com/elazarl/goproxy v0.0.0-20181111060418-2ce16c963a8a // indirect
 	github.com/golang/mock v1.6.0

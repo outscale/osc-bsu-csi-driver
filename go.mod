@@ -26,7 +26,7 @@ require (
 	gopkg.in/check.v1 v1.0.0-20200227125254-8fa46927fb4f // indirect
 	k8s.io/api v0.22.1
 	k8s.io/apimachinery v0.22.1
-	k8s.io/client-go v0.22.1
+	k8s.io/client-go v0.22.2
 	k8s.io/component-base v0.22.1
 	k8s.io/klog/v2 v2.20.0
 	k8s.io/kubernetes v1.19.11

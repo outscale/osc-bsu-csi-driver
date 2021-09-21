@@ -7,8 +7,3 @@ updates:
     target-branch: "OSC-MIGRATION"
     schedule:
       interval: "daily"
-  - package-ecosystem: "gomod"
-    directory: "/"
-    target-branch: "osc-sdk"
-    schedule:
-      interval: "daily"

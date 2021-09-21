@@ -8,7 +8,7 @@ on:
     branches: [ OSC-MIGRATION ]
 jobs:
   Build:
-    if: github.repository == 'aniszosc/cloud-provider-osc'
+    if: github.repository == 'outscale-dev/cloud-provider-osc'
     runs-on: ubuntu-20.04
     steps:
     - uses: actions/checkout@v2

@@ -105,17 +105,26 @@ func NewMetadata() (MetadataService, error) {
 }
 
 // NewSession create a new session
-func NewSession() (*session.Session, error) {
-
+func NewSession(meta EC2Metadata) (*session.Session, error) {
+	initMetadata := func(meta EC2Metadata) (MetadataService, error) {
+		if meta == nil {
+			return NewMetadata()
+		}
+		value, ok := meta.(MetadataService)
+		if ok {
+			return value, nil
+		}
+		return nil, fmt.Errorf("Unable to retrieve Metadata")
+	}
 	provider := []credentials.Provider{
 		&credentials.EnvProvider{},
 		&credentials.SharedCredentialsProvider{},
 	}
-
-	metadata, err := NewMetadata()
+	metadata, err := initMetadata(meta)
 	if err != nil {
 		return nil, fmt.Errorf("unable to initialize OSC Metadata session: %v", err)
 	}
+
 	awsConfig := &aws.Config{
 		Region:                        aws.String(metadata.GetRegion()),
 		Credentials:                   credentials.NewChainCredentials(provider),

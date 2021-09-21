@@ -109,7 +109,7 @@ func (p *awsSDKProvider) getCrossRequestRetryDelay(regionName string) *CrossRequ
 func (p *awsSDKProvider) Compute(regionName string) (EC2, error) {
 	debugPrintCallerFunctionName()
 	klog.V(10).Infof("Compute(%v)", regionName)
-	sess, err := NewSession()
+	sess, err := NewSession(nil)
 	if err != nil {
 		return nil, fmt.Errorf("unable to initialize OSC session: %v", err)
 	}
@@ -126,7 +126,7 @@ func (p *awsSDKProvider) Compute(regionName string) (EC2, error) {
 func (p *awsSDKProvider) LoadBalancing(regionName string) (ELB, error) {
 	debugPrintCallerFunctionName()
 	klog.V(10).Infof("LoadBalancing(%v)", regionName)
-	sess, err := NewSession()
+	sess, err := NewSession(nil)
 	if err != nil {
 		return nil, fmt.Errorf("unable to initialize AWS session: %v", err)
 	}

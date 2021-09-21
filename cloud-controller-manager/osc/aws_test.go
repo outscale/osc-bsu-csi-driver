@@ -479,12 +479,14 @@ func TestNewAWSCloud(t *testing.T) {
 	}{
 		{
 			"No config reader",
-			nil, newMockedFakeAWSServices(TestClusterID).WithAz(""),
+			nil,
+			newMockedFakeAWSServices(TestClusterID).WithAz(""),
 			true, "",
 		},
 		{
 			"Config specifies valid zone",
-			strings.NewReader("[global]\nzone = eu-west-1a"), newMockedFakeAWSServices(TestClusterID),
+			strings.NewReader("[global]\nzone = eu-west-1a"),
+			newMockedFakeAWSServices(TestClusterID),
 			false, "eu-west-1",
 		},
 		{
@@ -1809,8 +1811,8 @@ func informerNotSynced() bool {
 
 func newMockedFakeAWSServices(id string) *FakeAWSServices {
 	s := NewFakeAWSServices(id)
+
 	s.ec2 = &MockedFakeEC2{FakeEC2Impl: s.ec2.(*FakeEC2Impl)}
 	s.elb = &MockedFakeELB{FakeELB: s.elb.(*FakeELB)}
-	s.metadata = &FakeMetadata{aws: s}
 	return s
 }

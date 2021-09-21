@@ -17,7 +17,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
 	"strings"
 
 	"k8s.io/klog/v2"
@@ -30,18 +29,18 @@ import (
 )
 
 // newInstances returns an implementation of cloudprovider.InstancesV2
-func newInstancesV2(az string) (cloudprovider.InstancesV2, error) {
-	log.Println("newInstancesV2 : ")
+func newInstancesV2(az string, metadata EC2Metadata) (cloudprovider.InstancesV2, error) {
 
 	region, err := azToRegion(az)
 	if err != nil {
 		return nil, err
 	}
 
-	sess, err := NewSession()
+	sess, err := NewSession(metadata)
 	if err != nil {
 		return nil, fmt.Errorf("unable to initialize OSC session: %v", err)
 	}
+
 	ec2Service := ec2.New(sess)
 
 	return &instancesV2{

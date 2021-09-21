@@ -39,7 +39,7 @@ type FakeAWSServices struct {
 
 	ec2      FakeEC2
 	elb      ELB
-	metadata *FakeMetadata
+	metadata EC2Metadata
 }
 
 // NewFakeAWSServices creates a new FakeAWSServices
@@ -254,6 +254,26 @@ type FakeMetadata struct {
 	aws *FakeAWSServices
 }
 
+//GetInstanceID is a fake metadata for testing
+func (m *FakeMetadata) GetInstanceID() string {
+	return ""
+}
+
+//GetInstanceType is a fake metadata for testing
+func (m *FakeMetadata) GetInstanceType() string {
+	return ""
+}
+
+//GetRegion is a fake metadata for testing
+func (m *FakeMetadata) GetRegion() string {
+	return ""
+}
+
+//GetAvailabilityZone is a fake metadata for testing
+func (m *FakeMetadata) GetAvailabilityZone() string {
+	return ""
+}
+
 // GetInstanceIdentityDocument mocks base method
 func (m *FakeMetadata) GetInstanceIdentityDocument() (ec2metadata.EC2InstanceIdentityDocument, error) {
 	return ec2metadata.EC2InstanceIdentityDocument{}, nil
@@ -261,7 +281,6 @@ func (m *FakeMetadata) GetInstanceIdentityDocument() (ec2metadata.EC2InstanceIde
 
 // Available mocks base method
 func (m *FakeMetadata) Available() bool {
-
 	return true
 }
 

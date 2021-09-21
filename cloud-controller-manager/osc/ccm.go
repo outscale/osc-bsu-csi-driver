@@ -60,7 +60,7 @@ func readAWSCloudConfig(config io.Reader) (*CloudConfig, error) {
 // AWSProvider and instanceId are primarily for tests
 func newAWSCloud(cfg CloudConfig, awsServices Services) (*Cloud, error) {
 	debugPrintCallerFunctionName()
-	klog.V(10).Infof("newAWSCloud(%v,%v)", cfg, awsServices)
+	klog.V(10).Infof("newAWSCloud(%v, %v)", cfg, awsServices)
 	// We have some state in the Cloud object - in particular the attaching map
 	// Log so that if we are building multiple Cloud objects, it is obvious!
 	klog.Infof("Starting OSC cloud provider")
@@ -83,7 +83,7 @@ func newAWSCloud(cfg CloudConfig, awsServices Services) (*Cloud, error) {
 		return nil, err
 	}
 
-	instances, err := newInstancesV2(zone)
+	instances, err := newInstancesV2(zone, metadata)
 	if err != nil {
 		return nil, err
 	}

@@ -41,6 +41,6 @@ ARG GOPROXY
 WORKDIR $GOPATH/src/cloud-provider-osc
 
 
-ENV CGO_ENABLED=0
+ENV CGO_ENABLED=1
 ENV GOPROXY ${GOPROXY:-https://proxy.golang.org}
 

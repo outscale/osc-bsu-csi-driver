@@ -18,7 +18,6 @@ package osc
 
 import (
 	"fmt"
-	"log"
 )
 
 // MetadataService represents AWS metadata service.
@@ -80,7 +79,6 @@ func NewMetadataService(svc EC2Metadata) (MetadataService, error) {
 		return nil, fmt.Errorf("could not get valid EC2 availavility zone")
 	}
 	region := availabilityZone[0 : len(availabilityZone)-1]
-	log.Println("region : ", region)
 	if len(region) == 0 {
 		return nil, fmt.Errorf("could not get valid EC2 region")
 	}

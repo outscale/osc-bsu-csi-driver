@@ -25,7 +25,6 @@ limitations under the License.
 package main
 
 import (
-	"flag"
 	"fmt"
 	"math/rand"
 	"net"
@@ -34,89 +33,31 @@ import (
 	"strings"
 	"time"
 
-	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
-
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apimachinery/pkg/util/wait"
 	utilfeature "k8s.io/apiserver/pkg/util/feature"
-	"k8s.io/component-base/cli/globalflag"
+	"k8s.io/cloud-provider/app"
+	"k8s.io/cloud-provider/options"
+	cliflag "k8s.io/component-base/cli/flag"
 	"k8s.io/component-base/logs"
 	_ "k8s.io/component-base/metrics/prometheus/clientgo" // for client metric registration
 	_ "k8s.io/component-base/metrics/prometheus/version"  // for version metric registration
 	"k8s.io/klog/v2"
-	"k8s.io/kubernetes/cmd/cloud-controller-manager/app"
-	"k8s.io/kubernetes/cmd/cloud-controller-manager/app/options"
 	"k8s.io/kubernetes/pkg/features" // add the kubernetes feature gates
 	netutils "k8s.io/utils/net"
 
 	osc "github.com/outscale-dev/cloud-provider-osc/cloud-controller-manager/osc"
 	cloudprovider "k8s.io/cloud-provider"
 
+	cloudcontrollerconfig "k8s.io/cloud-provider/app/config"
 	cloudnodecontroller "k8s.io/cloud-provider/controllers/node"
 	cloudnodelifecyclecontroller "k8s.io/cloud-provider/controllers/nodelifecycle"
 	routecontroller "k8s.io/cloud-provider/controllers/route"
 	servicecontroller "k8s.io/cloud-provider/controllers/service"
-	cloudcontrollerconfig "k8s.io/kubernetes/cmd/cloud-controller-manager/app/config"
 )
 
 var version string
-
-func main() {
-	rand.Seed(time.Now().UTC().UnixNano())
-	logs.InitLogs()
-	defer logs.FlushLogs()
-	klog.InitFlags(flag.NewFlagSet("osc-cloud-controller-manager", flag.ExitOnError))
-	s, err := options.NewCloudControllerManagerOptions()
-	if err != nil {
-		klog.Fatalf("unable to initialize command options: %v", err)
-	}
-
-	command := &cobra.Command{
-		Use:  "osc-cloud-controller-manager",
-		Long: `osc-cloud-controller-manager manages osc cloud resources for a Kubernetes cluster.`,
-		Run: func(cmd *cobra.Command, args []string) {
-			// Use our version instead of the Kubernetes formatted version
-			versionFlag := cmd.Flags().Lookup("version")
-			if versionFlag.Value.String() == "true" {
-				fmt.Printf("%s version: %s\n", cmd.Name(), version)
-				os.Exit(0)
-			}
-
-			// Hard code osc cloud provider
-			cloudProviderFlag := cmd.Flags().Lookup("cloud-provider")
-			if cloudProviderFlag.Value.String() == "" {
-				cloudProviderFlag.Value.Set(osc.ProviderName)
-			}
-
-			printFlags(cmd.Flags())
-
-			c, err := s.Config(KnownControllers(), ControllersDisabledByDefault.List())
-			if err != nil {
-				fmt.Fprintf(os.Stderr, "%v\n", err)
-				os.Exit(1)
-			}
-
-			if err := app.Run(c.Complete(), wait.NeverStop); err != nil {
-				fmt.Fprintf(os.Stderr, "%v\n", err)
-				os.Exit(1)
-			}
-		},
-	}
-
-	fs := command.Flags()
-	namedFlagSets := s.Flags(KnownControllers(), ControllersDisabledByDefault.List())
-	globalflag.AddGlobalFlags(namedFlagSets.FlagSet("global"), command.Name())
-
-	for _, f := range namedFlagSets.FlagSets {
-		fs.AddFlagSet(f)
-	}
-
-	if err := command.Execute(); err != nil {
-		fmt.Fprintf(os.Stderr, "error: %v\n", err)
-		os.Exit(1)
-	}
-}
 
 // initFunc is used to launch a particular controller.  It may run additional "should I activate checks".
 // Any error returned will cause the controller process to `Fatal`
@@ -272,4 +213,42 @@ func printFlags(flags *pflag.FlagSet) {
 	flags.VisitAll(func(flag *pflag.Flag) {
 		klog.V(1).Infof("FLAG: --%s=%q", flag.Name, flag.Value)
 	})
+}
+
+func cloudInitializer(config *cloudcontrollerconfig.CompletedConfig) cloudprovider.Interface {
+	cloudConfig := config.ComponentConfig.KubeCloudShared.CloudProvider
+	providerName := cloudConfig.Name
+
+	if providerName == "" {
+		providerName = osc.ProviderName
+	}
+
+	cloud, err := cloudprovider.InitCloudProvider(providerName, cloudConfig.CloudConfigFile)
+	if err != nil {
+		klog.Fatalf("Cloud provider could not be initialized: %v", err)
+	}
+	if cloud == nil {
+		klog.Fatalf("Cloud provider is nil")
+	}
+
+	return cloud
+}
+
+func main() {
+	rand.Seed(time.Now().UTC().UnixNano())
+	logs.InitLogs()
+	defer logs.FlushLogs()
+
+	opts, err := options.NewCloudControllerManagerOptions()
+	if err != nil {
+		klog.Fatalf("unable to initialize command options: %v", err)
+	}
+
+	controllerInitializers := app.DefaultInitFuncConstructors
+	fss := cliflag.NamedFlagSets{}
+	command := app.NewCloudControllerManagerCommand(opts, cloudInitializer, controllerInitializers, fss, wait.NeverStop)
+
+	if err := command.Execute(); err != nil {
+		os.Exit(1)
+	}
 }

@@ -28,7 +28,7 @@ VERSION ?= $(shell git describe --exact-match 2> /dev/null || \
 LDFLAGS   := "-w -s -X 'main.version=${VERSION}'"
 
 # Full log with  -v -x
-GO_ADD_OPTIONS := -v -x
+GO_ADD_OPTIONS := -v -x 
 
 IMAGE = "osc/cloud-provider-osc"
 IMAGE_VERSION = "v${VERSION}"
@@ -43,7 +43,7 @@ E2E_AZ := "eu-west-2a"
 E2E_REGION := "eu-west-2"
 
 osc-cloud-controller-manager: $(SOURCES)
-	CGO_ENABLED=0 GOOS=$(GOOS) go build $(GO_ADD_OPTIONS)\
+	CGO_ENABLED=0 GOOS=$(GOOS) go build $(GO_ADD_OPTIONS) \
 		-ldflags $(LDFLAGS) \
 		-o osc-cloud-controller-manager \
 		cloud-controller-manager/cmd/osc-cloud-controller-manager/main.go

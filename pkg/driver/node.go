@@ -33,10 +33,8 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"k8s.io/klog/v2"
-	"k8s.io/kubernetes/pkg/util/resizefs"
 	"k8s.io/kubernetes/pkg/volume"
-	"k8s.io/utils/exec"
-	"k8s.io/utils/mount"
+	mountutils "k8s.io/mount-utils"
 )
 
 const (
@@ -283,10 +281,7 @@ func (d *nodeService) NodeExpandVolume(ctx context.Context, req *csi.NodeExpandV
 	}
 
 	// TODO: refactor Mounter to expose a mount.SafeFormatAndMount object
-	r := resizefs.NewResizeFs(&mount.SafeFormatAndMount{
-		Interface: mount.New(""),
-		Exec:      exec.New(),
-	})
+	r := mountutils.NewResizeFs(d.mounter.(*NodeMounter).Exec)
 
 	// TODO: lock per volume ID to have some idempotency
 	if _, err := r.Resize(devicePath, req.GetVolumePath()); err != nil {

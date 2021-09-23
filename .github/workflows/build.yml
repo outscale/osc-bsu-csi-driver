@@ -22,4 +22,7 @@ jobs:
       run: bash -c "make run_cmd RUN_CMD=verify"
     - name: Test
       run: bash -c "make run_cmd RUN_CMD=test"
-
+    - name: Image
+      run: bash -c "make image"
+    - name: Trivy-Scan
+      run: bash -c "make trivy-scan"

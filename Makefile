@@ -27,7 +27,8 @@ E2E_REGION := "eu-west-2"
 
 PKG := github.com/kubernetes-sigs/aws-ebs-csi-driver
 IMAGE := osc/osc-ebs-csi-driver
-IMAGE_TAG := latest
+IMAGE_TAG := $(shell git describe --exact-match 2> /dev/null || \
+                 git describe --match=$(git rev-parse --short=8 HEAD) --always --dirty --abbrev=8)
 REGISTRY := registry.kube-system:5001
 VERSION := 0.5.0-osc
 GIT_COMMIT ?= $(shell git rev-parse HEAD)
@@ -36,6 +37,8 @@ LDFLAGS ?= "-X ${PKG}/pkg/driver.driverVersion=${VERSION} -X ${PKG}/pkg/driver.g
 GO111MODULE := on
 GOPROXY := direct
 RUN_CMD := ""
+
+TRIVY_IMAGE := aquasec/trivy:0.19.2
 
 # Full log with  -v -x
 GO_ADD_OPTIONS := -v -x
@@ -60,11 +63,6 @@ verify:
 .PHONY: test
 test:
 	go test -v -race ./pkg/...
-
-.PHONY: test-sanity
-test-sanity:
-	#go test -v ./tests/sanity/...
-	echo "Disabled"
 
 .PHONY: test-e2e-multi-az
 test-e2e-multi-az:
@@ -196,4 +194,18 @@ kubeval: bin/kubeval
 
 mockgen: bin/mockgen
 	./hack/update-gomock
+
+.PHONY: trivy-scan
+trivy-scan:
+	docker pull $(TRIVY_IMAGE)
+	docker run --rm \
+			-v /var/run/docker.sock:/var/run/docker.sock \
+			-v ${HOME}/.trivy_cache:/root/.cache/ \
+			-v ${PWD}/.trivyignore:/root/.trivyignore \
+			$(TRIVY_IMAGE) \
+			image \
+			--exit-code 1 \
+			--severity="HIGH,CRITICAL" \
+			--ignorefile /root/.trivyignore \
+			$(IMAGE):$(IMAGE_TAG)
 

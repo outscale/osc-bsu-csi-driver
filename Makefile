@@ -42,6 +42,8 @@ E2E_ENV := "build-e2e-cloud-provider"
 E2E_AZ := "eu-west-2a"
 E2E_REGION := "eu-west-2"
 
+TRIVY_IMAGE := aquasec/trivy:0.19.2
+
 osc-cloud-controller-manager: $(SOURCES)
 	CGO_ENABLED=0 GOOS=$(GOOS) go build $(GO_ADD_OPTIONS) \
 		-ldflags $(LDFLAGS) \
@@ -153,3 +155,15 @@ clean_build_env:
 .PHONY: run_cmd
 run_cmd:
 	docker exec $(BUILD_ENV_RUN) make $(RUN_CMD)
+
+.PHONY: trivy-scan
+trivy-scan:
+	docker pull $(TRIVY_IMAGE)
+	docker run --rm \
+			-v /var/run/docker.sock:/var/run/docker.sock \
+			-v ${HOME}/.trivy_cache:/root/.cache/ \
+			$(TRIVY_IMAGE) \
+			image \
+			--exit-code 1 \
+			--severity="HIGH,CRITICAL" \
+			$(IMAGE):$(IMAGE_VERSION)

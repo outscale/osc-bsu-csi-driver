@@ -36,9 +36,39 @@ rules:
 - apiGroups:
   - ""
   resources:
+  - serviceaccounts
+  verbs:
+  - create
+- apiGroups:
+  - coordination.k8s.io
+  resources:
+  - leases
+  verbs:
+  - create
+  - get
+  - list
+  - update
+  - watch
+- apiGroups:
+  - ""
+  resourceNames:
+  - node-controller
+  - service-controller
+  - route-controller
+  resources:
+  - serviceaccounts/token
+  verbs:
+  - create
+- apiGroups:
+  - ""
+  resources:
   - nodes
   verbs:
-  - '*'
+  - get
+  - list
+  - patch
+  - update
+  - watch
 - apiGroups:
   - ""
   resources:
@@ -59,24 +89,9 @@ rules:
   resources:
   - services/status
   verbs:
-  - list
   - patch
   - update
-  - watch
-- apiGroups:
-  - ""
-  resources:
-  - serviceaccounts
-  verbs:
-  - create
-- apiGroups:
-  - ""
-  resources:
-  - persistentvolumes
-  verbs:
-  - get
   - list
-  - update
   - watch
 - apiGroups:
   - ""
@@ -86,22 +101,10 @@ rules:
   - create
   - get
   - list
-  - watch
   - update
-- apiGroups:
-  - coordination.k8s.io
-  resources:
-  - leases
-  verbs:
-  - create
-  - get
-  - list
   - watch
-  - update
 ---
-
 # CCM Service
----
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
@@ -111,10 +114,10 @@ roleRef:
   kind: ClusterRole
   name: cluster-admin
 subjects:
-  - kind: ServiceAccount
-    name: cloud-controller-manager
-    namespace: kube-system
-
+- apiGroup: ""
+  kind: ServiceAccount
+  name: cloud-controller-manager
+  namespace: kube-system
 ---
 apiVersion: apps/v1
 kind: DaemonSet
@@ -127,6 +130,8 @@ spec:
   selector:
     matchLabels:
       app: osc-cloud-controller-manager
+  updateStrategy:
+    type: RollingUpdate
   template:
     metadata:
       labels:
@@ -135,11 +140,11 @@ spec:
       serviceAccountName: cloud-controller-manager
       containers:
         - name: osc-cloud-controller-manager
-          image: outscale/cloud-provider-osc:v0.0.8beta
+          image: outscale/cloud-provider-osc:v0.0.9beta
           imagePullPolicy: IfNotPresent
           command:
             - /bin/osc-cloud-controller-manager
-            - --leader-elect=true
+            - --configure-cloud-routes=false
             - --cloud-provider=osc
             - -v=10
             - --logtostderr
@@ -205,4 +210,3 @@ spec:
         # the taint may vary depending on your cluster setup
         - key: node-role.kubernetes.io/master
           effect: NoSchedule
-

@@ -190,7 +190,7 @@ func (c *Cloud) Zones() (cloudprovider.Zones, bool) {
 // Routes returns an implementation of Routes for Amazon Web Services.
 func (c *Cloud) Routes() (cloudprovider.Routes, bool) {
 	debugPrintCallerFunctionName()
-	return c, true
+	return c, false
 }
 
 // HasClusterID returns true if the cluster has a clusterID

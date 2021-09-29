@@ -38,7 +38,7 @@ func newInstancesV2(az string, metadata EC2Metadata) (cloudprovider.InstancesV2,
 
 	sess, err := NewSession(metadata)
 	if err != nil {
-		return nil, fmt.Errorf("unable to initialize OSC session: %v", err)
+		return nil, fmt.Errorf("unable to initialize newInstancesV2 session: %v", err)
 	}
 
 	ec2Service := ec2.New(sess)

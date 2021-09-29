@@ -95,6 +95,7 @@ func newEC2MetadataSvc() *ec2metadata.EC2Metadata {
 
 // NewMetadata create a new metadata service
 func NewMetadata() (MetadataService, error) {
+	klog.V(10).Infof("NewMetadata")
 	svc := newEC2MetadataSvc()
 
 	metadata, err := NewMetadataService(svc)
@@ -134,7 +135,7 @@ func NewSession(meta EC2Metadata) (*session.Session, error) {
 	awsConfig.WithLogLevel(aws.LogDebugWithSigning | aws.LogDebugWithHTTPBody | aws.LogDebugWithRequestRetries | aws.LogDebugWithRequestErrors)
 	sess, err := session.NewSession(awsConfig)
 	if err != nil {
-		return nil, fmt.Errorf("unable to initialize OSC session: %v", err)
+		return nil, fmt.Errorf("unable to initialize NewSession session: %v", err)
 	}
 	return sess, nil
 }

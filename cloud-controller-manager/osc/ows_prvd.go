@@ -111,7 +111,7 @@ func (p *awsSDKProvider) Compute(regionName string) (EC2, error) {
 	klog.V(10).Infof("Compute(%v)", regionName)
 	sess, err := NewSession(nil)
 	if err != nil {
-		return nil, fmt.Errorf("unable to initialize OSC session: %v", err)
+		return nil, fmt.Errorf("unable to initialize Compute session: %v", err)
 	}
 	service := ec2.New(sess)
 
@@ -143,11 +143,12 @@ func (p *awsSDKProvider) Metadata() (EC2Metadata, error) {
 		EndpointResolver: endpoints.ResolverFunc(SetupMetadataResolver()),
 	}
 	awsConfig.WithLogLevel(aws.LogDebugWithSigning | aws.LogDebugWithHTTPBody | aws.LogDebugWithRequestRetries | aws.LogDebugWithRequestErrors)
-	sess, err := session.NewSession(awsConfig)
-	if err != nil {
-		return nil, fmt.Errorf("unable to initialize OSC session: %v", err)
-	}
+	sess := session.Must(session.NewSession(awsConfig))
 	client := ec2metadata.New(sess)
 	p.addAPILoggingHandlers(&client.Handlers)
-	return client, nil
+	metadata, err := NewMetadataService(client)
+	if err != nil {
+		return nil, fmt.Errorf("could not get metadata from AWS: %v", err)
+	}
+	return metadata.(EC2Metadata), err
 }

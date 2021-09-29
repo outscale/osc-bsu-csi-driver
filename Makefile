@@ -114,7 +114,7 @@ build_env:
 	docker wait $(BUILD_ENV_RUN) || true
 	docker rm -f $(BUILD_ENV_RUN) || true
 	docker build  -t $(BUILD_ENV) -f ./debug/Dockerfile_debug .
-	docker run -d -v $(PWD):/go/src/cloud-provider-osc --rm -it --name $(BUILD_ENV_RUN) $(BUILD_ENV)  bash -l
+	docker run -d -v ${HOME}/go_cache:/go -v $(PWD):/go/src/cloud-provider-osc --rm -it --name $(BUILD_ENV_RUN) $(BUILD_ENV)  bash -l
 	bash -c "until [[ `docker inspect -f '{{.State.Running}}' $(BUILD_ENV_RUN)` == "true" ]] ; do  sleep 1 ; done"
 
 .PHONY: e2e-test

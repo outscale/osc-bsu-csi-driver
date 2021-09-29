@@ -30,7 +30,7 @@ func elbSession() (*session.Session, error) {
 	awsConfig.WithLogLevel(aws.LogDebugWithSigning | aws.LogDebugWithHTTPBody | aws.LogDebugWithRequestRetries | aws.LogDebugWithRequestErrors)
 	sess, err := session.NewSession(awsConfig)
 	if err != nil {
-		return nil, fmt.Errorf("unable to initialize OSC session: %v", err)
+		return nil, fmt.Errorf("unable to initialize elb session: %v", err)
 	}
 	return sess, nil
 }

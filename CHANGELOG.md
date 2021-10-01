@@ -14,3 +14,9 @@
 
 ### Notable changes
 * Make LB name configurable using annotations
+
+# v0.0.9beta
+
+### Notable changes
+* Update to k8s pkg 1.21.5
+* update e2e tests

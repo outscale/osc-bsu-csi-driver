@@ -24,6 +24,6 @@ fi
 
 echo "Running golangci-lint"
 
-golangci-lint run --deadline=10m --exclude "SA1019: grpc.WithDialer is deprecated"
+golangci-lint run --deadline=10m --exclude "SA1019"
 
 echo "Congratulations! All Go source files have been linted."

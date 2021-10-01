@@ -9,7 +9,7 @@ The Outscale Block Storage Unit Container Storage Interface (CSI) Driver provide
 
 ## CSI Specification Compability Matrix
 
-| OSC BSU CSI Driver \ CSI Version       |  v1.2.0|
+| OSC BSU CSI Driver \ CSI Version       | v1.3.0 |
 |----------------------------------------|--------|
 | OSC-MIGRATION branch                   | yes    |
 
@@ -38,7 +38,7 @@ There are several optional parameters that could be passed into `CreateVolumeReq
 Following sections are Kubernetes specific. If you are Kubernetes user, use followings for driver features, installation steps and examples.
 
 ## Kubernetes Version Compability Matrix
-| OSC BSU CSI Driver \ Kubernetes Version|v1.19.4| 
+| OSC BSU CSI Driver \ Kubernetes Version|v1.21.5|
 |----------------------------------------|-------|
 | OSC-MIGRATION branch                   | yes   |
 
@@ -46,7 +46,7 @@ Following sections are Kubernetes specific. If you are Kubernetes user, use foll
 ## Container Images:
 |OSC BSU CSI Driver Version | Image                                     |
 |---------------------------|-------------------------------------------|
-| OSC-MIGRATION branch      |outscale/osc-bsu-csi-driver:v0.0.10beta     |
+| OSC-MIGRATION branch      |outscale/osc-bsu-csi-driver:v1.0.0         |
 
 ## Features
 * **Static Provisioning** - create a new or migrating existing BSU volumes, then create persistence volume (PV) from the BSU volume and consume the PV from container using persistence volume claim (PVC).
@@ -89,7 +89,8 @@ Following sections are Kubernetes specific. If you are Kubernetes user, use foll
     
     ## deploy the pod
     export IMAGE_NAME=outscale/osc-bsu-csi-driver
-    export IMAGE_TAG="v0.0.9beta"
+    export IMAGE_TAG="v1.0.0"
+
     git clone git@github.com:outscale-dev/osc-bsu-csi-driver.git
     cd osc-bsu-csi-driver
     helm uninstall osc-bsu-csi-driver  --namespace kube-system

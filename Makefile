@@ -26,8 +26,10 @@ E2E_AZ := "eu-west-2a"
 E2E_REGION := "eu-west-2"
 
 PKG := github.com/outscale-dev/osc-bsu-csi-driver
-IMAGE := osc/osc-bsu-csi-driver
-IMAGE_TAG := latest
+IMAGE := osc/osc-ebs-csi-driver
+IMAGE_TAG := $(shell git describe --exact-match 2> /dev/null || \
+                 git describe --match=$(git rev-parse --short=8 HEAD) --always --dirty --abbrev=8)
+
 REGISTRY := registry.kube-system:5001
 VERSION := 0.5.0-osc
 GIT_COMMIT ?= $(shell git rev-parse HEAD)
@@ -35,6 +37,9 @@ BUILD_DATE ?= $(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
 LDFLAGS ?= "-X ${PKG}/pkg/driver.driverVersion=${VERSION} -X ${PKG}/pkg/driver.gitCommit=${GIT_COMMIT} -X ${PKG}/pkg/driver.buildDate=${BUILD_DATE}"
 GO111MODULE := on
 GOPROXY := direct
+RUN_CMD := ""
+
+TRIVY_IMAGE := aquasec/trivy:0.19.2
 
 # Full log with  -v -x
 GO_ADD_OPTIONS := -v -x
@@ -59,11 +64,6 @@ verify:
 .PHONY: test
 test:
 	go test -v -race ./pkg/...
-
-.PHONY: test-sanity
-test-sanity:
-	#go test -v ./tests/sanity/...
-	echo "Disabled"
 
 .PHONY: test-e2e-multi-az
 test-e2e-multi-az:
@@ -110,7 +110,7 @@ build_env:
 	docker build  -t $(BUILD_ENV) -f ./debug/Dockerfile_debug .
 	mkdir -p ${HOME}/go_cache
 	docker run -d -v ${HOME}/go_cache:/go -v $(PWD):$(OSC_BSU_WORKDIR) --rm -it --name $(BUILD_ENV_RUN) $(BUILD_ENV)  bash -l
-	until [[ `docker inspect -f '{{.State.Running}}' $(BUILD_ENV_RUN)` == "true" ]] ; do  sleep 1 ; done
+	bash -c "until [[ `docker inspect -f '{{.State.Running}}' $(BUILD_ENV_RUN)` == "true" ]] ; do  sleep 1 ; done"
 
 .PHONY: test-integration
 test-integration:
@@ -131,8 +131,6 @@ run_int_test:
 .PHONY: deploy
 deploy:
 	IMAGE_TAG=$(IMAGE_VERSION) IMAGE_NAME=$(REGISTRY)/$(IMAGE) . ./osc-bsu-csi-driver/deploy.sh
-
-
 
 .PHONY: test-e2e-single-az
 test-e2e-single-az:
@@ -167,6 +165,10 @@ clean_build_env:
 	docker wait ${E2E_ENV_RUN} || true
 	docker rm -f ${E2E_ENV_RUN} || true
 
+.PHONY: run_cmd
+run_cmd:
+	docker exec $(BUILD_ENV_RUN) make $(RUN_CMD)
+
 bin /tmp/helm /tmp/kubeval:
 	@mkdir -p $@
 
@@ -194,3 +196,16 @@ kubeval: bin/kubeval
 mockgen: bin/mockgen
 	./hack/update-gomock
 
+.PHONY: trivy-scan
+trivy-scan:
+	docker pull $(TRIVY_IMAGE)
+	docker run --rm \
+			-v /var/run/docker.sock:/var/run/docker.sock \
+			-v ${HOME}/.trivy_cache:/root/.cache/ \
+			-v ${PWD}/.trivyignore:/root/.trivyignore \
+			$(TRIVY_IMAGE) \
+			image \
+			--exit-code 1 \
+			--severity="HIGH,CRITICAL" \
+			--ignorefile /root/.trivyignore \
+			$(IMAGE):$(IMAGE_TAG)

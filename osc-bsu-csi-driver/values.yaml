@@ -6,14 +6,14 @@ replicaCount: 2
 
 image:
   repository: outscale/osc-bsu-csi-driver
-  tag: v0.0.9beta
+  tag: v1.0.0
   pullPolicy: IfNotPresent
 
 # set the verbosity level of plugins
 verbosity: 2
 
 # Timeout for sidecars
-timeout: 30s
+timeout: 60s
 
 backoff:
 # integer in second defining initial duration
@@ -27,10 +27,10 @@ backoff:
 sidecars:
   provisionerImage:
     repository: k8s.gcr.io/sig-storage/csi-provisioner
-    tag: "v2.0.2"
+    tag: "v2.1.1"
   attacherImage:
     repository: k8s.gcr.io/sig-storage/csi-attacher
-    tag: "v3.0.0"
+    tag: "v3.1.0"
   snapshotterImage:
     repository: k8s.gcr.io/sig-storage/csi-snapshotter
     tag: "v3.0.3"
@@ -42,7 +42,7 @@ sidecars:
     tag: "v1.0.0"
   nodeDriverRegistrarImage:
     repository: k8s.gcr.io/sig-storage/csi-node-driver-registrar
-    tag: "v2.0.1"
+    tag: "v2.1.0"
 
 snapshotController:
   repository: k8s.gcr.io/sig-storage/snapshot-controller

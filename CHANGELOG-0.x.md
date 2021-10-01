@@ -26,3 +26,10 @@
 # v0.0.11beta
 ## Notable changes
 * Add fsGroupPolicy specific e2e test
+
+# v0.0.12beta
+## Notable changes
+* Update to k8s pkg 1.21.5
+* update to csi 1.3.0
+* Update charts and sidecars versions
+* update e2e tests

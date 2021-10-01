@@ -605,3 +605,8 @@ func getVolSizeBytes(req *csi.CreateVolumeRequest) (int64, error) {
 	}
 	return volSizeBytes, nil
 }
+
+func (d *controllerService) ControllerGetVolume(ctx context.Context, req *csi.ControllerGetVolumeRequest) (*csi.ControllerGetVolumeResponse, error) {
+	klog.V(4).Infof("ControllerGetVolume: called with args %+v", *req)
+	return nil, status.Error(codes.Unimplemented, "")
+}

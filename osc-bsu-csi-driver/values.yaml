@@ -6,11 +6,11 @@ replicaCount: 2
 
 image:
   repository: outscale/osc-ebs-csi-driver
-  tag: v0.0.9beta
+  tag: v0.0.12beta
   pullPolicy: IfNotPresent
 
 # set the verbosity level of plugins
-verbosity: 10
+verbosity: 2
 
 # Timeout for sidecars
 timeout: 60s

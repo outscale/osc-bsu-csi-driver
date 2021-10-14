@@ -4,25 +4,19 @@ go 1.15
 
 require (
 	github.com/antihax/optional v1.0.0
-	github.com/aws/aws-sdk-go v1.40.43
+	github.com/aws/aws-sdk-go v1.41.2
 	github.com/container-storage-interface/spec v1.3.0
-	github.com/docker/spdystream v0.0.0-20181023171402-6480d4af844c // indirect
 	github.com/elazarl/goproxy v0.0.0-20181111060418-2ce16c963a8a // indirect
 	github.com/golang/mock v1.6.0
 	github.com/golang/protobuf v1.5.2
-	github.com/gorilla/websocket v1.4.2 // indirect
 	github.com/imdario/mergo v0.3.9 // indirect
-	github.com/kr/text v0.2.0 // indirect
 	github.com/kubernetes-csi/csi-test v2.0.0+incompatible
-	github.com/kubernetes-csi/external-snapshotter/client/v3 v3.0.0
-	github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e // indirect
+	github.com/kubernetes-csi/external-snapshotter/client/v4 v4.2.0
 	github.com/onsi/ginkgo v1.16.4
 	github.com/onsi/gomega v1.16.0
 	github.com/outscale/osc-sdk-go/osc v0.0.0-20210609082153-592f65eab394
-	github.com/stretchr/testify v1.6.1 // indirect
 	golang.org/x/sys v0.0.0-20210510120138-977fb7262007
 	google.golang.org/grpc v1.29.0
-	gopkg.in/check.v1 v1.0.0-20200227125254-8fa46927fb4f // indirect
 	k8s.io/api v0.21.5
 	k8s.io/apimachinery v0.21.5
 	k8s.io/client-go v0.21.5

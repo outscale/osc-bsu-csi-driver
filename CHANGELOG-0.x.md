@@ -33,3 +33,7 @@
 * update to csi 1.3.0
 * Update charts and sidecars versions
 * update e2e tests
+
+# v0.0.13beta
+## Notable changes
+* Update default Max BSU Volumes value

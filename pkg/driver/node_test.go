@@ -1357,14 +1357,14 @@ func TestNodeGetInfo(t *testing.T) {
 			instanceID:       "i-123456789abcdef01",
 			instanceType:     "t2.medium",
 			availabilityZone: "us-west-2b",
-			expMaxVolumes:    39,
+			expMaxVolumes:    defaultMaxBSUVolumes,
 		},
 		{
 			name:             "success normal with NVMe",
 			instanceID:       "i-123456789abcdef01",
 			instanceType:     "m5d.large",
 			availabilityZone: "us-west-2b",
-			expMaxVolumes:    25,
+			expMaxVolumes:    defaultMaxBSUVolumes,
 		},
 	}
 	for _, tc := range testCases {
@@ -1374,7 +1374,6 @@ func TestNodeGetInfo(t *testing.T) {
 
 			mockMetadata := mocks.NewMockMetadataService(mockCtl)
 			mockMetadata.EXPECT().GetInstanceID().Return(tc.instanceID)
-			mockMetadata.EXPECT().GetInstanceType().Return(tc.instanceType)
 			mockMetadata.EXPECT().GetAvailabilityZone().Return(tc.availabilityZone)
 
 			mockMounter := mocks.NewMockMounter(mockCtl)

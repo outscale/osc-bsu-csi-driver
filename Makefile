@@ -186,7 +186,7 @@ bin/mockgen: | bin
 
 bin/golangci-lint: | bin
 	echo "Installing golangci-lint..."
-	curl -sfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh| sh -s v1.21.0
+	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.43.0
 
 .PHONY: kubeval
 kubeval: bin/kubeval

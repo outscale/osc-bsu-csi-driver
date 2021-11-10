@@ -41,3 +41,7 @@ CVE-2019-19882
 CVE-2011-4116
 # unimportant https://security-tracker.debian.org/tracker/CVE-2005-2541
 CVE-2005-2541
+#No fix https://security-tracker.debian.org/tracker/CVE-2021-43396
+CVE-2021-43396
+#No fix https://security-tracker.debian.org/tracker/CVE-2021-39537
+CVE-2021-39537

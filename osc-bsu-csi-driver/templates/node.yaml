@@ -68,6 +68,10 @@ spec:
               value: "{{ .Values.backoff.factor }}"
             - name: BACKOFF_STEPS
               value: "{{ .Values.backoff.steps }}"
+            {{- if .Values.maxBsuVolumes }}
+            - name: MAX_BSU_VOLUMES
+              value: "{{ .Values.maxBsuVolumes }}"
+            {{- end }}
           volumeMounts:
             - name: kubelet-dir
               mountPath: /var/lib/kubelet

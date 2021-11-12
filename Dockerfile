@@ -7,7 +7,7 @@ RUN apt-get -y update && \
     apt-get -y install libc-bin=2.32-4 \
                        ca-certificates=20210119 \
                        e2fsprogs=1.46.2-2 mount=2.37.2-4 \
-                       udev=249.5-2 util-linux=2.37.2-4 \
+                       udev=249.6-1 util-linux=2.37.2-4 \
                        xfsprogs=5.10.0-4 --no-install-recommends && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 

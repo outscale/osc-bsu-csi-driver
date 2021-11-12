@@ -68,6 +68,7 @@ spec:
           env:
             - name: CSI_ENDPOINT
               value: unix:///var/lib/csi/sockets/pluginproxy/csi.sock
+
             - name: OSC_ACCESS_KEY
               valueFrom:
                 secretKeyRef:
@@ -83,6 +84,10 @@ spec:
             {{- if .Values.region }}
             - name: AWS_REGION
               value: {{ .Values.region }}
+            {{- end }}
+            {{- if .Values.maxBsuVolumes }}
+            - name: MAX_BSU_VOLUMES
+              value: "{{ .Values.maxBsuVolumes }}"
             {{- end }}
             - name: BACKOFF_DURATION
               value: "{{ .Values.backoff.duration }}"

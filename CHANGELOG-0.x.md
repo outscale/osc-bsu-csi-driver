@@ -37,3 +37,7 @@
 # v0.0.13beta
 ## Notable changes
 * Update default Max BSU Volumes value
+
+# v0.0.14beta
+## Notable changes
+* Make Max BSU Volumes value custom

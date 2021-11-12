@@ -46,7 +46,7 @@ Following sections are Kubernetes specific. If you are Kubernetes user, use foll
 ## Container Images:
 |OSC BSU CSI Driver Version | Image                                     |
 |---------------------------|-------------------------------------------|
-| OSC-MIGRATION branch      |outscale/osc-ebs-csi-driver:v0.0.13beta    |
+| OSC-MIGRATION branch      |outscale/osc-ebs-csi-driver:v0.0.14beta    |
 
 ## Features
 * **Static Provisioning** - create a new or migrating existing BSU volumes, then create persistence volume (PV) from the BSU volume and consume the PV from container using persistence volume claim (PVC).
@@ -89,7 +89,7 @@ Following sections are Kubernetes specific. If you are Kubernetes user, use foll
     
     ## deploy the pod
     export IMAGE_NAME=outscale/osc-ebs-csi-driver
-    export IMAGE_TAG="v0.0.13beta"
+    export IMAGE_TAG="v0.0.14beta"
     git clone git@github.com:outscale-dev/osc-bsu-csi-driver.git
     cd osc-bsu-csi-driver
     helm uninstall osc-bsu-csi-driver  --namespace kube-system

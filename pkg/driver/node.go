@@ -638,7 +638,15 @@ func findScsiVolume(findName string) (device string, err error) {
 
 // getVolumesLimit returns the limit of volumes that the node supports
 func (d *nodeService) getVolumesLimit() int64 {
-	return defaultMaxBSUVolumes
+	value := os.Getenv("MAX_BSU_VOLUMES")
+	if value == "" {
+		return defaultMaxBSUVolumes
+	}
+	max_value, err := strconv.Atoi(value)
+	if err != nil {
+		return defaultMaxBSUVolumes
+	}
+	return int64(max_value)
 }
 
 // hasMountOption returns a boolean indicating whether the given

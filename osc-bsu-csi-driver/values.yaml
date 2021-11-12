@@ -6,7 +6,7 @@ replicaCount: 2
 
 image:
   repository: outscale/osc-ebs-csi-driver
-  tag: v0.0.13beta
+  tag: v0.0.14beta
   pullPolicy: IfNotPresent
 
 # set the verbosity level of plugins
@@ -101,6 +101,9 @@ k8sTagClusterId: ""
 # ---
 # region: us-east-1
 region: ""
+
+# Max bsu limits
+maxBsuVolumes: "25"
 
 node:
   podAnnotations: {}

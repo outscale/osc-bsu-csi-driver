@@ -9,9 +9,10 @@ The Outscale Block Storage Unit Container Storage Interface (CSI) Driver provide
 
 ## CSI Specification Compability Matrix
 
-| OSC BSU CSI Driver \ CSI Version       | v1.3.0 |
-|----------------------------------------|--------|
-| OSC-MIGRATION branch                   | yes    |
+| OSC BSU CSI Driver \ CSI Version       | v1.3.0 | v1.5.0 |
+|----------------------------------------|--------|--------|
+| <=  v0.0.14beta                        | yes    | no     |
+| v0.0.15                                | no     | yes    |
 
 
 ## Features

@@ -1,13 +1,9 @@
-FROM debian:stable-20210902
-RUN echo "deb http://deb.debian.org/debian testing non-free contrib main" >> /etc/apt/sources.list &&\
-    echo "deb http://deb.debian.org/debian unstable non-free contrib main" >> /etc/apt/sources.list && \
-    apt-get -y update && apt-get clean && rm -rf /var/lib/apt/lists/*
-
+FROM debian:bullseye-20211220
 RUN apt-get -y update && \
-    apt-get -y install libc-bin=2.32-4 \
+    apt-get -y install libc-bin=2.31-13+deb11u2 \
                        ca-certificates=20210119 \
-                       e2fsprogs=1.46.2-2 mount=2.37.2-4 \
-                       udev=249.6-1 util-linux=2.37.2-4 \
+                       e2fsprogs=1.46.2-2 mount=2.36.1-8 \
+                       udev=247.3-6 util-linux=2.36.1-8 \
                        xfsprogs=5.10.0-4 --no-install-recommends && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 

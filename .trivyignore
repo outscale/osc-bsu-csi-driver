@@ -45,3 +45,31 @@ CVE-2005-2541
 CVE-2021-43396
 #No fix https://security-tracker.debian.org/tracker/CVE-2021-39537
 CVE-2021-39537
+
+# Not yet fixed in stable
+# https://security-tracker.debian.org/tracker/CVE-2022-23218
+CVE-2022-23218
+# https://security-tracker.debian.org/tracker/CVE-2022-23219
+CVE-2022-23219
+# https://security-tracker.debian.org/tracker/CVE-2021-3999
+CVE-2021-3999
+# https://security-tracker.debian.org/tracker/CVE-2022-22822
+CVE-2022-22822
+# https://security-tracker.debian.org/tracker/CVE-2022-22823
+CVE-2022-22823
+# https://security-tracker.debian.org/tracker/CVE-2022-22824
+CVE-2022-22824
+# https://security-tracker.debian.org/tracker/CVE-2021-45960
+CVE-2021-45960
+# https://security-tracker.debian.org/tracker/CVE-2021-46143
+CVE-2021-46143
+# https://security-tracker.debian.org/tracker/CVE-2022-22825
+CVE-2022-22825
+# https://security-tracker.debian.org/tracker/CVE-2022-22826
+CVE-2022-22826
+# https://security-tracker.debian.org/tracker/CVE-2022-22827
+CVE-2022-22827
+# https://security-tracker.debian.org/tracker/CVE-2021-33560
+CVE-2021-33560
+# https://security-tracker.debian.org/tracker/CVE-2020-16156
+CVE-2020-16156

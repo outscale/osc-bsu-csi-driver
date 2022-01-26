@@ -39,9 +39,10 @@ There are several optional parameters that could be passed into `CreateVolumeReq
 Following sections are Kubernetes specific. If you are Kubernetes user, use followings for driver features, installation steps and examples.
 
 ## Kubernetes Version Compability Matrix
-| OSC BSU CSI Driver \ Kubernetes Version|v1.21.5|
-|----------------------------------------|-------|
-| OSC-MIGRATION branch                   | yes   |
+| OSC BSU CSI Driver \ Kubernetes Version|< v1.20 | v1.21.5|
+|----------------------------------------|------- |------- |
+| <=v0.0.14beta                          | ?      |   yes  |
+|   v0.0.15                              | no     |   yes  |
 
 
 ## Container Images:
@@ -54,7 +55,7 @@ Following sections are Kubernetes specific. If you are Kubernetes user, use foll
 * **Dynamic Provisioning** - uses persistence volume claim (PVC) to request the Kuberenetes to create the BSU volume on behalf of user and consumes the volume from inside container.
 * **Mount Option** - mount options could be specified in persistence volume (PV) to define how the volume should be mounted.
 * **Block Volume** (beta since 1.14) - consumes the BSU volume as a raw block device for latency sensitive application eg. MySql
-* **Volume Snapshot** (beta) - creating volume snapshots and restore volume from snapshot.
+* **Volume Snapshot** - creating volume snapshots and restore volume from snapshot.
 * **Volume Encryption** - Not supported yet.
 
 ## Prerequisites

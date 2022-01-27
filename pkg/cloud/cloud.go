@@ -283,6 +283,11 @@ func newOscCloud(region string) (Cloud, error) {
 	client := &OscClient{}
 	client.config = osc.NewConfiguration()
 	client.config.Debug = true
+
+	// Set User-Agent with name and version of the CSI driver
+	version := util.GetVersion()
+	client.config.UserAgent = fmt.Sprintf("ocs-bsu-csi-driver/%s", version.DriverVersion)
+
 	client.config.BasePath, _ = client.config.ServerUrl(0, map[string]string{"region": useRegion})
 	client.api = osc.NewAPIClient(client.config)
 	client.auth = context.WithValue(context.Background(), osc.ContextAWSv4, osc.AWSv4{

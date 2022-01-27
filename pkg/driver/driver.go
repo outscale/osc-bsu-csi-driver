@@ -60,7 +60,7 @@ type DriverOptions struct {
 }
 
 func NewDriver(options ...func(*DriverOptions)) (*Driver, error) {
-	klog.Infof("Driver: %v Version: %v", DriverName, driverVersion)
+	klog.Infof("Driver: %v Version: %v", DriverName, util.GetVersion().DriverVersion)
 
 	driverOptions := DriverOptions{
 		endpoint: DefaultCSIEndpoint,

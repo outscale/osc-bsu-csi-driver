@@ -24,6 +24,7 @@ import (
 
 	"github.com/outscale-dev/osc-bsu-csi-driver/cmd/options"
 	"github.com/outscale-dev/osc-bsu-csi-driver/pkg/driver"
+	"github.com/outscale-dev/osc-bsu-csi-driver/pkg/util"
 
 	"k8s.io/klog/v2"
 )
@@ -92,7 +93,7 @@ func GetOptions(fs *flag.FlagSet) *Options {
 	}
 
 	if *version {
-		info, err := driver.GetVersionJSON()
+		info, err := util.GetVersionJSON()
 		if err != nil {
 			klog.Fatalln(err)
 		}

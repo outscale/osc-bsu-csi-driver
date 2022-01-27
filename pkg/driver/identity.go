@@ -20,6 +20,7 @@ import (
 	"context"
 
 	csi "github.com/container-storage-interface/spec/lib/go/csi"
+	"github.com/outscale-dev/osc-bsu-csi-driver/pkg/util"
 	"k8s.io/klog/v2"
 )
 
@@ -27,7 +28,7 @@ func (d *Driver) GetPluginInfo(ctx context.Context, req *csi.GetPluginInfoReques
 	klog.V(6).Infof("GetPluginInfo: called with args %+v", *req)
 	resp := &csi.GetPluginInfoResponse{
 		Name:          DriverName,
-		VendorVersion: driverVersion,
+		VendorVersion: util.GetVersion().DriverVersion,
 	}
 
 	return resp, nil

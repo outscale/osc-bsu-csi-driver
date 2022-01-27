@@ -30,7 +30,7 @@ IMAGE := osc/osc-ebs-csi-driver
 IMAGE_TAG := $(shell git describe --exact-match 2> /dev/null || \
                  git describe --match=$(git rev-parse --short=8 HEAD) --always --dirty --abbrev=8)
 REGISTRY := registry.kube-system:5001
-VERSION := 0.5.0-osc
+VERSION := ${IMAGE_TAG}
 GIT_COMMIT ?= $(shell git rev-parse HEAD)
 BUILD_DATE ?= $(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
 LDFLAGS ?= "-X ${PKG}/pkg/util.driverVersion=${VERSION} -X ${PKG}/pkg/util.gitCommit=${GIT_COMMIT} -X ${PKG}/pkg/util.buildDate=${BUILD_DATE}"

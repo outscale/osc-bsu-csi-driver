@@ -25,7 +25,7 @@ E2E_ENV_RUN := "e2e-osc-bsu-csi-driver"
 E2E_AZ := "eu-west-2a"
 E2E_REGION := "eu-west-2"
 
-PKG := github.com/kubernetes-sigs/aws-ebs-csi-driver
+PKG := github.com/outscale-dev/osc-bsu-csi-driver
 IMAGE := osc/osc-ebs-csi-driver
 IMAGE_TAG := $(shell git describe --exact-match 2> /dev/null || \
                  git describe --match=$(git rev-parse --short=8 HEAD) --always --dirty --abbrev=8)

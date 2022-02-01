@@ -1,0 +1,98 @@
+name: e2e_test
+
+on:
+  pull_request_target:
+    branches:
+      - OSC-MIGRATION
+  push:
+    branches: [ OSC-MIGRATION ]
+  workflow_dispatch:
+
+jobs:
+  create_cluster:
+    runs-on: [self-hosted, linux]
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/checkout@v2
+      with:
+        repository: 'outscale-dev/osc-k8s-rke-cluster'
+        path: "set-up-rke-cluster"
+    - uses: azure/setup-kubectl@v2.0
+    - uses: azure/setup-helm@v1
+    - uses: actions/setup-go@v2
+      with:
+        go-version: '1.17'
+    - name: Deploy Cluster
+      uses: outscale-dev/osc-k8s-rke-cluster/github_actions/deploy_cluster@master
+      with:
+        repository_folder: "set-up-rke-cluster"
+        osc_access_key: ${{ secrets.OSC_ACCESS_KEY }}
+        osc_secret_key: ${{ secrets.OSC_SECRET_KEY }}
+        osc_region: ${{ secrets.OSC_REGION }}
+    - name: Wait to access the cluster
+      uses: nick-invision/retry@v2
+      with:
+        timeout_seconds: 60
+        max_attempts: 10
+        command: kubectl get nodes
+      env:
+        KUBECONFIG: set-up-rke-cluster/rke/kube_config_cluster.yml
+    - name: Deploy Docker-registry into cluster
+      run: |
+        ansible-playbook addons/docker-registry/playbook.yaml
+        ./addons/docker-registry/start_port_forwarding.sh &
+      env:
+        KUBECONFIG: rke/kube_config_cluster.yml
+        ANSIBLE_CONFIG: ansible.cfg
+      working-directory: set-up-rke-cluster
+    - name: Push the Docker image
+      run: |
+        make aws-ebs-csi-driver image-release
+        docker tag osc/osc-ebs-csi-driver:$IMAGE_TAG localhost:4242/osc/osc-ebs-csi-driver:$IMAGE_TAG
+        docker push localhost:4242/osc/osc-ebs-csi-driver:$IMAGE_TAG
+        docker image prune -a -f
+      env:
+        IMAGE_TAG: ${{ github.sha }}
+    - name: Retrieve NodePort Ip and NodePort
+      run: |
+        echo nodeport_port=$(kubectl get --namespace default -o jsonpath="{.spec.ports[0].nodePort}" services docker-registry) >> $GITHUB_ENV
+        echo nodeport_ip=$(kubectl get nodes --namespace default -o jsonpath="{.items[0].status.addresses[0].address}")  >> $GITHUB_ENV
+      env:
+        KUBECONFIG: set-up-rke-cluster/rke/kube_config_cluster.yml
+    - name: Install CSI
+      run: |
+        kubectl apply -f set-up-rke-cluster/addons/csi/secrets.yaml
+        kubectl apply -f https://raw.githubusercontent.com/kubernetes-csi/external-snapshotter/release-5.0/client/config/crd/snapshot.storage.k8s.io_volumesnapshotclasses.yaml
+        kubectl apply -f https://raw.githubusercontent.com/kubernetes-csi/external-snapshotter/release-5.0/client/config/crd/snapshot.storage.k8s.io_volumesnapshotcontents.yaml
+        kubectl apply -f https://raw.githubusercontent.com/kubernetes-csi/external-snapshotter/release-5.0/client/config/crd/snapshot.storage.k8s.io_volumesnapshots.yaml
+        kubectl apply -f https://raw.githubusercontent.com/kubernetes-csi/external-snapshotter/release-5.0/deploy/kubernetes/snapshot-controller/rbac-snapshot-controller.yaml
+        kubectl apply -f https://raw.githubusercontent.com/kubernetes-csi/external-snapshotter/release-5.0/deploy/kubernetes/snapshot-controller/setup-snapshot-controller.yaml
+        helm install --wait --wait-for-jobs osc-bsu-csi-driver ./osc-bsu-csi-driver --namespace kube-system --set enableVolumeScheduling=true --set enableVolumeResizing=true --set enableVolumeSnapshot=true --set region=$OSC_REGION --set image.repository=${nodeport_ip}:${nodeport_port}/osc/osc-ebs-csi-driver --set image.tag=$IMAGE_TAG
+      env:
+        KUBECONFIG: set-up-rke-cluster/rke/kube_config_cluster.yml
+        OSC_REGION: ${{ secrets.OSC_REGION}}
+        IMAGE_TAG: ${{ github.sha }}
+    - name: Run e2e tests
+      env:
+        OSC_ACCESS_KEY: ${{ secrets.OSC_ACCESS_KEY }}
+        OSC_SECRET_KEY: ${{ secrets.OSC_SECRET_KEY }}
+      run: bash -c "KC=$(base64 -w 0 set-up-rke-cluster/rke/kube_config_cluster.yml) make test-e2e-single-az"
+    - name: Uninstall CSI
+      run: |
+        kubectl delete -f set-up-rke-cluster/addons/csi/secrets.yaml
+        kubectl delete -f https://raw.githubusercontent.com/kubernetes-csi/external-snapshotter/release-5.0/client/config/crd/snapshot.storage.k8s.io_volumesnapshotclasses.yaml
+        kubectl delete -f https://raw.githubusercontent.com/kubernetes-csi/external-snapshotter/release-5.0/client/config/crd/snapshot.storage.k8s.io_volumesnapshotcontents.yaml
+        kubectl delete -f https://raw.githubusercontent.com/kubernetes-csi/external-snapshotter/release-5.0/client/config/crd/snapshot.storage.k8s.io_volumesnapshots.yaml
+        kubectl delete -f https://raw.githubusercontent.com/kubernetes-csi/external-snapshotter/release-5.0/deploy/kubernetes/snapshot-controller/rbac-snapshot-controller.yaml
+        kubectl delete -f https://raw.githubusercontent.com/kubernetes-csi/external-snapshotter/release-5.0/deploy/kubernetes/snapshot-controller/setup-snapshot-controller.yaml
+        helm uninstall --wait osc-bsu-csi-driver --namespace kube-system
+      env:
+        KUBECONFIG: set-up-rke-cluster/rke/kube_config_cluster.yml
+    - name: Destroy Cluster
+      uses: outscale-dev/osc-k8s-rke-cluster/github_actions/destroy_cluster@master
+      if: ${{ always() }}
+      with:
+        repository_folder: "set-up-rke-cluster"
+        osc_access_key: ${{ secrets.OSC_ACCESS_KEY }}
+        osc_secret_key: ${{ secrets.OSC_SECRET_KEY }}
+        osc_region: ${{ secrets.OSC_REGION }}

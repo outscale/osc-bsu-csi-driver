@@ -27,7 +27,7 @@ E2E_REGION := "eu-west-2"
 
 PKG := github.com/outscale-dev/osc-bsu-csi-driver
 IMAGE := osc/osc-ebs-csi-driver
-IMAGE_TAG := $(shell git describe --exact-match 2> /dev/null || \
+IMAGE_TAG ?= $(shell git describe --exact-match 2> /dev/null || \
                  git describe --match=$(git rev-parse --short=8 HEAD) --always --dirty --abbrev=8)
 REGISTRY := registry.kube-system:5001
 VERSION := ${IMAGE_TAG}
@@ -76,7 +76,7 @@ test-e2e-migration:
 
 .PHONY: image-release
 image-release:
-	docker build -t $(IMAGE):$(VERSION) .
+	docker build -t $(IMAGE):$(IMAGE_TAG) .
 
 .PHONY: image
 image:

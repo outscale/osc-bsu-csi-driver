@@ -1,0 +1,85 @@
+name: e2e_test
+
+on:
+  pull_request_target:
+    branches:
+      - OSC-MIGRATION
+  push:
+    branches: [ OSC-MIGRATION ]
+  workflow_dispatch:
+    
+jobs:
+  create_cluster:
+    runs-on: [self-hosted, linux]
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/checkout@v2
+      with:
+        repository: 'outscale-dev/osc-k8s-rke-cluster'
+        path: "set-up-rke-cluster"
+    - uses: azure/setup-kubectl@v2.0
+    - uses: azure/setup-helm@v1
+    - name: Deploy Cluster
+      uses: outscale-dev/osc-k8s-rke-cluster/github_actions/deploy_cluster@master
+      with:
+        repository_folder: "set-up-rke-cluster"
+        osc_access_key: ${{ secrets.OSC_ACCESS_KEY }}
+        osc_secret_key: ${{ secrets.OSC_SECRET_KEY }}
+        osc_region: ${{ secrets.OSC_REGION }}
+        will_install_ccm: "true"
+    - name: Wait to access the cluster
+      uses: nick-invision/retry@v2
+      with:
+        timeout_seconds: 60
+        max_attempts: 10
+        command: kubectl get nodes
+      env:
+        KUBECONFIG: set-up-rke-cluster/rke/kube_config_cluster.yml
+    - name: Deploy Docker-registry into cluster
+      run: |
+        ansible-playbook addons/docker-registry/playbook.yaml
+        ./addons/docker-registry/start_port_forwarding.sh &
+      env:
+        KUBECONFIG: rke/kube_config_cluster.yml
+        ANSIBLE_CONFIG: ansible.cfg
+      working-directory: set-up-rke-cluster
+    - name: Push the Docker image
+      run: |
+        make build-image
+        docker tag osc/cloud-provider-osc:v$VERSION localhost:4242/osc/cloud-provider-osc:v$VERSION
+        docker push localhost:4242/osc/cloud-provider-osc:v$VERSION
+        docker image prune -a -f
+      env:
+        VERSION: ${{ format('{0}.{1}', github.sha, github.run_attempt) }}
+    - name: Retrieve NodePort Ip and NodePort
+      run: |
+        echo nodeport_port=$(kubectl get --namespace default -o jsonpath="{.spec.ports[0].nodePort}" services docker-registry) >> $GITHUB_ENV
+        echo nodeport_ip=$(kubectl get nodes --namespace default -o jsonpath="{.items[0].status.addresses[0].address}")  >> $GITHUB_ENV
+      env:
+        KUBECONFIG: set-up-rke-cluster/rke/kube_config_cluster.yml
+    - name: Install CCM
+      run: |
+        kubectl apply -f set-up-rke-cluster/addons/ccm/secrets.yaml
+        helm install --wait --wait-for-jobs k8s-osc-ccm deploy/k8s-osc-ccm --set oscSecretName=osc-secret --set image.repository=${nodeport_ip}:${nodeport_port}/osc/cloud-provider-osc --set image.tag=${VERSION}
+      env:
+        KUBECONFIG: set-up-rke-cluster/rke/kube_config_cluster.yml
+        VERSION: ${{ format('v{0}.{1}', github.sha, github.run_attempt) }}
+    - name: Run e2e tests
+      env:
+        OSC_ACCESS_KEY: ${{ secrets.OSC_ACCESS_KEY }}
+        OSC_SECRET_KEY: ${{ secrets.OSC_SECRET_KEY }}
+      run: bash -c "KC=$(base64 -w 0 set-up-rke-cluster/rke/kube_config_cluster.yml) make e2e-test"
+    - name: Uninstall CCM
+      run: |
+        kubectl delete -f set-up-rke-cluster/addons/ccm/secrets.yaml
+        helm uninstall --wait k8s-osc-ccm
+      env:
+        KUBECONFIG: set-up-rke-cluster/rke/kube_config_cluster.yml
+    - name: Destroy Cluster
+      uses: outscale-dev/osc-k8s-rke-cluster/github_actions/destroy_cluster@master
+      if: ${{ always() }}
+      with:
+        repository_folder: "set-up-rke-cluster"
+        osc_access_key: ${{ secrets.OSC_ACCESS_KEY }}
+        osc_secret_key: ${{ secrets.OSC_SECRET_KEY }}
+        osc_region: ${{ secrets.OSC_REGION }}

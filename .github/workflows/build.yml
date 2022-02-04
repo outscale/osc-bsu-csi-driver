@@ -26,3 +26,5 @@ jobs:
       run: bash -c "make image"
     - name: Trivy-Scan
       run: bash -c "make trivy-scan"
+    - name: Trivy-Ignore-Check
+      run: bash -c "make trivy-ignore-check"

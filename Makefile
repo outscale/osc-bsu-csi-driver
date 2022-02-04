@@ -209,3 +209,6 @@ trivy-scan:
 			--ignorefile /root/.trivyignore \
 			$(IMAGE):$(IMAGE_TAG)
 
+.PHONY: trivy-ignore-check
+trivy-ignore-check:
+	@./hack/check-trivy.py --trivy-ignore .trivyignore --distribution bullseye

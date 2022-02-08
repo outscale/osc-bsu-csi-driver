@@ -30,6 +30,9 @@
 
 ## Deploy the CCM deamonset
 
+### Helm Configuration
+See [Helm Chart Configuration](../docs/helm.md)
+### Setps
 
 ```
 	#Using the manifest

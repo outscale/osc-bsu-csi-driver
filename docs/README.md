@@ -71,6 +71,7 @@ Following sections are Kubernetes specific. If you are Kubernetes user, use foll
 
 ## Installation
 
+### Steps 
 - pre-installed k8s platform under outscale cloud with 3 masters and 2 workers on vm with `tinav2.c2r4p3` type
 - prepare the machine from which you will run deploy the osc bsu csi plugin
 - Add CRD and a Snapshot Controller if you enable snapshots:
@@ -113,7 +114,8 @@ kubectl apply -f https://raw.githubusercontent.com/kubernetes-csi/external-snaps
     ## Check the pod is running
     kubectl get pods -o wide -A  -n kube-system
 ```
-
+### Chart Configuration
+See [Helm Chart Configuration](helm.md)
 ## Examples
 Make sure you follow the [Prerequisites](README.md#Prerequisites) before the examples:
 * [Dynamic Provisioning](../examples/kubernetes/dynamic-provisioning)

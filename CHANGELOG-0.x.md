@@ -41,3 +41,6 @@
 # v0.0.14beta
 ## Notable changes
 * Make Max BSU Volumes value custom
+# v0.0.15beta
+## Notable changes
+* Remove Snapshot Controller from the chart (See [Deployment Snapshot](https://kubernetes-csi.github.io/docs/snapshot-controller.html#deployment))

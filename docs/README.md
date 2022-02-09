@@ -73,6 +73,14 @@ Following sections are Kubernetes specific. If you are Kubernetes user, use foll
 
 - pre-installed k8s platform under outscale cloud with 3 masters and 2 workers on vm with `tinav2.c2r4p3` type
 - prepare the machine from which you will run deploy the osc bsu csi plugin
+- Add CRD and a Snapshot Controller if you enable snapshots:
+```
+kubectl apply -f https://raw.githubusercontent.com/kubernetes-csi/external-snapshotter/release-5.0/client/config/crd/snapshot.storage.k8s.io_volumesnapshotclasses.yaml
+kubectl apply -f https://raw.githubusercontent.com/kubernetes-csi/external-snapshotter/release-5.0/client/config/crd/snapshot.storage.k8s.io_volumesnapshotcontents.yaml
+kubectl apply -f https://raw.githubusercontent.com/kubernetes-csi/external-snapshotter/release-5.0/client/config/crd/snapshot.storage.k8s.io_volumesnapshots.yaml
+kubectl apply -f https://raw.githubusercontent.com/kubernetes-csi/external-snapshotter/release-5.0/deploy/kubernetes/snapshot-controller/rbac-snapshot-controller.yaml
+kubectl apply -f https://raw.githubusercontent.com/kubernetes-csi/external-snapshotter/release-5.0/deploy/kubernetes/snapshot-controller/setup-snapshot-controller.yaml
+```
 - The bsu csi plugin needs AK/SK to interact with Outscale BSU API, so you can create an AK/SK using an eim user, for example, with a proper permission by attaching [a policy like](./example-eim-policy.json) 
 
 ```

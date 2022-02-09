@@ -44,3 +44,4 @@
 # v0.0.15beta
 ## Notable changes
 * Remove Snapshot Controller from the chart (See [Deployment Snapshot](https://kubernetes-csi.github.io/docs/snapshot-controller.html#deployment))
+* Default FSType is now XFS instead of EXT4

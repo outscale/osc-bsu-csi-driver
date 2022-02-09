@@ -29,6 +29,7 @@ import (
 	"github.com/outscale-dev/osc-bsu-csi-driver/pkg/driver/mocks"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	exec "k8s.io/utils/exec"
 )
 
 func TestNodeStageVolume(t *testing.T) {
@@ -80,7 +81,7 @@ func TestNodeStageVolume(t *testing.T) {
 
 				mockMounter.EXPECT().MakeDir(targetPath).Return(nil)
 				mockMounter.EXPECT().GetDeviceName(targetPath).Return("", 1, nil)
-				mockMounter.EXPECT().FormatAndMount(gomock.Eq(devicePath), gomock.Eq(targetPath), gomock.Eq(defaultFsType), gomock.Any())
+				mockMounter.EXPECT().FormatAndMount(gomock.Eq(devicePath), gomock.Eq(targetPath), gomock.Eq(FSTypeExt4), gomock.Any())
 				_, err := awsDriver.NodeStageVolume(context.TODO(), req)
 				if err != nil {
 					t.Fatalf("Expect no error but got: %v", err)
@@ -160,11 +161,14 @@ func TestNodeStageVolume(t *testing.T) {
 
 				mockMounter.EXPECT().MakeDir(targetPath).Return(nil)
 				mockMounter.EXPECT().GetDeviceName(targetPath).Return("", 1, nil)
-				mockMounter.EXPECT().FormatAndMount(gomock.Eq(devicePath), gomock.Eq(targetPath), gomock.Eq(FSTypeExt4), gomock.Eq([]string{"dirsync", "noexec"}))
+				mockMounter.EXPECT().GetDiskFormat(gomock.Eq(devicePath)).Return("", nil)
+				mockMounter.EXPECT().Command(gomock.Eq("mkfs"), gomock.Eq("-t"), gomock.Eq(defaultFsType), gomock.Eq("-m"), gomock.Eq("reflink=0"), gomock.Eq(devicePath)).Return(exec.New().Command("mkfs"))
+				mockMounter.EXPECT().FormatAndMount(gomock.Eq(devicePath), gomock.Eq(targetPath), gomock.Eq(FSTypeXfs), gomock.Eq([]string{"dirsync", "noexec"}))
 				_, err := awsDriver.NodeStageVolume(context.TODO(), req)
 				if err != nil {
 					t.Fatalf("Expect no error but got: %v", err)
 				}
+
 			},
 		},
 		{
@@ -213,7 +217,7 @@ func TestNodeStageVolume(t *testing.T) {
 			},
 		},
 		{
-			name: "success mount with default fsType ext4",
+			name: "success mount with default fsType xfs",
 			testFunc: func(t *testing.T) {
 				mockCtl := gomock.NewController(t)
 				defer mockCtl.Finish()
@@ -250,7 +254,9 @@ func TestNodeStageVolume(t *testing.T) {
 
 				mockMounter.EXPECT().MakeDir(targetPath).Return(nil)
 				mockMounter.EXPECT().GetDeviceName(targetPath).Return("", 1, nil)
-				mockMounter.EXPECT().FormatAndMount(gomock.Eq(devicePath), gomock.Eq(targetPath), gomock.Eq(FSTypeExt4), gomock.Any())
+				mockMounter.EXPECT().GetDiskFormat(gomock.Eq(devicePath)).Return("", nil)
+				mockMounter.EXPECT().Command(gomock.Eq("mkfs"), gomock.Eq("-t"), gomock.Eq(defaultFsType), gomock.Eq("-m"), gomock.Eq("reflink=0"), gomock.Eq(devicePath)).Return(exec.New().Command("mkfs"))
+				mockMounter.EXPECT().FormatAndMount(gomock.Eq(devicePath), gomock.Eq(targetPath), gomock.Eq(FSTypeXfs), gomock.Any())
 				_, err := awsDriver.NodeStageVolume(context.TODO(), req)
 				if err != nil {
 					t.Fatalf("Expect no error but got: %v", err)

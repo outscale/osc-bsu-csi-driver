@@ -47,7 +47,7 @@ const (
 	FSTypeXfs = "xfs"
 
 	// default file system type to be used when it is not provided
-	defaultFsType = FSTypeExt4
+	defaultFsType = FSTypeXfs
 
 	// defaultMaxBSUVolumes is the maximum number of volumes that an OSC instance can have attached.
 	// https://wiki.outscale.net/display/EN/About+Volumes#AboutVolumes-VolumesInstancesVolumesandInstances

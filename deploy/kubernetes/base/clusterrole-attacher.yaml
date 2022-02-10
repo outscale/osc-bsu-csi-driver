@@ -1,15 +1,15 @@
 ---
-# Source: aws-ebs-csi-driver/templates/clusterrole-attacher.yaml
+# Source: osc-bsu-csi-driver/templates/clusterrole-attacher.yaml
 kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: ebs-external-attacher-role
   labels:
-    app.kubernetes.io/name: aws-ebs-csi-driver
+    app.kubernetes.io/name: osc-bsu-csi-driver
 rules:
   - apiGroups: [""]
     resources: ["persistentvolumes"]
-    verbs: ["get", "list", "watch", "update"]
+    verbs: ["get", "list", "watch", "update", "patch"]
   - apiGroups: [""]
     resources: ["nodes"]
     verbs: ["get", "list", "watch"]
@@ -18,4 +18,7 @@ rules:
     verbs: ["get", "list", "watch"]
   - apiGroups: ["storage.k8s.io"]
     resources: ["volumeattachments"]
-    verbs: ["get", "list", "watch", "update"]
+    verbs: ["get", "list", "watch", "update", "patch"]
+  - apiGroups: [ "storage.k8s.io" ]
+    resources: [ "volumeattachments/status" ]
+    verbs: [ "patch" ]

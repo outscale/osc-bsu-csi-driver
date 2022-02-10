@@ -2,7 +2,90 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 bases:
 - ../../base
+namespace: kube-system
+
 images:
-- name: amazon/aws-ebs-csi-driver
-  newTag: latest
-  newName: chengpan/aws-ebs-csi-driver
+- name: outscale/osc-ebs-csi-driver
+  newTag: v0.0.14beta
+  newName: outscale/osc-ebs-csi-driver
+- name: k8s.gcr.io/sig-storage/csi-provisioner
+  newTag: v3.0.0
+  newName: k8s.gcr.io/sig-storage/csi-provisioner
+- name: k8s.gcr.io/sig-storage/csi-attacher
+  newTag: v3.3.0
+  newName: k8s.gcr.io/sig-storage/csi-attacher
+- name: k8s.gcr.io/sig-storage/csi-snapshotter
+  newTag: v4.2.1
+  newName: k8s.gcr.io/sig-storage/csi-snapshotter
+- name: k8s.gcr.io/sig-storage/livenessprobe
+  newTag: v2.5.0
+  newName: k8s.gcr.io/sig-storage/livenessprobe
+- name: k8s.gcr.io/sig-storage/csi-resizer
+  newTag: v1.3.0
+  newName: k8s.gcr.io/sig-storage/csi-resizer
+- name: k8s.gcr.io/sig-storage/csi-node-driver-registrar
+  newTag: v2.3.0
+  newName: k8s.gcr.io/sig-storage/csi-node-driver-registrar
+- name: k8s.gcr.io/sig-storage/snapshot-controller
+  newTag: v3.0.3
+  newName: k8s.gcr.io/sig-storage/snapshot-controller
+replicas:
+- name: ebs-csi-controller
+  count: 3
+patches:
+   - target:
+       kind: DaemonSet
+     patch: |-
+       - op: replace
+         path: /spec/template/spec/imagePullSecrets
+         value:
+           name: regcred
+   - target:
+       kind: Deployment
+     patch: |-
+       - op: replace
+         path: /spec/template/spec/imagePullSecrets
+         value:
+           name: regcred
+   - target:
+       kind:  CSIDriver
+     patch: |-
+       - op: replace
+         path: /spec/fsGroupPolicy
+         value:
+           name: Files
+patchesJson6902:
+- target:
+    version: v1
+    kind: ServiceAccount
+    name: ebs-csi-controller-sa
+  patch: |-
+    - op: add
+      path: /metadata/annotations/kubernetes.io~1ingress.global-static-ip-name
+      value: my-static-ip-name   
+- target:
+    version: v1
+    kind: DaemonSet
+    name: ebs-csi-node
+  patch: |-
+    - op: add
+      path: /spec/template/metadata/annotations
+      value: {"kubernetes.io~1ingress.global-static-ip-name": "vault-secret"}
+    - op: add
+      path: /spec/template/metadata/labels/kubernetes.io~1ingress.global-static-ip-name
+      value: test
+- target:
+    version: v1
+    kind: Deployment
+    name: ebs-csi-controller
+  patch: |-
+    - op: add
+      path: /spec/template/metadata/annotations
+      value: {"kubernetes.io~1ingress.global-static-ip-name": "vault-secret"}
+    - op: add
+      path: /spec/template/metadata/labels/kubernetes.io~1ingress.global-static-ip-name"
+      value: test
+
+patchesStrategicMerge:
+- verbosity_timeout.yaml
+- backoff.yaml

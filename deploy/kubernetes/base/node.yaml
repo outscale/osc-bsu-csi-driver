@@ -1,5 +1,5 @@
 ---
-# Source: aws-ebs-csi-driver/templates/node.yaml
+# Source: osc-bsu-csi-driver/templates/node.yaml
 # Node Service
 kind: DaemonSet
 apiVersion: apps/v1
@@ -7,17 +7,17 @@ metadata:
   name: ebs-csi-node
   namespace: kube-system
   labels:
-    app.kubernetes.io/name: aws-ebs-csi-driver
+    app.kubernetes.io/name: osc-bsu-csi-driver
 spec:
   selector:
     matchLabels:
       app: ebs-csi-node
-      app.kubernetes.io/name: aws-ebs-csi-driver
+      app.kubernetes.io/name: osc-bsu-csi-driver
   template:
     metadata:
       labels:
         app: ebs-csi-node
-        app.kubernetes.io/name: aws-ebs-csi-driver
+        app.kubernetes.io/name: osc-bsu-csi-driver
     spec:
       affinity:
         nodeAffinity:
@@ -30,24 +30,34 @@ spec:
                 - fargate
       nodeSelector:
         kubernetes.io/os: linux
-        kubernetes.io/arch: amd64
       hostNetwork: true
       priorityClassName: system-node-critical
       tolerations:
         - operator: Exists
+      imagePullSecrets:
+        - name: registry-dockerconfigjson
       containers:
         - name: ebs-plugin
           securityContext:
             privileged: true
-          image: amazon/aws-ebs-csi-driver:latest
+          image: outscale/osc-ebs-csi-driver:v0.0.14beta
+          imagePullPolicy: IfNotPresent
           args:
             - node
             - --endpoint=$(CSI_ENDPOINT)
             - --logtostderr
-            - --v=5
+            - --v=2
           env:
             - name: CSI_ENDPOINT
               value: unix:/csi/csi.sock
+            - name: BACKOFF_DURATION
+              value: "1"
+            - name: BACKOFF_FACTOR
+              value: "1.9"
+            - name: BACKOFF_STEPS
+              value: "20"
+            - name: MAX_BSU_VOLUMES
+              value: "25"
           volumeMounts:
             - name: kubelet-dir
               mountPath: /var/lib/kubelet
@@ -69,15 +79,11 @@ spec:
             periodSeconds: 10
             failureThreshold: 5
         - name: node-driver-registrar
-          image: quay.io/k8scsi/csi-node-driver-registrar:v1.1.0
+          image: k8s.gcr.io/sig-storage/csi-node-driver-registrar:v2.3.0
           args:
             - --csi-address=$(ADDRESS)
             - --kubelet-registration-path=$(DRIVER_REG_SOCK_PATH)
-            - --v=5
-          lifecycle:
-            preStop:
-              exec:
-                command: ["/bin/sh", "-c", "rm -rf /registration/ebs.csi.aws.com-reg.sock /csi/csi.sock"]
+            - --v=2
           env:
             - name: ADDRESS
               value: /csi/csi.sock
@@ -89,7 +95,7 @@ spec:
             - name: registration-dir
               mountPath: /registration
         - name: liveness-probe
-          image: quay.io/k8scsi/livenessprobe:v1.1.0
+          image: k8s.gcr.io/sig-storage/livenessprobe:v2.5.0
           args:
             - --csi-address=/csi/csi.sock
           volumeMounts:

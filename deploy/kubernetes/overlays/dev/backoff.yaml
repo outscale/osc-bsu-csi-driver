@@ -1,0 +1,21 @@
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: ebs-csi-controller
+  namespace: kube-system
+spec:
+  template:
+    spec:
+      containers:
+        - name: ebs-plugin
+          env:
+            - name: AWS_REGION
+              value: eu-west-2
+            - name: MAX_BSU_VOLUMES
+              value: "25"
+            - name: BACKOFF_DURATION
+              value: "1"
+            - name: BACKOFF_FACTOR
+              value: "1.9"
+            - name: BACKOFF_STEPS
+              value: "20"

@@ -1,0 +1,54 @@
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: ebs-csi-controller
+  namespace: kube-system
+spec:
+  template:
+    spec:
+      containers:
+        - name: ebs-plugin
+          args:
+            - controller
+            - --endpoint=$(CSI_ENDPOINT)
+            - --logtostderr
+            - --v=3
+        - name: csi-provisioner
+          args:
+            - --csi-address=$(ADDRESS)
+            - --v=3
+            - --feature-gates=Topology=true
+            - --leader-election=true
+            - --timeout=60s
+        - name: csi-attacher
+          args:
+            - --csi-address=$(ADDRESS)
+            - --v=3
+            - --leader-election=true
+            - --timeout=60s
+        - name: csi-resizer
+          args:
+            - --csi-address=$(ADDRESS)
+            - --v=3
+            - --timeout=60s
+---
+kind: DaemonSet
+apiVersion: apps/v1
+metadata:
+  name: ebs-csi-node
+  namespace: kube-system
+spec:
+  template:
+    spec:
+      containers:
+        - name: ebs-plugin
+          args:
+            - node
+            - --endpoint=$(CSI_ENDPOINT)
+            - --logtostderr
+            - --v=3
+        - name: node-driver-registrar
+          args:
+            - --csi-address=$(ADDRESS)
+            - --kubelet-registration-path=$(DRIVER_REG_SOCK_PATH)
+            - --v=3

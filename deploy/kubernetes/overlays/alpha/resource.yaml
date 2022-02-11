@@ -1,0 +1,59 @@
+
+---
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: ebs-csi-controller
+  namespace: kube-system
+spec:
+  template:
+    spec:
+      containers:
+        - name: ebs-plugin
+          resources:
+            limits:
+              cpu: 100m
+              memory: 128Mi
+            requests:
+              cpu: 100m
+              memory: 128Mi
+        - name: csi-provisioner
+          resources:
+            limits:
+              cpu: 100m 
+              memory: 128Mi
+            requests:
+              cpu: 100m
+              memory: 128Mi
+        - name: csi-attacher
+          resources:
+            limits:
+              cpu: 100m 
+              memory: 128Mi
+            requests:
+              cpu: 100m
+              memory: 128Mi
+        - name: csi-snapshotter
+          resources:
+            limits:
+              cpu: 100m
+              memory: 128Mi
+            requests:
+              cpu: 100m
+              memory: 128Mi
+        - name: csi-resizer
+          resources:
+            limits:
+              cpu: 100m 
+              memory: 128Mi
+            requests:
+              cpu: 100m
+              memory: 128Mi
+        - name: liveness-probe
+          resources:
+            limits:
+              cpu: 100m
+              memory: 128Mi
+            requests:
+              cpu: 100m
+              memory: 128Mi

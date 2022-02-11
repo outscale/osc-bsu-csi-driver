@@ -30,6 +30,10 @@ images:
 - name: k8s.gcr.io/sig-storage/snapshot-controller
   newTag: v3.0.3
   newName: k8s.gcr.io/sig-storage/snapshot-controller
+# replicas (default 2)
+replicas:
+- name: ebs-csi-controller
+  count: 3
 
 patches:
    - target:
@@ -46,6 +50,13 @@ patches:
        - op: replace
          path: /spec/template/spec/imagePullSecrets
          value: [{ name: registry-dockerconfigjson }]
+# Option to apply permission modifications
+   - target:
+       kind: CSIDriver
+     patch: |-
+       - op: replace
+         path: /spec/fsGroupPolicy
+         value: File
 # If enable volume scheduling for dynamic volume provisioning
    - patch: |-
       - op: add
@@ -61,6 +72,41 @@ patches:
      target:
        kind: Deployment
 
+patchesJson6902:
+# Add serviceAccount controller annotations
+- target:
+    version: v1
+    kind: ServiceAccount
+    name: ebs-csi-controller-sa
+  patch: |-
+    - op: add
+      path: /metadata/annotations/kubernetes.io~1ingress.global-static-ip-name
+      value: my-static-ip-name   
+# Add Daemonset podAnnotations and podLabels
+- target:
+    version: v1
+    kind: DaemonSet
+    name: ebs-csi-node
+  patch: |-
+    - op: add
+      path: /spec/template/metadata/annotations
+      value: {"name": "ebs-csi-node"}
+    - op: add
+      path: /spec/template/metadata/labels/kubernetes.io~1name
+      value: ebs-csi-node
+# Add Deployment podAnnotations and podLabels
+- target:
+    version: v1
+    kind: Deployment
+    name: ebs-csi-controller
+  patch: |-
+    - op: add
+      path: /spec/template/metadata/annotations
+      value: {"name": "ebs-csi-controller"}
+    - op: add
+      path: /spec/template/metadata/labels/kubernetes.io~1name
+      value: ebs-csi-controller
+
 
 patchesStrategicMerge:
 # set the verbosity level of plugins and timeout for sidecars
@@ -70,3 +116,5 @@ patchesStrategicMerge:
 # enable volume snapshot
 - csi_resizer.yaml
 - csi_snapshotter.yaml
+# Add resources limit and request
+- resource.yaml

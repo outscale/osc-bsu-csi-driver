@@ -113,30 +113,6 @@ spec:
           volumeMounts:
             - name: socket-dir
               mountPath: /var/lib/csi/sockets/pluginproxy/
-        - name: csi-snapshotter
-          image: k8s.gcr.io/sig-storage/csi-snapshotter:v4.2.1
-          args:
-            - --csi-address=$(ADDRESS)
-            - --leader-election=true
-          env:
-            - name: ADDRESS
-              value: /var/lib/csi/sockets/pluginproxy/csi.sock
-          volumeMounts:
-            - name: socket-dir
-              mountPath: /var/lib/csi/sockets/pluginproxy/
-        - name: csi-resizer
-          image: k8s.gcr.io/sig-storage/csi-resizer:v1.3.0
-          imagePullPolicy: Always
-          args:
-            - --csi-address=$(ADDRESS)
-            - --v=2
-            - --timeout=60s
-          env:
-            - name: ADDRESS
-              value: /var/lib/csi/sockets/pluginproxy/csi.sock
-          volumeMounts:
-            - name: socket-dir
-              mountPath: /var/lib/csi/sockets/pluginproxy/
         - name: liveness-probe
           image: k8s.gcr.io/sig-storage/livenessprobe:v2.5.0
           args:

@@ -46,21 +46,6 @@ patches:
        - op: replace
          path: /spec/template/spec/imagePullSecrets
          value: [{ name: registry-dockerconfigjson }]
-# If enable volume scheduling for dynamic volume provisioning
-   - patch: |-
-      - op: add
-        path: /spec/template/spec/containers/1/args/-
-        value: --feature-gates=Topology=true
-     target:
-       kind: Deployment
-# If set, add pv/pvc metadata to plugin create requests as parameters.
-   - patch: |-
-      - op: add
-        path: /spec/template/spec/containers/1/args/-
-        value: --extra-create-metadata
-     target:
-       kind: Deployment
-
 
 patchesStrategicMerge:
 # set the verbosity level of plugins and timeout for sidecars

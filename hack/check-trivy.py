@@ -52,6 +52,8 @@ if __name__ == '__main__':
     resolved = False
     ignored_cves = read_trivy_filter(args.trivy_ignore)
     all_cves = retrieve_debian_data()
+    if all_cves is None:
+        sys.exit(1)
     for package in all_cves.keys():
         for cve in all_cves[package].keys():
             if cve in ignored_cves:

@@ -50,7 +50,7 @@ const (
 	defaultFsType = FSTypeXfs
 
 	// defaultMaxBSUVolumes is the maximum number of volumes that an OSC instance can have attached.
-	// https://wiki.outscale.net/display/EN/About+Volumes#AboutVolumes-VolumesInstancesVolumesandInstances
+	// https://docs.outscale.com/en/userguide/About-Volumes.html#_volumes_and_instances
 	defaultMaxBSUVolumes = 25
 )
 

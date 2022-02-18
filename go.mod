@@ -4,7 +4,7 @@ go 1.17
 
 require (
 	github.com/antihax/optional v1.0.0
-	github.com/aws/aws-sdk-go v1.42.45
+	github.com/aws/aws-sdk-go v1.43.1
 	github.com/container-storage-interface/spec v1.5.0
 	github.com/golang/mock v1.6.0
 	github.com/golang/protobuf v1.5.2

@@ -19,6 +19,18 @@ jobs:
         path: "set-up-rke-cluster"
     - uses: azure/setup-kubectl@v2.0
     - uses: azure/setup-helm@v1
+    - uses: actions/setup-python@v2
+    - name: Install osc-cli
+      run: pip install osc-sdk
+    - name: Configure osc-cli
+      run: |
+        apt install -y jq
+        mkdir -p $HOME/.osc
+        jq --null-input --arg accesskey "$osc_access_key" --arg secretkey "$osc_secret_key" --arg region "$osc_region" '{"default": {"access_key" : $accesskey, "secret_key": $secretkey, "region_name": $region, "host": "outscale.com", "https": true, "method": "POST"}}' > $HOME/.osc/config.json
+      env:
+        osc_access_key: ${{ secrets.OSC_ACCESS_KEY }}
+        osc_secret_key: ${{ secrets.OSC_SECRET_KEY }}
+        osc_region: ${{ secrets.OSC_REGION }}
     - name: Deploy Cluster
       uses: outscale-dev/osc-k8s-rke-cluster/github_actions/deploy_cluster@master
       with:
@@ -69,6 +81,13 @@ jobs:
         OSC_ACCESS_KEY: ${{ secrets.OSC_ACCESS_KEY }}
         OSC_SECRET_KEY: ${{ secrets.OSC_SECRET_KEY }}
       run: bash -c "KC=$(base64 -w 0 set-up-rke-cluster/rke/kube_config_cluster.yml) make e2e-test"
+    - name: Wait that all resources have been released (for ex SG ELB)
+      uses: nick-invision/retry@v2
+      with:
+        timeout_seconds: 60
+        max_attempts: 10
+        command: |
+          test "$(osc-cli api ReadSecurityGroups --Filters "{\"TagKeys\": [\"OscK8sClusterID/$cluster_name\"]}" | jq -r '.SecurityGroups | length')" = "1"
     - name: Uninstall CCM
       run: |
         kubectl delete -f set-up-rke-cluster/addons/ccm/secrets.yaml

@@ -20,9 +20,11 @@ spec:
         {{- if .Values.podLabels }}
           {{ toYaml .Values.podLabels | nindent 8 }}
         {{- end }}
-      {{- if .Values.podAnnotations }}
-      annotations: {{ toYaml .Values.podAnnotations | nindent 8 }}
-      {{- end }}
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
+        {{- if .Values.podAnnotations }}
+        {{- toYaml .Values.podAnnotations | nindent 8 }}
+        {{- end }}
     spec:
       nodeSelector:
         kubernetes.io/os: linux
@@ -72,13 +74,13 @@ spec:
             - name: OSC_ACCESS_KEY
               valueFrom:
                 secretKeyRef:
-                  name: osc-csi-bsu
+                  name: {{ .Values.credentials.secretName }}
                   key: access_key
                   optional: true
             - name: OSC_SECRET_KEY
               valueFrom:
                 secretKeyRef:
-                  name: osc-csi-bsu
+                  name: {{ .Values.credentials.secretName }}
                   key: secret_key
                   optional: true
             {{- if .Values.region }}

@@ -129,5 +129,16 @@ serviceAccount:
   snapshot:
     annotations: {}
 
+credentials:
+  # The name of the secret storing the below fields
+  # (Default is osc-csi-bsu to avoid breaking existing configs)
+  secretName: osc-csi-bsu
+
+  # We can actually create this secret with the following
+  # ak/sk, if create is true.
+  create: false
+  accessKey: null
+  secretKey: null
+
 csiDriver:
   fsGroupPolicy: File

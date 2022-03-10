@@ -141,7 +141,8 @@ Dependencies are managed through go module. To build the project, first turn on 
 * To execute all unit tests, run: `make test`
 * To execute e2e single az tests, run: 
 ```
-    cd osc-bsu-csi-driver
-    export OSC_ACCESS_KEY=XXXX ; export OSC_SECRET_KEY=XXX ; export E2E_AZ="eu-west-2a"
+    export OSC_ACCESS_KEY=XXX
+	export OSC_SECRET_KEY=XXX
+	export KC=$(bash64 -w 0 path/to/kube_config.yaml)
     make test-e2e-single-az
 ```

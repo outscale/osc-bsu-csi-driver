@@ -384,13 +384,32 @@ func (c *cloud) CreateDisk(ctx context.Context, volumeName string, diskOptions *
 			}),
 	}
 
-	creation, httpRes, err := c.client.CreateVolume(ctx, &request)
-	klog.Infof("Debug response CreateVolume: response(%+v), err(%v), httpRes(%v)", creation, err, httpRes)
-	if err != nil {
-		if httpRes != nil {
-			return Disk{}, fmt.Errorf(httpRes.Status)
+	var creation osc.CreateVolumeResponse
+	createVolumeCallBack := func() (bool, error) {
+		var httpRes *_nethttp.Response
+		var err error
+		creation, httpRes, err = c.client.CreateVolume(ctx, &request)
+		klog.Infof("Debug response CreateVolume: response(%+v), err(%v), httpRes(%v)", creation, err, httpRes)
+		if err != nil {
+			if httpRes != nil {
+				fmt.Fprintln(os.Stderr, httpRes.Status)
+			}
+			requestStr := fmt.Sprintf("%v", request)
+			if keepRetryWithError(
+				requestStr,
+				err,
+				[]string{"RequestLimitExceeded"}) {
+				return false, nil
+			}
+			return false, fmt.Errorf("could not create volume in OSC: %v", err)
 		}
-		return Disk{}, fmt.Errorf("could not create volume in OSC: %v", err)
+		return true, nil
+	}
+
+	backoff := util.EnvBackoff()
+	waitErr := wait.ExponentialBackoff(backoff, createVolumeCallBack)
+	if waitErr != nil {
+		return Disk{}, waitErr
 	}
 
 	volumeID := creation.Volume.VolumeId
@@ -410,14 +429,30 @@ func (c *cloud) CreateDisk(ctx context.Context, volumeName string, diskOptions *
 				Tags:        resourceTag,
 			}),
 	}
-	klog.Infof("Debug requestTag: %+v", requestTag)
-	resTag, httpRes, err := c.client.CreateTags(ctx, &requestTag)
-	klog.Infof("Debug response CreateTags: response(%+v), err(%v), httpRes(%v)", resTag, err, httpRes)
-	if err != nil {
-		if httpRes != nil {
-			fmt.Fprintln(os.Stderr, httpRes.Status)
+
+	createTagsCallBack := func() (bool, error) {
+		resTag, httpRes, err := c.client.CreateTags(ctx, &requestTag)
+		klog.Infof("Debug response CreateTags: response(%+v), err(%v), httpRes(%v)", resTag, err, httpRes)
+		if err != nil {
+			if httpRes != nil {
+				fmt.Fprintln(os.Stderr, httpRes.Status)
+			}
+			requestStr := fmt.Sprintf("%v", request)
+			if keepRetryWithError(
+				requestStr,
+				err,
+				[]string{"RequestLimitExceeded"}) {
+				return false, nil
+			}
+			return false, fmt.Errorf("error creating tags %v of volume %v: %v, http Status: %v", resTag, volumeID, err, httpRes)
 		}
-		return Disk{}, fmt.Errorf("error creating tags %v of volume %v: %v, http Status: %v", resTag, volumeID, err, httpRes)
+		return true, nil
+	}
+
+	backoff = util.EnvBackoff()
+	waitErr = wait.ExponentialBackoff(backoff, createTagsCallBack)
+	if waitErr != nil {
+		return Disk{}, waitErr
 	}
 
 	if err := c.waitForVolume(ctx, volumeID); err != nil {
@@ -435,15 +470,32 @@ func (c *cloud) DeleteDisk(ctx context.Context, volumeID string) (bool, error) {
 				VolumeId: volumeID,
 			}),
 	}
-	response, httpRes, err := c.client.DeleteVolume(ctx, &request)
-	klog.Infof("Debug response DeleteVolume: response(%+v), err(%v), httpRes(%v)", response, err, httpRes)
-	if err != nil {
-		fmt.Fprint(os.Stderr, "Error while creating volume ")
-		if httpRes != nil {
-			fmt.Fprintln(os.Stderr, httpRes.Status)
+
+	deleteVolumeCallBack := func() (bool, error) {
+		response, httpRes, err := c.client.DeleteVolume(ctx, &request)
+		klog.Infof("Debug response DeleteVolume: response(%+v), err(%v), httpRes(%v)", response, err, httpRes)
+		if err != nil {
+			if httpRes != nil {
+				fmt.Fprintln(os.Stderr, httpRes.Status)
+			}
+			requestStr := fmt.Sprintf("%v", request)
+			if keepRetryWithError(
+				requestStr,
+				err,
+				[]string{"RequestLimitExceeded"}) {
+				return false, nil
+			}
+			return false, fmt.Errorf("DeleteDisk could not delete volume in OSC: %v", err)
 		}
-		return false, fmt.Errorf("DeleteDisk could not delete volume in OSC: %v", err)
+		return true, nil
 	}
+
+	backoff := util.EnvBackoff()
+	waitErr := wait.ExponentialBackoff(backoff, deleteVolumeCallBack)
+	if waitErr != nil {
+		return false, waitErr
+	}
+
 	return true, nil
 }
 
@@ -469,14 +521,33 @@ func (c *cloud) AttachDisk(ctx context.Context, volumeID, nodeID string) (string
 					VolumeId:   volumeID,
 				}),
 		}
-		resp, httpRes, err := c.client.LinkVolume(ctx, &request)
-		klog.Infof("Debug response AttachVolume: response(%+v), err(%v), httpRes(%v)\n", resp, err, httpRes)
-		if err != nil {
-			if httpRes != nil {
-				return "", fmt.Errorf(httpRes.Status)
+		var resp osc.LinkVolumeResponse
+		var httpRes *_nethttp.Response
+		linkVolumeCallBack := func() (bool, error) {
+			resp, httpRes, err = c.client.LinkVolume(ctx, &request)
+			klog.Infof("Debug response AttachVolume: response(%+v), err(%v), httpRes(%v)\n", resp, err, httpRes)
+			if err != nil {
+				if httpRes != nil {
+					fmt.Fprintln(os.Stderr, httpRes.Status)
+				}
+				requestStr := fmt.Sprintf("%v", request)
+				if keepRetryWithError(
+					requestStr,
+					err,
+					[]string{"RequestLimitExceeded"}) {
+					return false, nil
+				}
+				return false, fmt.Errorf("could not attach volume %q to node %q: %v", volumeID, nodeID, err)
 			}
-			return "", fmt.Errorf("could not attach volume %q to node %q: %v", volumeID, nodeID, err)
+			return true, nil
 		}
+
+		backoff := util.EnvBackoff()
+		waitErr := wait.ExponentialBackoff(backoff, linkVolumeCallBack)
+		if waitErr != nil {
+			return "", waitErr
+		}
+
 		klog.V(5).Infof("AttachVolume volume=%q instance=%q request returned %v", volumeID, nodeID, resp)
 
 	}
@@ -543,14 +614,29 @@ func (c *cloud) DetachDisk(ctx context.Context, volumeID, nodeID string) error {
 			}),
 	}
 
-	var httpRes *_nethttp.Response
-	resp, httpRes, err := c.client.UnlinkVolume(ctx, &request)
-	klog.Infof("Debug response DetachVolume: response(%+v), err(%v) httpRes(%v)\n", resp, err, httpRes)
-	if err != nil {
-		if httpRes != nil {
-			fmt.Fprintln(os.Stderr, httpRes.Status)
+	unlinkVolumeCallBack := func() (bool, error) {
+		resp, httpRes, err := c.client.UnlinkVolume(ctx, &request)
+		klog.Infof("Debug response DetachVolume: response(%+v), err(%v) httpRes(%v)\n", resp, err, httpRes)
+		if err != nil {
+			if httpRes != nil {
+				fmt.Fprintln(os.Stderr, httpRes.Status)
+			}
+			requestStr := fmt.Sprintf("%v", request)
+			if keepRetryWithError(
+				requestStr,
+				err,
+				[]string{"RequestLimitExceeded"}) {
+				return false, nil
+			}
+			return false, fmt.Errorf("could not detach volume %q from node %q: %v", volumeID, nodeID, err)
 		}
-		return fmt.Errorf("could not detach volume %q from node %q: %v", volumeID, nodeID, err)
+		return true, nil
+	}
+
+	backoff := util.EnvBackoff()
+	waitErr := wait.ExponentialBackoff(backoff, unlinkVolumeCallBack)
+	if waitErr != nil {
+		return waitErr
 	}
 
 	if err := c.WaitForAttachmentState(ctx, volumeID, "detached"); err != nil {
@@ -686,8 +772,8 @@ func (c *cloud) CreateSnapshot(ctx context.Context, volumeID string, snapshotOpt
 
 	klog.Infof("Debug request := CreateSnapshotInput %+v  \n", request)
 	var res osc.CreateSnapshotResponse
-	var httpRes *_nethttp.Response
 	createSnapshotCallBack := func() (bool, error) {
+		var httpRes *_nethttp.Response
 		res, httpRes, err = c.client.CreateSnapshot(ctx, &request)
 		klog.Infof("Debug response CreateSnapshot: response(%+v), err(%v), httpRes(%v)\n", res, err, httpRes)
 		if err != nil {
@@ -712,10 +798,6 @@ func (c *cloud) CreateSnapshot(ctx context.Context, volumeID string, snapshotOpt
 		return Snapshot{}, waitErr
 	}
 
-	err = waitErr
-	if err != nil {
-		return Snapshot{}, fmt.Errorf("error creating snapshot of volume %s: %v", volumeID, err)
-	}
 	if reflect.DeepEqual(res, osc.CreateSnapshotResponse{}) {
 		return Snapshot{}, fmt.Errorf("nil CreateSnapshotResponse")
 	}
@@ -731,14 +813,14 @@ func (c *cloud) CreateSnapshot(ctx context.Context, volumeID string, snapshotOpt
 
 	klog.Infof("Debug requestTag(%+v)\n", requestTag)
 	var resTag osc.CreateTagsResponse
-	var httpResTag *_nethttp.Response
-	var errTag error
 	createTagCallback := func() (bool, error) {
+		var httpResTag *_nethttp.Response
+		var errTag error
 		resTag, httpResTag, errTag = c.client.CreateTags(ctx, &requestTag)
 		klog.Infof("Debug resTag( %+v ) errTag( %+v ), httpResTag(%+v)\n", resTag, errTag, httpResTag)
 		if errTag != nil {
 			if httpResTag != nil {
-				fmt.Fprintln(os.Stderr, httpRes.Status)
+				fmt.Fprintln(os.Stderr, httpResTag.Status)
 			}
 			requestStr := fmt.Sprintf("%v", resTag)
 			if keepRetryWithError(
@@ -758,13 +840,6 @@ func (c *cloud) CreateSnapshot(ctx context.Context, volumeID string, snapshotOpt
 		return Snapshot{}, waitErr
 	}
 
-	err = waitErr
-	if err != nil {
-		if httpRes != nil {
-			fmt.Fprintln(os.Stderr, httpRes.Status)
-		}
-		return Snapshot{}, fmt.Errorf("error creating tags of snapshot %v: %v", res.Snapshot.SnapshotId, err)
-	}
 	return c.oscSnapshotResponseToStruct(res.Snapshot), nil
 }
 
@@ -778,16 +853,31 @@ func (c *cloud) DeleteSnapshot(ctx context.Context, snapshotID string) (success 
 			}),
 	}
 
-	var httpRes *_nethttp.Response
-
-	response, httpRes, err := c.client.DeleteSnapshot(ctx, &request)
-	klog.Infof("Debug response DeleteSnapshot: response(%+v), err(%v), httpRes(%v)\n", response, err, httpRes)
-	if err != nil {
-		if httpRes != nil {
-			fmt.Fprintln(os.Stderr, httpRes.Status)
+	deleteSnapshotCallBack := func() (bool, error) {
+		response, httpRes, err := c.client.DeleteSnapshot(ctx, &request)
+		klog.Infof("Debug response DeleteSnapshot: response(%+v), err(%v), httpRes(%v)\n", response, err, httpRes)
+		if err != nil {
+			if httpRes != nil {
+				fmt.Fprintln(os.Stderr, httpRes.Status)
+			}
+			requestStr := fmt.Sprintf("%v", request)
+			if keepRetryWithError(
+				requestStr,
+				err,
+				[]string{"RequestLimitExceeded"}) {
+				return false, nil
+			}
+			return false, fmt.Errorf("DeleteSnapshot could not delete volume: %v", err)
 		}
-		return false, fmt.Errorf("DeleteSnapshot could not delete volume: %v", err)
+		return true, nil
 	}
+
+	backoff := util.EnvBackoff()
+	waitErr := wait.ExponentialBackoff(backoff, deleteSnapshotCallBack)
+	if waitErr != nil {
+		return false, waitErr
+	}
+
 	return true, nil
 }
 
@@ -1170,13 +1260,29 @@ func (c *cloud) ResizeDisk(ctx context.Context, volumeID string, newSizeBytes in
 			}),
 	}
 
-	response, httpRes, err := c.client.UpdateVolume(ctx, &req)
-	klog.Infof("Debug response UpdateVolume: response(%+v), err(%v), httpRes(%v)", response, err, httpRes)
-	if err != nil {
-		if httpRes != nil {
-			return 0, fmt.Errorf(httpRes.Status)
+	updateVolumeCallBack := func() (bool, error) {
+		response, httpRes, err := c.client.UpdateVolume(ctx, &req)
+		klog.Infof("Debug response UpdateVolume: response(%+v), err(%v), httpRes(%v)", response, err, httpRes)
+		if err != nil {
+			if httpRes != nil {
+				fmt.Fprintln(os.Stderr, httpRes.Status)
+			}
+			requestStr := fmt.Sprintf("%v", request)
+			if keepRetryWithError(
+				requestStr,
+				err,
+				[]string{"RequestLimitExceeded"}) {
+				return false, nil
+			}
+			return false, fmt.Errorf("could not modify volume %q: %v", volumeID, err)
 		}
-		return 0, fmt.Errorf("could not modify volume %q: %v", volumeID, err)
+		return true, nil
+	}
+
+	backoff := util.EnvBackoff()
+	waitErr := wait.ExponentialBackoff(backoff, updateVolumeCallBack)
+	if waitErr != nil {
+		return 0, waitErr
 	}
 	delay := 5
 	klog.Infof("Waiting %v sec for the effective modification.", delay)
@@ -1218,14 +1324,32 @@ func (c *cloud) randomAvailabilityZone(ctx context.Context, region string) (stri
 		return zone, nil
 	}
 
-	response, httpRes, err := c.client.ReadSubregions(ctx, nil)
-	klog.Infof("Debug response DescribeAvailabilityZones: response(%+v), err(%v) httpRes(%v)\n", response, err, httpRes)
-
-	if err != nil {
-		if httpRes != nil {
-			fmt.Fprintln(os.Stderr, httpRes.Status)
+	var response osc.ReadSubregionsResponse
+	readSubregionsCallback := func() (bool, error) {
+		var httpRes *_nethttp.Response
+		var err error
+		response, httpRes, err = c.client.ReadSubregions(ctx, nil)
+		klog.Infof("Debug response DescribeAvailabilityZones: response(%+v), err(%v) httpRes(%v)\n", response, err, httpRes)
+		if err != nil {
+			if httpRes != nil {
+				fmt.Fprintln(os.Stderr, httpRes.Status)
+			}
+			requestStr := fmt.Sprintf("%v", nil)
+			if keepRetryWithError(
+				requestStr,
+				err,
+				[]string{"RequestLimitExceeded"}) {
+				return false, nil
+			}
+			return false, err
 		}
-		return "", err
+		return true, nil
+	}
+
+	backoff := util.EnvBackoff()
+	waitErr := wait.ExponentialBackoff(backoff, readSubregionsCallback)
+	if waitErr != nil {
+		return "", waitErr
 	}
 
 	zones := []string{}

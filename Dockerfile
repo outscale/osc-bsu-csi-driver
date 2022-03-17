@@ -33,7 +33,7 @@ ARG DISTROLESS_IMAGE=gcr.io/distroless/static@sha256:c6d5981545ce1406d33e61434c6
 FROM ${GOLANG_IMAGE} as builder
 
 # This build arg is the version to embed in the CPI binary
-ARG VERSION=unknown
+ARG VERSION=${VERSION}
 
 # This build arg controls the GOPROXY setting
 ARG GOPROXY

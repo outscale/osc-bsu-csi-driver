@@ -25,7 +25,7 @@ SOURCES := $(shell find ./cloud-controller-manager -name '*.go')
 GOOS ?= $(shell go env GOOS)
 VERSION ?= $(shell git describe --exact-match 2> /dev/null || \
                  git describe --match=$(git rev-parse --short=8 HEAD) --always --dirty --abbrev=8)
-LDFLAGS   := "-w -s -X 'main.version=${VERSION}'"
+LDFLAGS   := "-w -s -X 'github.com/outscale-dev/cloud-provider-osc/cloud-controller-manager/utils.version=$(VERSION)'"
 
 # Full log with  -v -x
 GO_ADD_OPTIONS := -v -x 
@@ -85,7 +85,7 @@ update-fmt:
 
 .PHONY: build-image
 build-image:
-	docker build -t $(IMAGE):$(IMAGE_VERSION) .
+	docker build --build-arg VERSION=$(VERSION) -t $(IMAGE):$(IMAGE_VERSION) .
 
 .PHONY: tag-image
 tag-image:

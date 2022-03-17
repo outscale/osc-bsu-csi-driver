@@ -29,7 +29,8 @@ import (
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/aws/aws-sdk-go/service/elb"
 
-	"k8s.io/client-go/pkg/version"
+	"github.com/outscale-dev/cloud-provider-osc/cloud-controller-manager/utils"
+
 	"k8s.io/klog/v2"
 )
 
@@ -43,11 +44,18 @@ type awsSDKProvider struct {
 	regionDelayers map[string]*CrossRequestRetryDelay
 }
 
+func addOscUserAgent(h *request.Handlers) {
+	// addUserAgent is a named handler that will add information to requests made by the AWS SDK.
+	var addUserAgent = request.NamedHandler{
+		Name: "cloud-provider-osc/user-agent",
+		Fn:   request.MakeAddToUserAgentHandler("osc-cloud-controller-manager", utils.GetVersion()),
+	}
+
+	h.Build.PushFrontNamed(addUserAgent)
+}
+
 func (p *awsSDKProvider) addHandlers(regionName string, h *request.Handlers) {
-	h.Build.PushFrontNamed(request.NamedHandler{
-		Name: "k8s/user-agent",
-		Fn:   request.MakeAddToUserAgentHandler("kubernetes", version.Get().String()),
-	})
+	addOscUserAgent(h)
 
 	h.Sign.PushFrontNamed(request.NamedHandler{
 		Name: "k8s/logger",
@@ -144,6 +152,9 @@ func (p *awsSDKProvider) Metadata() (EC2Metadata, error) {
 	}
 	awsConfig.WithLogLevel(aws.LogDebugWithSigning | aws.LogDebugWithHTTPBody | aws.LogDebugWithRequestRetries | aws.LogDebugWithRequestErrors)
 	sess := session.Must(session.NewSession(awsConfig))
+
+	addOscUserAgent(&sess.Handlers)
+
 	client := ec2metadata.New(sess)
 	p.addAPILoggingHandlers(&client.Handlers)
 	metadata, err := NewMetadataService(client)

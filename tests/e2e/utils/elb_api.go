@@ -8,10 +8,12 @@ import (
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/endpoints"
+	"github.com/aws/aws-sdk-go/aws/request"
 	"github.com/aws/aws-sdk-go/aws/session"
 	elbApi "github.com/aws/aws-sdk-go/service/elb"
 
 	osc "github.com/outscale-dev/cloud-provider-osc/cloud-controller-manager/osc"
+	"github.com/outscale-dev/cloud-provider-osc/cloud-controller-manager/utils"
 )
 
 func elbSession() (*session.Session, error) {
@@ -32,6 +34,14 @@ func elbSession() (*session.Session, error) {
 	if err != nil {
 		return nil, fmt.Errorf("unable to initialize elb session: %v", err)
 	}
+
+	// addUserAgent is a named handler that will add information to requests made by the AWS SDK.
+	var addUserAgent = request.NamedHandler{
+		Name: "cloud-provider-osc/user-agent",
+		Fn:   request.MakeAddToUserAgentHandler("osc-cloud-controller-manager", utils.GetVersion()),
+	}
+
+	sess.Handlers.Build.PushFrontNamed(addUserAgent)
 	return sess, nil
 }
 

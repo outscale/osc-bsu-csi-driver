@@ -31,7 +31,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/aws/aws-sdk-go/service/elb"
 
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/klog/v2"
@@ -90,6 +90,9 @@ func newEC2MetadataSvc() *ec2metadata.EC2Metadata {
 	awsConfig.WithLogLevel(aws.LogDebugWithSigning | aws.LogDebugWithHTTPBody | aws.LogDebugWithRequestRetries | aws.LogDebugWithRequestErrors)
 
 	sess := session.Must(session.NewSession(awsConfig))
+
+	addOscUserAgent(&sess.Handlers)
+
 	return ec2metadata.New(sess)
 }
 

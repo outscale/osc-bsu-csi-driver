@@ -41,6 +41,8 @@ func newInstancesV2(az string, metadata EC2Metadata) (cloudprovider.InstancesV2,
 		return nil, fmt.Errorf("unable to initialize newInstancesV2 session: %v", err)
 	}
 
+	addOscUserAgent(&sess.Handlers)
+
 	ec2Service := ec2.New(sess)
 
 	return &instancesV2{

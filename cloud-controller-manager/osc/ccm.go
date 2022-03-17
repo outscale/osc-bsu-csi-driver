@@ -25,7 +25,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"gopkg.in/gcfg.v1"
 
-	"k8s.io/cloud-provider"
+	cloudprovider "k8s.io/cloud-provider"
 	"k8s.io/klog/v2"
 )
 

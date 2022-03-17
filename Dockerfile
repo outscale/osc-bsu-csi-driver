@@ -1,4 +1,4 @@
-FROM debian:bullseye-20220228
+FROM debian:bullseye-20220316
 RUN apt-get -y update && \
     apt-get -y install libc-bin=2.31-13+deb11u2 \
                        ca-certificates=20210119 \

@@ -23,11 +23,11 @@ import (
 	"strings"
 
 	csi "github.com/container-storage-interface/spec/lib/go/csi"
-	"github.com/golang/protobuf/ptypes"
 	"github.com/outscale-dev/osc-bsu-csi-driver/pkg/cloud"
 	"github.com/outscale-dev/osc-bsu-csi-driver/pkg/util"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/timestamppb"
 	"k8s.io/klog/v2"
 )
 
@@ -544,10 +544,7 @@ func newCreateVolumeResponse(disk cloud.Disk) *csi.CreateVolumeResponse {
 }
 
 func newCreateSnapshotResponse(snapshot cloud.Snapshot) (*csi.CreateSnapshotResponse, error) {
-	ts, err := ptypes.TimestampProto(snapshot.CreationTime)
-	if err != nil {
-		return nil, err
-	}
+	ts := timestamppb.New(snapshot.CreationTime)
 	return &csi.CreateSnapshotResponse{
 		Snapshot: &csi.Snapshot{
 			SnapshotId:     snapshot.SnapshotID,
@@ -576,10 +573,7 @@ func newListSnapshotsResponse(cloudResponse cloud.ListSnapshotsResponse) (*csi.L
 }
 
 func newListSnapshotsResponseEntry(snapshot cloud.Snapshot) (*csi.ListSnapshotsResponse_Entry, error) {
-	ts, err := ptypes.TimestampProto(snapshot.CreationTime)
-	if err != nil {
-		return nil, err
-	}
+	ts := timestamppb.New(snapshot.CreationTime)
 	return &csi.ListSnapshotsResponse_Entry{
 		Snapshot: &csi.Snapshot{
 			SnapshotId:     snapshot.SnapshotID,

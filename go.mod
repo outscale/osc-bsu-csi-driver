@@ -19,10 +19,10 @@ require (
 	k8s.io/apimachinery v0.23.2
 	k8s.io/client-go v0.23.2
 	k8s.io/component-base v0.23.2
-	k8s.io/klog/v2 v2.40.1
+	k8s.io/klog/v2 v2.60.0
 	k8s.io/kubernetes v1.23.2
 	k8s.io/mount-utils v0.23.2
-	k8s.io/utils v0.0.0-20211208161948-7d6a63dca704
+	k8s.io/utils v0.0.0-20220210201930-3a6ce19ff2f9
 )
 
 require (

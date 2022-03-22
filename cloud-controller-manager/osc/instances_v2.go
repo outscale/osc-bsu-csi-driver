@@ -148,7 +148,9 @@ func (i *instancesV2) getInstance(ctx context.Context, node *v1.Node) (*ec2.Inst
 		}
 
 		request = &ec2.DescribeInstancesInput{
-			InstanceIds: []*string{aws.String(instanceID)},
+			Filters: []*ec2.Filter{
+				newEc2Filter("instance-id", instanceID),
+			},
 		}
 		klog.V(4).Infof("looking for node by provider ID %v", node.Spec.ProviderID)
 	}
@@ -157,7 +159,7 @@ func (i *instancesV2) getInstance(ctx context.Context, node *v1.Node) (*ec2.Inst
 	var nextToken *string
 	for {
 		response, err := i.ec2.DescribeInstances(request)
-		klog.V(4).Infof("looking for node by private DNS name %v", response)
+		klog.V(4).Infof("Get Response from Describe Instances  %v", response)
 
 		if err != nil {
 			return nil, fmt.Errorf("error describing ec2 instances: %v", err)

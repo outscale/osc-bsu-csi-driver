@@ -299,7 +299,9 @@ func (c *Cloud) InstanceExistsByProviderID(ctx context.Context, providerID strin
 	}
 
 	request := &ec2.DescribeInstancesInput{
-		InstanceIds: []*string{instanceID.awsString()},
+		Filters: []*ec2.Filter{
+			newEc2Filter("instance-id", string(instanceID)),
+		},
 	}
 
 	instances, err := c.ec2.DescribeInstances(request)

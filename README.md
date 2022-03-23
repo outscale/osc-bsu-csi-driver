@@ -7,7 +7,7 @@ This project allows a Kubernetes cluster to provision, monitor and remove Outsca
 # Cloud Provider 3DS OSC CCM on Kubernetes
 
 ## Requirements
-* Golang 1.15.+
+* Golang 1.17.+
 * Docker 18.09.2+ 
 * K8s v1.17.4+
 

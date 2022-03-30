@@ -23,7 +23,7 @@ This project allows a Kubernetes cluster to provision, monitor and remove Outsca
 
 |OSC BSU CSI Driver Version | Image                                     |
 |---------------------------|-------------------------------------------|
-|OSC-MIGRATION branch       |outscale/cloud-provider-osc:v0.0.9beta     |
+|OSC-MIGRATION branch       |outscale/cloud-provider-osc:v0.0.10beta     |
 
 
 ## Flags

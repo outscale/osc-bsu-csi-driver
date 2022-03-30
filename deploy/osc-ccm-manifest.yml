@@ -140,7 +140,7 @@ spec:
       serviceAccountName: cloud-controller-manager
       containers:
         - name: osc-cloud-controller-manager
-          image: outscale/cloud-provider-osc:v0.0.9beta
+          image: outscale/cloud-provider-osc:v0.0.10beta
           imagePullPolicy: IfNotPresent
           command:
             - /bin/osc-cloud-controller-manager

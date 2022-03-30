@@ -44,7 +44,7 @@ See [Helm Chart Configuration](../docs/helm.md)
 	cd deploy
 	# set the IMAGE_SECRET, IMAGE_NAME, IMAGE_TAG, SECRET_NAME to the right values on your case
 	IMAGE_NAME=outscale/cloud-provider-osc && \
-	IMAGE_TAG=v0.0.9beta && \
+	IMAGE_TAG=v0.0.10beta && \
 	SECRET_NAME=osc-secret && \
 	helm uninstall k8s-osc-ccm 
 	helm install k8s-osc-ccm deploy/k8s-osc-ccm \

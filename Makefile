@@ -32,7 +32,6 @@ GO_ADD_OPTIONS := -v -x
 
 IMAGE = "osc/cloud-provider-osc"
 IMAGE_VERSION = "v${VERSION}"
-REGISTRY = "registry.kube-system:5001"
 
 export GO111MODULE=on
 #GOPATH=$(PWD)
@@ -89,11 +88,11 @@ build-image:
 
 .PHONY: tag-image
 tag-image:
-	docker tag  $(IMAGE):$(IMAGE_VERSION) $(REGISTRY)/$(IMAGE):$(IMAGE_VERSION)
+	docker tag  $(IMAGE):$(IMAGE_VERSION) $(IMAGE):$(IMAGE_VERSION)
 
 .PHONY: push-release
 push-release:
-	docker push $(REGISTRY)/$(IMAGE):$(IMAGE_VERSION)
+	docker push $(IMAGE):$(IMAGE_VERSION)
 
 .PHONY: build-debug
 build-debug:
@@ -143,7 +142,7 @@ e2e-test:
 
 .PHONY: deploy
 deploy:
-	IMAGE_TAG=$(IMAGE_VERSION) IMAGE_NAME=$(REGISTRY)/$(IMAGE) . ./tests/deploy.sh
+	IMAGE_TAG=$(IMAGE_VERSION) IMAGE_NAME=$(IMAGE) . ./tests/deploy.sh
 
 .PHONY: clean_build_env
 clean_build_env:

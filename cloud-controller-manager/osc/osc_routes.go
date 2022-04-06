@@ -38,7 +38,7 @@ func (c *Cloud) findRouteTable(clusterName string) (*ec2.RouteTable, error) {
 
 	if c.cfg.Global.RouteTableID != "" {
 		request := &ec2.DescribeRouteTablesInput{Filters: []*ec2.Filter{newEc2Filter("route-table-id", c.cfg.Global.RouteTableID)}}
-		response, err := c.compute.DescribeRouteTables(request)
+		response, err := c.compute.ReadRouteTables(request)
 		if err != nil {
 			return nil, err
 		}
@@ -46,7 +46,7 @@ func (c *Cloud) findRouteTable(clusterName string) (*ec2.RouteTable, error) {
 		tables = response
 	} else {
 		request := &ec2.DescribeRouteTablesInput{}
-		response, err := c.compute.DescribeRouteTables(request)
+		response, err := c.compute.ReadRouteTables(request)
 		if err != nil {
 			return nil, err
 		}

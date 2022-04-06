@@ -38,7 +38,7 @@ type Compute interface {
 
 	CreateTags(*ec2.CreateTagsInput) (*ec2.CreateTagsOutput, error)
 
-	DescribeRouteTables(request *ec2.DescribeRouteTablesInput) ([]*ec2.RouteTable, error)
+	ReadRouteTables(request *ec2.DescribeRouteTablesInput) ([]*ec2.RouteTable, error)
 	CreateRoute(request *ec2.CreateRouteInput) (*ec2.CreateRouteOutput, error)
 	DeleteRoute(request *ec2.DeleteRouteInput) (*ec2.DeleteRouteOutput, error)
 

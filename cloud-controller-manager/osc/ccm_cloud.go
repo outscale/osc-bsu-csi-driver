@@ -945,7 +945,7 @@ func (c *Cloud) findELBSubnets(internalELB bool) ([]string, error) {
 		vpcIDFilter := newEc2Filter("vpc-id", c.vpcID)
 		rRequest := &ec2.DescribeRouteTablesInput{}
 		rRequest.Filters = []*ec2.Filter{vpcIDFilter}
-		rt, err = c.compute.DescribeRouteTables(rRequest)
+		rt, err = c.compute.ReadRouteTables(rRequest)
 		if err != nil {
 			return nil, fmt.Errorf("error describe route table: %q", err)
 		}

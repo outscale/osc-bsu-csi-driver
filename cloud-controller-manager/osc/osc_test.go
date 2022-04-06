@@ -861,7 +861,7 @@ func TestSubnetIDsinVPC(t *testing.T) {
 	t.Logf("awsServices.ec2.DescribeSubnets----: %v", res)
 
 	request2222 := &ec2.DescribeRouteTablesInput{}
-	rt, err := awsServices.ec2.DescribeRouteTables(request2222)
+	rt, err := awsServices.ec2.ReadRouteTables(request2222)
 	t.Logf("awsServices.ec2.DescribeRouteTables----: %v", rt)
 
 	subnetsRes, err := c.findSubnets()

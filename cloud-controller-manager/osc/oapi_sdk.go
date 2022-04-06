@@ -119,7 +119,7 @@ func (s *oscSdkCompute) CreateTags(request *ec2.CreateTagsInput) (*ec2.CreateTag
 	return resp, err
 }
 
-func (s *oscSdkCompute) DescribeRouteTables(request *ec2.DescribeRouteTablesInput) ([]*ec2.RouteTable, error) {
+func (s *oscSdkCompute) ReadRouteTables(request *ec2.DescribeRouteTablesInput) ([]*ec2.RouteTable, error) {
 	results := []*ec2.RouteTable{}
 	var nextToken *string
 	requestTime := time.Now()

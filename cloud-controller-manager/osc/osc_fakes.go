@@ -209,8 +209,8 @@ func (ec2i *FakeComputeImpl) CreateTags(*ec2.CreateTagsInput) (*ec2.CreateTagsOu
 	panic("Not implemented")
 }
 
-// DescribeRouteTables returns fake route table descriptions
-func (ec2i *FakeComputeImpl) DescribeRouteTables(request *ec2.DescribeRouteTablesInput) ([]*ec2.RouteTable, error) {
+// ReadRouteTables returns fake route table descriptions
+func (ec2i *FakeComputeImpl) ReadRouteTables(request *ec2.DescribeRouteTablesInput) ([]*ec2.RouteTable, error) {
 	ec2i.DescribeRouteTablesInput = request
 	return ec2i.RouteTables, nil
 }

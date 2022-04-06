@@ -127,7 +127,7 @@ func newAWSCloud(cfg CloudConfig, awsServices Services) (*Cloud, error) {
 		// When the master is running on a different AWS account, cloud provider or on-premise
 		// build up a dummy instance and use the VPC from the nodes account
 		klog.Info("Master is configured to run on a different AWS account, different cloud provider or on-premises")
-		awsCloud.selfAWSInstance = &awsInstance{
+		awsCloud.selfAWSInstance = &Vm{
 			nodeName: "master-dummy",
 			vpcID:    cfg.Global.VPC,
 			subnetID: cfg.Global.SubnetID,

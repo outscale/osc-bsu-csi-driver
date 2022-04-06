@@ -63,7 +63,7 @@ type Cloud struct {
 
 	// The AWS instance that we are running on
 	// Note that we cache some state in awsInstance (mountpoints), so we must preserve the instance
-	selfAWSInstance *awsInstance
+	selfAWSInstance *Vm
 
 	instanceCache instanceCache
 
@@ -82,7 +82,7 @@ type Cloud struct {
 // ********************* CCM Cloud Context functions *********************
 // Builds the awsInstance for the EC2 instance on which we are running.
 // This is called when the AWSCloud is initialized, and should not be called otherwise (because the awsInstance for the local instance is a singleton with drive mapping state)
-func (c *Cloud) buildSelfAWSInstance() (*awsInstance, error) {
+func (c *Cloud) buildSelfAWSInstance() (*Vm, error) {
 	debugPrintCallerFunctionName()
 	klog.V(10).Infof("buildSelfAWSInstance()")
 	if c.selfAWSInstance != nil {
@@ -2001,7 +2001,7 @@ func (c *Cloud) getInstanceByNodeName(nodeName types.NodeName) (*ec2.Instance, e
 	return instance, err
 }
 
-func (c *Cloud) getFullInstance(nodeName types.NodeName) (*awsInstance, *ec2.Instance, error) {
+func (c *Cloud) getFullInstance(nodeName types.NodeName) (*Vm, *ec2.Instance, error) {
 	debugPrintCallerFunctionName()
 	klog.V(10).Infof("getFullInstance(%v)", nodeName)
 	if nodeName == "" {

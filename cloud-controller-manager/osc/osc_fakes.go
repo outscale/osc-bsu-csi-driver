@@ -154,9 +154,9 @@ func (ec2i *FakeComputeImpl) ReadVms(request *ec2.DescribeInstancesInput) ([]*ec
 	return matches, nil
 }
 
-// DescribeSecurityGroups is not implemented but is required for interface
+// ReadSecurityGroups is not implemented but is required for interface
 // conformance
-func (ec2i *FakeComputeImpl) DescribeSecurityGroups(request *ec2.DescribeSecurityGroupsInput) ([]*ec2.SecurityGroup, error) {
+func (ec2i *FakeComputeImpl) ReadSecurityGroups(request *ec2.DescribeSecurityGroupsInput) ([]*ec2.SecurityGroup, error) {
 	panic("Not implemented")
 }
 

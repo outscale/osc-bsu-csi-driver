@@ -50,7 +50,7 @@ type MockedFakeCompute struct {
 	mock.Mock
 }
 
-func (m *MockedFakeCompute) expectDescribeSecurityGroups(clusterID, groupName string) {
+func (m *MockedFakeCompute) expectReadSecurityGroups(clusterID, groupName string) {
 	tags := []*ec2.Tag{
 		{
 			Key:   aws.String(fmt.Sprintf("%s%s", TagNameKubernetesClusterPrefix, clusterID)),
@@ -62,13 +62,13 @@ func (m *MockedFakeCompute) expectDescribeSecurityGroups(clusterID, groupName st
 		},
 	}
 
-	m.On("DescribeSecurityGroups", &ec2.DescribeSecurityGroupsInput{Filters: []*ec2.Filter{
+	m.On("ReadSecurityGroups", &ec2.DescribeSecurityGroupsInput{Filters: []*ec2.Filter{
 		newEc2Filter("group-name", groupName),
 		newEc2Filter("vpc-id", "vpc-123456"),
 	}}).Return([]*ec2.SecurityGroup{{Tags: tags, GroupId: aws.String("sg-12345")}})
 }
 
-func (m *MockedFakeCompute) DescribeSecurityGroups(request *ec2.DescribeSecurityGroupsInput) ([]*ec2.SecurityGroup, error) {
+func (m *MockedFakeCompute) ReadSecurityGroups(request *ec2.DescribeSecurityGroupsInput) ([]*ec2.SecurityGroup, error) {
 	args := m.Called(request)
 	return args.Get(0).([]*ec2.SecurityGroup), nil
 }
@@ -1511,7 +1511,7 @@ func TestLBExtraSecurityGroupsAnnotation(t *testing.T) {
 		{"Multiple SGs specified", sg3, []string{sg1[ServiceAnnotationLoadBalancerExtraSecurityGroups], sg2[ServiceAnnotationLoadBalancerExtraSecurityGroups]}},
 	}
 
-	awsServices.ec2.(*MockedFakeCompute).expectDescribeSecurityGroups(TestClusterID, "k8s-elb-aid")
+	awsServices.ec2.(*MockedFakeCompute).expectReadSecurityGroups(TestClusterID, "k8s-elb-aid")
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
@@ -1545,7 +1545,7 @@ func TestLBSecurityGroupsAnnotation(t *testing.T) {
 		{"Multiple SGs specified", sg3, []string{sg1[ServiceAnnotationLoadBalancerSecurityGroups], sg2[ServiceAnnotationLoadBalancerSecurityGroups]}},
 	}
 
-	awsServices.ec2.(*MockedFakeCompute).expectDescribeSecurityGroups(TestClusterID, "k8s-elb-aid")
+	awsServices.ec2.(*MockedFakeCompute).expectReadSecurityGroups(TestClusterID, "k8s-elb-aid")
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {

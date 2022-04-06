@@ -59,8 +59,8 @@ func (s *oscSdkCompute) ReadVms(request *ec2.DescribeInstancesInput) ([]*ec2.Ins
 	return results, nil
 }
 
-// Implements EC2.DescribeSecurityGroups
-func (s *oscSdkCompute) DescribeSecurityGroups(request *ec2.DescribeSecurityGroupsInput) ([]*ec2.SecurityGroup, error) {
+// Implements EC2.ReadSecurityGroups
+func (s *oscSdkCompute) ReadSecurityGroups(request *ec2.DescribeSecurityGroupsInput) ([]*ec2.SecurityGroup, error) {
 	// Security groups are paged
 	results := []*ec2.SecurityGroup{}
 	var nextToken *string

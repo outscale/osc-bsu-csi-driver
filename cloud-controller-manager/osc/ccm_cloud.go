@@ -551,7 +551,7 @@ func (c *Cloud) findSecurityGroup(securityGroupID string) (*ec2.SecurityGroup, e
 	}
 	// We don't apply our tag filters because we are retrieving by ID
 
-	groups, err := c.compute.DescribeSecurityGroups(describeSecurityGroupsRequest)
+	groups, err := c.compute.ReadSecurityGroups(describeSecurityGroupsRequest)
 	if err != nil {
 		klog.Warningf("Error retrieving security group: %q", err)
 		return nil, err
@@ -819,7 +819,7 @@ func (c *Cloud) ensureSecurityGroup(name string, description string, additionalT
 			request.Filters = append(request.Filters, newEc2Filter("vpc-id", c.vpcID))
 		}
 
-		securityGroups, err := c.compute.DescribeSecurityGroups(request)
+		securityGroups, err := c.compute.ReadSecurityGroups(request)
 		if err != nil {
 			return "", err
 		}
@@ -1455,7 +1455,7 @@ func (c *Cloud) getTaggedSecurityGroups() (map[string]*ec2.SecurityGroup, error)
 		newEc2Filter("tag:"+TagNameMainSG+c.tagging.clusterID(), "True"),
 	}
 
-	groups, err := c.compute.DescribeSecurityGroups(request)
+	groups, err := c.compute.ReadSecurityGroups(request)
 	if err != nil {
 		return nil, fmt.Errorf("error querying security groups: %q", err)
 	}
@@ -1529,7 +1529,7 @@ func (c *Cloud) updateInstanceSecurityGroupsForLoadBalancer(lb *elb.LoadBalancer
 				newEc2Filter("ip-permission.group-name", loadBalancerSecurityGroupID),
 			}
 		}
-		response, err := c.compute.DescribeSecurityGroups(describeRequest)
+		response, err := c.compute.ReadSecurityGroups(describeRequest)
 		if err != nil {
 			return fmt.Errorf("error querying security groups for ELB: %q", err)
 		}
@@ -1706,7 +1706,7 @@ func (c *Cloud) EnsureLoadBalancerDeleted(ctx context.Context, clusterName strin
 		describeRequest.Filters = []*ec2.Filter{
 			newEc2Filter("group-id", loadBalancerSGs...),
 		}
-		response, err := c.compute.DescribeSecurityGroups(describeRequest)
+		response, err := c.compute.ReadSecurityGroups(describeRequest)
 		if err != nil {
 			return fmt.Errorf("error querying security groups for ELB: %q", err)
 		}

@@ -28,7 +28,7 @@ import (
 
 // oscSdkCompute is an implementation of the EC2 interface, backed by aws-sdk-go
 type oscSdkCompute struct {
-	ec2 *ec2.EC2
+	oapi *ec2.EC2
 }
 
 // Implementation of EC2.Instances
@@ -38,7 +38,7 @@ func (s *oscSdkCompute) ReadVms(request *ec2.DescribeInstancesInput) ([]*ec2.Ins
 	var nextToken *string
 	requestTime := time.Now()
 	for {
-		response, err := s.ec2.DescribeInstances(request)
+		response, err := s.oapi.DescribeInstances(request)
 		if err != nil {
 			recordAWSMetric("describe_instance", 0, err)
 			return nil, fmt.Errorf("error listing AWS instances: %q", err)
@@ -66,7 +66,7 @@ func (s *oscSdkCompute) ReadSecurityGroups(request *ec2.DescribeSecurityGroupsIn
 	var nextToken *string
 	requestTime := time.Now()
 	for {
-		response, err := s.ec2.DescribeSecurityGroups(request)
+		response, err := s.oapi.DescribeSecurityGroups(request)
 		if err != nil {
 			recordAWSMetric("describe_security_groups", 0, err)
 			return nil, fmt.Errorf("error listing AWS security groups: %q", err)
@@ -87,7 +87,7 @@ func (s *oscSdkCompute) ReadSecurityGroups(request *ec2.DescribeSecurityGroupsIn
 
 func (s *oscSdkCompute) DescribeSubnets(request *ec2.DescribeSubnetsInput) ([]*ec2.Subnet, error) {
 	// Subnets are not paged
-	response, err := s.ec2.DescribeSubnets(request)
+	response, err := s.oapi.DescribeSubnets(request)
 	if err != nil {
 		return nil, fmt.Errorf("error listing AWS subnets: %q", err)
 	}
@@ -95,25 +95,25 @@ func (s *oscSdkCompute) DescribeSubnets(request *ec2.DescribeSubnetsInput) ([]*e
 }
 
 func (s *oscSdkCompute) CreateSecurityGroup(request *ec2.CreateSecurityGroupInput) (*ec2.CreateSecurityGroupOutput, error) {
-	return s.ec2.CreateSecurityGroup(request)
+	return s.oapi.CreateSecurityGroup(request)
 }
 
 func (s *oscSdkCompute) DeleteSecurityGroup(request *ec2.DeleteSecurityGroupInput) (*ec2.DeleteSecurityGroupOutput, error) {
-	return s.ec2.DeleteSecurityGroup(request)
+	return s.oapi.DeleteSecurityGroup(request)
 }
 
 func (s *oscSdkCompute) CreateSecurityGroupRule(request *ec2.AuthorizeSecurityGroupIngressInput) (*ec2.AuthorizeSecurityGroupIngressOutput, error) {
-	return s.ec2.AuthorizeSecurityGroupIngress(request)
+	return s.oapi.AuthorizeSecurityGroupIngress(request)
 }
 
 func (s *oscSdkCompute) DeleteSecurityGroupRule(request *ec2.RevokeSecurityGroupIngressInput) (*ec2.RevokeSecurityGroupIngressOutput, error) {
-	return s.ec2.RevokeSecurityGroupIngress(request)
+	return s.oapi.RevokeSecurityGroupIngress(request)
 }
 
 func (s *oscSdkCompute) CreateTags(request *ec2.CreateTagsInput) (*ec2.CreateTagsOutput, error) {
 	debugPrintCallerFunctionName()
 	requestTime := time.Now()
-	resp, err := s.ec2.CreateTags(request)
+	resp, err := s.oapi.CreateTags(request)
 	timeTaken := time.Since(requestTime).Seconds()
 	recordAWSMetric("create_tags", timeTaken, err)
 	return resp, err
@@ -124,7 +124,7 @@ func (s *oscSdkCompute) ReadRouteTables(request *ec2.DescribeRouteTablesInput) (
 	var nextToken *string
 	requestTime := time.Now()
 	for {
-		response, err := s.ec2.DescribeRouteTables(request)
+		response, err := s.oapi.DescribeRouteTables(request)
 		if err != nil {
 			recordAWSMetric("describe_route_tables", 0, err)
 			return nil, fmt.Errorf("error listing AWS route tables: %q", err)
@@ -144,17 +144,17 @@ func (s *oscSdkCompute) ReadRouteTables(request *ec2.DescribeRouteTablesInput) (
 }
 
 func (s *oscSdkCompute) CreateRoute(request *ec2.CreateRouteInput) (*ec2.CreateRouteOutput, error) {
-	return s.ec2.CreateRoute(request)
+	return s.oapi.CreateRoute(request)
 }
 
 func (s *oscSdkCompute) DeleteRoute(request *ec2.DeleteRouteInput) (*ec2.DeleteRouteOutput, error) {
-	return s.ec2.DeleteRoute(request)
+	return s.oapi.DeleteRoute(request)
 }
 
 func (s *oscSdkCompute) UpdateVm(request *ec2.ModifyInstanceAttributeInput) (*ec2.ModifyInstanceAttributeOutput, error) {
-	return s.ec2.ModifyInstanceAttribute(request)
+	return s.oapi.ModifyInstanceAttribute(request)
 }
 
 func (s *oscSdkCompute) ReadNets(request *ec2.DescribeVpcsInput) (*ec2.DescribeVpcsOutput, error) {
-	return s.ec2.DescribeVpcs(request)
+	return s.oapi.DescribeVpcs(request)
 }

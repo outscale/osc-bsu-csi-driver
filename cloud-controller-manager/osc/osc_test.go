@@ -45,12 +45,12 @@ import (
 const TestClusterID = "clusterid.test"
 const TestClusterName = "testCluster"
 
-type MockedFakeEC2 struct {
+type MockedFakeCompute struct {
 	*FakeComputeImpl
 	mock.Mock
 }
 
-func (m *MockedFakeEC2) expectDescribeSecurityGroups(clusterID, groupName string) {
+func (m *MockedFakeCompute) expectDescribeSecurityGroups(clusterID, groupName string) {
 	tags := []*ec2.Tag{
 		{
 			Key:   aws.String(fmt.Sprintf("%s%s", TagNameKubernetesClusterPrefix, clusterID)),
@@ -68,7 +68,7 @@ func (m *MockedFakeEC2) expectDescribeSecurityGroups(clusterID, groupName string
 	}}).Return([]*ec2.SecurityGroup{{Tags: tags, GroupId: aws.String("sg-12345")}})
 }
 
-func (m *MockedFakeEC2) DescribeSecurityGroups(request *ec2.DescribeSecurityGroupsInput) ([]*ec2.SecurityGroup, error) {
+func (m *MockedFakeCompute) DescribeSecurityGroups(request *ec2.DescribeSecurityGroupsInput) ([]*ec2.SecurityGroup, error) {
 	args := m.Called(request)
 	return args.Get(0).([]*ec2.SecurityGroup), nil
 }
@@ -1511,7 +1511,7 @@ func TestLBExtraSecurityGroupsAnnotation(t *testing.T) {
 		{"Multiple SGs specified", sg3, []string{sg1[ServiceAnnotationLoadBalancerExtraSecurityGroups], sg2[ServiceAnnotationLoadBalancerExtraSecurityGroups]}},
 	}
 
-	awsServices.ec2.(*MockedFakeEC2).expectDescribeSecurityGroups(TestClusterID, "k8s-elb-aid")
+	awsServices.ec2.(*MockedFakeCompute).expectDescribeSecurityGroups(TestClusterID, "k8s-elb-aid")
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
@@ -1545,7 +1545,7 @@ func TestLBSecurityGroupsAnnotation(t *testing.T) {
 		{"Multiple SGs specified", sg3, []string{sg1[ServiceAnnotationLoadBalancerSecurityGroups], sg2[ServiceAnnotationLoadBalancerSecurityGroups]}},
 	}
 
-	awsServices.ec2.(*MockedFakeEC2).expectDescribeSecurityGroups(TestClusterID, "k8s-elb-aid")
+	awsServices.ec2.(*MockedFakeCompute).expectDescribeSecurityGroups(TestClusterID, "k8s-elb-aid")
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
@@ -1813,7 +1813,7 @@ func informerNotSynced() bool {
 func newMockedFakeAWSServices(id string) *FakeOscServices {
 	s := NewFakeAWSServices(id)
 
-	s.ec2 = &MockedFakeEC2{FakeComputeImpl: s.ec2.(*FakeComputeImpl)}
+	s.ec2 = &MockedFakeCompute{FakeComputeImpl: s.ec2.(*FakeComputeImpl)}
 	s.elb = &MockedFakeELB{FakeELB: s.elb.(*FakeELB)}
 	return s
 }

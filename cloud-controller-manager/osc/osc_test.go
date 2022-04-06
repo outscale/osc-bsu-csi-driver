@@ -841,9 +841,9 @@ func TestSubnetIDsinVPC(t *testing.T) {
 	subnets[2]["id"] = "subnet-c0000001"
 	subnets[2]["az"] = "af-south-1c"
 	constructedSubnets := constructSubnets(subnets)
-	awsServices.ec2.RemoveSubnets()
+	awsServices.compute.RemoveSubnets()
 	for _, subnet := range constructedSubnets {
-		awsServices.ec2.CreateSubnet(subnet)
+		awsServices.compute.CreateSubnet(subnet)
 	}
 
 	routeTables := map[string]bool{
@@ -852,16 +852,16 @@ func TestSubnetIDsinVPC(t *testing.T) {
 		"subnet-c0000001": true,
 	}
 	constructedRouteTables := constructRouteTables(routeTables)
-	awsServices.ec2.RemoveRouteTables()
+	awsServices.compute.RemoveRouteTables()
 	for _, rt := range constructedRouteTables {
-		awsServices.ec2.CreateRouteTable(rt)
+		awsServices.compute.CreateRouteTable(rt)
 	}
 	request1111 := &ec2.DescribeSubnetsInput{}
-	res, _ := awsServices.ec2.DescribeSubnets(request1111)
+	res, _ := awsServices.compute.DescribeSubnets(request1111)
 	t.Logf("awsServices.ec2.DescribeSubnets----: %v", res)
 
 	request2222 := &ec2.DescribeRouteTablesInput{}
-	rt, err := awsServices.ec2.ReadRouteTables(request2222)
+	rt, err := awsServices.compute.ReadRouteTables(request2222)
 	t.Logf("awsServices.ec2.DescribeRouteTables----: %v", rt)
 
 	subnetsRes, err := c.findSubnets()
@@ -892,9 +892,9 @@ func TestSubnetIDsinVPC(t *testing.T) {
 
 	// test implicit routing table - when subnets are not explicitly linked to a table they should use main
 	constructedRouteTables = constructRouteTables(map[string]bool{})
-	awsServices.ec2.RemoveRouteTables()
+	awsServices.compute.RemoveRouteTables()
 	for _, rt := range constructedRouteTables {
-		awsServices.ec2.CreateRouteTable(rt)
+		awsServices.compute.CreateRouteTable(rt)
 	}
 
 	result, err = c.findELBSubnets(false)
@@ -931,16 +931,16 @@ func TestSubnetIDsinVPC(t *testing.T) {
 	subnets[4]["id"] = "subnet-c0000002"
 	subnets[4]["az"] = "af-south-1c"
 	constructedSubnets = constructSubnets(subnets)
-	awsServices.ec2.RemoveSubnets()
+	awsServices.compute.RemoveSubnets()
 	for _, subnet := range constructedSubnets {
-		awsServices.ec2.CreateSubnet(subnet)
+		awsServices.compute.CreateSubnet(subnet)
 	}
 	routeTables["subnet-c0000000"] = true
 	routeTables["subnet-c0000002"] = true
 	constructedRouteTables = constructRouteTables(routeTables)
-	awsServices.ec2.RemoveRouteTables()
+	awsServices.compute.RemoveRouteTables()
 	for _, rt := range constructedRouteTables {
-		awsServices.ec2.CreateRouteTable(rt)
+		awsServices.compute.CreateRouteTable(rt)
 	}
 
 	result, err = c.findELBSubnets(false)
@@ -974,9 +974,9 @@ func TestSubnetIDsinVPC(t *testing.T) {
 	subnets[5]["az"] = "af-south-1b"
 
 	constructedSubnets = constructSubnets(subnets)
-	awsServices.ec2.RemoveSubnets()
+	awsServices.compute.RemoveSubnets()
 	for _, subnet := range constructedSubnets {
-		awsServices.ec2.CreateSubnet(subnet)
+		awsServices.compute.CreateSubnet(subnet)
 	}
 
 	routeTables["subnet-a0000001"] = false
@@ -986,9 +986,9 @@ func TestSubnetIDsinVPC(t *testing.T) {
 	routeTables["subnet-d0000001"] = true
 	routeTables["subnet-d0000002"] = true
 	constructedRouteTables = constructRouteTables(routeTables)
-	awsServices.ec2.RemoveRouteTables()
+	awsServices.compute.RemoveRouteTables()
 	for _, rt := range constructedRouteTables {
-		awsServices.ec2.CreateRouteTable(rt)
+		awsServices.compute.CreateRouteTable(rt)
 	}
 	result, err = c.findELBSubnets(false)
 	if err != nil {
@@ -1511,7 +1511,7 @@ func TestLBExtraSecurityGroupsAnnotation(t *testing.T) {
 		{"Multiple SGs specified", sg3, []string{sg1[ServiceAnnotationLoadBalancerExtraSecurityGroups], sg2[ServiceAnnotationLoadBalancerExtraSecurityGroups]}},
 	}
 
-	awsServices.ec2.(*MockedFakeCompute).expectReadSecurityGroups(TestClusterID, "k8s-elb-aid")
+	awsServices.compute.(*MockedFakeCompute).expectReadSecurityGroups(TestClusterID, "k8s-elb-aid")
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
@@ -1545,7 +1545,7 @@ func TestLBSecurityGroupsAnnotation(t *testing.T) {
 		{"Multiple SGs specified", sg3, []string{sg1[ServiceAnnotationLoadBalancerSecurityGroups], sg2[ServiceAnnotationLoadBalancerSecurityGroups]}},
 	}
 
-	awsServices.ec2.(*MockedFakeCompute).expectReadSecurityGroups(TestClusterID, "k8s-elb-aid")
+	awsServices.compute.(*MockedFakeCompute).expectReadSecurityGroups(TestClusterID, "k8s-elb-aid")
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
@@ -1813,7 +1813,7 @@ func informerNotSynced() bool {
 func newMockedFakeAWSServices(id string) *FakeOscServices {
 	s := NewFakeAWSServices(id)
 
-	s.ec2 = &MockedFakeCompute{FakeComputeImpl: s.ec2.(*FakeComputeImpl)}
+	s.compute = &MockedFakeCompute{FakeComputeImpl: s.compute.(*FakeComputeImpl)}
 	s.elb = &MockedFakeELB{FakeELB: s.elb.(*FakeELB)}
 	return s
 }

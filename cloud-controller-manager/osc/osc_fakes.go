@@ -38,7 +38,7 @@ type FakeOscServices struct {
 	networkInterfacesPrivateIPs [][]string
 	networkInterfacesVpcIDs     []string
 
-	ec2      FakeCompute
+	compute  FakeCompute
 	elb      ELB
 	metadata EC2Metadata
 }
@@ -47,7 +47,7 @@ type FakeOscServices struct {
 func NewFakeAWSServices(clusterID string) *FakeOscServices {
 	s := &FakeOscServices{}
 	s.region = "us-east-1"
-	s.ec2 = &FakeComputeImpl{aws: s}
+	s.compute = &FakeComputeImpl{aws: s}
 	s.elb = &FakeELB{aws: s}
 	s.metadata = &FakeMetadata{aws: s}
 
@@ -84,7 +84,7 @@ func (s *FakeOscServices) WithAz(az string) *FakeOscServices {
 
 // Compute returns a fake EC2 client
 func (s *FakeOscServices) Compute(region string) (Compute, error) {
-	return s.ec2, nil
+	return s.compute, nil
 }
 
 // LoadBalancing returns a fake ELB client

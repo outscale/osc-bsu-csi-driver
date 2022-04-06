@@ -344,10 +344,14 @@ func (d *nodeService) NodeUnpublishVolume(ctx context.Context, req *csi.NodeUnpu
 		return nil, status.Error(codes.InvalidArgument, "Target path not provided")
 	}
 
-	klog.V(5).Infof("NodeUnpublishVolume: unmounting %s", target)
-	err := d.mounter.Unmount(target)
-	if err != nil {
-		return nil, status.Errorf(codes.Internal, "Could not unmount %q: %v", target, err)
+	isMounted, err := d.isMounted(target)
+
+	if isMounted {
+		klog.V(5).Infof("NodeUnpublishVolume: unmounting %s", target)
+		err = d.mounter.Unmount(target)
+		if err != nil {
+			return nil, status.Errorf(codes.Internal, "Could not unmount %q: %v", target, err)
+		}
 	}
 
 	return &csi.NodeUnpublishVolumeResponse{}, nil

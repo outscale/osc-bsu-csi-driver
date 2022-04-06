@@ -26,7 +26,7 @@ import (
 // ********************* CCM awsInstance Object & functions *********************
 
 type Vm struct {
-	ec2 Compute
+	compute Compute
 
 	// id in AWS
 	awsID string
@@ -51,5 +51,5 @@ type Vm struct {
 func (i *Vm) describeInstance() (*ec2.Instance, error) {
 	debugPrintCallerFunctionName()
 	klog.V(10).Infof("describeInstance")
-	return describeInstance(i.ec2, InstanceID(i.awsID))
+	return describeInstance(i.compute, InstanceID(i.awsID))
 }

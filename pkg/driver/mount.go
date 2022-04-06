@@ -33,6 +33,7 @@ type Mounter interface {
 	MakeFile(pathname string) error
 	MakeDir(pathname string) error
 	ExistsPath(filename string) (bool, error)
+	IsCorruptedMnt(error) bool
 }
 
 type NodeMounter struct {
@@ -52,6 +53,10 @@ func newNodeMounter() Mounter {
 
 func (m *NodeMounter) GetDeviceName(mountPath string) (string, int, error) {
 	return mount.GetDeviceNameFromMount(m, mountPath)
+}
+
+func (m NodeMounter) IsCorruptedMnt(err error) bool {
+	return mount.IsCorruptedMnt(err)
 }
 
 func (m *NodeMounter) MakeFile(pathname string) error {

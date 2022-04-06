@@ -38,7 +38,7 @@ type FakeAWSServices struct {
 	networkInterfacesPrivateIPs [][]string
 	networkInterfacesVpcIDs     []string
 
-	ec2      FakeEC2
+	ec2      FakeCompute
 	elb      ELB
 	metadata EC2Metadata
 }
@@ -97,8 +97,8 @@ func (s *FakeAWSServices) Metadata() (EC2Metadata, error) {
 	return s.metadata, nil
 }
 
-// FakeEC2 is a fake EC2 client used for testing
-type FakeEC2 interface {
+// FakeCompute is a fake Compute client used for testing
+type FakeCompute interface {
 	Compute
 	CreateSubnet(*ec2.Subnet) (*ec2.CreateSubnetOutput, error)
 	RemoveSubnets()

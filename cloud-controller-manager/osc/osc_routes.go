@@ -134,7 +134,7 @@ func (c *Cloud) configureInstanceSourceDestCheck(instanceID string, sourceDestCh
 	request.InstanceId = aws.String(instanceID)
 	request.SourceDestCheck = &ec2.AttributeBooleanValue{Value: aws.Bool(sourceDestCheck)}
 
-	_, err := c.compute.ModifyInstanceAttribute(request)
+	_, err := c.compute.UpdateVm(request)
 	if err != nil {
 		return fmt.Errorf("error configuring source-dest-check on instance %s: %q", instanceID, err)
 	}

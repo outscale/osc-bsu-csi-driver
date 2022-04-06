@@ -241,7 +241,7 @@ func (ec2i *FakeComputeImpl) DeleteRoute(request *ec2.DeleteRouteInput) (*ec2.De
 
 // ModifyInstanceAttribute is not implemented but is required for interface
 // conformance
-func (ec2i *FakeComputeImpl) ModifyInstanceAttribute(request *ec2.ModifyInstanceAttributeInput) (*ec2.ModifyInstanceAttributeOutput, error) {
+func (ec2i *FakeComputeImpl) UpdateVm(request *ec2.ModifyInstanceAttributeInput) (*ec2.ModifyInstanceAttributeOutput, error) {
 	panic("Not implemented")
 }
 

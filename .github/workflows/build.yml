@@ -15,16 +15,12 @@ jobs:
     - uses: actions/setup-python@v2
     - name: Docker Lint
       run: bash -c "make dockerlint"
-    - name: Build Env
-      run: bash -c "make build_env"
-    - name: Build
-      run: bash -c "make run_cmd RUN_CMD=aws-ebs-csi-driver"
     - name: Verify
-      run: bash -c "make run_cmd RUN_CMD=verify"
+      run: bash -c "make verify"
     - name: Test
-      run: bash -c "make run_cmd RUN_CMD=test"
+      run: bash -c "make test"
     - name: Image
-      run: bash -c "make image"
+      run: bash -c "make build-image"
     - name: Trivy-Scan
       run: bash -c "make trivy-scan"
     - name: Trivy-Ignore-Check

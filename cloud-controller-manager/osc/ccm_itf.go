@@ -17,10 +17,8 @@ limitations under the License.
 package osc
 
 // ********************* CCM Used Interfaces *********************
-
-// Services is an abstraction over OSC, to allow mocking/other implementations
 type Services interface {
-	Compute(region string) (EC2, error)
+	Compute(region string) (Compute, error)
 	LoadBalancing(region string) (ELB, error)
 	Metadata() (EC2Metadata, error)
 }

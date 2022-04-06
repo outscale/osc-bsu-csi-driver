@@ -114,7 +114,7 @@ func (p *awsSDKProvider) getCrossRequestRetryDelay(regionName string) *CrossRequ
 	return delayer
 }
 
-func (p *awsSDKProvider) Compute(regionName string) (EC2, error) {
+func (p *awsSDKProvider) Compute(regionName string) (Compute, error) {
 	debugPrintCallerFunctionName()
 	klog.V(10).Infof("Compute(%v)", regionName)
 	sess, err := NewSession(nil)

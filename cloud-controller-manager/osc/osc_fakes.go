@@ -83,7 +83,7 @@ func (s *FakeAWSServices) WithAz(az string) *FakeAWSServices {
 }
 
 // Compute returns a fake EC2 client
-func (s *FakeAWSServices) Compute(region string) (EC2, error) {
+func (s *FakeAWSServices) Compute(region string) (Compute, error) {
 	return s.ec2, nil
 }
 
@@ -99,7 +99,7 @@ func (s *FakeAWSServices) Metadata() (EC2Metadata, error) {
 
 // FakeEC2 is a fake EC2 client used for testing
 type FakeEC2 interface {
-	EC2
+	Compute
 	CreateSubnet(*ec2.Subnet) (*ec2.CreateSubnetOutput, error)
 	RemoveSubnets()
 	CreateRouteTable(*ec2.RouteTable) (*ec2.CreateRouteTableOutput, error)

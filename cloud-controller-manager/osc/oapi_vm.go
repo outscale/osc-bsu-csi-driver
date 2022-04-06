@@ -26,7 +26,7 @@ import (
 // ********************* CCM awsInstance Object & functions *********************
 
 type awsInstance struct {
-	ec2 EC2
+	ec2 Compute
 
 	// id in AWS
 	awsID string

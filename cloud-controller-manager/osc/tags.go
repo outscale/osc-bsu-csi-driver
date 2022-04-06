@@ -171,7 +171,7 @@ func (t *awsTagging) hasClusterTag(tags []*ec2.Tag) bool {
 // Ensure that a resource has the correct tags
 // If it has no tags, we assume that this was a problem caused by an error in between creation and tagging,
 // and we add the tags.  If it has a different cluster's tags, that is an error.
-func (t *awsTagging) readRepairClusterTags(client EC2, resourceID string, lifecycle ResourceLifecycle, additionalTags map[string]string, observedTags []*ec2.Tag) error {
+func (t *awsTagging) readRepairClusterTags(client Compute, resourceID string, lifecycle ResourceLifecycle, additionalTags map[string]string, observedTags []*ec2.Tag) error {
 	debugPrintCallerFunctionName()
 	klog.V(10).Infof("readRepairClusterTags(%v, %v, %v, %v, %v)",
 		client, resourceID, lifecycle, additionalTags, observedTags)
@@ -210,7 +210,7 @@ func (t *awsTagging) readRepairClusterTags(client EC2, resourceID string, lifecy
 // createTags calls EC2 CreateTags, but adds retry-on-failure logic
 // We retry mainly because if we create an object, we cannot tag it until it is "fully created" (eventual consistency)
 // The error code varies though (depending on what we are tagging), so we simply retry on all errors
-func (t *awsTagging) createTags(client EC2, resourceID string, lifecycle ResourceLifecycle, additionalTags map[string]string) error {
+func (t *awsTagging) createTags(client Compute, resourceID string, lifecycle ResourceLifecycle, additionalTags map[string]string) error {
 	debugPrintCallerFunctionName()
 	klog.V(10).Infof("createTags(%v,%v,%v,%v)", client, resourceID, lifecycle, additionalTags)
 

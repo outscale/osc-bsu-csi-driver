@@ -23,12 +23,7 @@ import (
 )
 
 // ********************* CCM API interfaces *********************
-
-// EC2 is an abstraction over AWS', to allow mocking/other implementations
-// Note that the DescribeX functions return a list, so callers don't need to deal with paging
-// TODO: Should we rename this to AWS (EBS & ELB are not technically part of EC2)
-type EC2 interface {
-	// Query EC2 for instances matching the filter
+type Compute interface {
 	DescribeInstances(request *ec2.DescribeInstancesInput) ([]*ec2.Instance, error)
 
 	DescribeSecurityGroups(request *ec2.DescribeSecurityGroupsInput) ([]*ec2.SecurityGroup, error)

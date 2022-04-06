@@ -31,7 +31,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/aws/aws-sdk-go/service/elb"
 
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/informers"
 	informercorev1 "k8s.io/client-go/informers/core/v1"
@@ -50,7 +50,7 @@ import (
 
 // Cloud is an implementation of Interface, LoadBalancer and Instances for Amazon Web Services.
 type Cloud struct {
-	ec2      EC2
+	ec2      Compute
 	elb      ELB
 	metadata EC2Metadata
 	cfg      *CloudConfig

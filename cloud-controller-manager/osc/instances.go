@@ -29,9 +29,8 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/ec2"
+	v1 "k8s.io/api/core/v1"
 	"k8s.io/klog/v2"
-
-	"k8s.io/api/core/v1"
 )
 
 // awsInstanceRegMatch represents Regex Match for AWS instance.
@@ -131,7 +130,7 @@ func mapToAWSInstanceIDsTolerant(nodes []*v1.Node) []InstanceID {
 }
 
 // Gets the full information about this instance from the EC2 API
-func describeInstance(ec2Client EC2, instanceID InstanceID) (*ec2.Instance, error) {
+func describeInstance(ec2Client Compute, instanceID InstanceID) (*ec2.Instance, error) {
 	request := &ec2.DescribeInstancesInput{
 		InstanceIds: []*string{instanceID.awsString()},
 	}

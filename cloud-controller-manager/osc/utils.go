@@ -476,7 +476,7 @@ func isRegionValid(region string, metadata EC2Metadata) bool {
 }
 
 // newAWSInstance creates a new awsInstance object
-func newAWSInstance(ec2Service EC2, instance *ec2.Instance) *awsInstance {
+func newAWSInstance(ec2Service Compute, instance *ec2.Instance) *awsInstance {
 	az := ""
 	if instance.Placement != nil {
 		az = aws.StringValue(instance.Placement.AvailabilityZone)

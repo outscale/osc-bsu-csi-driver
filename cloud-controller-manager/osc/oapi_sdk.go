@@ -155,6 +155,6 @@ func (s *oscSdkCompute) UpdateVm(request *ec2.ModifyInstanceAttributeInput) (*ec
 	return s.ec2.ModifyInstanceAttribute(request)
 }
 
-func (s *oscSdkCompute) DescribeVpcs(request *ec2.DescribeVpcsInput) (*ec2.DescribeVpcsOutput, error) {
+func (s *oscSdkCompute) ReadNets(request *ec2.DescribeVpcsInput) (*ec2.DescribeVpcsOutput, error) {
 	return s.ec2.DescribeVpcs(request)
 }

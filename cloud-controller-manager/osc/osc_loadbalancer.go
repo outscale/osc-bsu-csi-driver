@@ -107,7 +107,7 @@ func getLoadBalancerAdditionalTags(annotations map[string]string) map[string]str
 
 func (c *Cloud) getVpcCidrBlocks() ([]string, error) {
 	debugPrintCallerFunctionName()
-	vpcs, err := c.compute.DescribeVpcs(&ec2.DescribeVpcsInput{
+	vpcs, err := c.compute.ReadNets(&ec2.DescribeVpcsInput{
 		VpcIds: []*string{aws.String(c.vpcID)},
 	})
 	if err != nil {

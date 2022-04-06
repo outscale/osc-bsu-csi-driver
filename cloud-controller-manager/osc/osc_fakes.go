@@ -245,8 +245,8 @@ func (ec2i *FakeComputeImpl) UpdateVm(request *ec2.ModifyInstanceAttributeInput)
 	panic("Not implemented")
 }
 
-// DescribeVpcs returns fake VPC descriptions
-func (ec2i *FakeComputeImpl) DescribeVpcs(request *ec2.DescribeVpcsInput) (*ec2.DescribeVpcsOutput, error) {
+// ReadNets returns fake VPC descriptions
+func (ec2i *FakeComputeImpl) ReadNets(request *ec2.DescribeVpcsInput) (*ec2.DescribeVpcsOutput, error) {
 	return &ec2.DescribeVpcsOutput{Vpcs: []*ec2.Vpc{{CidrBlock: aws.String("172.20.0.0/16")}}}, nil
 }
 

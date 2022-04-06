@@ -44,7 +44,7 @@ type Compute interface {
 
 	UpdateVm(request *ec2.ModifyInstanceAttributeInput) (*ec2.ModifyInstanceAttributeOutput, error)
 
-	DescribeVpcs(input *ec2.DescribeVpcsInput) (*ec2.DescribeVpcsOutput, error)
+	ReadNets(input *ec2.DescribeVpcsInput) (*ec2.DescribeVpcsOutput, error)
 }
 
 // ELB is a simple pass-through of AWS' ELB client interface, which allows for testing

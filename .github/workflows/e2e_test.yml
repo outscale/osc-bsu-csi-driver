@@ -51,7 +51,7 @@ jobs:
       working-directory: set-up-rke-cluster
     - name: Push the Docker image
       run: |
-        make aws-ebs-csi-driver image-release
+        make build-image
         docker tag osc/osc-ebs-csi-driver:$IMAGE_TAG localhost:4242/osc/osc-ebs-csi-driver:$IMAGE_TAG
         docker push localhost:4242/osc/osc-ebs-csi-driver:$IMAGE_TAG
         docker image prune -a -f

@@ -34,7 +34,7 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/sets"
@@ -46,7 +46,7 @@ const TestClusterID = "clusterid.test"
 const TestClusterName = "testCluster"
 
 type MockedFakeEC2 struct {
-	*FakeEC2Impl
+	*FakeComputeImpl
 	mock.Mock
 }
 
@@ -1813,7 +1813,7 @@ func informerNotSynced() bool {
 func newMockedFakeAWSServices(id string) *FakeAWSServices {
 	s := NewFakeAWSServices(id)
 
-	s.ec2 = &MockedFakeEC2{FakeEC2Impl: s.ec2.(*FakeEC2Impl)}
+	s.ec2 = &MockedFakeEC2{FakeComputeImpl: s.ec2.(*FakeComputeImpl)}
 	s.elb = &MockedFakeELB{FakeELB: s.elb.(*FakeELB)}
 	return s
 }

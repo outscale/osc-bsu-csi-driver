@@ -47,7 +47,7 @@ type FakeAWSServices struct {
 func NewFakeAWSServices(clusterID string) *FakeAWSServices {
 	s := &FakeAWSServices{}
 	s.region = "us-east-1"
-	s.ec2 = &FakeEC2Impl{aws: s}
+	s.ec2 = &FakeComputeImpl{aws: s}
 	s.elb = &FakeELB{aws: s}
 	s.metadata = &FakeMetadata{aws: s}
 
@@ -107,7 +107,7 @@ type FakeCompute interface {
 }
 
 // FakeEC2Impl is an implementation of the FakeEC2 interface used for testing
-type FakeEC2Impl struct {
+type FakeComputeImpl struct {
 	aws                      *FakeAWSServices
 	Subnets                  []*ec2.Subnet
 	DescribeSubnetsInput     *ec2.DescribeSubnetsInput
@@ -116,7 +116,7 @@ type FakeEC2Impl struct {
 }
 
 // DescribeInstances returns fake instance descriptions
-func (ec2i *FakeEC2Impl) DescribeInstances(request *ec2.DescribeInstancesInput) ([]*ec2.Instance, error) {
+func (ec2i *FakeComputeImpl) DescribeInstances(request *ec2.DescribeInstancesInput) ([]*ec2.Instance, error) {
 	matches := []*ec2.Instance{}
 	for _, instance := range ec2i.aws.instances {
 		if request.InstanceIds != nil {
@@ -156,36 +156,36 @@ func (ec2i *FakeEC2Impl) DescribeInstances(request *ec2.DescribeInstancesInput) 
 
 // DescribeSecurityGroups is not implemented but is required for interface
 // conformance
-func (ec2i *FakeEC2Impl) DescribeSecurityGroups(request *ec2.DescribeSecurityGroupsInput) ([]*ec2.SecurityGroup, error) {
+func (ec2i *FakeComputeImpl) DescribeSecurityGroups(request *ec2.DescribeSecurityGroupsInput) ([]*ec2.SecurityGroup, error) {
 	panic("Not implemented")
 }
 
 // CreateSecurityGroup is not implemented but is required for interface
 // conformance
-func (ec2i *FakeEC2Impl) CreateSecurityGroup(*ec2.CreateSecurityGroupInput) (*ec2.CreateSecurityGroupOutput, error) {
+func (ec2i *FakeComputeImpl) CreateSecurityGroup(*ec2.CreateSecurityGroupInput) (*ec2.CreateSecurityGroupOutput, error) {
 	panic("Not implemented")
 }
 
 // DeleteSecurityGroup is not implemented but is required for interface
 // conformance
-func (ec2i *FakeEC2Impl) DeleteSecurityGroup(*ec2.DeleteSecurityGroupInput) (*ec2.DeleteSecurityGroupOutput, error) {
+func (ec2i *FakeComputeImpl) DeleteSecurityGroup(*ec2.DeleteSecurityGroupInput) (*ec2.DeleteSecurityGroupOutput, error) {
 	panic("Not implemented")
 }
 
 // AuthorizeSecurityGroupIngress is not implemented but is required for
 // interface conformance
-func (ec2i *FakeEC2Impl) AuthorizeSecurityGroupIngress(*ec2.AuthorizeSecurityGroupIngressInput) (*ec2.AuthorizeSecurityGroupIngressOutput, error) {
+func (ec2i *FakeComputeImpl) AuthorizeSecurityGroupIngress(*ec2.AuthorizeSecurityGroupIngressInput) (*ec2.AuthorizeSecurityGroupIngressOutput, error) {
 	panic("Not implemented")
 }
 
 // RevokeSecurityGroupIngress is not implemented but is required for interface
 // conformance
-func (ec2i *FakeEC2Impl) RevokeSecurityGroupIngress(*ec2.RevokeSecurityGroupIngressInput) (*ec2.RevokeSecurityGroupIngressOutput, error) {
+func (ec2i *FakeComputeImpl) RevokeSecurityGroupIngress(*ec2.RevokeSecurityGroupIngressInput) (*ec2.RevokeSecurityGroupIngressOutput, error) {
 	panic("Not implemented")
 }
 
 // CreateSubnet creates fake subnets
-func (ec2i *FakeEC2Impl) CreateSubnet(request *ec2.Subnet) (*ec2.CreateSubnetOutput, error) {
+func (ec2i *FakeComputeImpl) CreateSubnet(request *ec2.Subnet) (*ec2.CreateSubnetOutput, error) {
 	ec2i.Subnets = append(ec2i.Subnets, request)
 	response := &ec2.CreateSubnetOutput{
 		Subnet: request,
@@ -194,29 +194,29 @@ func (ec2i *FakeEC2Impl) CreateSubnet(request *ec2.Subnet) (*ec2.CreateSubnetOut
 }
 
 // DescribeSubnets returns fake subnet descriptions
-func (ec2i *FakeEC2Impl) DescribeSubnets(request *ec2.DescribeSubnetsInput) ([]*ec2.Subnet, error) {
+func (ec2i *FakeComputeImpl) DescribeSubnets(request *ec2.DescribeSubnetsInput) ([]*ec2.Subnet, error) {
 	ec2i.DescribeSubnetsInput = request
 	return ec2i.Subnets, nil
 }
 
 // RemoveSubnets clears subnets on client
-func (ec2i *FakeEC2Impl) RemoveSubnets() {
+func (ec2i *FakeComputeImpl) RemoveSubnets() {
 	ec2i.Subnets = ec2i.Subnets[:0]
 }
 
 // CreateTags is not implemented but is required for interface conformance
-func (ec2i *FakeEC2Impl) CreateTags(*ec2.CreateTagsInput) (*ec2.CreateTagsOutput, error) {
+func (ec2i *FakeComputeImpl) CreateTags(*ec2.CreateTagsInput) (*ec2.CreateTagsOutput, error) {
 	panic("Not implemented")
 }
 
 // DescribeRouteTables returns fake route table descriptions
-func (ec2i *FakeEC2Impl) DescribeRouteTables(request *ec2.DescribeRouteTablesInput) ([]*ec2.RouteTable, error) {
+func (ec2i *FakeComputeImpl) DescribeRouteTables(request *ec2.DescribeRouteTablesInput) ([]*ec2.RouteTable, error) {
 	ec2i.DescribeRouteTablesInput = request
 	return ec2i.RouteTables, nil
 }
 
 // CreateRouteTable creates fake route tables
-func (ec2i *FakeEC2Impl) CreateRouteTable(request *ec2.RouteTable) (*ec2.CreateRouteTableOutput, error) {
+func (ec2i *FakeComputeImpl) CreateRouteTable(request *ec2.RouteTable) (*ec2.CreateRouteTableOutput, error) {
 	ec2i.RouteTables = append(ec2i.RouteTables, request)
 	response := &ec2.CreateRouteTableOutput{
 		RouteTable: request,
@@ -225,28 +225,28 @@ func (ec2i *FakeEC2Impl) CreateRouteTable(request *ec2.RouteTable) (*ec2.CreateR
 }
 
 // RemoveRouteTables clears route tables on client
-func (ec2i *FakeEC2Impl) RemoveRouteTables() {
+func (ec2i *FakeComputeImpl) RemoveRouteTables() {
 	ec2i.RouteTables = ec2i.RouteTables[:0]
 }
 
 // CreateRoute is not implemented but is required for interface conformance
-func (ec2i *FakeEC2Impl) CreateRoute(request *ec2.CreateRouteInput) (*ec2.CreateRouteOutput, error) {
+func (ec2i *FakeComputeImpl) CreateRoute(request *ec2.CreateRouteInput) (*ec2.CreateRouteOutput, error) {
 	panic("Not implemented")
 }
 
 // DeleteRoute is not implemented but is required for interface conformance
-func (ec2i *FakeEC2Impl) DeleteRoute(request *ec2.DeleteRouteInput) (*ec2.DeleteRouteOutput, error) {
+func (ec2i *FakeComputeImpl) DeleteRoute(request *ec2.DeleteRouteInput) (*ec2.DeleteRouteOutput, error) {
 	panic("Not implemented")
 }
 
 // ModifyInstanceAttribute is not implemented but is required for interface
 // conformance
-func (ec2i *FakeEC2Impl) ModifyInstanceAttribute(request *ec2.ModifyInstanceAttributeInput) (*ec2.ModifyInstanceAttributeOutput, error) {
+func (ec2i *FakeComputeImpl) ModifyInstanceAttribute(request *ec2.ModifyInstanceAttributeInput) (*ec2.ModifyInstanceAttributeOutput, error) {
 	panic("Not implemented")
 }
 
 // DescribeVpcs returns fake VPC descriptions
-func (ec2i *FakeEC2Impl) DescribeVpcs(request *ec2.DescribeVpcsInput) (*ec2.DescribeVpcsOutput, error) {
+func (ec2i *FakeComputeImpl) DescribeVpcs(request *ec2.DescribeVpcsInput) (*ec2.DescribeVpcsOutput, error) {
 	return &ec2.DescribeVpcsOutput{Vpcs: []*ec2.Vpc{{CidrBlock: aws.String("172.20.0.0/16")}}}, nil
 }
 

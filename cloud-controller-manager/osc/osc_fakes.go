@@ -115,8 +115,8 @@ type FakeComputeImpl struct {
 	DescribeRouteTablesInput *ec2.DescribeRouteTablesInput
 }
 
-// DescribeInstances returns fake instance descriptions
-func (ec2i *FakeComputeImpl) DescribeInstances(request *ec2.DescribeInstancesInput) ([]*ec2.Instance, error) {
+// DescribeVms returns fake instance descriptions
+func (ec2i *FakeComputeImpl) ReadVms(request *ec2.DescribeInstancesInput) ([]*ec2.Instance, error) {
 	matches := []*ec2.Instance{}
 	for _, instance := range ec2i.aws.instances {
 		if request.InstanceIds != nil {

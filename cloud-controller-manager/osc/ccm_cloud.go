@@ -304,7 +304,7 @@ func (c *Cloud) InstanceExistsByProviderID(ctx context.Context, providerID strin
 		},
 	}
 
-	instances, err := c.compute.DescribeInstances(request)
+	instances, err := c.compute.ReadVms(request)
 	if err != nil {
 		return false, err
 	}
@@ -337,7 +337,7 @@ func (c *Cloud) InstanceShutdownByProviderID(ctx context.Context, providerID str
 		InstanceIds: []*string{instanceID.awsString()},
 	}
 
-	instances, err := c.compute.DescribeInstances(request)
+	instances, err := c.compute.ReadVms(request)
 	if err != nil {
 		return false, err
 	}
@@ -1864,7 +1864,7 @@ func (c *Cloud) getInstancesByIDs(instanceIDs []*string) (map[string]*ec2.Instan
 		InstanceIds: instanceIDs,
 	}
 
-	instances, err := c.compute.DescribeInstances(request)
+	instances, err := c.compute.ReadVms(request)
 	if err != nil {
 		return nil, err
 	}
@@ -1930,7 +1930,7 @@ func (c *Cloud) describeInstances(filters []*ec2.Filter) ([]*ec2.Instance, error
 		Filters: filters,
 	}
 
-	response, err := c.compute.DescribeInstances(request)
+	response, err := c.compute.ReadVms(request)
 	if err != nil {
 		return nil, err
 	}

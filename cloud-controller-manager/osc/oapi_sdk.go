@@ -32,7 +32,7 @@ type oscSdkCompute struct {
 }
 
 // Implementation of EC2.Instances
-func (s *oscSdkCompute) DescribeInstances(request *ec2.DescribeInstancesInput) ([]*ec2.Instance, error) {
+func (s *oscSdkCompute) ReadVms(request *ec2.DescribeInstancesInput) ([]*ec2.Instance, error) {
 	// Instances are paged
 	results := []*ec2.Instance{}
 	var nextToken *string

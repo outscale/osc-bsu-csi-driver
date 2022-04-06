@@ -24,7 +24,7 @@ import (
 
 // ********************* CCM API interfaces *********************
 type Compute interface {
-	DescribeInstances(request *ec2.DescribeInstancesInput) ([]*ec2.Instance, error)
+	ReadVms(request *ec2.DescribeInstancesInput) ([]*ec2.Instance, error)
 
 	DescribeSecurityGroups(request *ec2.DescribeSecurityGroupsInput) ([]*ec2.SecurityGroup, error)
 

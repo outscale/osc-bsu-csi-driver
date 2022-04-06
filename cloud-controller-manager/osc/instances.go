@@ -135,7 +135,7 @@ func describeInstance(ec2Client Compute, instanceID InstanceID) (*ec2.Instance, 
 		InstanceIds: []*string{instanceID.awsString()},
 	}
 
-	instances, err := ec2Client.DescribeInstances(request)
+	instances, err := ec2Client.ReadVms(request)
 	if err != nil {
 		return nil, err
 	}

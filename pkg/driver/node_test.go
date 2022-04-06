@@ -709,6 +709,38 @@ func TestNodePublishVolume(t *testing.T) {
 			},
 		},
 		{
+			name: "success normal idempotency",
+			testFunc: func(t *testing.T) {
+				mockCtl := gomock.NewController(t)
+				defer mockCtl.Finish()
+
+				mockMetadata := mocks.NewMockMetadataService(mockCtl)
+				mockMounter := mocks.NewMockMounter(mockCtl)
+
+				awsDriver := &nodeService{
+					metadata: mockMetadata,
+					mounter:  mockMounter,
+					inFlight: internal.NewInFlight(),
+				}
+
+				mockMounter.EXPECT().MakeDir(gomock.Eq(targetPath)).Return(nil)
+				mockMounter.EXPECT().IsLikelyNotMountPoint(gomock.Eq(targetPath)).Return(false, nil)
+
+				req := &csi.NodePublishVolumeRequest{
+					PublishContext:    map[string]string{DevicePathKey: devicePath},
+					StagingTargetPath: stagingTargetPath,
+					TargetPath:        targetPath,
+					VolumeCapability:  stdVolCap,
+					VolumeId:          "vol-test",
+				}
+
+				_, err := awsDriver.NodePublishVolume(context.TODO(), req)
+				if err != nil {
+					t.Fatalf("Expect no error but got: %v", err)
+				}
+			},
+		},
+		{
 			name: "success fstype",
 			testFunc: func(t *testing.T) {
 				mockCtl := gomock.NewController(t)
@@ -1121,6 +1153,33 @@ func TestNodeUnpublishVolume(t *testing.T) {
 
 				mockMounter.EXPECT().IsLikelyNotMountPoint(gomock.Eq(targetPath)).Return(false, nil)
 				mockMounter.EXPECT().Unmount(gomock.Eq(targetPath)).Return(nil)
+				_, err := awsDriver.NodeUnpublishVolume(context.TODO(), req)
+				if err != nil {
+					t.Fatalf("Expect no error but got: %v", err)
+				}
+			},
+		},
+		{
+			name: "success normal idempotency",
+			testFunc: func(t *testing.T) {
+				mockCtl := gomock.NewController(t)
+				defer mockCtl.Finish()
+
+				mockMetadata := mocks.NewMockMetadataService(mockCtl)
+				mockMounter := mocks.NewMockMounter(mockCtl)
+
+				awsDriver := &nodeService{
+					metadata: mockMetadata,
+					mounter:  mockMounter,
+					inFlight: internal.NewInFlight(),
+				}
+
+				req := &csi.NodeUnpublishVolumeRequest{
+					TargetPath: targetPath,
+					VolumeId:   "vol-test",
+				}
+
+				mockMounter.EXPECT().IsLikelyNotMountPoint(gomock.Eq(targetPath)).Return(true, nil)
 				_, err := awsDriver.NodeUnpublishVolume(context.TODO(), req)
 				if err != nil {
 					t.Fatalf("Expect no error but got: %v", err)

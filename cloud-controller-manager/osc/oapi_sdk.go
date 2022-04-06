@@ -102,7 +102,7 @@ func (s *oscSdkCompute) DeleteSecurityGroup(request *ec2.DeleteSecurityGroupInpu
 	return s.ec2.DeleteSecurityGroup(request)
 }
 
-func (s *oscSdkCompute) AuthorizeSecurityGroupIngress(request *ec2.AuthorizeSecurityGroupIngressInput) (*ec2.AuthorizeSecurityGroupIngressOutput, error) {
+func (s *oscSdkCompute) CreateSecurityGroupRule(request *ec2.AuthorizeSecurityGroupIngressInput) (*ec2.AuthorizeSecurityGroupIngressOutput, error) {
 	return s.ec2.AuthorizeSecurityGroupIngress(request)
 }
 

@@ -625,7 +625,7 @@ func (c *Cloud) setSecurityGroupIngress(securityGroupID string, permissions IPPe
 		request := &ec2.AuthorizeSecurityGroupIngressInput{}
 		request.GroupId = &securityGroupID
 		request.IpPermissions = add.List()
-		_, err = c.compute.AuthorizeSecurityGroupIngress(request)
+		_, err = c.compute.CreateSecurityGroupRule(request)
 		if err != nil {
 			return false, fmt.Errorf("error authorizing security group ingress: %q", err)
 		}
@@ -704,7 +704,7 @@ func (c *Cloud) addSecurityGroupIngress(securityGroupID string, addPermissions [
 		request.SourceSecurityGroupName = aws.String(DefaultSrcSgName)
 		request.SourceSecurityGroupOwnerId = aws.String(DefaultSgOwnerID)
 	}
-	_, err = c.compute.AuthorizeSecurityGroupIngress(request)
+	_, err = c.compute.CreateSecurityGroupRule(request)
 	if err != nil {
 		ignore := false
 		if isPublicCloud {

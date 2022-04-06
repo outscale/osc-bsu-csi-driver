@@ -526,7 +526,7 @@ func TestNewAWSCloud(t *testing.T) {
 	}
 }
 
-func mockInstancesResp(selfInstance *ec2.Instance, instances []*ec2.Instance) (*Cloud, *FakeAWSServices) {
+func mockInstancesResp(selfInstance *ec2.Instance, instances []*ec2.Instance) (*Cloud, *FakeOscServices) {
 	awsServices := newMockedFakeAWSServices(TestClusterID)
 	awsServices.instances = instances
 	awsServices.selfInstance = selfInstance
@@ -1810,7 +1810,7 @@ func informerNotSynced() bool {
 	return false
 }
 
-func newMockedFakeAWSServices(id string) *FakeAWSServices {
+func newMockedFakeAWSServices(id string) *FakeOscServices {
 	s := NewFakeAWSServices(id)
 
 	s.ec2 = &MockedFakeEC2{FakeComputeImpl: s.ec2.(*FakeComputeImpl)}

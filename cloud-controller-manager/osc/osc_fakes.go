@@ -30,7 +30,7 @@ import (
 )
 
 // FakeAWSServices is an fake AWS session used for testing
-type FakeAWSServices struct {
+type FakeOscServices struct {
 	region                      string
 	instances                   []*ec2.Instance
 	selfInstance                *ec2.Instance
@@ -44,8 +44,8 @@ type FakeAWSServices struct {
 }
 
 // NewFakeAWSServices creates a new FakeAWSServices
-func NewFakeAWSServices(clusterID string) *FakeAWSServices {
-	s := &FakeAWSServices{}
+func NewFakeAWSServices(clusterID string) *FakeOscServices {
+	s := &FakeOscServices{}
 	s.region = "us-east-1"
 	s.ec2 = &FakeComputeImpl{aws: s}
 	s.elb = &FakeELB{aws: s}
@@ -74,7 +74,7 @@ func NewFakeAWSServices(clusterID string) *FakeAWSServices {
 }
 
 // WithAz sets the ec2 placement availability zone
-func (s *FakeAWSServices) WithAz(az string) *FakeAWSServices {
+func (s *FakeOscServices) WithAz(az string) *FakeOscServices {
 	if s.selfInstance.Placement == nil {
 		s.selfInstance.Placement = &ec2.Placement{}
 	}
@@ -83,17 +83,17 @@ func (s *FakeAWSServices) WithAz(az string) *FakeAWSServices {
 }
 
 // Compute returns a fake EC2 client
-func (s *FakeAWSServices) Compute(region string) (Compute, error) {
+func (s *FakeOscServices) Compute(region string) (Compute, error) {
 	return s.ec2, nil
 }
 
 // LoadBalancing returns a fake ELB client
-func (s *FakeAWSServices) LoadBalancing(region string) (ELB, error) {
+func (s *FakeOscServices) LoadBalancing(region string) (ELB, error) {
 	return s.elb, nil
 }
 
 // Metadata returns a fake EC2Metadata client
-func (s *FakeAWSServices) Metadata() (EC2Metadata, error) {
+func (s *FakeOscServices) Metadata() (EC2Metadata, error) {
 	return s.metadata, nil
 }
 
@@ -108,7 +108,7 @@ type FakeCompute interface {
 
 // FakeEC2Impl is an implementation of the FakeEC2 interface used for testing
 type FakeComputeImpl struct {
-	aws                      *FakeAWSServices
+	aws                      *FakeOscServices
 	Subnets                  []*ec2.Subnet
 	DescribeSubnetsInput     *ec2.DescribeSubnetsInput
 	RouteTables              []*ec2.RouteTable
@@ -252,7 +252,7 @@ func (ec2i *FakeComputeImpl) DescribeVpcs(request *ec2.DescribeVpcsInput) (*ec2.
 
 // FakeMetadata is a fake EC2 metadata service client used for testing
 type FakeMetadata struct {
-	aws *FakeAWSServices
+	aws *FakeOscServices
 }
 
 //GetInstanceID is a fake metadata for testing
@@ -335,7 +335,7 @@ func (m *FakeMetadata) GetMetadata(key string) (string, error) {
 
 // FakeELB is a fake ELB client used for testing
 type FakeELB struct {
-	aws *FakeAWSServices
+	aws *FakeOscServices
 }
 
 // CreateLoadBalancer is not implemented but is required for interface

@@ -112,7 +112,7 @@ func newAWSCloud(cfg CloudConfig, awsServices Services) (*Cloud, error) {
 	}
 
 	awsCloud := &Cloud{
-		ec2:       ec2,
+		compute:   ec2,
 		elb:       elb,
 		metadata:  metadata,
 		cfg:       &cfg,

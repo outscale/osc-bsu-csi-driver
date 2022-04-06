@@ -29,9 +29,9 @@ import (
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/aws/aws-sdk-go/service/elb"
+	v1 "k8s.io/api/core/v1"
 	"k8s.io/klog/v2"
 
-	"k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/sets"
 )
@@ -107,7 +107,7 @@ func getLoadBalancerAdditionalTags(annotations map[string]string) map[string]str
 
 func (c *Cloud) getVpcCidrBlocks() ([]string, error) {
 	debugPrintCallerFunctionName()
-	vpcs, err := c.ec2.DescribeVpcs(&ec2.DescribeVpcsInput{
+	vpcs, err := c.compute.DescribeVpcs(&ec2.DescribeVpcsInput{
 		VpcIds: []*string{aws.String(c.vpcID)},
 	})
 	if err != nil {

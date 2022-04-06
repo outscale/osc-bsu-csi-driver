@@ -50,7 +50,7 @@ import (
 
 // Cloud is an implementation of Interface, LoadBalancer and Instances for Amazon Web Services.
 type Cloud struct {
-	ec2      Compute
+	compute  Compute
 	elb      ELB
 	metadata EC2Metadata
 	cfg      *CloudConfig
@@ -105,7 +105,7 @@ func (c *Cloud) buildSelfAWSInstance() (*awsInstance, error) {
 	if err != nil {
 		return nil, fmt.Errorf("error finding instance %s: %q", instanceID, err)
 	}
-	return newAWSInstance(c.ec2, instance), nil
+	return newAWSInstance(c.compute, instance), nil
 }
 
 // SetInformers implements InformerUser interface by setting up informer-fed caches for aws lib to
@@ -280,7 +280,7 @@ func (c *Cloud) NodeAddressesByProviderID(ctx context.Context, providerID string
 		return nil, err
 	}
 
-	instance, err := describeInstance(c.ec2, instanceID)
+	instance, err := describeInstance(c.compute, instanceID)
 	if err != nil {
 		return nil, err
 	}
@@ -304,7 +304,7 @@ func (c *Cloud) InstanceExistsByProviderID(ctx context.Context, providerID strin
 		},
 	}
 
-	instances, err := c.ec2.DescribeInstances(request)
+	instances, err := c.compute.DescribeInstances(request)
 	if err != nil {
 		return false, err
 	}
@@ -337,7 +337,7 @@ func (c *Cloud) InstanceShutdownByProviderID(ctx context.Context, providerID str
 		InstanceIds: []*string{instanceID.awsString()},
 	}
 
-	instances, err := c.ec2.DescribeInstances(request)
+	instances, err := c.compute.DescribeInstances(request)
 	if err != nil {
 		return false, err
 	}
@@ -393,7 +393,7 @@ func (c *Cloud) InstanceTypeByProviderID(ctx context.Context, providerID string)
 		return "", err
 	}
 
-	instance, err := describeInstance(c.ec2, instanceID)
+	instance, err := describeInstance(c.compute, instanceID)
 	if err != nil {
 		return "", err
 	}
@@ -551,7 +551,7 @@ func (c *Cloud) findSecurityGroup(securityGroupID string) (*ec2.SecurityGroup, e
 	}
 	// We don't apply our tag filters because we are retrieving by ID
 
-	groups, err := c.ec2.DescribeSecurityGroups(describeSecurityGroupsRequest)
+	groups, err := c.compute.DescribeSecurityGroups(describeSecurityGroupsRequest)
 	if err != nil {
 		klog.Warningf("Error retrieving security group: %q", err)
 		return nil, err
@@ -625,7 +625,7 @@ func (c *Cloud) setSecurityGroupIngress(securityGroupID string, permissions IPPe
 		request := &ec2.AuthorizeSecurityGroupIngressInput{}
 		request.GroupId = &securityGroupID
 		request.IpPermissions = add.List()
-		_, err = c.ec2.AuthorizeSecurityGroupIngress(request)
+		_, err = c.compute.AuthorizeSecurityGroupIngress(request)
 		if err != nil {
 			return false, fmt.Errorf("error authorizing security group ingress: %q", err)
 		}
@@ -636,7 +636,7 @@ func (c *Cloud) setSecurityGroupIngress(securityGroupID string, permissions IPPe
 		request := &ec2.RevokeSecurityGroupIngressInput{}
 		request.GroupId = &securityGroupID
 		request.IpPermissions = remove.List()
-		_, err = c.ec2.RevokeSecurityGroupIngress(request)
+		_, err = c.compute.RevokeSecurityGroupIngress(request)
 		if err != nil {
 			return false, fmt.Errorf("error revoking security group ingress: %q", err)
 		}
@@ -704,7 +704,7 @@ func (c *Cloud) addSecurityGroupIngress(securityGroupID string, addPermissions [
 		request.SourceSecurityGroupName = aws.String(DefaultSrcSgName)
 		request.SourceSecurityGroupOwnerId = aws.String(DefaultSgOwnerID)
 	}
-	_, err = c.ec2.AuthorizeSecurityGroupIngress(request)
+	_, err = c.compute.AuthorizeSecurityGroupIngress(request)
 	if err != nil {
 		ignore := false
 		if isPublicCloud {
@@ -783,7 +783,7 @@ func (c *Cloud) removeSecurityGroupIngress(securityGroupID string, removePermiss
 		request.SourceSecurityGroupOwnerId = aws.String(DefaultSgOwnerID)
 	}
 
-	_, err = c.ec2.RevokeSecurityGroupIngress(request)
+	_, err = c.compute.RevokeSecurityGroupIngress(request)
 	if err != nil {
 		klog.Warningf("Error revoking security group ingress: %q", err)
 		return false, err
@@ -819,7 +819,7 @@ func (c *Cloud) ensureSecurityGroup(name string, description string, additionalT
 			request.Filters = append(request.Filters, newEc2Filter("vpc-id", c.vpcID))
 		}
 
-		securityGroups, err := c.ec2.DescribeSecurityGroups(request)
+		securityGroups, err := c.compute.DescribeSecurityGroups(request)
 		if err != nil {
 			return "", err
 		}
@@ -829,7 +829,7 @@ func (c *Cloud) ensureSecurityGroup(name string, description string, additionalT
 				klog.Warningf("Found multiple security groups with name: %q", name)
 			}
 			err := c.tagging.readRepairClusterTags(
-				c.ec2, aws.StringValue(securityGroups[0].GroupId),
+				c.compute, aws.StringValue(securityGroups[0].GroupId),
 				ResourceLifecycleOwned, nil, securityGroups[0].Tags)
 			if err != nil {
 				return "", err
@@ -845,7 +845,7 @@ func (c *Cloud) ensureSecurityGroup(name string, description string, additionalT
 		createRequest.GroupName = &name
 		createRequest.Description = &description
 
-		createResponse, err := c.ec2.CreateSecurityGroup(createRequest)
+		createResponse, err := c.compute.CreateSecurityGroup(createRequest)
 		if err != nil {
 			ignore := false
 			switch err := err.(type) {
@@ -869,7 +869,7 @@ func (c *Cloud) ensureSecurityGroup(name string, description string, additionalT
 		return "", fmt.Errorf("created security group, but id was not returned: %s", name)
 	}
 
-	err := c.tagging.createTags(c.ec2, groupID, ResourceLifecycleOwned, additionalTags)
+	err := c.tagging.createTags(c.compute, groupID, ResourceLifecycleOwned, additionalTags)
 	if err != nil {
 		// If we retry, ensureClusterTags will recover from this - it
 		// will add the missing tags.  We could delete the security
@@ -894,7 +894,7 @@ func (c *Cloud) findSubnets() ([]*ec2.Subnet, error) {
 	if c.vpcID != "" {
 		request.Filters = []*ec2.Filter{newEc2Filter("vpc-id", c.vpcID)}
 
-		subnets, err := c.ec2.DescribeSubnets(request)
+		subnets, err := c.compute.DescribeSubnets(request)
 		if err != nil {
 			return nil, fmt.Errorf("error describing subnets: %q", err)
 		}
@@ -917,7 +917,7 @@ func (c *Cloud) findSubnets() ([]*ec2.Subnet, error) {
 		request = &ec2.DescribeSubnetsInput{}
 		request.Filters = []*ec2.Filter{newEc2Filter("subnet-id", c.selfAWSInstance.subnetID)}
 
-		subnets, err = c.ec2.DescribeSubnets(request)
+		subnets, err = c.compute.DescribeSubnets(request)
 		if err != nil {
 			return nil, fmt.Errorf("error describing subnets: %q", err)
 		}
@@ -945,7 +945,7 @@ func (c *Cloud) findELBSubnets(internalELB bool) ([]string, error) {
 		vpcIDFilter := newEc2Filter("vpc-id", c.vpcID)
 		rRequest := &ec2.DescribeRouteTablesInput{}
 		rRequest.Filters = []*ec2.Filter{vpcIDFilter}
-		rt, err = c.ec2.DescribeRouteTables(rRequest)
+		rt, err = c.compute.DescribeRouteTables(rRequest)
 		if err != nil {
 			return nil, fmt.Errorf("error describe route table: %q", err)
 		}
@@ -1455,7 +1455,7 @@ func (c *Cloud) getTaggedSecurityGroups() (map[string]*ec2.SecurityGroup, error)
 		newEc2Filter("tag:"+TagNameMainSG+c.tagging.clusterID(), "True"),
 	}
 
-	groups, err := c.ec2.DescribeSecurityGroups(request)
+	groups, err := c.compute.DescribeSecurityGroups(request)
 	if err != nil {
 		return nil, fmt.Errorf("error querying security groups: %q", err)
 	}
@@ -1529,7 +1529,7 @@ func (c *Cloud) updateInstanceSecurityGroupsForLoadBalancer(lb *elb.LoadBalancer
 				newEc2Filter("ip-permission.group-name", loadBalancerSecurityGroupID),
 			}
 		}
-		response, err := c.ec2.DescribeSecurityGroups(describeRequest)
+		response, err := c.compute.DescribeSecurityGroups(describeRequest)
 		if err != nil {
 			return fmt.Errorf("error querying security groups for ELB: %q", err)
 		}
@@ -1706,7 +1706,7 @@ func (c *Cloud) EnsureLoadBalancerDeleted(ctx context.Context, clusterName strin
 		describeRequest.Filters = []*ec2.Filter{
 			newEc2Filter("group-id", loadBalancerSGs...),
 		}
-		response, err := c.ec2.DescribeSecurityGroups(describeRequest)
+		response, err := c.compute.DescribeSecurityGroups(describeRequest)
 		if err != nil {
 			return fmt.Errorf("error querying security groups for ELB: %q", err)
 		}
@@ -1740,7 +1740,7 @@ func (c *Cloud) EnsureLoadBalancerDeleted(ctx context.Context, clusterName strin
 			for securityGroupID := range securityGroupIDs {
 				request := &ec2.DeleteSecurityGroupInput{}
 				request.GroupId = &securityGroupID
-				_, err := c.ec2.DeleteSecurityGroup(request)
+				_, err := c.compute.DeleteSecurityGroup(request)
 				if err == nil {
 					delete(securityGroupIDs, securityGroupID)
 				} else {
@@ -1864,7 +1864,7 @@ func (c *Cloud) getInstancesByIDs(instanceIDs []*string) (map[string]*ec2.Instan
 		InstanceIds: instanceIDs,
 	}
 
-	instances, err := c.ec2.DescribeInstances(request)
+	instances, err := c.compute.DescribeInstances(request)
 	if err != nil {
 		return nil, err
 	}
@@ -1930,7 +1930,7 @@ func (c *Cloud) describeInstances(filters []*ec2.Filter) ([]*ec2.Instance, error
 		Filters: filters,
 	}
 
-	response, err := c.ec2.DescribeInstances(request)
+	response, err := c.compute.DescribeInstances(request)
 	if err != nil {
 		return nil, err
 	}
@@ -2012,7 +2012,7 @@ func (c *Cloud) getFullInstance(nodeName types.NodeName) (*awsInstance, *ec2.Ins
 	if err != nil {
 		return nil, nil, err
 	}
-	awsInstance := newAWSInstance(c.ec2, instance)
+	awsInstance := newAWSInstance(c.compute, instance)
 	return awsInstance, instance, err
 }
 

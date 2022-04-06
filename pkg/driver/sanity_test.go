@@ -368,3 +368,7 @@ func (f *fakeMounter) GetDiskFormat(disk string) (string, error) {
 func (f *fakeMounter) MountSensitive(source string, target string, fstype string, options []string, sensitiveOptions []string) error {
 	return nil
 }
+
+func (f *fakeMounter) IsCorruptedMnt(err error) bool {
+	return false
+}

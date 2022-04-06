@@ -262,3 +262,17 @@ func (mr *MockMounterMockRecorder) ExistsPath(filename interface{}) *gomock.Call
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ExistsPath", reflect.TypeOf((*MockMounter)(nil).ExistsPath), filename)
 }
+
+// IsCorruptedMnt mocks base method
+func (m *MockMounter) IsCorruptedMnt(err error) bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IsCorruptedMnt", err)
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// IsCorruptedMnt indicates an expected call of IsCorruptedMnt
+func (mr *MockMounterMockRecorder) IsCorruptedMnt(err error) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsCorruptedMnt", reflect.TypeOf((*MockMounter)(nil).IsCorruptedMnt), err)
+}

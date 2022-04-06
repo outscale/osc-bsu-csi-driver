@@ -1,16 +1,16 @@
 #!/bin/bash
 set -eu pipefail
 
-MANDATORY_DIR="/e2e-env/.kube/ /root/aws-ebs-csi-driver"
-export KUBECONFIG=/e2e-env/.kube/config
+export KUBECONFIG=/tmp/kubeconfig
 
-if [ ! -z "${KC}"  ];then
-      mkdir -p $HOME/.kube
-      echo "${KC}" | base64 --decode > $HOME/.kube/config
-      export KUBECONFIG=$HOME/.kube/config
-      MANDATORY_DIR="/root/aws-ebs-csi-driver"
+if [ -z "${KC}"  ];then
+   echo "KC is mandatory to make test pass"
+   exit 1
 fi
 
+echo "${KC}" | base64 --decode > $KUBECONFIG
+
+MANDATORY_DIR="/root/aws-ebs-csi-driver"
 MANDATORY_DIR=(${MANDATORY_DIR})
 for (( dir=0; dir<${#MANDATORY_DIR[@]}; dir++ )); do
 	dir_name=${MANDATORY_DIR[${dir}]}
@@ -22,6 +22,21 @@ done
 
 if [ -z ${AWS_AVAILABILITY_ZONES}  ];then
 	echo "AWS_AVAILABILITY_ZONES is mandatory to make test pass"
+	exit 1
+fi
+
+if [ -z ${OSC_ACCESS_KEY} ]; then
+	echo "OSC_ACCESS_KEY is mandatory to make test pass"
+	exit 1
+fi
+
+if [ -z ${OSC_SECRET_KEY} ]; then
+	echo "OSC_SECRET_KEY is mandatory to make test pass"
+	exit 1
+fi
+
+if [ -z ${OSC_REGION} ]; then
+	echo "OSC_REGION is mandatory to make test pass"
 	exit 1
 fi
 

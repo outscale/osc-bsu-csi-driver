@@ -636,7 +636,7 @@ func (c *Cloud) setSecurityGroupIngress(securityGroupID string, permissions IPPe
 		request := &ec2.RevokeSecurityGroupIngressInput{}
 		request.GroupId = &securityGroupID
 		request.IpPermissions = remove.List()
-		_, err = c.compute.RevokeSecurityGroupIngress(request)
+		_, err = c.compute.DeleteSecurityGroupRule(request)
 		if err != nil {
 			return false, fmt.Errorf("error revoking security group ingress: %q", err)
 		}
@@ -783,7 +783,7 @@ func (c *Cloud) removeSecurityGroupIngress(securityGroupID string, removePermiss
 		request.SourceSecurityGroupOwnerId = aws.String(DefaultSgOwnerID)
 	}
 
-	_, err = c.compute.RevokeSecurityGroupIngress(request)
+	_, err = c.compute.DeleteSecurityGroupRule(request)
 	if err != nil {
 		klog.Warningf("Error revoking security group ingress: %q", err)
 		return false, err

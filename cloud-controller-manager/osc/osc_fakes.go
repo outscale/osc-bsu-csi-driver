@@ -178,9 +178,9 @@ func (ec2i *FakeComputeImpl) CreateSecurityGroupRule(*ec2.AuthorizeSecurityGroup
 	panic("Not implemented")
 }
 
-// RevokeSecurityGroupIngress is not implemented but is required for interface
+// DeleteSecurityGroupRule is not implemented but is required for interface
 // conformance
-func (ec2i *FakeComputeImpl) RevokeSecurityGroupIngress(*ec2.RevokeSecurityGroupIngressInput) (*ec2.RevokeSecurityGroupIngressOutput, error) {
+func (ec2i *FakeComputeImpl) DeleteSecurityGroupRule(*ec2.RevokeSecurityGroupIngressInput) (*ec2.RevokeSecurityGroupIngressOutput, error) {
 	panic("Not implemented")
 }
 

@@ -9,8 +9,8 @@ image:
   tag: v0.0.14beta
   pullPolicy: IfNotPresent
 
-# set the verbosity level of plugins
-verbosity: 2
+# set the verbosity level of plugins (default Max)
+verbosity: 10
 
 # Timeout for sidecars
 timeout: 60s

@@ -1,4 +1,25 @@
-FROM debian:bullseye-20220328
+ARG GOLANG_IMAGE_TAG=1.17.6-buster
+ARG RUNTIME_IMAGE_TAG=bullseye-20220328
+
+# Build image
+FROM golang:${GOLANG_IMAGE_TAG} AS builder
+# This build arg is the version to embed in the CPI binary
+ARG VERSION=${VERSION}
+
+# This build arg controls the GOPROXY setting
+ARG GOPROXY
+
+WORKDIR /build
+COPY go.mod .
+COPY go.sum .
+RUN go mod download
+COPY . .
+ENV CGO_ENABLED=0
+ENV GOPROXY=${GOPROXY:-https://proxy.golang.org}
+RUN make aws-ebs-csi-driver
+
+# Final IMAGE
+FROM debian:${RUNTIME_IMAGE_TAG}
 RUN apt-get -y update && \
     apt-get -y install libc-bin=2.31-13+deb11u3 \
                        ca-certificates=20210119 \
@@ -10,6 +31,6 @@ RUN apt-get -y update && \
                        --no-install-recommends && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
-COPY ./bin/aws-ebs-csi-driver /bin/aws-ebs-csi-driver
+COPY  --from=builder /build/bin/aws-ebs-csi-driver /bin/aws-ebs-csi-driver
 
 ENTRYPOINT ["/bin/aws-ebs-csi-driver"]

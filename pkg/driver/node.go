@@ -345,6 +345,10 @@ func (d *nodeService) NodeUnpublishVolume(ctx context.Context, req *csi.NodeUnpu
 	}
 
 	isMounted, err := d.isMounted(target)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "Could not check if %q is mounted: %v", target, err)
+
+	}
 
 	if isMounted {
 		klog.V(5).Infof("NodeUnpublishVolume: unmounting %s", target)

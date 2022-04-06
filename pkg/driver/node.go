@@ -557,14 +557,16 @@ func (d *nodeService) nodePublishVolumeForBlock(req *csi.NodePublishVolumeReques
 		return status.Errorf(codes.Internal, "Could not check if %q is mounted: %v", target, err)
 	}
 
-	if !isMounted {
-		klog.V(5).Infof("NodePublishVolume [block]: mounting %s at %s", source, target)
-		if err := d.mounter.Mount(source, target, "", mountOptions); err != nil {
-			if removeErr := os.Remove(target); removeErr != nil {
-				return status.Errorf(codes.Internal, "Could not remove mount target %q: %v", target, removeErr)
-			}
-			return status.Errorf(codes.Internal, "Could not mount %q at %q: %v", source, target, err)
+	if isMounted {
+		return nil
+	}
+
+	klog.V(5).Infof("NodePublishVolume [block]: mounting %s at %s", source, target)
+	if err := d.mounter.Mount(source, target, "", mountOptions); err != nil {
+		if removeErr := os.Remove(target); removeErr != nil {
+			return status.Errorf(codes.Internal, "Could not remove mount target %q: %v", target, removeErr)
 		}
+		return status.Errorf(codes.Internal, "Could not mount %q at %q: %v", source, target, err)
 	}
 
 	return nil
@@ -596,14 +598,16 @@ func (d *nodeService) nodePublishVolumeForFileSystem(req *csi.NodePublishVolumeR
 		return status.Errorf(codes.Internal, "Could not check if %q is mounted: %v", target, err)
 	}
 
-	if !isMounted {
-		klog.V(5).Infof("NodePublishVolume: mounting %s at %s with option %s as fstype %s", source, target, mountOptions, fsType)
-		if err := d.mounter.Mount(source, target, fsType, mountOptions); err != nil {
-			if removeErr := os.Remove(target); removeErr != nil {
-				return status.Errorf(codes.Internal, "Could not remove mount target %q: %v", target, err)
-			}
-			return status.Errorf(codes.Internal, "Could not mount %q at %q: %v", source, target, err)
+	if isMounted {
+		return nil
+	}
+
+	klog.V(5).Infof("NodePublishVolume: mounting %s at %s with option %s as fstype %s", source, target, mountOptions, fsType)
+	if err := d.mounter.Mount(source, target, fsType, mountOptions); err != nil {
+		if removeErr := os.Remove(target); removeErr != nil {
+			return status.Errorf(codes.Internal, "Could not remove mount target %q: %v", target, err)
 		}
+		return status.Errorf(codes.Internal, "Could not mount %q at %q: %v", source, target, err)
 	}
 
 	return nil

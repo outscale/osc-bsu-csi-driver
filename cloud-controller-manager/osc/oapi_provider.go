@@ -125,7 +125,7 @@ func (p *awsSDKProvider) Compute(regionName string) (Compute, error) {
 
 	p.addHandlers(regionName, &service.Handlers)
 
-	ec2 := &awsSdkEC2{
+	ec2 := &oscSdkCompute{
 		ec2: service,
 	}
 	return ec2, nil

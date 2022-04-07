@@ -101,7 +101,6 @@ func getLoadBalancerAdditionalTags(annotations map[string]string) map[string]str
 			}
 		}
 	}
-
 	return additionalTags
 }
 

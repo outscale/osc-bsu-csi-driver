@@ -28,7 +28,7 @@ import (
 
 func TestFilterTags(t *testing.T) {
 	awsServices := NewFakeAWSServices(TestClusterID)
-	c, err := newAWSCloud(CloudConfig{}, awsServices)
+	c, err := newCloud(CloudConfig{}, awsServices)
 	if err != nil {
 		t.Errorf("Error building aws cloud: %v", err)
 		return
@@ -121,7 +121,7 @@ func TestFindClusterID(t *testing.T) {
 
 func TestHasClusterTag(t *testing.T) {
 	awsServices := NewFakeAWSServices(TestClusterID)
-	c, err := newAWSCloud(CloudConfig{}, awsServices)
+	c, err := newCloud(CloudConfig{}, awsServices)
 	if err != nil {
 		t.Errorf("Error building aws cloud: %v", err)
 		return

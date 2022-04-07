@@ -165,7 +165,7 @@ func TestReadAWSCloudConfig(t *testing.T) {
 		if test.aws != nil {
 			metadata, _ = test.aws.Metadata()
 		}
-		cfg, err := readAWSCloudConfig(test.reader)
+		cfg, err := readCloudConfig(test.reader)
 		if err == nil {
 			err = updateConfigZone(cfg, metadata)
 		}
@@ -387,7 +387,7 @@ func TestOverridesActiveConfig(t *testing.T) {
 
 	for _, test := range tests {
 		t.Logf("Running test case %s", test.name)
-		cfg, err := readAWSCloudConfig(test.reader)
+		cfg, err := readCloudConfig(test.reader)
 		if err == nil {
 			err = cfg.validateOverrides()
 		}
@@ -506,7 +506,7 @@ func TestNewAWSCloud(t *testing.T) {
 
 	for _, test := range tests {
 		t.Logf("Running test case %s", test.name)
-		cfg, err := readAWSCloudConfig(test.reader)
+		cfg, err := readCloudConfig(test.reader)
 		var c *Cloud
 		if err == nil {
 			c, err = newCloud(*cfg, test.awsServices)

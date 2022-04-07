@@ -40,8 +40,8 @@ var _ cloudprovider.Zones = (*Cloud)(nil)
 
 // ********************* CCM entry point function *********************
 
-// readAWSCloudConfig reads an instance of AWSCloudConfig from config reader.
-func readAWSCloudConfig(config io.Reader) (*CloudConfig, error) {
+// readCloudConfig reads an instance of CloudConfig from config reader.
+func readCloudConfig(config io.Reader) (*CloudConfig, error) {
 	debugPrintCallerFunctionName()
 	klog.V(10).Infof("readAWSCloudConfig(%v)", config)
 	var cfg CloudConfig
@@ -166,7 +166,7 @@ func init() {
 	klog.V(10).Infof("init()")
 	registerMetrics()
 	cloudprovider.RegisterCloudProvider(ProviderName, func(config io.Reader) (cloudprovider.Interface, error) {
-		cfg, err := readAWSCloudConfig(config)
+		cfg, err := readCloudConfig(config)
 		if err != nil {
 			return nil, fmt.Errorf("unable to read OSC cloud provider config file: %v", err)
 		}

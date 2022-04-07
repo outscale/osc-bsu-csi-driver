@@ -3,9 +3,11 @@ set -eu pipefail
 
 export KUBECONFIG=/tmp/kubeconfig
 
+exit_code=0
+
 if [ -z "${KC}"  ];then
    echo "KC is mandatory to make test pass"
-   exit 1
+   exit_code=1
 fi
 
 echo "${KC}" | base64 --decode > $KUBECONFIG
@@ -16,46 +18,50 @@ for (( dir=0; dir<${#MANDATORY_DIR[@]}; dir++ )); do
 	dir_name=${MANDATORY_DIR[${dir}]}
 	if [ -z "$(ls -A ${dir_name})" ]; then
 		echo "unexpected Empty ${dir_name}"
-		exit 1
+   		exit_code=1
 	fi
 done
 
 if [ -z ${AWS_AVAILABILITY_ZONES}  ];then
 	echo "AWS_AVAILABILITY_ZONES is mandatory to make test pass"
-	exit 1
+	exit_code=1
 fi
 
 if [ -z ${OSC_ACCESS_KEY} ]; then
 	echo "OSC_ACCESS_KEY is mandatory to make test pass"
-	exit 1
+   	exit_code=1
 fi
 
 if [ -z ${OSC_SECRET_KEY} ]; then
 	echo "OSC_SECRET_KEY is mandatory to make test pass"
-	exit 1
+   	exit_code=1
 fi
 
 if [ -z ${OSC_REGION} ]; then
 	echo "OSC_REGION is mandatory to make test pass"
-	exit 1
+   	exit_code=1
 fi
 
 count_rs=`kubectl get rs -n kube-system -l "app.kubernetes.io/name=osc-bsu-csi-driver" | wc -l`
 if [ "$count_rs" -eq "0" ]; then
    echo "osc-bsu-csi-driver rs not found";
-   exit 1
+   exit_code=1
 fi
 
 count_ds=`kubectl get ds -n kube-system -l "app.kubernetes.io/name=osc-bsu-csi-driver" | wc -l`
 if [ "$count_ds" -eq "0" ]; then
    echo "osc-bsu-csi-driver ds not found";
-   exit 1
+   exit_code=1
 fi
 
 count_pods=`kubectl get pod -n kube-system -l "app.kubernetes.io/name=osc-bsu-csi-driver" | wc -l`
 if [ "$count_pods" -eq "0" ]; then
    echo "osc-bsu-csi-driver pods not found";
-   exit 1
+   exit_code=1
+fi
+
+if [ $exit_code -ne 0 ]; then
+	exit $exit_code
 fi
 
 kubectl describe rs -n kube-system -l "app.kubernetes.io/name=osc-bsu-csi-driver"

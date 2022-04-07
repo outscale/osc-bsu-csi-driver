@@ -19,6 +19,6 @@ package osc
 // ********************* CCM Used Interfaces *********************
 type Services interface {
 	Compute(region string) (Compute, error)
-	LoadBalancing(region string) (ELB, error)
+	LoadBalancing(region string) (LoadBalancer, error)
 	Metadata() (EC2Metadata, error)
 }

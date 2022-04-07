@@ -46,7 +46,7 @@ func elbSession() (*session.Session, error) {
 }
 
 //ElbAPI instanciate elb service
-func ElbAPI() (osc.ELB, error) {
+func ElbAPI() (osc.LoadBalancer, error) {
 	sess, err := elbSession()
 	if err != nil {
 		return nil, fmt.Errorf("unable to initialize AWS session: %v", err)
@@ -56,7 +56,7 @@ func ElbAPI() (osc.ELB, error) {
 }
 
 //RemoveLbInst remove instance from lb
-func RemoveLbInst(elb osc.ELB, lbName string, lbInstances []*elbApi.Instance) error {
+func RemoveLbInst(elb osc.LoadBalancer, lbName string, lbInstances []*elbApi.Instance) error {
 	fmt.Printf("Instances removed from load-balancer %s", lbName)
 	deregisterRequest := &elbApi.DeregisterInstancesFromLoadBalancerInput{}
 	deregisterRequest.Instances = lbInstances
@@ -69,7 +69,7 @@ func RemoveLbInst(elb osc.ELB, lbName string, lbInstances []*elbApi.Instance) er
 }
 
 //GetLb describe an LB
-func GetLb(elb osc.ELB, name string) (*elbApi.LoadBalancerDescription, error) {
+func GetLb(elb osc.LoadBalancer, name string) (*elbApi.LoadBalancerDescription, error) {
 	request := &elbApi.DescribeLoadBalancersInput{}
 	request.LoadBalancerNames = []*string{&name}
 

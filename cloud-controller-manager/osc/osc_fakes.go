@@ -39,7 +39,7 @@ type FakeOscServices struct {
 	networkInterfacesVpcIDs     []string
 
 	compute  FakeCompute
-	elb      ELB
+	elb      LoadBalancer
 	metadata EC2Metadata
 }
 
@@ -88,7 +88,7 @@ func (s *FakeOscServices) Compute(region string) (Compute, error) {
 }
 
 // LoadBalancing returns a fake ELB client
-func (s *FakeOscServices) LoadBalancing(region string) (ELB, error) {
+func (s *FakeOscServices) LoadBalancing(region string) (LoadBalancer, error) {
 	return s.elb, nil
 }
 

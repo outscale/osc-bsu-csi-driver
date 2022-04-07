@@ -131,7 +131,7 @@ func (p *awsSDKProvider) Compute(regionName string) (Compute, error) {
 	return ec2, nil
 }
 
-func (p *awsSDKProvider) LoadBalancing(regionName string) (ELB, error) {
+func (p *awsSDKProvider) LoadBalancing(regionName string) (LoadBalancer, error) {
 	debugPrintCallerFunctionName()
 	klog.V(10).Infof("LoadBalancing(%v)", regionName)
 	sess, err := NewSession(nil)

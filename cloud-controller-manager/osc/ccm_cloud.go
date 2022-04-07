@@ -51,7 +51,7 @@ import (
 // Cloud is an implementation of Interface, LoadBalancer and Instances for Amazon Web Services.
 type Cloud struct {
 	compute  Compute
-	elb      ELB
+	elb      LoadBalancer
 	metadata EC2Metadata
 	cfg      *CloudConfig
 	region   string

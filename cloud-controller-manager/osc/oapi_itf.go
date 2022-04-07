@@ -47,8 +47,8 @@ type Compute interface {
 	ReadNets(input *ec2.DescribeVpcsInput) (*ec2.DescribeVpcsOutput, error)
 }
 
-// ELB is a simple pass-through of AWS' ELB client interface, which allows for testing
-type ELB interface {
+// LoadBalancer is a simple pass-through of Outscale' LoadBalancer client interface, which allows for testing
+type LoadBalancer interface {
 	CreateLoadBalancer(*elb.CreateLoadBalancerInput) (*elb.CreateLoadBalancerOutput, error)
 	DeleteLoadBalancer(*elb.DeleteLoadBalancerInput) (*elb.DeleteLoadBalancerOutput, error)
 	DescribeLoadBalancers(*elb.DescribeLoadBalancersInput) (*elb.DescribeLoadBalancersOutput, error)

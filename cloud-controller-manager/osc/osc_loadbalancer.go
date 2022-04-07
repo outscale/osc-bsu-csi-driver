@@ -371,7 +371,7 @@ func (c *Cloud) ensureLoadBalancer(namespacedName types.NamespacedName, loadBala
 		klog.Infof("Creating load balancer for %v with name: %s", namespacedName, loadBalancerName)
 		klog.Infof("c.elb.CreateLoadBalancer(createRequest): %v", createRequest)
 
-		_, err := c.elb.CreateLoadBalancer(createRequest)
+		_, err := c.loadBalancer.CreateLoadBalancer(createRequest)
 		if err != nil {
 			return nil, err
 		}
@@ -451,7 +451,7 @@ func (c *Cloud) ensureLoadBalancer(namespacedName types.NamespacedName, loadBala
 					}
 				}
 				klog.V(2).Info("Deleting removed load balancer listeners")
-				if _, err := c.elb.DeleteLoadBalancerListeners(request); err != nil {
+				if _, err := c.loadBalancer.DeleteLoadBalancerListeners(request); err != nil {
 					return nil, fmt.Errorf("error deleting OSC loadbalancer listeners: %q", err)
 				}
 				dirty = true
@@ -462,7 +462,7 @@ func (c *Cloud) ensureLoadBalancer(namespacedName types.NamespacedName, loadBala
 				request.LoadBalancerName = aws.String(loadBalancerName)
 				request.Listeners = additions
 				klog.V(2).Info("Creating added load balancer listeners")
-				if _, err := c.elb.CreateLoadBalancerListeners(request); err != nil {
+				if _, err := c.loadBalancer.CreateLoadBalancerListeners(request); err != nil {
 					return nil, fmt.Errorf("error creating OSC loadbalancer listeners: %q", err)
 				}
 				dirty = true
@@ -534,7 +534,7 @@ func (c *Cloud) ensureLoadBalancer(namespacedName types.NamespacedName, loadBala
 	{
 		describeAttributesRequest := &elb.DescribeLoadBalancerAttributesInput{}
 		describeAttributesRequest.LoadBalancerName = aws.String(loadBalancerName)
-		describeAttributesOutput, err := c.elb.DescribeLoadBalancerAttributes(describeAttributesRequest)
+		describeAttributesOutput, err := c.loadBalancer.DescribeLoadBalancerAttributes(describeAttributesRequest)
 		if err != nil {
 			klog.Warning("Unable to retrieve load balancer attributes during attribute sync")
 			return nil, err
@@ -549,7 +549,7 @@ func (c *Cloud) ensureLoadBalancer(namespacedName types.NamespacedName, loadBala
 			modifyAttributesRequest.LoadBalancerAttributes = loadBalancerAttributes
 			klog.V(2).Infof("Updating load-balancer attributes for %q with attributes (%v)",
 				loadBalancerName, loadBalancerAttributes)
-			_, err = c.elb.ModifyLoadBalancerAttributes(modifyAttributesRequest)
+			_, err = c.loadBalancer.ModifyLoadBalancerAttributes(modifyAttributesRequest)
 			if err != nil {
 				return nil, fmt.Errorf("Unable to update load balancer attributes during attribute sync: %q", err)
 			}
@@ -727,7 +727,7 @@ func (c *Cloud) ensureLoadBalancerHealthCheck(loadBalancer *elb.LoadBalancerDesc
 	request.HealthCheck = expected
 	request.LoadBalancerName = loadBalancer.LoadBalancerName
 
-	_, err = c.elb.ConfigureHealthCheck(request)
+	_, err = c.loadBalancer.ConfigureHealthCheck(request)
 	if err != nil {
 		return fmt.Errorf("error configuring load balancer health check for %q: %q", name, err)
 	}
@@ -773,7 +773,7 @@ func (c *Cloud) ensureLoadBalancerInstances(loadBalancerName string,
 		registerRequest := &elb.RegisterInstancesWithLoadBalancerInput{}
 		registerRequest.Instances = addInstances
 		registerRequest.LoadBalancerName = aws.String(loadBalancerName)
-		_, err := c.elb.RegisterInstancesWithLoadBalancer(registerRequest)
+		_, err := c.loadBalancer.RegisterInstancesWithLoadBalancer(registerRequest)
 		if err != nil {
 			return err
 		}
@@ -784,7 +784,7 @@ func (c *Cloud) ensureLoadBalancerInstances(loadBalancerName string,
 		deregisterRequest := &elb.DeregisterInstancesFromLoadBalancerInput{}
 		deregisterRequest.Instances = removeInstances
 		deregisterRequest.LoadBalancerName = aws.String(loadBalancerName)
-		_, err := c.elb.DeregisterInstancesFromLoadBalancer(deregisterRequest)
+		_, err := c.loadBalancer.DeregisterInstancesFromLoadBalancer(deregisterRequest)
 		if err != nil {
 			return err
 		}
@@ -812,7 +812,7 @@ func (c *Cloud) ensureSSLNegotiationPolicy(loadBalancer *elb.LoadBalancerDescrip
 	debugPrintCallerFunctionName()
 	klog.V(10).Infof("ensureSSLNegotiationPolicy(%v,%v)", loadBalancer, policyName)
 	klog.V(2).Info("Describing load balancer policies on load balancer")
-	result, err := c.elb.DescribeLoadBalancerPolicies(&elb.DescribeLoadBalancerPoliciesInput{
+	result, err := c.loadBalancer.DescribeLoadBalancerPolicies(&elb.DescribeLoadBalancerPoliciesInput{
 		LoadBalancerName: loadBalancer.LoadBalancerName,
 		PolicyNames: []*string{
 			aws.String(fmt.Sprintf(SSLNegotiationPolicyNameFormat, policyName)),
@@ -835,7 +835,7 @@ func (c *Cloud) ensureSSLNegotiationPolicy(loadBalancer *elb.LoadBalancerDescrip
 	klog.V(2).Infof("Creating SSL negotiation policy '%s' on load balancer", fmt.Sprintf(SSLNegotiationPolicyNameFormat, policyName))
 	// there is an upper limit of 98 policies on an ELB, we're pretty safe from
 	// running into it
-	_, err = c.elb.CreateLoadBalancerPolicy(&elb.CreateLoadBalancerPolicyInput{
+	_, err = c.loadBalancer.CreateLoadBalancerPolicy(&elb.CreateLoadBalancerPolicyInput{
 		LoadBalancerName: loadBalancer.LoadBalancerName,
 		PolicyName:       aws.String(fmt.Sprintf(SSLNegotiationPolicyNameFormat, policyName)),
 		PolicyTypeName:   aws.String("SSLNegotiationPolicyType"),
@@ -864,7 +864,7 @@ func (c *Cloud) setSSLNegotiationPolicy(loadBalancerName, sslPolicyName string, 
 		},
 	}
 	klog.V(2).Infof("Setting SSL negotiation policy '%s' on load balancer", policyName)
-	_, err := c.elb.SetLoadBalancerPoliciesOfListener(request)
+	_, err := c.loadBalancer.SetLoadBalancerPoliciesOfListener(request)
 	if err != nil {
 		return fmt.Errorf("error setting SSL negotiation policy '%s' on load balancer: %q", policyName, err)
 	}
@@ -887,7 +887,7 @@ func (c *Cloud) createProxyProtocolPolicy(loadBalancerName string, update bool) 
 		},
 	}
 	klog.V(2).Info("Creating proxy protocol policy on load balancer")
-	_, err := c.elb.CreateLoadBalancerPolicy(request)
+	_, err := c.loadBalancer.CreateLoadBalancerPolicy(request)
 	if err != nil {
 		if update {
 			if aerr, ok := err.(awserr.Error); ok {
@@ -916,7 +916,7 @@ func (c *Cloud) setBackendPolicies(loadBalancerName string, instancePort int64, 
 	} else {
 		klog.V(2).Infof("Removing AWS loadbalancer backend policies on node port %d", instancePort)
 	}
-	_, err := c.elb.SetLoadBalancerPoliciesForBackendServer(request)
+	_, err := c.loadBalancer.SetLoadBalancerPoliciesForBackendServer(request)
 	if err != nil {
 		return fmt.Errorf("error adjusting AWS loadbalancer backend policies: %q", err)
 	}

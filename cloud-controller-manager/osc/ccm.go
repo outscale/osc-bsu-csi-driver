@@ -99,12 +99,12 @@ func newCloud(cfg CloudConfig, awsServices Services) (*Cloud, error) {
 	}
 
 	awsCloud := &Cloud{
-		compute:   ec2,
-		elb:       elb,
-		metadata:  metadata,
-		cfg:       &cfg,
-		region:    regionName,
-		instances: instances,
+		compute:      ec2,
+		loadBalancer: elb,
+		metadata:     metadata,
+		cfg:          &cfg,
+		region:       regionName,
+		instances:    instances,
 	}
 	awsCloud.instanceCache.cloud = awsCloud
 

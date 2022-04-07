@@ -50,12 +50,12 @@ import (
 
 // Cloud is an implementation of Interface, LoadBalancer and Instances for Amazon Web Services.
 type Cloud struct {
-	compute  Compute
-	elb      LoadBalancer
-	metadata EC2Metadata
-	cfg      *CloudConfig
-	region   string
-	vpcID    string
+	compute      Compute
+	loadBalancer LoadBalancer
+	metadata     EC2Metadata
+	cfg          *CloudConfig
+	region       string
+	vpcID        string
 
 	instances cloudprovider.InstancesV2
 
@@ -508,7 +508,7 @@ func (c *Cloud) addLoadBalancerTags(loadBalancerName string, requested map[strin
 	request.LoadBalancerNames = []*string{&loadBalancerName}
 	request.Tags = tags
 
-	_, err := c.elb.AddTags(request)
+	_, err := c.loadBalancer.AddTags(request)
 	if err != nil {
 		return fmt.Errorf("error adding tags to load balancer: %v", err)
 	}
@@ -522,7 +522,7 @@ func (c *Cloud) describeLoadBalancer(name string) (*elb.LoadBalancerDescription,
 	request := &elb.DescribeLoadBalancersInput{}
 	request.LoadBalancerNames = []*string{&name}
 
-	response, err := c.elb.DescribeLoadBalancers(request)
+	response, err := c.loadBalancer.DescribeLoadBalancers(request)
 	if err != nil {
 		if awsError, ok := err.(awserr.Error); ok {
 			if awsError.Code() == "LoadBalancerNotFound" {
@@ -1689,7 +1689,7 @@ func (c *Cloud) EnsureLoadBalancerDeleted(ctx context.Context, clusterName strin
 		request := &elb.DeleteLoadBalancerInput{}
 		request.LoadBalancerName = lb.LoadBalancerName
 
-		_, err = c.elb.DeleteLoadBalancer(request)
+		_, err = c.loadBalancer.DeleteLoadBalancer(request)
 		if err != nil {
 			// TODO: Check if error was because load balancer was concurrently deleted
 			klog.Errorf("Error deleting load balancer: %q", err)

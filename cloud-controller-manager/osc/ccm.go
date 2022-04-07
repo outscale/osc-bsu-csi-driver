@@ -30,17 +30,6 @@ import (
 	"k8s.io/klog/v2"
 )
 
-// ********************* CCM Object Init *********************
-
-var _ cloudprovider.Interface = (*Cloud)(nil)
-var _ cloudprovider.Instances = (*Cloud)(nil)
-var _ cloudprovider.LoadBalancer = (*Cloud)(nil)
-var _ cloudprovider.Routes = (*Cloud)(nil)
-var _ cloudprovider.Zones = (*Cloud)(nil)
-
-// ********************* CCM entry point function *********************
-
-// readCloudConfig reads an instance of CloudConfig from config reader.
 func readCloudConfig(config io.Reader) (*CloudConfig, error) {
 	debugPrintCallerFunctionName()
 	klog.V(10).Infof("readAWSCloudConfig(%v)", config)

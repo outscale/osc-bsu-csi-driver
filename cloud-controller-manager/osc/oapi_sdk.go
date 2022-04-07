@@ -151,7 +151,7 @@ func (s *oscSdkCompute) DeleteRoute(request *ec2.DeleteRouteInput) (*ec2.DeleteR
 	return s.oapi.DeleteRoute(request)
 }
 
-func (s *oscSdkCompute) UpdateVm(request *ec2.ModifyInstanceAttributeInput) (*ec2.ModifyInstanceAttributeOutput, error) {
+func (s *oscSdkCompute) UpdateVM(request *ec2.ModifyInstanceAttributeInput) (*ec2.ModifyInstanceAttributeOutput, error) {
 	return s.oapi.ModifyInstanceAttribute(request)
 }
 

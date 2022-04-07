@@ -44,7 +44,7 @@ type Compute interface {
 	CreateRoute(request *ec2.CreateRouteInput) (*ec2.CreateRouteOutput, error)
 	DeleteRoute(request *ec2.DeleteRouteInput) (*ec2.DeleteRouteOutput, error)
 
-	UpdateVm(request *ec2.ModifyInstanceAttributeInput) (*ec2.ModifyInstanceAttributeOutput, error)
+	UpdateVM(request *ec2.ModifyInstanceAttributeInput) (*ec2.ModifyInstanceAttributeOutput, error)
 
 	ReadNets(input *ec2.DescribeVpcsInput) (*ec2.DescribeVpcsOutput, error)
 }

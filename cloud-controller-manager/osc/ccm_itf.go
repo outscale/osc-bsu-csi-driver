@@ -17,6 +17,8 @@ limitations under the License.
 package osc
 
 // ********************* CCM Used Interfaces *********************
+
+// Services providers interface to Compute, LoadBalancing, etc
 type Services interface {
 	Compute(region string) (Compute, error)
 	LoadBalancing(region string) (LoadBalancer, error)

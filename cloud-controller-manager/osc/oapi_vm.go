@@ -25,6 +25,7 @@ import (
 
 // ********************* CCM awsInstance Object & functions *********************
 
+// Vm provide Virtual Machine representation
 type Vm struct {
 	compute Compute
 

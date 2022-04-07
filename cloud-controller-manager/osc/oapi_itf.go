@@ -23,6 +23,8 @@ import (
 )
 
 // ********************* CCM API interfaces *********************
+
+// Compute provice abstraction to IaaS calls
 type Compute interface {
 	ReadVms(request *ec2.DescribeInstancesInput) ([]*ec2.Instance, error)
 

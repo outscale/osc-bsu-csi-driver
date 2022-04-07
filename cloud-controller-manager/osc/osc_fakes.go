@@ -29,7 +29,7 @@ import (
 	"k8s.io/klog/v2"
 )
 
-// FakeAWSServices is an fake AWS session used for testing
+// FakeOscServices is an fake AWS session used for testing
 type FakeOscServices struct {
 	region                      string
 	instances                   []*ec2.Instance
@@ -106,7 +106,7 @@ type FakeCompute interface {
 	RemoveRouteTables()
 }
 
-// FakeEC2Impl is an implementation of the FakeEC2 interface used for testing
+// FakeComputeImpl is an implementation of the FakeEC2 interface used for testing
 type FakeComputeImpl struct {
 	aws                      *FakeOscServices
 	Subnets                  []*ec2.Subnet
@@ -115,7 +115,7 @@ type FakeComputeImpl struct {
 	DescribeRouteTablesInput *ec2.DescribeRouteTablesInput
 }
 
-// DescribeVms returns fake instance descriptions
+// ReadVms returns fake instance descriptions
 func (ec2i *FakeComputeImpl) ReadVms(request *ec2.DescribeInstancesInput) ([]*ec2.Instance, error) {
 	matches := []*ec2.Instance{}
 	for _, instance := range ec2i.aws.instances {
@@ -239,7 +239,7 @@ func (ec2i *FakeComputeImpl) DeleteRoute(request *ec2.DeleteRouteInput) (*ec2.De
 	panic("Not implemented")
 }
 
-// ModifyInstanceAttribute is not implemented but is required for interface
+// UpdateVm is not implemented but is required for interface
 // conformance
 func (ec2i *FakeComputeImpl) UpdateVm(request *ec2.ModifyInstanceAttributeInput) (*ec2.ModifyInstanceAttributeOutput, error) {
 	panic("Not implemented")

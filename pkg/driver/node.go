@@ -188,13 +188,26 @@ func (d *nodeService) NodeStageVolume(ctx context.Context, req *csi.NodeStageVol
 		return &csi.NodeStageVolumeResponse{}, nil
 	}
 
+	existingFormat, err := d.mounter.GetDiskFormat(source)
+	if err != nil {
+		return nil, status.Error(codes.Internal, fmt.Sprintf("failed to get disk format of disk %s: %v", source, err))
+	}
+
+	if existingFormat != "" && existingFormat != fsType {
+		if len(mount.GetFsType()) == 0 {
+			// The default FStype will break the disk, switching to existingFormat
+			klog.Warningf("NodeStageVolume: The default fstype %v does not match the fstype of the disk %v. Please update your StorageClass.", defaultFsType, existingFormat)
+			fsType = existingFormat
+		} else {
+			return nil, status.Error(codes.Internal, fmt.Sprintf("NodeStageVolume: the requested fstype %v does not match the fstype of the disk %v", fsType, existingFormat))
+		}
+	}
+
 	klog.V(5).Infof("NodeStageVolume: formatting %s and mounting at %s with fstype %s", source, target, fsType)
 	if FSTypeXfs == fsType {
 		// Special case for xfs default format and mout fails due to fromat
 		// mkfs -t xfs -m reflink=0 /dev/xvdh
-		// Check if the disk is already formatted
-		existingFormat, err := d.mounter.GetDiskFormat(source)
-		if err == nil && "" == existingFormat {
+		if existingFormat == "" {
 			argsXfs := []string{"-t", fsType, "-m", "reflink=0", source}
 			klog.V(5).Infof("NodeStageVolume: xfs case mkfs %v ", argsXfs)
 			cmdOut, cmdErr := d.mounter.Command("mkfs", argsXfs...).CombinedOutput()

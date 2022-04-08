@@ -81,6 +81,7 @@ func TestNodeStageVolume(t *testing.T) {
 
 				mockMounter.EXPECT().MakeDir(targetPath).Return(nil)
 				mockMounter.EXPECT().GetDeviceName(targetPath).Return("", 1, nil)
+				mockMounter.EXPECT().GetDiskFormat(devicePath).Return("", nil)
 				mockMounter.EXPECT().FormatAndMount(gomock.Eq(devicePath), gomock.Eq(targetPath), gomock.Eq(FSTypeExt4), gomock.Any())
 				_, err := awsDriver.NodeStageVolume(context.TODO(), req)
 				if err != nil {
@@ -209,6 +210,7 @@ func TestNodeStageVolume(t *testing.T) {
 
 				mockMounter.EXPECT().MakeDir(targetPath).Return(nil)
 				mockMounter.EXPECT().GetDeviceName(targetPath).Return("", 1, nil)
+				mockMounter.EXPECT().GetDiskFormat(devicePath).Return("", nil)
 				mockMounter.EXPECT().FormatAndMount(gomock.Eq(devicePath), gomock.Eq(targetPath), gomock.Eq(FSTypeExt3), gomock.Any())
 				_, err := awsDriver.NodeStageVolume(context.TODO(), req)
 				if err != nil {

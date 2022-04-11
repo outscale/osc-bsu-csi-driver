@@ -137,6 +137,7 @@ spec:
             {{- end}}
             - --leader-election=true
             - --timeout={{ .Values.timeout }}
+            - --default-fstype={{ .Values.defaultFsType }}
           env:
             - name: ADDRESS
               value: /var/lib/csi/sockets/pluginproxy/csi.sock

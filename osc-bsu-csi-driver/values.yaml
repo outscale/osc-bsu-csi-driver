@@ -102,6 +102,9 @@ region: ""
 # Max bsu limits
 maxBsuVolumes: "25"
 
+# Default FsType if no FsType is set in StorageClass
+defaultFsType: "ext4"
+
 node:
   podAnnotations: {}
   podLabels: {}

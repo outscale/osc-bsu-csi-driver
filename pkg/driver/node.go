@@ -190,16 +190,16 @@ func (d *nodeService) NodeStageVolume(ctx context.Context, req *csi.NodeStageVol
 
 	existingFormat, err := d.mounter.GetDiskFormat(source)
 	if err != nil {
-		return nil, status.Error(codes.Internal, fmt.Sprintf("failed to get disk format of disk %s: %v", source, err))
+		return nil, status.Error(codes.Internal, fmt.Sprintf("failed to get disk format of disk %q: %v", source, err))
 	}
 
 	if existingFormat != "" && existingFormat != fsType {
 		if len(mount.GetFsType()) == 0 {
 			// The default FStype will break the disk, switching to existingFormat
-			klog.Warningf("NodeStageVolume: The default fstype %v does not match the fstype of the disk %v. Please update your StorageClass.", defaultFsType, existingFormat)
+			klog.Warningf("NodeStageVolume: The default fstype %q does not match the fstype of the disk %q. Please update your StorageClass.", defaultFsType, existingFormat)
 			fsType = existingFormat
 		} else {
-			return nil, status.Error(codes.Internal, fmt.Sprintf("NodeStageVolume: the requested fstype %v does not match the fstype of the disk %v", fsType, existingFormat))
+			return nil, status.Error(codes.Internal, fmt.Sprintf("NodeStageVolume: the requested fstype %q does not match the fstype of the disk %q", fsType, existingFormat))
 		}
 	}
 

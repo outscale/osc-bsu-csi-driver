@@ -38,19 +38,19 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 )
 
-var _ = Describe("[ebs-csi-e2e] [single-az] Dynamic Provisioning", func() {
-	f := framework.NewDefaultFramework("ebs")
+var _ = Describe("[bsu-csi-e2e] [single-az] Dynamic Provisioning", func() {
+	f := framework.NewDefaultFramework("bsu")
 
 	var (
 		cs        clientset.Interface
 		ns        *v1.Namespace
-		ebsDriver driver.PVTestDriver
+		bsuDriver driver.PVTestDriver
 	)
 
 	BeforeEach(func() {
 		cs = f.ClientSet
 		ns = f.Namespace
-		ebsDriver = driver.InitEbsCSIDriver()
+		bsuDriver = driver.InitBsuCSIDriver()
 	})
 
 	for _, t := range osccloud.ValidVolumeTypes {
@@ -75,7 +75,7 @@ var _ = Describe("[ebs-csi-e2e] [single-az] Dynamic Provisioning", func() {
 					},
 				}
 				test := testsuites.DynamicallyProvisionedCmdVolumeTest{
-					CSIDriver: ebsDriver,
+					CSIDriver: bsuDriver,
 					Pods:      pods,
 				}
 				test.Run(cs, ns)
@@ -105,7 +105,7 @@ var _ = Describe("[ebs-csi-e2e] [single-az] Dynamic Provisioning", func() {
 				},
 			}
 			test := testsuites.DynamicallyProvisionedCmdVolumeTest{
-				CSIDriver: ebsDriver,
+				CSIDriver: bsuDriver,
 				Pods:      pods,
 			}
 			test.Run(cs, ns)
@@ -131,7 +131,7 @@ var _ = Describe("[ebs-csi-e2e] [single-az] Dynamic Provisioning", func() {
 			},
 		}
 		test := testsuites.DynamicallyProvisionedCmdVolumeTest{
-			CSIDriver: ebsDriver,
+			CSIDriver: bsuDriver,
 			Pods:      pods,
 		}
 		test.Run(cs, ns)
@@ -164,7 +164,7 @@ var _ = Describe("[ebs-csi-e2e] [single-az] Dynamic Provisioning", func() {
 			},
 		}
 		test := testsuites.DynamicallyProvisionedCmdVolumeTest{
-			CSIDriver: ebsDriver,
+			CSIDriver: bsuDriver,
 			Pods:      pods,
 		}
 		test.Run(cs, ns)
@@ -202,7 +202,7 @@ var _ = Describe("[ebs-csi-e2e] [single-az] Dynamic Provisioning", func() {
 			},
 		}
 		test := testsuites.DynamicallyProvisionedCmdVolumeTest{
-			CSIDriver: ebsDriver,
+			CSIDriver: bsuDriver,
 			Pods:      pods,
 		}
 		test.Run(cs, ns)
@@ -227,7 +227,7 @@ var _ = Describe("[ebs-csi-e2e] [single-az] Dynamic Provisioning", func() {
 			},
 		}
 		test := testsuites.DynamicallyProvisionedCmdVolumeTest{
-			CSIDriver: ebsDriver,
+			CSIDriver: bsuDriver,
 			Pods:      pods,
 		}
 		test.Run(cs, ns)
@@ -262,7 +262,7 @@ var _ = Describe("[ebs-csi-e2e] [single-az] Dynamic Provisioning", func() {
 			},
 		}
 		test := testsuites.DynamicallyProvisionedCmdVolumeTest{
-			CSIDriver: ebsDriver,
+			CSIDriver: bsuDriver,
 			Pods:      pods,
 		}
 		test.Run(cs, ns)
@@ -300,7 +300,7 @@ var _ = Describe("[ebs-csi-e2e] [single-az] Dynamic Provisioning", func() {
 			},
 		}
 		test := testsuites.DynamicallyProvisionedCollocatedPodTest{
-			CSIDriver:    ebsDriver,
+			CSIDriver:    bsuDriver,
 			Pods:         pods,
 			ColocatePods: true,
 		}
@@ -327,7 +327,7 @@ var _ = Describe("[ebs-csi-e2e] [single-az] Dynamic Provisioning", func() {
 			},
 		}
 		test := testsuites.DynamicallyProvisionedReadOnlyVolumeTest{
-			CSIDriver: ebsDriver,
+			CSIDriver: bsuDriver,
 			Pods:      pods,
 		}
 		test.Run(cs, ns)
@@ -344,7 +344,7 @@ var _ = Describe("[ebs-csi-e2e] [single-az] Dynamic Provisioning", func() {
 			},
 		}
 		test := testsuites.DynamicallyProvisionedReclaimPolicyTest{
-			CSIDriver: ebsDriver,
+			CSIDriver: bsuDriver,
 			Volumes:   volumes,
 		}
 		test.Run(cs, ns)
@@ -372,7 +372,7 @@ var _ = Describe("[ebs-csi-e2e] [single-az] Dynamic Provisioning", func() {
 		}
 
 		test := testsuites.DynamicallyProvisionedReclaimPolicyTest{
-			CSIDriver: ebsDriver,
+			CSIDriver: bsuDriver,
 			Volumes:   volumes,
 			Cloud:     cloud,
 		}
@@ -395,7 +395,7 @@ var _ = Describe("[ebs-csi-e2e] [single-az] Dynamic Provisioning", func() {
 			},
 		}
 		test := testsuites.DynamicallyProvisionedDeletePodTest{
-			CSIDriver: ebsDriver,
+			CSIDriver: bsuDriver,
 			Pod:       pod,
 			PodCheck: &testsuites.PodExecCheck{
 				Cmd:            []string{"cat", "/mnt/test-1/data"},
@@ -422,7 +422,7 @@ var _ = Describe("[ebs-csi-e2e] [single-az] Dynamic Provisioning", func() {
 			},
 		}
 		test := testsuites.DynamicallyProvisionedResizeVolumeTest{
-			CSIDriver: ebsDriver,
+			CSIDriver: bsuDriver,
 			Pod:       pod,
 		}
 		test.Run(cs, ns)
@@ -480,7 +480,7 @@ var _ = Describe("[ebs-csi-e2e] [single-az] Dynamic Provisioning", func() {
 			},
 		}
 		test := testsuites.DynamicallyProvisionedCustomPodTest{
-			CSIDriver: ebsDriver,
+			CSIDriver: bsuDriver,
 			Pod:       pod,
 			PodCmds:   podCmds,
 		}
@@ -490,14 +490,14 @@ var _ = Describe("[ebs-csi-e2e] [single-az] Dynamic Provisioning", func() {
 	})
 })
 
-var _ = Describe("[ebs-csi-e2e] [single-az] Snapshot", func() {
-	f := framework.NewDefaultFramework("ebs")
+var _ = Describe("[bsu-csi-e2e] [single-az] Snapshot", func() {
+	f := framework.NewDefaultFramework("bsu")
 
 	var (
 		cs          clientset.Interface
 		snapshotrcs restclientset.Interface
 		ns          *v1.Namespace
-		ebsDriver   driver.PVTestDriver
+		bsuDriver   driver.PVTestDriver
 	)
 
 	BeforeEach(func() {
@@ -508,12 +508,12 @@ var _ = Describe("[ebs-csi-e2e] [single-az] Snapshot", func() {
 			Fail(fmt.Sprintf("could not get rest clientset: %v", err))
 		}
 		ns = f.Namespace
-		ebsDriver = driver.InitEbsCSIDriver()
+		bsuDriver = driver.InitBsuCSIDriver()
 	})
 
 	It("should create a pod, write and read to it, take a volume snapshot, and create another pod from the snapshot", func() {
 		pod := testsuites.PodDetails{
-			// sync before taking a snapshot so that any cached data is written to the EBS volume
+			// sync before taking a snapshot so that any cached data is written to the BSU volume
 			Cmd: "echo 'hello world' >> /mnt/test-1/data && grep 'hello world' /mnt/test-1/data && sync",
 			Volumes: []testsuites.VolumeDetails{
 				{
@@ -542,7 +542,7 @@ var _ = Describe("[ebs-csi-e2e] [single-az] Snapshot", func() {
 			},
 		}
 		test := testsuites.DynamicallyProvisionedVolumeSnapshotTest{
-			CSIDriver:   ebsDriver,
+			CSIDriver:   bsuDriver,
 			Pod:         pod,
 			RestoredPod: restoredPod,
 		}
@@ -550,19 +550,19 @@ var _ = Describe("[ebs-csi-e2e] [single-az] Snapshot", func() {
 	})
 })
 
-var _ = Describe("[ebs-csi-e2e] [multi-az] Dynamic Provisioning", func() {
-	f := framework.NewDefaultFramework("ebs")
+var _ = Describe("[bsu-csi-e2e] [multi-az] Dynamic Provisioning", func() {
+	f := framework.NewDefaultFramework("bsu")
 
 	var (
 		cs        clientset.Interface
 		ns        *v1.Namespace
-		ebsDriver driver.DynamicPVTestDriver
+		bsuDriver driver.DynamicPVTestDriver
 	)
 
 	BeforeEach(func() {
 		cs = f.ClientSet
 		ns = f.Namespace
-		ebsDriver = driver.InitEbsCSIDriver()
+		bsuDriver = driver.InitBsuCSIDriver()
 	})
 
 	It("should allow for topology aware volume scheduling", func() {
@@ -585,7 +585,7 @@ var _ = Describe("[ebs-csi-e2e] [multi-az] Dynamic Provisioning", func() {
 			},
 		}
 		test := testsuites.DynamicallyProvisionedTopologyAwareVolumeTest{
-			CSIDriver: ebsDriver,
+			CSIDriver: bsuDriver,
 			Pods:      pods,
 		}
 		test.Run(cs, ns)
@@ -617,7 +617,7 @@ var _ = Describe("[ebs-csi-e2e] [multi-az] Dynamic Provisioning", func() {
 			},
 		}
 		test := testsuites.DynamicallyProvisionedTopologyAwareVolumeTest{
-			CSIDriver: ebsDriver,
+			CSIDriver: bsuDriver,
 			Pods:      pods,
 		}
 		test.Run(cs, ns)

@@ -25,7 +25,7 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	awscloud "github.com/outscale-dev/osc-bsu-csi-driver/pkg/cloud"
+	osccloud "github.com/outscale-dev/osc-bsu-csi-driver/pkg/cloud"
 	apps "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	storagev1 "k8s.io/api/storage/v1"
@@ -363,9 +363,9 @@ func (t *TestPersistentVolumeClaim) DeleteBoundPersistentVolume() {
 	framework.ExpectNoError(err)
 }
 
-func (t *TestPersistentVolumeClaim) DeleteBackingVolume(cloud awscloud.Cloud) {
+func (t *TestPersistentVolumeClaim) DeleteBackingVolume(cloud osccloud.Cloud) {
 	volumeID := t.persistentVolume.Spec.CSI.VolumeHandle
-	By(fmt.Sprintf("deleting EBS volume %q", volumeID))
+	By(fmt.Sprintf("deleting BSU volume %q", volumeID))
 	ok, err := cloud.DeleteDisk(context.Background(), volumeID)
 	if err != nil || !ok {
 		Fail(fmt.Sprintf("could not delete volume %q: %v", volumeID, err))
@@ -384,7 +384,7 @@ func NewTestDeployment(c clientset.Interface, ns *v1.Namespace, command string, 
 	if len(customImage) > 0 {
 		imageName = customImage[0]
 	}
-	generateName := "ebs-volume-tester-"
+	generateName := "bsu-volume-tester-"
 	selectorValue := fmt.Sprintf("%s%d", generateName, rand.Int())
 	replicas := int32(1)
 	return &TestDeployment{
@@ -526,7 +526,7 @@ func NewTestPod(c clientset.Interface, ns *v1.Namespace, command string) *TestPo
 		namespace: ns,
 		pod: &v1.Pod{
 			ObjectMeta: metav1.ObjectMeta{
-				GenerateName: "ebs-volume-tester-",
+				GenerateName: "bsu-volume-tester-",
 			},
 			Spec: v1.PodSpec{
 				Containers: []v1.Container{

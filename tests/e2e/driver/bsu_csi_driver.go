@@ -19,7 +19,7 @@ import (
 
 	volumesnapshotv1 "github.com/kubernetes-csi/external-snapshotter/client/v4/apis/volumesnapshot/v1"
 	bsucsidriver "github.com/outscale-dev/osc-bsu-csi-driver/pkg/driver"
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	storagev1 "k8s.io/api/storage/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -34,8 +34,8 @@ type bsuCSIDriver struct {
 	driverName string
 }
 
-// InitEbsCSIDriver returns bsuCSIDriver that implements DynamicPVTestDriver interface
-func InitEbsCSIDriver() PVTestDriver {
+// InitBsuCSIDriver returns bsuCSIDriver that implements DynamicPVTestDriver interface
+func InitBsuCSIDriver() PVTestDriver {
 	return &bsuCSIDriver{
 		driverName: bsucsidriver.DriverName,
 	}

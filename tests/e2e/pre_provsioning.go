@@ -46,13 +46,13 @@ var (
 )
 
 // Requires env AWS_AVAILABILITY_ZONES a comma separated list of AZs to be set
-var _ = Describe("[ebs-csi-e2e] [single-az] Pre-Provisioned", func() {
-	f := framework.NewDefaultFramework("ebs")
+var _ = Describe("[bsu-csi-e2e] [single-az] Pre-Provisioned", func() {
+	f := framework.NewDefaultFramework("bsu")
 
 	var (
 		cs        clientset.Interface
 		ns        *v1.Namespace
-		ebsDriver driver.PreProvisionedVolumeTestDriver
+		bsuDriver driver.PreProvisionedVolumeTestDriver
 		cloud     osccloud.Cloud
 		volumeID  string
 		diskSize  string
@@ -63,9 +63,9 @@ var _ = Describe("[ebs-csi-e2e] [single-az] Pre-Provisioned", func() {
 	BeforeEach(func() {
 		cs = f.ClientSet
 		ns = f.Namespace
-		ebsDriver = driver.InitEbsCSIDriver()
+		bsuDriver = driver.InitBsuCSIDriver()
 
-		// setup EBS volume
+		// setup BSU volume
 		if os.Getenv(awsAvailabilityZonesEnv) == "" {
 			Skip(fmt.Sprintf("env %q not set", awsAvailabilityZonesEnv))
 		}
@@ -92,7 +92,7 @@ var _ = Describe("[ebs-csi-e2e] [single-az] Pre-Provisioned", func() {
 		}
 		volumeID = disk.VolumeID
 		diskSize = fmt.Sprintf("%dGi", defaultDiskSize)
-		By(fmt.Sprintf("Successfully provisioned EBS volume: %q\n", volumeID))
+		By(fmt.Sprintf("Successfully provisioned BSU volume: %q\n", volumeID))
 	})
 
 	AfterEach(func() {
@@ -126,7 +126,7 @@ var _ = Describe("[ebs-csi-e2e] [single-az] Pre-Provisioned", func() {
 			},
 		}
 		test := testsuites.PreProvisionedVolumeTest{
-			CSIDriver: ebsDriver,
+			CSIDriver: bsuDriver,
 			Pods:      pods,
 		}
 		test.Run(cs, ns)
@@ -151,7 +151,7 @@ var _ = Describe("[ebs-csi-e2e] [single-az] Pre-Provisioned", func() {
 			},
 		}
 		test := testsuites.PreProvisionedReadOnlyVolumeTest{
-			CSIDriver: ebsDriver,
+			CSIDriver: bsuDriver,
 			Pods:      pods,
 		}
 		test.Run(cs, ns)
@@ -168,7 +168,7 @@ var _ = Describe("[ebs-csi-e2e] [single-az] Pre-Provisioned", func() {
 			},
 		}
 		test := testsuites.PreProvisionedReclaimPolicyTest{
-			CSIDriver: ebsDriver,
+			CSIDriver: bsuDriver,
 			Volumes:   volumes,
 		}
 		test.Run(cs, ns)
@@ -186,7 +186,7 @@ var _ = Describe("[ebs-csi-e2e] [single-az] Pre-Provisioned", func() {
 			},
 		}
 		test := testsuites.PreProvisionedReclaimPolicyTest{
-			CSIDriver: ebsDriver,
+			CSIDriver: bsuDriver,
 			Volumes:   volumes,
 		}
 		test.Run(cs, ns)

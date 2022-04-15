@@ -75,7 +75,7 @@ test-e2e-single-az:
 	@echo "test-e2e-single-az"
 	docker build  -t $(E2E_ENV) -f ./tests/e2e/docker/Dockerfile_e2eTest .
 	docker run --rm \
-		-v ${PWD}:/root/aws-ebs-csi-driver \
+		-v ${PWD}:/root/osc-bsu-csi-driver \
 		-e OSC_ACCESS_KEY=${OSC_ACCESS_KEY} \
 		-e OSC_SECRET_KEY=${OSC_SECRET_KEY} \
 		-e AWS_AVAILABILITY_ZONES=${E2E_AZ} \

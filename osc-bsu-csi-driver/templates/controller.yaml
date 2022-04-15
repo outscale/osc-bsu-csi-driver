@@ -5,18 +5,18 @@ metadata:
   name: ebs-csi-controller
   namespace: kube-system
   labels:
-    {{- include "aws-ebs-csi-driver.labels" . | nindent 4 }}
+    {{- include "osc-bsu-csi-driver.labels" . | nindent 4 }}
 spec:
   replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
       app: ebs-csi-controller
-      {{- include "aws-ebs-csi-driver.selectorLabels" . | nindent 6 }}
+      {{- include "osc-bsu-csi-driver.selectorLabels" . | nindent 6 }}
   template:
     metadata:
       labels:
         app: ebs-csi-controller
-        {{- include "aws-ebs-csi-driver.labels" . | nindent 8 }}
+        {{- include "osc-bsu-csi-driver.labels" . | nindent 8 }}
         {{- if .Values.podLabels }}
           {{ toYaml .Values.podLabels | nindent 8 }}
         {{- end }}
@@ -61,7 +61,7 @@ spec:
             {{- end }}
             - --endpoint=$(CSI_ENDPOINT)
             {{- if .Values.extraVolumeTags }}
-              {{- include "aws-ebs-csi-driver.extra-volume-tags" . | nindent 12 }}
+              {{- include "osc-bsu-csi-driver.extra-volume-tags" . | nindent 12 }}
             {{- end }}
             - --logtostderr
             - --v={{ .Values.verbosity }}

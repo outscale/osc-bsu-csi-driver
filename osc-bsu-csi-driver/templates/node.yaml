@@ -5,17 +5,17 @@ metadata:
   name: ebs-csi-node
   namespace: kube-system
   labels:
-    {{- include "aws-ebs-csi-driver.labels" . | nindent 4 }}
+    {{- include "osc-bsu-csi-driver.labels" . | nindent 4 }}
 spec:
   selector:
     matchLabels:
       app: ebs-csi-node
-      {{- include "aws-ebs-csi-driver.selectorLabels" . | nindent 6 }}
+      {{- include "osc-bsu-csi-driver.selectorLabels" . | nindent 6 }}
   template:
     metadata:
       labels:
         app: ebs-csi-node
-        {{- include "aws-ebs-csi-driver.labels" . | nindent 8 }}
+        {{- include "osc-bsu-csi-driver.labels" . | nindent 8 }}
         {{- if .Values.node.podLabels }}
           {{ toYaml .Values.node.podLabels | nindent 8 }}
         {{- end }}
@@ -23,15 +23,6 @@ spec:
       annotations: {{ toYaml .Values.node.podAnnotations | nindent 8 }}
       {{- end }}
     spec:
-      affinity:
-        nodeAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            nodeSelectorTerms:
-            - matchExpressions:
-              - key: eks.amazonaws.com/compute-type
-                operator: NotIn
-                values:
-                - fargate
       nodeSelector:
         kubernetes.io/os: linux
       hostNetwork: true

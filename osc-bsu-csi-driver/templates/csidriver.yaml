@@ -3,7 +3,7 @@ kind: CSIDriver
 metadata:
   name: ebs.csi.aws.com
   labels:
-    {{- include "aws-ebs-csi-driver.labels" . | nindent 4 }}
+    {{- include "osc-bsu-csi-driver.labels" . | nindent 4 }}
 spec:
   attachRequired: true
   podInfoOnMount: false

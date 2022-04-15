@@ -25,7 +25,7 @@ import (
 
 func TestMakeDir(t *testing.T) {
 	// Setup the full driver and its environment
-	dir, err := ioutil.TempDir("", "mount-ebs-csi")
+	dir, err := ioutil.TempDir("", "mount-bsu-csi")
 	if err != nil {
 		t.Fatalf("error creating directory %v", err)
 	}
@@ -52,7 +52,7 @@ func TestMakeDir(t *testing.T) {
 
 func TestMakeFile(t *testing.T) {
 	// Setup the full driver and its environment
-	dir, err := ioutil.TempDir("", "mount-ebs-csi")
+	dir, err := ioutil.TempDir("", "mount-bsu-csi")
 	if err != nil {
 		t.Fatalf("error creating directory %v", err)
 	}
@@ -80,7 +80,7 @@ func TestMakeFile(t *testing.T) {
 
 func TestExistsPath(t *testing.T) {
 	// Setup the full driver and its environment
-	dir, err := ioutil.TempDir("", "mount-ebs-csi")
+	dir, err := ioutil.TempDir("", "mount-bsu-csi")
 	if err != nil {
 		t.Fatalf("error creating directory %v", err)
 	}
@@ -106,7 +106,7 @@ func TestExistsPath(t *testing.T) {
 
 func TestGetDeviceName(t *testing.T) {
 	// Setup the full driver and its environment
-	dir, err := ioutil.TempDir("", "mount-ebs-csi")
+	dir, err := ioutil.TempDir("", "mount-bsu-csi")
 	if err != nil {
 		t.Fatalf("error creating directory %v", err)
 	}

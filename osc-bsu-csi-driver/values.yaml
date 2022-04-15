@@ -6,7 +6,7 @@ replicaCount: 2
 
 image:
   repository: outscale/osc-ebs-csi-driver
-  tag: v0.0.14beta
+  tag: v0.0.15
   pullPolicy: IfNotPresent
 
 # set the verbosity level of plugins (default Max)

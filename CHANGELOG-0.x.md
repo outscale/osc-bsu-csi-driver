@@ -1,31 +1,16 @@
-# v0.0.6beta
+# v0.0.15
+> **_NOTE:_** In the future major version, the default FsType will change from EXT4 to XFS. You can start using it by changing the `defaultFsType` in the helm chart
 ## Notable changes
-* Enable API sdk logs 
+* Remove Snapshot Controller and CRD from the chart (See [Deployment Snapshot](https://kubernetes-csi.github.io/docs/snapshot-controller.html#deployment))
+* Set FsType in the PV if no FsType is specified in the StorageClass
 
-# v0.0.7beta
+# v0.0.14beta
 ## Notable changes
-* Use [osc-sdk-go](https://github.com/outscale/osc-sdk-go) instead of aws-sdk-go
-* Update to helm3
-* Update of sidecar images
+* Make Max BSU Volumes value custom
 
-# v0.0.8beta
+# v0.0.13beta
 ## Notable changes
-* Implement NodeGetVolumeStats
-
-
-# v0.0.9beta
-## Notable changes
-* Implement ControllerExpandVolume using UpdateVolume api call
-* Fix regression in detach disk toleration
-* customise sidecars conatiner verbosity and timeout
-
-# v0.0.10beta
-## Notable changes
-* Add fsGroupPolicy field to CSIDriver object and customize it with chart values
-
-# v0.0.11beta
-## Notable changes
-* Add fsGroupPolicy specific e2e test
+* Update default Max BSU Volumes value
 
 # v0.0.12beta
 ## Notable changes
@@ -34,14 +19,32 @@
 * Update charts and sidecars versions
 * update e2e tests
 
-# v0.0.13beta
+# v0.0.11beta
 ## Notable changes
-* Update default Max BSU Volumes value
+* Add fsGroupPolicy specific e2e test
 
-# v0.0.14beta
+# v0.0.10beta
 ## Notable changes
-* Make Max BSU Volumes value custom
-# v0.0.15beta
+* Add fsGroupPolicy field to CSIDriver object and customize it with chart values
+
+# v0.0.9beta
 ## Notable changes
-* Remove Snapshot Controller from the chart (See [Deployment Snapshot](https://kubernetes-csi.github.io/docs/snapshot-controller.html#deployment))
-* Default FSType is now XFS instead of EXT4
+* Implement ControllerExpandVolume using UpdateVolume api call
+* Fix regression in detach disk toleration
+* customise sidecars conatiner verbosity and timeout
+
+# v0.0.8beta
+## Notable changes
+* Implement NodeGetVolumeStats
+
+# v0.0.7beta
+## Notable changes
+* Use [osc-sdk-go](https://github.com/outscale/osc-sdk-go) instead of aws-sdk-go
+* Update to helm3
+* Update of sidecar images
+
+# v0.0.6beta
+## Notable changes
+* Enable API sdk logs 
+
+

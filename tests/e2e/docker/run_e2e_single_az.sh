@@ -12,7 +12,7 @@ fi
 
 echo "${KC}" | base64 --decode > $KUBECONFIG
 
-MANDATORY_DIR="/root/aws-ebs-csi-driver"
+MANDATORY_DIR="/root/osc-bsu-csi-driver"
 MANDATORY_DIR=(${MANDATORY_DIR})
 for (( dir=0; dir<${#MANDATORY_DIR[@]}; dir++ )); do
 	dir_name=${MANDATORY_DIR[${dir}]}
@@ -74,7 +74,7 @@ export ARTIFACTS=./single_az_test_e2e_report
 mkdir -p $ARTIFACTS
 export NODES=4
 
-FOCUS_REGEXP="\[ebs-csi-e2e\] \[single-az\]"
+FOCUS_REGEXP="\[bsu-csi-e2e\] \[single-az\]"
 SKIP_REGEXP="and encryption"
 $GOPATH/bin/ginkgo build -r tests/e2e
 $GOPATH/bin/ginkgo --progress -debug -p -nodes=$NODES \

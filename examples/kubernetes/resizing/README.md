@@ -21,7 +21,7 @@ kubectl get pv
 
 4. Expand the volume size by increasing the capacity in PVC's `spec.resources.requests.storage`:
 ```
- kubectl edit pvc -n resizing-p ebs-claim
+ kubectl edit pvc -n resizing-p bsu-claim
 ```
 Save the result at the end of the edit.
 

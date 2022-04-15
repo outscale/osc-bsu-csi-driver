@@ -1,7 +1,7 @@
 kind: StorageClass
 apiVersion: storage.k8s.io/v1
 metadata:
-  name: ebs-sc
+  name: bsu-sc
   namespace: dynamic-p
-provisioner: ebs.csi.aws.com
+provisioner: bsu.csi.outscale.com
 volumeBindingMode: WaitForFirstConsumer

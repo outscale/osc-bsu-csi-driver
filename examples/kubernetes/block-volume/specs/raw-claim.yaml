@@ -6,7 +6,7 @@ spec:
   accessModes:
     - ReadWriteOnce
   volumeMode: Block
-  storageClassName: ebs-sc
+  storageClassName: bsu-sc
   resources:
     requests:
       storage: 10Gi

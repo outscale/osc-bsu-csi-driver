@@ -1,5 +1,5 @@
 ## Raw Block Volume
-This example shows how to consume a dynamically-provisioned EBS volume as a raw block device.
+This example shows how to consume a dynamically-provisioned BSU volume as a raw block device.
 
 ### Edit [Persistence Volume Claim Spec](./specs/raw-claim.yaml)
 Make sure the `volumeMode` is `Block`.

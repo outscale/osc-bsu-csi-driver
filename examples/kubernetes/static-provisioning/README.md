@@ -1,8 +1,8 @@
 # Static Provisioning 
-This example shows how to create and consume persistence volume from exising EBS using static provisioning. 
+This example shows how to create and consume persistence volume from exising BSU using static provisioning. 
 
 ## Usage
-1. Edit the PersistentVolume spec in [example manifest](./specs/example.yaml). Update `volumeHandle` with EBS volume ID that you are going to use, and update the `fsType` with the filesystem type of the volume. In this example, I have a pre-created EBS  volume in us-east-1c availability zone and it is formatted with xfs filesystem.
+1. Edit the PersistentVolume spec in [example manifest](./specs/example.yaml). Update `volumeHandle` with BSU volume ID that you are going to use, and update the `fsType` with the filesystem type of the volume. In this example, I have a pre-created BSU  volume in eu-west-2 availability zone and it is formatted with xfs filesystem.
 
 ```
 apiVersion: v1
@@ -15,21 +15,21 @@ spec:
   volumeMode: Filesystem
   accessModes:
     - ReadWriteOnce
-  storageClassName: ebs-sc
+  storageClassName: bsu-sc
   csi:
-    driver: ebs.csi.aws.com
+    driver: bsu.csi.outscale.com
     volumeHandle: {volumeId} 
     fsType: xfs
   nodeAffinity:
     required:
       nodeSelectorTerms:
       - matchExpressions:
-        - key: topology.ebs.csi.aws.com/zone
+        - key: topology.bsu.csi.outscale.com/zone
           operator: In
           values:
-          - us-east-1c 
+          - eu-west-2a
 ```
-Note that node affinity is used here since EBS volume is created in us-east-1c, hence only node in the same AZ can consume this persisence volume. 
+Note that node affinity is used here since BSU volume is created in us-east-1c, hence only node in the same AZ can consume this persisence volume. 
 
 2. Deploy the example:
 ```sh

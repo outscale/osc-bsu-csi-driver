@@ -4,6 +4,6 @@ metadata:
   name: static-snapshot-demo
   namespace: default 
 spec:
-  volumeSnapshotClassName: csi-aws-vsc
+  volumeSnapshotClassName: csi-osc-vsc
   source:
     volumeSnapshotContentName: static-snapshot-content

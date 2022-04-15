@@ -1,8 +1,8 @@
 # Configuring StorageClass
-This example shows how to configure Kubernetes storageclass to provision EBS volumes with various configuration parameters. EBS CSI driver is compatiable with in-tree EBS plugin on StorageClass parameters. For the full list of in-tree EBS plugin parameters, please refer to Kubernetes documentation of [StorageClass Parameter](https://kubernetes.io/docs/concepts/storage/storage-classes/#aws-ebs).
+This example shows how to configure Kubernetes storageclass to provision BSU volumes with various configuration parameters. BSU CSI driver is compatiable with in-tree EBS plugin on StorageClass parameters. For the full list plugin parameters, please refer to Kubernetes documentation of [StorageClass Parameter](../../../docs/storageclass.md).
 
 ## Usage
-1. Edit the StorageClass spec in [example manifest](./specs/example.yaml) and update storageclass parameters to desired value. In this example, a `io1` EBS volume will be created and formatted to `xfs` filesystem with encryption enabled using the default KMS key.
+1. Edit the StorageClass spec in [example manifest](./specs/example.yaml) and update storageclass parameters to desired value. In this example, a `io1` BSU volume will be created and formatted to `xfs` filesystem.
 
 2. Deploy the example:
 ```sh

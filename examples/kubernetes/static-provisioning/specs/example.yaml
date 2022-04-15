@@ -1,8 +1,8 @@
 kind: StorageClass
 apiVersion: storage.k8s.io/v1
 metadata:
-  name: ebs-sc
-provisioner: ebs.csi.aws.com
+  name: bsu-sc
+provisioner: bsu.csi.outscale.com
 volumeBindingMode: WaitForFirstConsumer
 reclaimPolicy: Retain
 ---
@@ -16,28 +16,28 @@ spec:
   volumeMode: Filesystem
   accessModes:
     - ReadWriteOnce
-  storageClassName: ebs-sc
+  storageClassName: bsu-sc
   csi:
-    driver: ebs.csi.aws.com
+    driver: bsu.csi.outscale.com
     volumeHandle: vol-05786ec9ec9526b67
     fsType: xfs
   nodeAffinity:
     required:
       nodeSelectorTerms:
       - matchExpressions:
-        - key: topology.ebs.csi.aws.com/zone
+        - key: topology.bsu.csi.outscale.com/zone
           operator: In
           values:
-          - us-east-1c 
+          - eu-west-2a 
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: ebs-claim
+  name: bsu-claim
 spec:
   accessModes:
     - ReadWriteOnce
-  storageClassName: ebs-sc
+  storageClassName: bsu-sc
   resources:
     requests:
       storage: 50Gi
@@ -58,4 +58,4 @@ spec:
   volumes:
   - name: persistent-storage
     persistentVolumeClaim:
-      claimName: ebs-claim
+      claimName: bsu-claim

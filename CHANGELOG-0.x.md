@@ -2,8 +2,15 @@
 > **_NOTE:_** In the future major version, the default FsType will change from EXT4 to XFS. You can start using it by changing the `defaultFsType` in the helm chart
 ## Notable changes
 * Remove Snapshot Controller and CRD from the chart (See [Deployment Snapshot](https://kubernetes-csi.github.io/docs/snapshot-controller.html#deployment))
-* Set FsType in the PV if no FsType is specified in the StorageClass
-
+* Set FsType of the PV if no FsType is specified in the StorageClass
+* Add the support of custom labels on the pod ([#101](https://github.com/outscale-dev/osc-bsu-csi-driver/pull/101))
+* Update sidecars to the latest version. 
+  * Impacts:
+    * CSI spec v1.5.0
+    * Minimal kubernetes version is now v1.20
+* Update to kubernetes library to v1.23.4
+## Bugfixes
+* Make NodePublishVolume and NodeUnpublishVolume idempotent ([#163](https://github.com/outscale-dev/osc-bsu-csi-driver/pull/163))
 # v0.0.14beta
 ## Notable changes
 * Make Max BSU Volumes value custom

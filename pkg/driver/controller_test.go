@@ -185,12 +185,12 @@ func TestCreateVolume(t *testing.T) {
 				mockCloud.EXPECT().GetDiskByName(gomock.Eq(ctx), gomock.Eq(req.Name), gomock.Eq(stdVolSize)).Return(cloud.Disk{}, cloud.ErrNotFound)
 				mockCloud.EXPECT().CreateDisk(gomock.Eq(ctx), gomock.Eq(req.Name), gomock.Any()).Return(mockDisk, nil)
 
-				awsDriver := controllerService{
+				oscDriver := controllerService{
 					cloud:         mockCloud,
 					driverOptions: &DriverOptions{},
 				}
 
-				if _, err := awsDriver.CreateVolume(ctx, req); err != nil {
+				if _, err := oscDriver.CreateVolume(ctx, req); err != nil {
 					srvErr, ok := status.FromError(err)
 					if !ok {
 						t.Fatalf("Could not get error status code from error: %v", srvErr)
@@ -232,12 +232,12 @@ func TestCreateVolume(t *testing.T) {
 				mockCloud.EXPECT().GetDiskByName(gomock.Eq(ctx), gomock.Eq(req.Name), gomock.Eq(stdVolSize)).Return(cloud.Disk{}, cloud.ErrNotFound)
 				mockCloud.EXPECT().CreateDisk(gomock.Eq(ctx), gomock.Eq(req.Name), gomock.Any()).Return(mockDisk, nil)
 
-				awsDriver := controllerService{
+				oscDriver := controllerService{
 					cloud:         mockCloud,
 					driverOptions: &DriverOptions{},
 				}
 
-				rsp, err := awsDriver.CreateVolume(ctx, req)
+				rsp, err := oscDriver.CreateVolume(ctx, req)
 				if err != nil {
 					srvErr, ok := status.FromError(err)
 					if !ok {
@@ -287,12 +287,12 @@ func TestCreateVolume(t *testing.T) {
 				mockCloud := mocks.NewMockCloud(mockCtl)
 				mockCloud.EXPECT().GetDiskByName(gomock.Eq(ctx), gomock.Eq(req.Name), gomock.Eq(stdVolSize)).Return(mockDisk, nil)
 
-				awsDriver := controllerService{
+				oscDriver := controllerService{
 					cloud:         mockCloud,
 					driverOptions: &DriverOptions{},
 				}
 
-				rsp, err := awsDriver.CreateVolume(ctx, req)
+				rsp, err := oscDriver.CreateVolume(ctx, req)
 				if err != nil {
 					srvErr, ok := status.FromError(err)
 					if !ok {
@@ -342,12 +342,12 @@ func TestCreateVolume(t *testing.T) {
 				mockCloud := mocks.NewMockCloud(mockCtl)
 				mockCloud.EXPECT().GetDiskByName(gomock.Eq(ctx), gomock.Eq(req.Name), gomock.Eq(stdVolSize)).Return(mockDisk, nil)
 
-				awsDriver := controllerService{
+				oscDriver := controllerService{
 					cloud:         mockCloud,
 					driverOptions: &DriverOptions{},
 				}
 
-				if _, err := awsDriver.CreateVolume(ctx, req); err == nil {
+				if _, err := oscDriver.CreateVolume(ctx, req); err == nil {
 					t.Error("CreateVolume with invalid SnapshotID unexpectedly succeeded")
 				}
 			},
@@ -369,12 +369,12 @@ func TestCreateVolume(t *testing.T) {
 
 				mockCloud := mocks.NewMockCloud(mockCtl)
 
-				awsDriver := controllerService{
+				oscDriver := controllerService{
 					cloud:         mockCloud,
 					driverOptions: &DriverOptions{},
 				}
 
-				if _, err := awsDriver.CreateVolume(ctx, req); err != nil {
+				if _, err := oscDriver.CreateVolume(ctx, req); err != nil {
 					srvErr, ok := status.FromError(err)
 					if !ok {
 						t.Fatalf("Could not get error status code from error: %v", srvErr)
@@ -423,12 +423,12 @@ func TestCreateVolume(t *testing.T) {
 				mockCloud.EXPECT().GetDiskByName(gomock.Eq(ctx), gomock.Eq(req.Name), gomock.Eq(stdVolSize)).Return(cloud.Disk{}, cloud.ErrNotFound)
 				mockCloud.EXPECT().CreateDisk(gomock.Eq(ctx), gomock.Eq(req.Name), gomock.Any()).Return(mockDisk, nil)
 
-				awsDriver := controllerService{
+				oscDriver := controllerService{
 					cloud:         mockCloud,
 					driverOptions: &DriverOptions{},
 				}
 
-				if _, err := awsDriver.CreateVolume(ctx, req); err != nil {
+				if _, err := oscDriver.CreateVolume(ctx, req); err != nil {
 					srvErr, ok := status.FromError(err)
 					if !ok {
 						t.Fatalf("Could not get error status code from error: %v", srvErr)
@@ -438,7 +438,7 @@ func TestCreateVolume(t *testing.T) {
 
 				// Subsequent call returns the created disk
 				mockCloud.EXPECT().GetDiskByName(gomock.Eq(ctx), gomock.Eq(req.Name), gomock.Eq(stdVolSize)).Return(mockDisk, nil)
-				resp, err := awsDriver.CreateVolume(ctx, extraReq)
+				resp, err := oscDriver.CreateVolume(ctx, extraReq)
 				if err != nil {
 					srvErr, ok := status.FromError(err)
 					if !ok {
@@ -509,12 +509,12 @@ func TestCreateVolume(t *testing.T) {
 				mockCloud.EXPECT().GetDiskByName(gomock.Eq(ctx), gomock.Eq(req.Name), gomock.Eq(volSizeBytes)).Return(cloud.Disk{}, cloud.ErrNotFound)
 				mockCloud.EXPECT().CreateDisk(gomock.Eq(ctx), gomock.Eq(req.Name), gomock.Any()).Return(mockDisk, nil)
 
-				awsDriver := controllerService{
+				oscDriver := controllerService{
 					cloud:         mockCloud,
 					driverOptions: &DriverOptions{},
 				}
 
-				_, err = awsDriver.CreateVolume(ctx, req)
+				_, err = oscDriver.CreateVolume(ctx, req)
 				if err != nil {
 					srvErr, ok := status.FromError(err)
 					if !ok {
@@ -530,7 +530,7 @@ func TestCreateVolume(t *testing.T) {
 
 				// Subsequent failure
 				mockCloud.EXPECT().GetDiskByName(gomock.Eq(ctx), gomock.Eq(extraReq.Name), gomock.Eq(extraVolSizeBytes)).Return(cloud.Disk{}, cloud.ErrDiskExistsDiffSize)
-				if _, err := awsDriver.CreateVolume(ctx, extraReq); err != nil {
+				if _, err := oscDriver.CreateVolume(ctx, extraReq); err != nil {
 					srvErr, ok := status.FromError(err)
 					if !ok {
 						t.Fatalf("Could not get error status code from error: %v", srvErr)
@@ -572,12 +572,12 @@ func TestCreateVolume(t *testing.T) {
 				mockCloud.EXPECT().GetDiskByName(gomock.Eq(ctx), gomock.Eq(req.Name), gomock.Eq(cloud.DefaultVolumeSize)).Return(cloud.Disk{}, cloud.ErrNotFound)
 				mockCloud.EXPECT().CreateDisk(gomock.Eq(ctx), gomock.Eq(req.Name), gomock.Any()).Return(mockDisk, nil)
 
-				awsDriver := controllerService{
+				oscDriver := controllerService{
 					cloud:         mockCloud,
 					driverOptions: &DriverOptions{},
 				}
 
-				resp, err := awsDriver.CreateVolume(ctx, req)
+				resp, err := oscDriver.CreateVolume(ctx, req)
 				if err != nil {
 					srvErr, ok := status.FromError(err)
 					if !ok {
@@ -633,12 +633,12 @@ func TestCreateVolume(t *testing.T) {
 				mockCloud.EXPECT().GetDiskByName(gomock.Eq(ctx), gomock.Eq(req.Name), gomock.Eq(expVol.CapacityBytes)).Return(cloud.Disk{}, cloud.ErrNotFound)
 				mockCloud.EXPECT().CreateDisk(gomock.Eq(ctx), gomock.Eq(req.Name), gomock.Any()).Return(mockDisk, nil)
 
-				awsDriver := controllerService{
+				oscDriver := controllerService{
 					cloud:         mockCloud,
 					driverOptions: &DriverOptions{},
 				}
 
-				resp, err := awsDriver.CreateVolume(ctx, req)
+				resp, err := oscDriver.CreateVolume(ctx, req)
 				if err != nil {
 					srvErr, ok := status.FromError(err)
 					if !ok {
@@ -685,12 +685,12 @@ func TestCreateVolume(t *testing.T) {
 				mockCloud.EXPECT().GetDiskByName(gomock.Eq(ctx), gomock.Eq(req.Name), gomock.Eq(stdVolSize)).Return(cloud.Disk{}, cloud.ErrNotFound)
 				mockCloud.EXPECT().CreateDisk(gomock.Eq(ctx), gomock.Eq(req.Name), gomock.Any()).Return(mockDisk, nil)
 
-				awsDriver := controllerService{
+				oscDriver := controllerService{
 					cloud:         mockCloud,
 					driverOptions: &DriverOptions{},
 				}
 
-				if _, err := awsDriver.CreateVolume(ctx, req); err != nil {
+				if _, err := oscDriver.CreateVolume(ctx, req); err != nil {
 					srvErr, ok := status.FromError(err)
 					if !ok {
 						t.Fatalf("Could not get error status code from error: %v", srvErr)
@@ -726,12 +726,12 @@ func TestCreateVolume(t *testing.T) {
 				mockCloud.EXPECT().GetDiskByName(gomock.Eq(ctx), gomock.Eq(req.Name), gomock.Eq(stdVolSize)).Return(cloud.Disk{}, cloud.ErrNotFound)
 				mockCloud.EXPECT().CreateDisk(gomock.Eq(ctx), gomock.Eq(req.Name), gomock.Any()).Return(mockDisk, nil)
 
-				awsDriver := controllerService{
+				oscDriver := controllerService{
 					cloud:         mockCloud,
 					driverOptions: &DriverOptions{},
 				}
 
-				if _, err := awsDriver.CreateVolume(ctx, req); err != nil {
+				if _, err := oscDriver.CreateVolume(ctx, req); err != nil {
 					srvErr, ok := status.FromError(err)
 					if !ok {
 						t.Fatalf("Could not get error status code from error: %v", srvErr)
@@ -767,12 +767,12 @@ func TestCreateVolume(t *testing.T) {
 				mockCloud.EXPECT().GetDiskByName(gomock.Eq(ctx), gomock.Eq(req.Name), gomock.Eq(stdVolSize)).Return(cloud.Disk{}, cloud.ErrNotFound)
 				mockCloud.EXPECT().CreateDisk(gomock.Eq(ctx), gomock.Eq(req.Name), gomock.Any()).Return(mockDisk, nil)
 
-				awsDriver := controllerService{
+				oscDriver := controllerService{
 					cloud:         mockCloud,
 					driverOptions: &DriverOptions{},
 				}
 
-				if _, err := awsDriver.CreateVolume(ctx, req); err != nil {
+				if _, err := oscDriver.CreateVolume(ctx, req); err != nil {
 					srvErr, ok := status.FromError(err)
 					if !ok {
 						t.Fatalf("Could not get error status code from error: %v", srvErr)
@@ -808,12 +808,12 @@ func TestCreateVolume(t *testing.T) {
 				mockCloud.EXPECT().GetDiskByName(gomock.Eq(ctx), gomock.Eq(req.Name), gomock.Eq(stdVolSize)).Return(cloud.Disk{}, cloud.ErrNotFound)
 				mockCloud.EXPECT().CreateDisk(gomock.Eq(ctx), gomock.Eq(req.Name), gomock.Any()).Return(mockDisk, nil)
 
-				awsDriver := controllerService{
+				oscDriver := controllerService{
 					cloud:         mockCloud,
 					driverOptions: &DriverOptions{},
 				}
 
-				if _, err := awsDriver.CreateVolume(ctx, req); err != nil {
+				if _, err := oscDriver.CreateVolume(ctx, req); err != nil {
 					srvErr, ok := status.FromError(err)
 					if !ok {
 						t.Fatalf("Could not get error status code from error: %v", srvErr)
@@ -850,12 +850,12 @@ func TestCreateVolume(t *testing.T) {
 				mockCloud.EXPECT().GetDiskByName(gomock.Eq(ctx), gomock.Eq(req.Name), gomock.Eq(stdVolSize)).Return(cloud.Disk{}, cloud.ErrNotFound)
 				mockCloud.EXPECT().CreateDisk(gomock.Eq(ctx), gomock.Eq(req.Name), gomock.Any()).Return(mockDisk, nil)
 
-				awsDriver := controllerService{
+				oscDriver := controllerService{
 					cloud:         mockCloud,
 					driverOptions: &DriverOptions{},
 				}
 
-				if _, err := awsDriver.CreateVolume(ctx, req); err != nil {
+				if _, err := oscDriver.CreateVolume(ctx, req); err != nil {
 					srvErr, ok := status.FromError(err)
 					if !ok {
 						t.Fatalf("Could not get error status code from error: %v", srvErr)
@@ -885,12 +885,12 @@ func TestCreateVolume(t *testing.T) {
 				mockCloud := mocks.NewMockCloud(mockCtl)
 				mockCloud.EXPECT().GetDiskByName(gomock.Eq(ctx), gomock.Eq(req.Name), gomock.Eq(stdVolSize)).Return(cloud.Disk{}, cloud.ErrNotFound)
 
-				awsDriver := controllerService{
+				oscDriver := controllerService{
 					cloud:         mockCloud,
 					driverOptions: &DriverOptions{},
 				}
 
-				_, err := awsDriver.CreateVolume(ctx, req)
+				_, err := oscDriver.CreateVolume(ctx, req)
 				if err == nil {
 					t.Fatalf("Expected CreateVolume to fail but got no error")
 				}
@@ -959,12 +959,12 @@ func TestCreateVolume(t *testing.T) {
 				mockCloud.EXPECT().GetDiskByName(gomock.Eq(ctx), gomock.Eq(req.Name), gomock.Eq(stdVolSize)).Return(cloud.Disk{}, cloud.ErrNotFound)
 				mockCloud.EXPECT().CreateDisk(gomock.Eq(ctx), gomock.Eq(req.Name), gomock.Any()).Return(mockDisk, nil)
 
-				awsDriver := controllerService{
+				oscDriver := controllerService{
 					cloud:         mockCloud,
 					driverOptions: &DriverOptions{},
 				}
 
-				if _, err := awsDriver.CreateVolume(ctx, req); err != nil {
+				if _, err := oscDriver.CreateVolume(ctx, req); err != nil {
 					srvErr, ok := status.FromError(err)
 					if !ok {
 						t.Fatalf("Could not get error status code from error: %v", srvErr)
@@ -973,7 +973,7 @@ func TestCreateVolume(t *testing.T) {
 				}
 
 				mockCloud.EXPECT().GetDiskByName(gomock.Eq(ctx), gomock.Eq(req.Name), gomock.Eq(stdVolSize)).Return(mockDisk, nil)
-				resp, err := awsDriver.CreateVolume(ctx, extraReq)
+				resp, err := oscDriver.CreateVolume(ctx, extraReq)
 				if err != nil {
 					srvErr, ok := status.FromError(err)
 					if !ok {
@@ -1039,7 +1039,7 @@ func TestCreateVolume(t *testing.T) {
 				mockCloud.EXPECT().GetDiskByName(gomock.Eq(ctx), gomock.Eq(req.Name), gomock.Eq(stdVolSize)).Return(cloud.Disk{}, cloud.ErrNotFound)
 				mockCloud.EXPECT().CreateDisk(gomock.Eq(ctx), gomock.Eq(req.Name), gomock.Eq(diskOptions)).Return(mockDisk, nil)
 
-				awsDriver := controllerService{
+				oscDriver := controllerService{
 					cloud: mockCloud,
 					driverOptions: &DriverOptions{
 						extraVolumeTags: map[string]string{
@@ -1048,7 +1048,7 @@ func TestCreateVolume(t *testing.T) {
 					},
 				}
 
-				_, err := awsDriver.CreateVolume(ctx, req)
+				_, err := oscDriver.CreateVolume(ctx, req)
 				if err != nil {
 					srvErr, ok := status.FromError(err)
 					if !ok {
@@ -1084,11 +1084,11 @@ func TestDeleteVolume(t *testing.T) {
 
 				mockCloud := mocks.NewMockCloud(mockCtl)
 				mockCloud.EXPECT().DeleteDisk(gomock.Eq(ctx), gomock.Eq(req.VolumeId)).Return(true, nil)
-				awsDriver := controllerService{
+				oscDriver := controllerService{
 					cloud:         mockCloud,
 					driverOptions: &DriverOptions{},
 				}
-				resp, err := awsDriver.DeleteVolume(ctx, req)
+				resp, err := oscDriver.DeleteVolume(ctx, req)
 				if err != nil {
 					srvErr, ok := status.FromError(err)
 					if !ok {
@@ -1115,11 +1115,11 @@ func TestDeleteVolume(t *testing.T) {
 
 				mockCloud := mocks.NewMockCloud(mockCtl)
 				mockCloud.EXPECT().DeleteDisk(gomock.Eq(ctx), gomock.Eq(req.VolumeId)).Return(false, cloud.ErrNotFound)
-				awsDriver := controllerService{
+				oscDriver := controllerService{
 					cloud:         mockCloud,
 					driverOptions: &DriverOptions{},
 				}
-				resp, err := awsDriver.DeleteVolume(ctx, req)
+				resp, err := oscDriver.DeleteVolume(ctx, req)
 				if err != nil {
 					srvErr, ok := status.FromError(err)
 					if !ok {
@@ -1145,11 +1145,11 @@ func TestDeleteVolume(t *testing.T) {
 
 				mockCloud := mocks.NewMockCloud(mockCtl)
 				mockCloud.EXPECT().DeleteDisk(gomock.Eq(ctx), gomock.Eq(req.VolumeId)).Return(false, fmt.Errorf("DeleteDisk could not delete volume"))
-				awsDriver := controllerService{
+				oscDriver := controllerService{
 					cloud:         mockCloud,
 					driverOptions: &DriverOptions{},
 				}
-				resp, err := awsDriver.DeleteVolume(ctx, req)
+				resp, err := oscDriver.DeleteVolume(ctx, req)
 				if err != nil {
 					srvErr, ok := status.FromError(err)
 					if !ok {
@@ -1263,11 +1263,11 @@ func TestCreateSnapshot(t *testing.T) {
 				mockCloud.EXPECT().CreateSnapshot(gomock.Eq(ctx), gomock.Eq(req.SourceVolumeId), gomock.Any()).Return(mockSnapshot, nil)
 				mockCloud.EXPECT().GetSnapshotByName(gomock.Eq(ctx), gomock.Eq(req.GetName())).Return(cloud.Snapshot{}, cloud.ErrNotFound)
 
-				awsDriver := controllerService{
+				oscDriver := controllerService{
 					cloud:         mockCloud,
 					driverOptions: &DriverOptions{},
 				}
-				resp, err := awsDriver.CreateSnapshot(context.Background(), req)
+				resp, err := oscDriver.CreateSnapshot(context.Background(), req)
 				if err != nil {
 					t.Fatalf("Unexpected error: %v", err)
 				}
@@ -1290,11 +1290,11 @@ func TestCreateSnapshot(t *testing.T) {
 
 				mockCloud := mocks.NewMockCloud(mockCtl)
 
-				awsDriver := controllerService{
+				oscDriver := controllerService{
 					cloud:         mockCloud,
 					driverOptions: &DriverOptions{},
 				}
-				if _, err := awsDriver.CreateSnapshot(context.Background(), req); err != nil {
+				if _, err := oscDriver.CreateSnapshot(context.Background(), req); err != nil {
 					srvErr, ok := status.FromError(err)
 					if !ok {
 						t.Fatalf("Could not get error status code from error: %v", srvErr)
@@ -1338,11 +1338,11 @@ func TestCreateSnapshot(t *testing.T) {
 				mockCloud.EXPECT().GetSnapshotByName(gomock.Eq(ctx), gomock.Eq(req.GetName())).Return(cloud.Snapshot{}, cloud.ErrNotFound)
 				mockCloud.EXPECT().CreateSnapshot(gomock.Eq(ctx), gomock.Eq(req.SourceVolumeId), gomock.Any()).Return(mockSnapshot, nil)
 
-				awsDriver := controllerService{
+				oscDriver := controllerService{
 					cloud:         mockCloud,
 					driverOptions: &DriverOptions{},
 				}
-				resp, err := awsDriver.CreateSnapshot(context.Background(), req)
+				resp, err := oscDriver.CreateSnapshot(context.Background(), req)
 				if err != nil {
 					srvErr, ok := status.FromError(err)
 					if !ok {
@@ -1359,7 +1359,7 @@ func TestCreateSnapshot(t *testing.T) {
 				}
 
 				mockCloud.EXPECT().GetSnapshotByName(gomock.Eq(ctx), gomock.Eq(extraReq.GetName())).Return(mockSnapshot, nil)
-				_, err = awsDriver.CreateSnapshot(ctx, extraReq)
+				_, err = oscDriver.CreateSnapshot(ctx, extraReq)
 				if err != nil {
 					srvErr, ok := status.FromError(err)
 					if !ok {
@@ -1404,11 +1404,11 @@ func TestCreateSnapshot(t *testing.T) {
 				mockCloud.EXPECT().GetSnapshotByName(gomock.Eq(ctx), gomock.Eq(req.GetName())).Return(cloud.Snapshot{}, cloud.ErrNotFound)
 				mockCloud.EXPECT().CreateSnapshot(gomock.Eq(ctx), gomock.Eq(req.SourceVolumeId), gomock.Any()).Return(mockSnapshot, nil)
 
-				awsDriver := controllerService{
+				oscDriver := controllerService{
 					cloud:         mockCloud,
 					driverOptions: &DriverOptions{},
 				}
-				resp, err := awsDriver.CreateSnapshot(context.Background(), req)
+				resp, err := oscDriver.CreateSnapshot(context.Background(), req)
 				if err != nil {
 					t.Fatalf("Unexpected error: %v", err)
 				}
@@ -1418,7 +1418,7 @@ func TestCreateSnapshot(t *testing.T) {
 				}
 
 				mockCloud.EXPECT().GetSnapshotByName(gomock.Eq(ctx), gomock.Eq(extraReq.GetName())).Return(mockSnapshot, nil)
-				_, err = awsDriver.CreateSnapshot(ctx, extraReq)
+				_, err = oscDriver.CreateSnapshot(ctx, extraReq)
 				if err != nil {
 					t.Fatalf("Unexpected error: %v", err)
 				}
@@ -1445,7 +1445,7 @@ func TestDeleteSnapshot(t *testing.T) {
 				defer mockCtl.Finish()
 				mockCloud := mocks.NewMockCloud(mockCtl)
 
-				awsDriver := controllerService{
+				oscDriver := controllerService{
 					cloud:         mockCloud,
 					driverOptions: &DriverOptions{},
 				}
@@ -1455,7 +1455,7 @@ func TestDeleteSnapshot(t *testing.T) {
 				}
 
 				mockCloud.EXPECT().DeleteSnapshot(gomock.Eq(ctx), gomock.Eq("xxx")).Return(true, nil)
-				if _, err := awsDriver.DeleteSnapshot(ctx, req); err != nil {
+				if _, err := oscDriver.DeleteSnapshot(ctx, req); err != nil {
 					t.Fatalf("Unexpected error: %v", err)
 				}
 			},
@@ -1469,7 +1469,7 @@ func TestDeleteSnapshot(t *testing.T) {
 				defer mockCtl.Finish()
 				mockCloud := mocks.NewMockCloud(mockCtl)
 
-				awsDriver := controllerService{
+				oscDriver := controllerService{
 					cloud:         mockCloud,
 					driverOptions: &DriverOptions{},
 				}
@@ -1479,7 +1479,7 @@ func TestDeleteSnapshot(t *testing.T) {
 				}
 
 				mockCloud.EXPECT().DeleteSnapshot(gomock.Eq(ctx), gomock.Eq("xxx")).Return(false, cloud.ErrNotFound)
-				if _, err := awsDriver.DeleteSnapshot(ctx, req); err != nil {
+				if _, err := oscDriver.DeleteSnapshot(ctx, req); err != nil {
 					t.Fatalf("Unexpected error: %v", err)
 				}
 			},
@@ -1525,12 +1525,12 @@ func TestListSnapshots(t *testing.T) {
 				mockCloud := mocks.NewMockCloud(mockCtl)
 				mockCloud.EXPECT().ListSnapshots(gomock.Eq(ctx), gomock.Eq(""), gomock.Eq(int64(0)), gomock.Eq("")).Return(mockCloudSnapshotsResponse, nil)
 
-				awsDriver := controllerService{
+				oscDriver := controllerService{
 					cloud:         mockCloud,
 					driverOptions: &DriverOptions{},
 				}
 
-				resp, err := awsDriver.ListSnapshots(context.Background(), req)
+				resp, err := oscDriver.ListSnapshots(context.Background(), req)
 				if err != nil {
 					t.Fatalf("Unexpected error: %v", err)
 				}
@@ -1551,12 +1551,12 @@ func TestListSnapshots(t *testing.T) {
 				mockCloud := mocks.NewMockCloud(mockCtl)
 				mockCloud.EXPECT().ListSnapshots(gomock.Eq(ctx), gomock.Eq(""), gomock.Eq(int64(0)), gomock.Eq("")).Return(cloud.ListSnapshotsResponse{}, cloud.ErrNotFound)
 
-				awsDriver := controllerService{
+				oscDriver := controllerService{
 					cloud:         mockCloud,
 					driverOptions: &DriverOptions{},
 				}
 
-				resp, err := awsDriver.ListSnapshots(context.Background(), req)
+				resp, err := oscDriver.ListSnapshots(context.Background(), req)
 				if err != nil {
 					t.Fatalf("Unexpected error: %v", err)
 				}
@@ -1586,12 +1586,12 @@ func TestListSnapshots(t *testing.T) {
 				mockCloud := mocks.NewMockCloud(mockCtl)
 				mockCloud.EXPECT().GetSnapshotByID(gomock.Eq(ctx), gomock.Eq("snapshot-1")).Return(mockCloudSnapshotsResponse, nil)
 
-				awsDriver := controllerService{
+				oscDriver := controllerService{
 					cloud:         mockCloud,
 					driverOptions: &DriverOptions{},
 				}
 
-				resp, err := awsDriver.ListSnapshots(context.Background(), req)
+				resp, err := oscDriver.ListSnapshots(context.Background(), req)
 				if err != nil {
 					t.Fatalf("Unexpected error: %v", err)
 				}
@@ -1615,12 +1615,12 @@ func TestListSnapshots(t *testing.T) {
 				mockCloud := mocks.NewMockCloud(mockCtl)
 				mockCloud.EXPECT().GetSnapshotByID(gomock.Eq(ctx), gomock.Eq("snapshot-1")).Return(cloud.Snapshot{}, cloud.ErrNotFound)
 
-				awsDriver := controllerService{
+				oscDriver := controllerService{
 					cloud:         mockCloud,
 					driverOptions: &DriverOptions{},
 				}
 
-				resp, err := awsDriver.ListSnapshots(context.Background(), req)
+				resp, err := oscDriver.ListSnapshots(context.Background(), req)
 				if err != nil {
 					t.Fatalf("Unexpected error: %v", err)
 				}
@@ -1644,12 +1644,12 @@ func TestListSnapshots(t *testing.T) {
 				mockCloud := mocks.NewMockCloud(mockCtl)
 				mockCloud.EXPECT().GetSnapshotByID(gomock.Eq(ctx), gomock.Eq("snapshot-1")).Return(cloud.Snapshot{}, cloud.ErrMultiSnapshots)
 
-				awsDriver := controllerService{
+				oscDriver := controllerService{
 					cloud:         mockCloud,
 					driverOptions: &DriverOptions{},
 				}
 
-				if _, err := awsDriver.ListSnapshots(context.Background(), req); err != nil {
+				if _, err := oscDriver.ListSnapshots(context.Background(), req); err != nil {
 					srvErr, ok := status.FromError(err)
 					if !ok {
 						t.Fatalf("Could not get error status code from error: %v", srvErr)
@@ -1675,12 +1675,12 @@ func TestListSnapshots(t *testing.T) {
 				mockCloud := mocks.NewMockCloud(mockCtl)
 				mockCloud.EXPECT().ListSnapshots(gomock.Eq(ctx), gomock.Eq(""), gomock.Eq(int64(4)), gomock.Eq("")).Return(cloud.ListSnapshotsResponse{}, cloud.ErrInvalidMaxResults)
 
-				awsDriver := controllerService{
+				oscDriver := controllerService{
 					cloud:         mockCloud,
 					driverOptions: &DriverOptions{},
 				}
 
-				if _, err := awsDriver.ListSnapshots(context.Background(), req); err != nil {
+				if _, err := oscDriver.ListSnapshots(context.Background(), req); err != nil {
 					srvErr, ok := status.FromError(err)
 					if !ok {
 						t.Fatalf("Could not get error status code from error: %v", srvErr)
@@ -1737,12 +1737,12 @@ func TestControllerPublishVolume(t *testing.T) {
 				mockCloud.EXPECT().GetDiskByID(gomock.Eq(ctx), gomock.Any()).Return(cloud.Disk{}, nil)
 				mockCloud.EXPECT().AttachDisk(gomock.Eq(ctx), gomock.Any(), gomock.Eq(req.NodeId)).Return(expDevicePath, nil)
 
-				awsDriver := controllerService{
+				oscDriver := controllerService{
 					cloud:         mockCloud,
 					driverOptions: &DriverOptions{},
 				}
 
-				resp, err := awsDriver.ControllerPublishVolume(ctx, req)
+				resp, err := oscDriver.ControllerPublishVolume(ctx, req)
 				if err != nil {
 					t.Fatalf("Unexpected error: %v", err)
 				}
@@ -1769,8 +1769,8 @@ func TestControllerPublishVolume(t *testing.T) {
 				mockCloud := mocks.NewMockCloud(mockCtl)
 				mockCloud.EXPECT().DetachDisk(gomock.Eq(ctx), req.VolumeId, req.NodeId).Return(cloud.ErrNotFound)
 
-				awsDriver := controllerService{cloud: mockCloud}
-				resp, err := awsDriver.ControllerUnpublishVolume(ctx, req)
+				oscDriver := controllerService{cloud: mockCloud}
+				resp, err := oscDriver.ControllerUnpublishVolume(ctx, req)
 				if err != nil {
 					t.Fatalf("Unexpected error: %v", err)
 				}
@@ -1792,12 +1792,12 @@ func TestControllerPublishVolume(t *testing.T) {
 
 				mockCloud := mocks.NewMockCloud(mockCtl)
 
-				awsDriver := controllerService{
+				oscDriver := controllerService{
 					cloud:         mockCloud,
 					driverOptions: &DriverOptions{},
 				}
 
-				if _, err := awsDriver.ControllerPublishVolume(ctx, req); err != nil {
+				if _, err := oscDriver.ControllerPublishVolume(ctx, req); err != nil {
 					srvErr, ok := status.FromError(err)
 					if !ok {
 						t.Fatalf("Could not get error status code from error: %v", srvErr)
@@ -1824,12 +1824,12 @@ func TestControllerPublishVolume(t *testing.T) {
 
 				mockCloud := mocks.NewMockCloud(mockCtl)
 
-				awsDriver := controllerService{
+				oscDriver := controllerService{
 					cloud:         mockCloud,
 					driverOptions: &DriverOptions{},
 				}
 
-				if _, err := awsDriver.ControllerPublishVolume(ctx, req); err != nil {
+				if _, err := oscDriver.ControllerPublishVolume(ctx, req); err != nil {
 					srvErr, ok := status.FromError(err)
 					if !ok {
 						t.Fatalf("Could not get error status code from error: %v", srvErr)
@@ -1857,12 +1857,12 @@ func TestControllerPublishVolume(t *testing.T) {
 
 				mockCloud := mocks.NewMockCloud(mockCtl)
 
-				awsDriver := controllerService{
+				oscDriver := controllerService{
 					cloud:         mockCloud,
 					driverOptions: &DriverOptions{},
 				}
 
-				if _, err := awsDriver.ControllerPublishVolume(ctx, req); err != nil {
+				if _, err := oscDriver.ControllerPublishVolume(ctx, req); err != nil {
 					srvErr, ok := status.FromError(err)
 					if !ok {
 						t.Fatalf("Could not get error status code from error: %v", srvErr)
@@ -1895,12 +1895,12 @@ func TestControllerPublishVolume(t *testing.T) {
 
 				mockCloud := mocks.NewMockCloud(mockCtl)
 
-				awsDriver := controllerService{
+				oscDriver := controllerService{
 					cloud:         mockCloud,
 					driverOptions: &DriverOptions{},
 				}
 
-				if _, err := awsDriver.ControllerPublishVolume(ctx, req); err != nil {
+				if _, err := oscDriver.ControllerPublishVolume(ctx, req); err != nil {
 					srvErr, ok := status.FromError(err)
 					if !ok {
 						t.Fatalf("Could not get error status code from error: %v", srvErr)
@@ -1930,12 +1930,12 @@ func TestControllerPublishVolume(t *testing.T) {
 				mockCloud := mocks.NewMockCloud(mockCtl)
 				mockCloud.EXPECT().IsExistInstance(gomock.Eq(ctx), gomock.Eq(req.NodeId)).Return(false)
 
-				awsDriver := controllerService{
+				oscDriver := controllerService{
 					cloud:         mockCloud,
 					driverOptions: &DriverOptions{},
 				}
 
-				if _, err := awsDriver.ControllerPublishVolume(ctx, req); err != nil {
+				if _, err := oscDriver.ControllerPublishVolume(ctx, req); err != nil {
 					srvErr, ok := status.FromError(err)
 					if !ok {
 						t.Fatalf("Could not get error status code from error: %v", srvErr)
@@ -1966,12 +1966,12 @@ func TestControllerPublishVolume(t *testing.T) {
 				mockCloud.EXPECT().IsExistInstance(gomock.Eq(ctx), gomock.Eq(req.NodeId)).Return(true)
 				mockCloud.EXPECT().GetDiskByID(gomock.Eq(ctx), gomock.Any()).Return(cloud.Disk{}, cloud.ErrNotFound)
 
-				awsDriver := controllerService{
+				oscDriver := controllerService{
 					cloud:         mockCloud,
 					driverOptions: &DriverOptions{},
 				}
 
-				if _, err := awsDriver.ControllerPublishVolume(ctx, req); err != nil {
+				if _, err := oscDriver.ControllerPublishVolume(ctx, req); err != nil {
 					srvErr, ok := status.FromError(err)
 					if !ok {
 						t.Fatalf("Could not get error status code from error: %v", srvErr)
@@ -2003,12 +2003,12 @@ func TestControllerPublishVolume(t *testing.T) {
 				mockCloud.EXPECT().GetDiskByID(gomock.Eq(ctx), gomock.Any()).Return(cloud.Disk{}, nil)
 				mockCloud.EXPECT().AttachDisk(gomock.Eq(ctx), gomock.Any(), gomock.Eq(req.NodeId)).Return("", cloud.ErrAlreadyExists)
 
-				awsDriver := controllerService{
+				oscDriver := controllerService{
 					cloud:         mockCloud,
 					driverOptions: &DriverOptions{},
 				}
 
-				if _, err := awsDriver.ControllerPublishVolume(ctx, req); err != nil {
+				if _, err := oscDriver.ControllerPublishVolume(ctx, req); err != nil {
 					srvErr, ok := status.FromError(err)
 					if !ok {
 						t.Fatalf("Could not get error status code from error: %v", srvErr)
@@ -2050,12 +2050,12 @@ func TestControllerUnpublishVolume(t *testing.T) {
 				mockCloud := mocks.NewMockCloud(mockCtl)
 				mockCloud.EXPECT().DetachDisk(gomock.Eq(ctx), req.VolumeId, req.NodeId).Return(nil)
 
-				awsDriver := controllerService{
+				oscDriver := controllerService{
 					cloud:         mockCloud,
 					driverOptions: &DriverOptions{},
 				}
 
-				resp, err := awsDriver.ControllerUnpublishVolume(ctx, req)
+				resp, err := oscDriver.ControllerUnpublishVolume(ctx, req)
 				if err != nil {
 					t.Fatalf("Unexpected error: %v", err)
 				}
@@ -2077,12 +2077,12 @@ func TestControllerUnpublishVolume(t *testing.T) {
 
 				mockCloud := mocks.NewMockCloud(mockCtl)
 
-				awsDriver := controllerService{
+				oscDriver := controllerService{
 					cloud:         mockCloud,
 					driverOptions: &DriverOptions{},
 				}
 
-				if _, err := awsDriver.ControllerUnpublishVolume(ctx, req); err != nil {
+				if _, err := oscDriver.ControllerUnpublishVolume(ctx, req); err != nil {
 					srvErr, ok := status.FromError(err)
 					if !ok {
 						t.Fatalf("Could not get error status code from error: %v", srvErr)
@@ -2109,12 +2109,12 @@ func TestControllerUnpublishVolume(t *testing.T) {
 
 				mockCloud := mocks.NewMockCloud(mockCtl)
 
-				awsDriver := controllerService{
+				oscDriver := controllerService{
 					cloud:         mockCloud,
 					driverOptions: &DriverOptions{},
 				}
 
-				if _, err := awsDriver.ControllerUnpublishVolume(ctx, req); err != nil {
+				if _, err := oscDriver.ControllerUnpublishVolume(ctx, req); err != nil {
 					srvErr, ok := status.FromError(err)
 					if !ok {
 						t.Fatalf("Could not get error status code from error: %v", srvErr)

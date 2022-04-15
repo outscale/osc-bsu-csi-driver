@@ -53,8 +53,8 @@ func validateExtraVolumeTags(tags map[string]string) error {
 		if strings.HasPrefix(k, cloud.KubernetesTagKeyPrefix) {
 			return fmt.Errorf("Volume tag key prefix '%s' is reserved", cloud.KubernetesTagKeyPrefix)
 		}
-		if strings.HasPrefix(k, cloud.AWSTagKeyPrefix) {
-			return fmt.Errorf("Volume tag key prefix '%s' is reserved", cloud.AWSTagKeyPrefix)
+		if strings.HasPrefix(k, cloud.OscTagKeyPrefix) {
+			return fmt.Errorf("Volume tag key prefix '%s' is reserved", cloud.OscTagKeyPrefix)
 		}
 	}
 

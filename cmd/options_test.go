@@ -46,7 +46,7 @@ func TestGetOptions(t *testing.T) {
 		}
 
 		args := append([]string{
-			"aws-ebs-csi-driver",
+			"osc-bsu-csi-driver",
 		}, additionalArgs...)
 
 		if withServerOptions {
@@ -144,7 +144,7 @@ func TestGetOptions(t *testing.T) {
 				oldArgs := os.Args
 				defer func() { os.Args = oldArgs }()
 				os.Args = []string{
-					"aws-ebs-csi-driver",
+					"osc-bsu-csi-driver",
 					"-version",
 				}
 

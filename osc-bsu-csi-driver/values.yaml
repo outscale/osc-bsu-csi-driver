@@ -1,11 +1,11 @@
-# Default values for aws-ebs-csi-driver.
+# Default values for osc-bsu-csi-driver.
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 
 replicaCount: 2
 
 image:
-  repository: outscale/osc-ebs-csi-driver
+  repository: outscale/osc-bsu-csi-driver
   tag: v0.1.0
   pullPolicy: IfNotPresent
 
@@ -105,7 +105,9 @@ extraVolumeTags: {}
 # If set, add pv/pvc metadata to plugin create requests as parameters.
 extraCreateMetadata: false
 
-# AWS region to use. If not specified then the region will be looked up via the AWS EC2 metadata
+
+
+# Outscale region to use. If not specified then the region will be looked up via the Outscale metadata
 # service.
 # ---
 # region: us-east-1

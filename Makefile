@@ -22,7 +22,7 @@ E2E_AZ := "eu-west-2a"
 E2E_REGION := "eu-west-2"
 
 PKG := github.com/outscale-dev/osc-bsu-csi-driver
-IMAGE := osc/osc-ebs-csi-driver
+IMAGE := osc/osc-bsu-csi-driver
 IMAGE_TAG ?= $(shell git describe --tags --always --dirty)
 VERSION ?= ${IMAGE_TAG}
 GIT_COMMIT ?= $(shell git rev-parse HEAD)
@@ -48,10 +48,10 @@ help:
 	@echo "  - test               : run all tests"
 	@echo "  - test-e2e-single-az : run e2e tests"
 
-.PHONY: aws-ebs-csi-driver
+.PHONY: build
 build:
 	mkdir -p bin
-	CGO_ENABLED=0 GOOS=linux go build -ldflags ${LDFLAGS} -o bin/aws-ebs-csi-driver ./cmd/
+	CGO_ENABLED=0 GOOS=linux go build -ldflags ${LDFLAGS} -o bin/osc-bsu-csi-driver ./cmd/
 
 .PHONY: build-image
 build-image:

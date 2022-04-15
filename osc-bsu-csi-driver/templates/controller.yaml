@@ -2,7 +2,7 @@
 kind: Deployment
 apiVersion: apps/v1
 metadata:
-  name: ebs-csi-controller
+  name: osc-csi-controller
   namespace: kube-system
   labels:
     {{- include "osc-bsu-csi-driver.labels" . | nindent 4 }}
@@ -10,12 +10,12 @@ spec:
   replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
-      app: ebs-csi-controller
+      app: osc-csi-controller
       {{- include "osc-bsu-csi-driver.selectorLabels" . | nindent 6 }}
   template:
     metadata:
       labels:
-        app: ebs-csi-controller
+        app: osc-csi-controller
         {{- include "osc-bsu-csi-driver.labels" . | nindent 8 }}
         {{- if .Values.podLabels }}
           {{ toYaml .Values.podLabels | nindent 8 }}
@@ -29,7 +29,7 @@ spec:
         {{- with .Values.nodeSelector }}
 {{ toYaml . | indent 8 }}
         {{- end }}
-      serviceAccountName: ebs-csi-controller-sa
+      serviceAccountName: osc-csi-controller-sa
       priorityClassName: system-cluster-critical
       {{- with .Values.affinity }}
       affinity: {{ toYaml . | nindent 8 }}
@@ -50,7 +50,7 @@ spec:
       imagePullSecrets:
         - name: {{ .Values.imagePullSecrets | default "registry-dockerconfigjson" }}
       containers:
-        - name: ebs-plugin
+        - name: osc-plugin
           image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           args:

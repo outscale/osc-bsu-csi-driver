@@ -2,19 +2,19 @@
 kind: DaemonSet
 apiVersion: apps/v1
 metadata:
-  name: ebs-csi-node
+  name: osc-csi-node
   namespace: kube-system
   labels:
     {{- include "osc-bsu-csi-driver.labels" . | nindent 4 }}
 spec:
   selector:
     matchLabels:
-      app: ebs-csi-node
+      app: osc-csi-node
       {{- include "osc-bsu-csi-driver.selectorLabels" . | nindent 6 }}
   template:
     metadata:
       labels:
-        app: ebs-csi-node
+        app: osc-csi-node
         {{- include "osc-bsu-csi-driver.labels" . | nindent 8 }}
         {{- if .Values.node.podLabels }}
           {{ toYaml .Values.node.podLabels | nindent 8 }}
@@ -43,7 +43,7 @@ spec:
       imagePullSecrets:
         - name: {{ .Values.imagePullSecrets | default "registry-dockerconfigjson" }}
       containers:
-        - name: ebs-plugin
+        - name: osc-plugin
           securityContext:
             privileged: true
           image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
@@ -115,7 +115,7 @@ spec:
             - name: ADDRESS
               value: /csi/csi.sock
             - name: DRIVER_REG_SOCK_PATH
-              value: /var/lib/kubelet/plugins/ebs.csi.aws.com/csi.sock
+              value: /var/lib/kubelet/plugins/bsu.csi.outscale.com/csi.sock
           volumeMounts:
             - name: plugin-dir
               mountPath: /csi
@@ -141,7 +141,7 @@ spec:
             type: Directory
         - name: plugin-dir
           hostPath:
-            path: /var/lib/kubelet/plugins/ebs.csi.aws.com/
+            path: /var/lib/kubelet/plugins/bsu.csi.outscale.com/
             type: DirectoryOrCreate
         - name: registration-dir
           hostPath:

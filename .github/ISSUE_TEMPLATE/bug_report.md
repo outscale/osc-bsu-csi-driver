@@ -1,6 +1,6 @@
 ---
 name: Bug report
-about: Create a report to help us improve EBS CSI Driver
+about: Create a report to help us improve BSU CSI Driver
 labels: 
 
 ---

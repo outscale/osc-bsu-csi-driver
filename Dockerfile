@@ -28,6 +28,8 @@ RUN apt-get -y update && \
                        util-linux=2.36.1-8+deb11u1 \
                        udev=247.3-7 \
                        xfsprogs=5.10.0-4 \
+                       gzip=1.10-4+deb11u1 \
+                       liblzma5=5.2.5-2.1~deb11u1 \
                        --no-install-recommends && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 

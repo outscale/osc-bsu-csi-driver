@@ -55,6 +55,9 @@ Following sections are Kubernetes specific. If you are Kubernetes user, use foll
 See [Helm Chart Configuration](helm.md)
 ### Installation
 See [Deploy](deploy.md)
+
+### Migration from v0.X to v1.0.0
+See [Migration Process](migration.md)
 ## Examples
 Make sure you follow the [Prerequisites](README.md#Prerequisites) before the examples:
 * [Dynamic Provisioning](../examples/kubernetes/dynamic-provisioning)

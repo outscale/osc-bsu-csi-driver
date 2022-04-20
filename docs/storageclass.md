@@ -19,7 +19,7 @@ parameters:
   fsType: ext4
 ```
 
-* `type`: `standard`, gp2, `io1`. See
+* `type`: `standard`, `gp2`, `io1`. See
   [Outscale docs](https://docs.outscale.com/en/userguide/About-Volumes.html#AboutVolumes-VolumeTypesVolumeTypesandIOPS)
   for details. Default: `gp2`.
 * `iopsPerGB`: only for `io1` volumes. I/O operations per second per GiB. 

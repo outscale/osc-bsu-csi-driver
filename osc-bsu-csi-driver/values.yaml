@@ -46,6 +46,7 @@ sidecars:
   livenessProbeImage:
     repository: k8s.gcr.io/sig-storage/livenessprobe
     tag: "v2.5.0"
+    port: "9808"
   resizerImage:
     repository: k8s.gcr.io/sig-storage/csi-resizer
     tag: "v1.3.0"

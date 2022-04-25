@@ -76,7 +76,7 @@ spec:
               mountPath: /dev
           ports:
             - name: healthz
-              containerPort: 9808
+              containerPort: {{ .Values.sidecars.livenessProbeImage.port }}
               protocol: TCP
           livenessProbe:
             httpGet:
@@ -128,6 +128,7 @@ spec:
           image: {{ printf "%s:%s" .Values.sidecars.livenessProbeImage.repository .Values.sidecars.livenessProbeImage.tag }}
           args:
             - --csi-address=/csi/csi.sock
+            - --health-port={{ .Values.sidecars.livenessProbeImage.port }}
           volumeMounts:
             - name: plugin-dir
               mountPath: /csi

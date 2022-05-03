@@ -104,6 +104,27 @@ spec:
             - --csi-address=$(ADDRESS)
             - --kubelet-registration-path=$(DRIVER_REG_SOCK_PATH)
             - --v={{ .Values.verbosity }}
+        {{- if .Values.sidecars.nodeDriverRegistrarImage.enableHttpEndpoint }}
+            - --http-endpoint=:{{ .Values.sidecars.nodeDriverRegistrarImage.httpEndpointPort }}
+        {{- end }}
+        {{- if .Values.sidecars.nodeDriverRegistrarImage.enableHttpEndpoint }}
+          ports:
+            - name: httpendpoint
+              containerPort: {{ .Values.sidecars.nodeDriverRegistrarImage.httpEndpointPort }}
+              protocol: TCP
+        {{- end }}
+        {{- if and .Values.sidecars.nodeDriverRegistrarImage.enableHttpEndpoint .Values.sidecars.nodeDriverRegistrarImage.enableLivenessProbe }}
+          livenessProbe:
+            failureThreshold: 5
+            httpGet:
+              path: /healthz
+              port: httpendpoint
+              scheme: HTTP
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 3
+        {{- end }}
           env:
             - name: ADDRESS
               value: /csi/csi.sock

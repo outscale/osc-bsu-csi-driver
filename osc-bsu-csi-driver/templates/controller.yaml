@@ -138,6 +138,27 @@ spec:
             - --leader-election=true
             - --timeout={{ .Values.timeout }}
             - --default-fstype={{ .Values.defaultFsType }}
+          {{- if .Values.sidecars.provisionerImage.enableHttpEndpoint }}
+            - --http-endpoint=:{{ .Values.sidecars.provisionerImage.httpEndpointPort }}
+          {{- end }}
+          {{- if .Values.sidecars.provisionerImage.enableHttpEndpoint }}
+          ports:
+            - name: httpendpoint
+              containerPort: {{ .Values.sidecars.provisionerImage.httpEndpointPort }}
+              protocol: TCP
+          {{- end }}
+          {{- if and .Values.sidecars.provisionerImage.enableHttpEndpoint .Values.sidecars.provisionerImage.enableLivenessProbe }}
+          livenessProbe:
+            failureThreshold: 5
+            httpGet:
+              path: /healthz/leader-election
+              port: httpendpoint
+              scheme: HTTP
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 3
+          {{- end }}
           env:
             - name: ADDRESS
               value: /var/lib/csi/sockets/pluginproxy/csi.sock
@@ -154,6 +175,27 @@ spec:
             - --v={{ .Values.verbosity }}
             - --leader-election=true
             - --timeout={{ .Values.timeout }}
+          {{- if .Values.sidecars.attacherImage.enableHttpEndpoint }}
+            - --http-endpoint=:{{ .Values.sidecars.attacherImage.httpEndpointPort }}
+          {{- end }}
+          {{- if .Values.sidecars.attacherImage.enableHttpEndpoint }}
+          ports:
+            - name: httpendpoint
+              containerPort: {{ .Values.sidecars.attacherImage.httpEndpointPort }}
+              protocol: TCP
+          {{- end }}
+          {{- if and .Values.sidecars.attacherImage.enableHttpEndpoint .Values.sidecars.attacherImage.enableLivenessProbe }}
+          livenessProbe:
+            failureThreshold: 5
+            httpGet:
+              path: /healthz/leader-election
+              port: httpendpoint
+              scheme: HTTP
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 3
+          {{- end }}
           env:
             - name: ADDRESS
               value: /var/lib/csi/sockets/pluginproxy/csi.sock
@@ -169,6 +211,27 @@ spec:
           args:
             - --csi-address=$(ADDRESS)
             - --leader-election=true
+          {{- if .Values.sidecars.snapshotterImage.enableHttpEndpoint }}
+            - --http-endpoint=:{{ .Values.sidecars.snapshotterImage.httpEndpointPort }}
+          {{- end }}
+          {{- if .Values.sidecars.snapshotterImage.enableHttpEndpoint }}
+          ports:
+            - name: httpendpoint
+              containerPort: {{ .Values.sidecars.snapshotterImage.httpEndpointPort }}
+              protocol: TCP
+          {{- end }}
+          {{- if and .Values.sidecars.snapshotterImage.enableHttpEndpoint .Values.sidecars.snapshotterImage.enableLivenessProbe }}
+          livenessProbe:
+            failureThreshold: 5
+            httpGet:
+              path: /healthz/leader-election
+              port: httpendpoint
+              scheme: HTTP
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 3
+          {{- end }}
           env:
             - name: ADDRESS
               value: /var/lib/csi/sockets/pluginproxy/csi.sock
@@ -187,6 +250,27 @@ spec:
             - --csi-address=$(ADDRESS)
             - --v={{ .Values.verbosity }}
             - --timeout={{ .Values.timeout }}
+        {{- if .Values.sidecars.resizerImage.enableHttpEndpoint }}
+            - --http-endpoint=:{{ .Values.sidecars.resizerImage.httpEndpointPort }}
+        {{- end }}
+        {{- if .Values.sidecars.resizerImage.enableHttpEndpoint }}
+          ports:
+            - name: httpendpoint
+              containerPort: {{ .Values.sidecars.resizerImage.httpEndpointPort }}
+              protocol: TCP
+        {{- end }}
+        {{- if and .Values.sidecars.resizerImage.enableHttpEndpoint .Values.sidecars.resizerImage.enableLivenessProbe }}
+          livenessProbe:
+            failureThreshold: 5
+            httpGet:
+              path: /healthz/leader-election
+              port: httpendpoint
+              scheme: HTTP
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 3
+        {{- end }}
           env:
             - name: ADDRESS
               value: /var/lib/csi/sockets/pluginproxy/csi.sock

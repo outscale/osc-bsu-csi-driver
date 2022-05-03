@@ -28,21 +28,36 @@ sidecars:
   provisionerImage:
     repository: k8s.gcr.io/sig-storage/csi-provisioner
     tag: "v3.0.0"
+    enableHttpEndpoint: false
+    httpEndpointPort: "8089"
+    enableLivenessProbe: false
   attacherImage:
     repository: k8s.gcr.io/sig-storage/csi-attacher
     tag: "v3.3.0"
+    enableHttpEndpoint: false
+    httpEndpointPort: "8090"
+    enableLivenessProbe: false
   snapshotterImage:
     repository: k8s.gcr.io/sig-storage/csi-snapshotter
     tag: "v4.2.1"
+    enableHttpEndpoint: false
+    httpEndpointPort: "8091"
+    enableLivenessProbe: false
   livenessProbeImage:
     repository: k8s.gcr.io/sig-storage/livenessprobe
     tag: "v2.5.0"
   resizerImage:
     repository: k8s.gcr.io/sig-storage/csi-resizer
     tag: "v1.3.0"
+    enableHttpEndpoint: false
+    httpEndpointPort: "8092"
+    enableLivenessProbe: false
   nodeDriverRegistrarImage:
     repository: k8s.gcr.io/sig-storage/csi-node-driver-registrar
     tag: "v2.3.0"
+    enableHttpEndpoint: false
+    httpEndpointPort: "8093"
+    enableLivenessProbe: false
 
 imagePullSecrets: []
 nameOverride: ""

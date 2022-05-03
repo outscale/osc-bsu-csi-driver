@@ -4,8 +4,24 @@ on:
   pull_request_target:
     branches:
       - OSC-MIGRATION
+    paths:
+      - "**.go"
+      - "Dockerfile"
+      - ".trivyignore"
+      - "Makefile"
+      - "go.*"
+      - "osc-bsu-csi-driver/**.yaml"
+      - ".github/workflows/e2e_test.yml"
   push:
     branches: [ OSC-MIGRATION ]
+    paths:
+      - "**.go"
+      - "Dockerfile"
+      - ".trivyignore"
+      - "Makefile"
+      - "go.*"
+      - "osc-bsu-csi-driver/**.yaml"
+      - ".github/workflows/e2e_test.yml"
   workflow_dispatch:
 
 jobs:

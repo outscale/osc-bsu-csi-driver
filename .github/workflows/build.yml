@@ -4,8 +4,24 @@ on:
   pull_request:
     branches:
       - OSC-MIGRATION
+    paths:
+      - "**.go"
+      - "Dockerfile"
+      - ".trivyignore"
+      - "Makefile"
+      - "go.*"
+      - ".github/workflows/build.yml"
+      - "!tests/**"
   push:
     branches: [ OSC-MIGRATION ]
+    paths:
+      - "**.go"
+      - "Dockerfile"
+      - ".trivyignore"
+      - "Makefile"
+      - "go.*"
+      - ".github/workflows/build.yml"
+      - "!tests/**"
 jobs:
   Build:
     if: github.repository == 'outscale-dev/osc-bsu-csi-driver'

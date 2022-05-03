@@ -250,6 +250,7 @@ spec:
             - --csi-address=$(ADDRESS)
             - --v={{ .Values.verbosity }}
             - --timeout={{ .Values.timeout }}
+            - --leader-election=true
         {{- if .Values.sidecars.resizerImage.enableHttpEndpoint }}
             - --http-endpoint=:{{ .Values.sidecars.resizerImage.httpEndpointPort }}
         {{- end }}

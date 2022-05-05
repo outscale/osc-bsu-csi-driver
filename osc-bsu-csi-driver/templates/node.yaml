@@ -115,15 +115,10 @@ spec:
         {{- end }}
         {{- if and .Values.sidecars.nodeDriverRegistrarImage.enableHttpEndpoint .Values.sidecars.nodeDriverRegistrarImage.enableLivenessProbe }}
           livenessProbe:
-            failureThreshold: 5
             httpGet:
               path: /healthz
               port: httpendpoint
               scheme: HTTP
-            initialDelaySeconds: 10
-            periodSeconds: 10
-            successThreshold: 1
-            timeoutSeconds: 3
         {{- end }}
           env:
             - name: ADDRESS

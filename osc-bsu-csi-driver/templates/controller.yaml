@@ -149,15 +149,10 @@ spec:
           {{- end }}
           {{- if and .Values.sidecars.provisionerImage.enableHttpEndpoint .Values.sidecars.provisionerImage.enableLivenessProbe }}
           livenessProbe:
-            failureThreshold: 5
             httpGet:
               path: /healthz/leader-election
               port: httpendpoint
               scheme: HTTP
-            initialDelaySeconds: 10
-            periodSeconds: 10
-            successThreshold: 1
-            timeoutSeconds: 3
           {{- end }}
           env:
             - name: ADDRESS
@@ -186,15 +181,10 @@ spec:
           {{- end }}
           {{- if and .Values.sidecars.attacherImage.enableHttpEndpoint .Values.sidecars.attacherImage.enableLivenessProbe }}
           livenessProbe:
-            failureThreshold: 5
             httpGet:
               path: /healthz/leader-election
               port: httpendpoint
               scheme: HTTP
-            initialDelaySeconds: 10
-            periodSeconds: 10
-            successThreshold: 1
-            timeoutSeconds: 3
           {{- end }}
           env:
             - name: ADDRESS
@@ -222,15 +212,10 @@ spec:
           {{- end }}
           {{- if and .Values.sidecars.snapshotterImage.enableHttpEndpoint .Values.sidecars.snapshotterImage.enableLivenessProbe }}
           livenessProbe:
-            failureThreshold: 5
             httpGet:
               path: /healthz/leader-election
               port: httpendpoint
               scheme: HTTP
-            initialDelaySeconds: 10
-            periodSeconds: 10
-            successThreshold: 1
-            timeoutSeconds: 3
           {{- end }}
           env:
             - name: ADDRESS
@@ -262,15 +247,10 @@ spec:
         {{- end }}
         {{- if and .Values.sidecars.resizerImage.enableHttpEndpoint .Values.sidecars.resizerImage.enableLivenessProbe }}
           livenessProbe:
-            failureThreshold: 5
             httpGet:
               path: /healthz/leader-election
               port: httpendpoint
               scheme: HTTP
-            initialDelaySeconds: 10
-            periodSeconds: 10
-            successThreshold: 1
-            timeoutSeconds: 3
         {{- end }}
           env:
             - name: ADDRESS

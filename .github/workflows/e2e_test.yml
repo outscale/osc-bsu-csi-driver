@@ -42,6 +42,11 @@ jobs:
     - uses: actions/setup-go@v2
       with:
         go-version: '1.17'
+    - uses: outscale-dev/frieza-github-actions/frieza-clean@master
+      with:
+        access_key: ${{ secrets.OSC_ACCESS_KEY }}
+        secret_key: ${{ secrets.OSC_SECRET_KEY }}
+        region: ${{ secrets.OSC_REGION }}
     - name: Deploy Cluster
       uses: outscale-dev/osc-k8s-rke-cluster/github_actions/deploy_cluster@master
       with:

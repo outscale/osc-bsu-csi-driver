@@ -25,7 +25,6 @@ import (
 
 	"os"
 
-	"github.com/antihax/optional"
 	oscV1 "github.com/outscale/osc-sdk-go/osc"
 	osc "github.com/outscale/osc-sdk-go/v2"
 
@@ -191,7 +190,7 @@ type OscInterface interface {
 	DeleteSnapshot(ctx context.Context, localVarOptionals osc.DeleteSnapshotRequest) (osc.DeleteSnapshotResponse, *_nethttp.Response, error)
 	ReadSubregions(ctx context.Context, localVarOptionals osc.ReadSubregionsRequest) (osc.ReadSubregionsResponse, *_nethttp.Response, error)
 	ReadVms(ctx context.Context, localVarOptionals osc.ReadVmsRequest) (osc.ReadVmsResponse, *_nethttp.Response, error)
-	UpdateVolume(ctx context.Context, localVarOptionals *oscV1.UpdateVolumeOpts) (oscV1.UpdateVolumeResponse, *_nethttp.Response, error)
+	UpdateVolume(ctx context.Context, localVarOptionals osc.UpdateVolumeRequest) (osc.UpdateVolumeResponse, *_nethttp.Response, error)
 }
 
 type OscClient struct {
@@ -247,8 +246,8 @@ func (client *OscClient) ReadVms(ctx context.Context, localVarOptionals osc.Read
 	return client.api.VmApi.ReadVms(client.auth).ReadVmsRequest(localVarOptionals).Execute()
 }
 
-func (client *OscClient) UpdateVolume(ctx context.Context, localVarOptionals *oscV1.UpdateVolumeOpts) (oscV1.UpdateVolumeResponse, *_nethttp.Response, error) {
-	return client.apiV1.VolumeApi.UpdateVolume(client.authV1, localVarOptionals)
+func (client *OscClient) UpdateVolume(ctx context.Context, localVarOptionals osc.UpdateVolumeRequest) (osc.UpdateVolumeResponse, *_nethttp.Response, error) {
+	return client.api.VolumeApi.UpdateVolume(client.auth).UpdateVolumeRequest(localVarOptionals).Execute()
 }
 
 var _ OscInterface = &OscClient{}
@@ -1190,16 +1189,14 @@ func (c *cloud) ResizeDisk(ctx context.Context, volumeID string, newSizeBytes in
 	}
 
 	klog.Infof("expanding volume %q to size %d", volumeID, newSizeGiB)
-	req := oscV1.UpdateVolumeOpts{
-		UpdateVolumeRequest: optional.NewInterface(
-			oscV1.UpdateVolumeRequest{
-				Size:     int32(newSizeGiB),
-				VolumeId: volumeID,
-			}),
+	reqSize := int32(newSizeGiB)
+	req := osc.UpdateVolumeRequest{
+		Size:     &reqSize,
+		VolumeId: volumeID,
 	}
 
 	updateVolumeCallBack := func() (bool, error) {
-		response, httpRes, err := c.client.UpdateVolume(ctx, &req)
+		response, httpRes, err := c.client.UpdateVolume(ctx, req)
 		klog.Infof("Debug response UpdateVolume: response(%+v), err(%v), httpRes(%v)", response, err, httpRes)
 		if err != nil {
 			if httpRes != nil {

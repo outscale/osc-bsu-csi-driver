@@ -189,7 +189,7 @@ type OscInterface interface {
 	CreateSnapshot(ctx context.Context, localVarOptionals osc.CreateSnapshotRequest) (osc.CreateSnapshotResponse, *_nethttp.Response, error)
 	ReadSnapshots(ctx context.Context, localVarOptionals osc.ReadSnapshotsRequest) (osc.ReadSnapshotsResponse, *_nethttp.Response, error)
 	DeleteSnapshot(ctx context.Context, localVarOptionals osc.DeleteSnapshotRequest) (osc.DeleteSnapshotResponse, *_nethttp.Response, error)
-	ReadSubregions(ctx context.Context, localVarOptionals *oscV1.ReadSubregionsOpts) (oscV1.ReadSubregionsResponse, *_nethttp.Response, error)
+	ReadSubregions(ctx context.Context, localVarOptionals osc.ReadSubregionsRequest) (osc.ReadSubregionsResponse, *_nethttp.Response, error)
 	ReadVms(ctx context.Context, localVarOptionals *oscV1.ReadVmsOpts) (oscV1.ReadVmsResponse, *_nethttp.Response, error)
 	UpdateVolume(ctx context.Context, localVarOptionals *oscV1.UpdateVolumeOpts) (oscV1.UpdateVolumeResponse, *_nethttp.Response, error)
 }
@@ -239,8 +239,8 @@ func (client *OscClient) DeleteSnapshot(ctx context.Context, localVarOptionals o
 	return client.api.SnapshotApi.DeleteSnapshot(client.auth).DeleteSnapshotRequest(localVarOptionals).Execute()
 }
 
-func (client *OscClient) ReadSubregions(ctx context.Context, localVarOptionals *oscV1.ReadSubregionsOpts) (oscV1.ReadSubregionsResponse, *_nethttp.Response, error) {
-	return client.apiV1.SubregionApi.ReadSubregions(client.authV1, localVarOptionals)
+func (client *OscClient) ReadSubregions(ctx context.Context, localVarOptionals osc.ReadSubregionsRequest) (osc.ReadSubregionsResponse, *_nethttp.Response, error) {
+	return client.api.SubregionApi.ReadSubregions(client.auth).ReadSubregionsRequest(localVarOptionals).Execute()
 }
 
 func (client *OscClient) ReadVms(ctx context.Context, localVarOptionals *oscV1.ReadVmsOpts) (oscV1.ReadVmsResponse, *_nethttp.Response, error) {
@@ -1258,11 +1258,11 @@ func (c *cloud) checkDesiredSize(ctx context.Context, volumeID string, newSizeGi
 func (c *cloud) randomAvailabilityZone(ctx context.Context, region string) (string, error) {
 	klog.Infof("Debug randomAvailabilityZone: %+v\n", region)
 
-	var response oscV1.ReadSubregionsResponse
+	var response osc.ReadSubregionsResponse
 	readSubregionsCallback := func() (bool, error) {
 		var httpRes *_nethttp.Response
 		var err error
-		response, httpRes, err = c.client.ReadSubregions(ctx, nil)
+		response, httpRes, err = c.client.ReadSubregions(ctx, osc.ReadSubregionsRequest{})
 		klog.Infof("Debug response ReadSubregions: response(%+v), err(%v) httpRes(%v)\n", response, err, httpRes)
 		if err != nil {
 			if httpRes != nil {
@@ -1287,8 +1287,8 @@ func (c *cloud) randomAvailabilityZone(ctx context.Context, region string) (stri
 	}
 
 	zones := []string{}
-	for _, zone := range response.Subregions {
-		zones = append(zones, zone.SubregionName)
+	for _, zone := range response.GetSubregions() {
+		zones = append(zones, zone.GetSubregionName())
 	}
 
 	return zones[0], nil

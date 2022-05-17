@@ -185,9 +185,9 @@ func TestCreateDisk(t *testing.T) {
 			}
 
 			if tc.diskOptions.AvailabilityZone == "" {
-				mockOscInterface.EXPECT().ReadSubregions(gomock.Eq(ctx), gomock.Any()).Return(osc.ReadSubregionsResponse{Subregions: []osc.Subregion{
+				mockOscInterface.EXPECT().ReadSubregions(gomock.Eq(ctx), gomock.Any()).Return(osc.ReadSubregionsResponse{Subregions: &[]osc.Subregion{
 					{
-						SubregionName: defaultZone,
+						SubregionName: &defaultZone,
 					},
 				}}, nil, nil)
 			}

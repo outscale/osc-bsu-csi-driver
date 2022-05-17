@@ -194,12 +194,9 @@ type OscInterface interface {
 }
 
 type OscClient struct {
-	configV1 *oscV1.Configuration
-	config   *osc.Configuration
-	authV1   context.Context
-	auth     context.Context
-	apiV1    *oscV1.APIClient
-	api      *osc.APIClient
+	config *osc.Configuration
+	auth   context.Context
+	api    *osc.APIClient
 }
 
 func (client *OscClient) CreateVolume(ctx context.Context, localVarOptionals osc.CreateVolumeRequest) (osc.CreateVolumeResponse, *_nethttp.Response, error) {
@@ -268,20 +265,8 @@ func NewCloud(region string) (Cloud, error) {
 
 func newOscCloud(region string) (Cloud, error) {
 	client := &OscClient{}
-	// SDK V1
-	client.configV1 = oscV1.NewConfiguration()
-	client.configV1.Debug = true
-
 	// Set User-Agent with name and version of the CSI driver
 	version := util.GetVersion()
-	client.configV1.UserAgent = fmt.Sprintf("osc-bsu-csi-driver/%s", version.DriverVersion)
-
-	client.configV1.BasePath, _ = client.configV1.ServerUrl(0, map[string]string{"region": region})
-	client.apiV1 = oscV1.NewAPIClient(client.configV1)
-	client.authV1 = context.WithValue(context.Background(), oscV1.ContextAWSv4, oscV1.AWSv4{
-		AccessKey: os.Getenv("OSC_ACCESS_KEY"),
-		SecretKey: os.Getenv("OSC_SECRET_KEY"),
-	})
 
 	client.config = osc.NewConfiguration()
 	client.config.Debug = true
@@ -1294,12 +1279,17 @@ func NewCloudWithoutMetadata(region string) (Cloud, error) {
 		return nil, fmt.Errorf("could not get region")
 	}
 
+	// Set User-Agent with name and version of the CSI driver
+	version := util.GetVersion()
+
 	client := &OscClient{}
-	client.configV1 = oscV1.NewConfiguration()
-	client.configV1.Debug = true
-	client.configV1.BasePath, _ = client.configV1.ServerUrl(0, map[string]string{"region": region})
-	client.apiV1 = oscV1.NewAPIClient(client.configV1)
-	client.authV1 = context.WithValue(context.Background(), oscV1.ContextAWSv4, oscV1.AWSv4{
+	client.config = osc.NewConfiguration()
+	client.config.Debug = true
+	client.config.UserAgent = fmt.Sprintf("osc-bsu-csi-driver/%s", version.DriverVersion)
+
+	client.api = osc.NewAPIClient(client.config)
+
+	client.auth = context.WithValue(context.Background(), osc.ContextAWSv4, osc.AWSv4{
 		AccessKey: os.Getenv("OSC_ACCESS_KEY"),
 		SecretKey: os.Getenv("OSC_SECRET_KEY"),
 	})

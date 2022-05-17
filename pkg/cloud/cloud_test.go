@@ -27,7 +27,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/golang/mock/gomock"
 
-	"github.com/outscale/osc-sdk-go/osc"
+	osc "github.com/outscale/osc-sdk-go/v2"
 
 	dm "github.com/outscale-dev/osc-bsu-csi-driver/pkg/cloud/devicemanager"
 	"github.com/outscale-dev/osc-bsu-csi-driver/pkg/cloud/mocks"
@@ -161,28 +161,27 @@ func TestCreateDisk(t *testing.T) {
 			}
 
 			vol := osc.CreateVolumeResponse{
-				Volume: osc.Volume{
-					VolumeId:      tc.diskOptions.Tags[VolumeNameTagKey],
-					Size:          int32(util.BytesToGiB(tc.diskOptions.CapacityBytes)),
-					State:         volState,
-					SubregionName: tc.diskOptions.AvailabilityZone,
-				},
+				Volume: &osc.Volume{},
 			}
+			vol.Volume.SetVolumeId(tc.diskOptions.Tags[VolumeNameTagKey])
+			vol.Volume.SetSize(int32(util.BytesToGiB(tc.diskOptions.CapacityBytes)))
+			vol.Volume.SetState(volState)
+			vol.Volume.SetSubregionName(tc.diskOptions.AvailabilityZone)
 
 			readSnapshot := osc.Snapshot{
-				SnapshotId: tc.diskOptions.SnapshotID,
-				VolumeId:   "snap-test-volume",
-				State:      "completed",
+				SnapshotId: &tc.diskOptions.SnapshotID,
 			}
+			readSnapshot.SetVolumeId("snap-test-volume")
+			readSnapshot.SetState("completed")
 
 			tag := osc.CreateTagsResponse{}
 			ctx := context.Background()
 			if !tc.diskOptions.Encrypted {
 				mockOscInterface.EXPECT().CreateVolume(gomock.Eq(ctx), gomock.Any()).Return(vol, nil, tc.expCreateVolumeErr)
 				mockOscInterface.EXPECT().CreateTags(gomock.Eq(ctx), gomock.Any()).Return(tag, nil, nil).AnyTimes()
-				mockOscInterface.EXPECT().ReadVolumes(gomock.Eq(ctx), gomock.Any()).Return(osc.ReadVolumesResponse{Volumes: []osc.Volume{vol.Volume}}, nil, tc.expDescVolumeErr).AnyTimes()
+				mockOscInterface.EXPECT().ReadVolumes(gomock.Eq(ctx), gomock.Any()).Return(osc.ReadVolumesResponse{Volumes: &[]osc.Volume{vol.GetVolume()}}, nil, tc.expDescVolumeErr).AnyTimes()
 				if len(tc.diskOptions.SnapshotID) > 0 {
-					mockOscInterface.EXPECT().ReadSnapshots(gomock.Eq(ctx), gomock.Any()).Return(osc.ReadSnapshotsResponse{Snapshots: []osc.Snapshot{readSnapshot}}, nil, nil).AnyTimes()
+					mockOscInterface.EXPECT().ReadSnapshots(gomock.Eq(ctx), gomock.Any()).Return(osc.ReadSnapshotsResponse{Snapshots: &[]osc.Snapshot{readSnapshot}}, nil, nil).AnyTimes()
 				}
 			}
 
@@ -296,12 +295,15 @@ func TestAttachDisk(t *testing.T) {
 			c := newCloud(mockOscInterface)
 
 			vol := osc.Volume{
-				VolumeId:      tc.volumeID,
-				LinkedVolumes: []osc.LinkedVolume{{State: "attached"}},
+				VolumeId: &tc.volumeID,
+				LinkedVolumes: &[]osc.LinkedVolume{
+					{},
+				},
 			}
+			vol.GetLinkedVolumes()[0].SetState("attached")
 
 			ctx := context.Background()
-			mockOscInterface.EXPECT().ReadVolumes(gomock.Eq(ctx), gomock.Any()).Return(osc.ReadVolumesResponse{Volumes: []osc.Volume{vol}}, nil, nil).AnyTimes()
+			mockOscInterface.EXPECT().ReadVolumes(gomock.Eq(ctx), gomock.Any()).Return(osc.ReadVolumesResponse{Volumes: &[]osc.Volume{vol}}, nil, nil).AnyTimes()
 			mockOscInterface.EXPECT().ReadVms(gomock.Eq(ctx), gomock.Any()).Return(newDescribeInstancesOutput(tc.nodeID), nil, nil)
 			mockOscInterface.EXPECT().LinkVolume(gomock.Eq(ctx), gomock.Any()).Return(osc.LinkVolumeResponse{}, nil, tc.expErr)
 
@@ -352,12 +354,12 @@ func TestDetachDisk(t *testing.T) {
 			c := newCloud(mockOscInterface)
 
 			vol := osc.Volume{
-				VolumeId:      tc.volumeID,
+				VolumeId:      &tc.volumeID,
 				LinkedVolumes: nil,
 			}
 
 			ctx := context.Background()
-			mockOscInterface.EXPECT().ReadVolumes(gomock.Eq(ctx), gomock.Any()).Return(osc.ReadVolumesResponse{Volumes: []osc.Volume{vol}}, nil, nil).AnyTimes()
+			mockOscInterface.EXPECT().ReadVolumes(gomock.Eq(ctx), gomock.Any()).Return(osc.ReadVolumesResponse{Volumes: &[]osc.Volume{vol}}, nil, nil).AnyTimes()
 			mockOscInterface.EXPECT().ReadVms(gomock.Eq(ctx), gomock.Any()).Return(newDescribeInstancesOutput(tc.nodeID), nil, nil)
 			mockOscInterface.EXPECT().UnlinkVolume(gomock.Eq(ctx), gomock.Any()).Return(osc.UnlinkVolumeResponse{}, nil, tc.expErr)
 
@@ -407,13 +409,13 @@ func TestGetDiskByName(t *testing.T) {
 			c := newCloud(mockOscInterface)
 
 			vol := osc.Volume{
-				VolumeId:      tc.volumeName,
-				Size:          int32(util.BytesToGiB(tc.volumeCapacity)),
-				SubregionName: tc.availabilityZone,
+				VolumeId:      &tc.volumeName,
+				SubregionName: &tc.availabilityZone,
 			}
+			vol.SetSize(int32(util.BytesToGiB(tc.volumeCapacity)))
 
 			ctx := context.Background()
-			mockOscInterface.EXPECT().ReadVolumes(gomock.Eq(ctx), gomock.Any()).Return(osc.ReadVolumesResponse{Volumes: []osc.Volume{vol}}, nil, tc.expErr)
+			mockOscInterface.EXPECT().ReadVolumes(gomock.Eq(ctx), gomock.Any()).Return(osc.ReadVolumesResponse{Volumes: &[]osc.Volume{vol}}, nil, tc.expErr)
 
 			disk, err := c.GetDiskByName(ctx, tc.volumeName, tc.volumeCapacity)
 			if err != nil {
@@ -466,10 +468,10 @@ func TestGetDiskByID(t *testing.T) {
 			ctx := context.Background()
 			mockOscInterface.EXPECT().ReadVolumes(gomock.Eq(ctx), gomock.Any()).Return(
 				osc.ReadVolumesResponse{
-					Volumes: []osc.Volume{
+					Volumes: &[]osc.Volume{
 						{
-							VolumeId:      tc.volumeID,
-							SubregionName: tc.availabilityZone,
+							VolumeId:      &tc.volumeID,
+							SubregionName: &tc.availabilityZone,
 						},
 					},
 				},
@@ -529,18 +531,17 @@ func TestCreateSnapshot(t *testing.T) {
 			c := newCloud(mockOscInterface)
 
 			oscsnapshot := osc.CreateSnapshotResponse{
-				Snapshot: osc.Snapshot{
-					SnapshotId: tc.snapshotOptions.Tags[SnapshotNameTagKey],
-					VolumeId:   "snap-test-volume",
-					State:      "completed",
-				},
+				Snapshot: &osc.Snapshot{},
 			}
+			oscsnapshot.Snapshot.SetSnapshotId(tc.snapshotOptions.Tags[SnapshotNameTagKey])
+			oscsnapshot.Snapshot.SetVolumeId("snap-test-volume")
+			oscsnapshot.Snapshot.SetState("completed")
 
 			tag := osc.CreateTagsResponse{}
 			ctx := context.Background()
 			mockOscInterface.EXPECT().CreateSnapshot(gomock.Eq(ctx), gomock.Any()).Return(oscsnapshot, nil, tc.expErr)
 			mockOscInterface.EXPECT().CreateTags(gomock.Eq(ctx), gomock.Any()).Return(tag, nil, nil).AnyTimes()
-			mockOscInterface.EXPECT().ReadSnapshots(gomock.Eq(ctx), gomock.Any()).Return(osc.ReadSnapshotsResponse{Snapshots: []osc.Snapshot{oscsnapshot.Snapshot}}, nil, nil).AnyTimes()
+			mockOscInterface.EXPECT().ReadSnapshots(gomock.Eq(ctx), gomock.Any()).Return(osc.ReadSnapshotsResponse{Snapshots: &[]osc.Snapshot{oscsnapshot.GetSnapshot()}}, nil, nil).AnyTimes()
 
 			snapshot, err := c.CreateSnapshot(ctx, tc.expSnapshot.SourceVolumeID, tc.snapshotOptions)
 			if err != nil {
@@ -639,14 +640,13 @@ func TestGetSnapshotByName(t *testing.T) {
 			mockOscInterface := mocks.NewMockOscInterface(mockCtrl)
 			c := newCloud(mockOscInterface)
 
-			oscsnapshot := osc.Snapshot{
-				SnapshotId: tc.snapshotOptions.Tags[SnapshotNameTagKey],
-				VolumeId:   "snap-test-volume",
-				State:      "completed",
-			}
+			oscsnapshot := osc.Snapshot{}
+			oscsnapshot.SetSnapshotId(tc.snapshotOptions.Tags[SnapshotNameTagKey])
+			oscsnapshot.SetVolumeId("snap-test-volume")
+			oscsnapshot.SetState("completed")
 
 			ctx := context.Background()
-			mockOscInterface.EXPECT().ReadSnapshots(gomock.Eq(ctx), gomock.Any()).Return(osc.ReadSnapshotsResponse{Snapshots: []osc.Snapshot{oscsnapshot}}, nil, nil)
+			mockOscInterface.EXPECT().ReadSnapshots(gomock.Eq(ctx), gomock.Any()).Return(osc.ReadSnapshotsResponse{Snapshots: &[]osc.Snapshot{oscsnapshot}}, nil, nil)
 
 			_, err := c.GetSnapshotByName(ctx, tc.snapshotOptions.Tags[SnapshotNameTagKey])
 			if err != nil {
@@ -693,14 +693,13 @@ func TestGetSnapshotByID(t *testing.T) {
 			mockOscInterface := mocks.NewMockOscInterface(mockCtrl)
 			c := newCloud(mockOscInterface)
 
-			oscsnapshot := osc.Snapshot{
-				SnapshotId: tc.snapshotOptions.Tags[SnapshotNameTagKey],
-				VolumeId:   "snap-test-volume",
-				State:      "completed",
-			}
+			oscsnapshot := osc.Snapshot{}
+			oscsnapshot.SetSnapshotId(tc.snapshotOptions.Tags[SnapshotNameTagKey])
+			oscsnapshot.SetVolumeId("snap-test-volume")
+			oscsnapshot.SetState("completed")
 
 			ctx := context.Background()
-			mockOscInterface.EXPECT().ReadSnapshots(gomock.Eq(ctx), gomock.Any()).Return(osc.ReadSnapshotsResponse{Snapshots: []osc.Snapshot{oscsnapshot}}, nil, nil)
+			mockOscInterface.EXPECT().ReadSnapshots(gomock.Eq(ctx), gomock.Any()).Return(osc.ReadSnapshotsResponse{Snapshots: &[]osc.Snapshot{oscsnapshot}}, nil, nil)
 
 			_, err := c.GetSnapshotByID(ctx, tc.snapshotOptions.Tags[SnapshotNameTagKey])
 			if err != nil {
@@ -736,16 +735,21 @@ func TestListSnapshots(t *testing.T) {
 						SnapshotID:     "snap-test-name2",
 					},
 				}
+				state := "completed"
+				volumeIds := []string{
+					"snap-test-volume1",
+					"snap-test-volume2",
+				}
 				oscsnapshot := []osc.Snapshot{
 					{
-						SnapshotId: expSnapshots[0].SnapshotID,
-						VolumeId:   "snap-test-volume1",
-						State:      "completed",
+						SnapshotId: &expSnapshots[0].SnapshotID,
+						VolumeId:   &volumeIds[0],
+						State:      &state,
 					},
 					{
-						SnapshotId: expSnapshots[1].SnapshotID,
-						VolumeId:   "snap-test-volume2",
-						State:      "completed",
+						SnapshotId: &expSnapshots[1].SnapshotID,
+						VolumeId:   &volumeIds[1],
+						State:      &state,
 					},
 				}
 
@@ -756,7 +760,7 @@ func TestListSnapshots(t *testing.T) {
 
 				ctx := context.Background()
 				fmt.Printf("Read snapshot :\n")
-				mockOscInterface.EXPECT().ReadSnapshots(gomock.Eq(ctx), gomock.Any()).Return(osc.ReadSnapshotsResponse{Snapshots: oscsnapshot}, nil, nil)
+				mockOscInterface.EXPECT().ReadSnapshots(gomock.Eq(ctx), gomock.Any()).Return(osc.ReadSnapshotsResponse{Snapshots: &oscsnapshot}, nil, nil)
 				fmt.Printf("End Read snapshot :\n")
 				_, err := c.ListSnapshots(ctx, "", 0, "")
 				if err != nil {
@@ -768,6 +772,7 @@ func TestListSnapshots(t *testing.T) {
 			name: "success: with volume ID",
 			testFunc: func(t *testing.T) {
 				sourceVolumeID := "snap-test-volume"
+				state := "completed"
 				expSnapshots := []*Snapshot{
 					{
 						SourceVolumeID: sourceVolumeID,
@@ -780,14 +785,14 @@ func TestListSnapshots(t *testing.T) {
 				}
 				oscsnapshot := []osc.Snapshot{
 					{
-						SnapshotId: expSnapshots[0].SnapshotID,
-						VolumeId:   sourceVolumeID,
-						State:      "completed",
+						SnapshotId: &expSnapshots[0].SnapshotID,
+						VolumeId:   &sourceVolumeID,
+						State:      &state,
 					},
 					{
-						SnapshotId: expSnapshots[1].SnapshotID,
-						VolumeId:   sourceVolumeID,
-						State:      "completed",
+						SnapshotId: &expSnapshots[1].SnapshotID,
+						VolumeId:   &sourceVolumeID,
+						State:      &state,
 					},
 				}
 
@@ -798,7 +803,7 @@ func TestListSnapshots(t *testing.T) {
 
 				ctx := context.Background()
 
-				mockOscInterface.EXPECT().ReadSnapshots(gomock.Eq(ctx), gomock.Any()).Return(osc.ReadSnapshotsResponse{Snapshots: oscsnapshot}, nil, nil)
+				mockOscInterface.EXPECT().ReadSnapshots(gomock.Eq(ctx), gomock.Any()).Return(osc.ReadSnapshotsResponse{Snapshots: &oscsnapshot}, nil, nil)
 
 				resp, err := c.ListSnapshots(ctx, sourceVolumeID, 0, "")
 				if err != nil {
@@ -871,13 +876,18 @@ func newCloud(mockOscInterface OscInterface) *cloud {
 
 func newDescribeInstancesOutput(nodeID string) osc.ReadVmsResponse {
 	return osc.ReadVmsResponse{
-		Vms: []osc.Vm{
-			{VmId: nodeID},
+		Vms: &[]osc.Vm{
+			{VmId: &nodeID},
 		},
 	}
 }
 
 func TestResizeDisk(t *testing.T) {
+	volumeId := "vol-test"
+	var existingVolumeSize int32 = 1
+	var modifiedVolumeSize int32 = 2
+	defaultZoneVar := defaultZone
+	state := "available"
 	testCases := []struct {
 		name                string
 		volumeID            string
@@ -892,35 +902,16 @@ func TestResizeDisk(t *testing.T) {
 			name:     "success: normal",
 			volumeID: "vol-test",
 			existingVolume: osc.Volume{
-				VolumeId:      "vol-test",
-				Size:          1,
-				SubregionName: defaultZone,
-				State:         "available",
+				VolumeId:      &volumeId,
+				Size:          &existingVolumeSize,
+				SubregionName: &defaultZoneVar,
+				State:         &state,
 			},
 			modifiedVolume: osc.UpdateVolumeResponse{
-				Volume: osc.Volume{
-					VolumeId:      "vol-test",
-					Size:          2,
-					SubregionName: defaultZone,
-				},
-			},
-			reqSizeGiB: 2,
-			expErr:     nil,
-		},
-		{
-			name:     "success: normal modifying state",
-			volumeID: "vol-test",
-			existingVolume: osc.Volume{
-				VolumeId:      "vol-test",
-				Size:          1,
-				SubregionName: defaultZone,
-				State:         "available",
-			},
-			modifiedVolume: osc.UpdateVolumeResponse{
-				Volume: osc.Volume{
-					VolumeId:      "vol-test",
-					Size:          2,
-					SubregionName: defaultZone,
+				Volume: &osc.Volume{
+					VolumeId:      &volumeId,
+					Size:          &modifiedVolumeSize,
+					SubregionName: &defaultZoneVar,
 				},
 			},
 			reqSizeGiB: 2,
@@ -930,10 +921,10 @@ func TestResizeDisk(t *testing.T) {
 			name:     "success: with previous expansion",
 			volumeID: "vol-test",
 			existingVolume: osc.Volume{
-				VolumeId:      "vol-test",
-				Size:          2,
-				SubregionName: defaultZone,
-				State:         "available",
+				VolumeId:      &volumeId,
+				Size:          &modifiedVolumeSize,
+				SubregionName: &defaultZoneVar,
+				State:         &state,
 			},
 			reqSizeGiB: 2,
 			expErr:     nil,
@@ -949,9 +940,9 @@ func TestResizeDisk(t *testing.T) {
 			name:     "failure: volume in modifying state",
 			volumeID: "vol-test",
 			existingVolume: osc.Volume{
-				VolumeId:      "vol-test",
-				Size:          1,
-				SubregionName: defaultZone,
+				VolumeId:      &volumeId,
+				Size:          &existingVolumeSize,
+				SubregionName: &defaultZoneVar,
 			},
 			reqSizeGiB: 2,
 			expErr:     fmt.Errorf("ResizeDisk generic error"),
@@ -968,7 +959,7 @@ func TestResizeDisk(t *testing.T) {
 			if !reflect.DeepEqual(tc.existingVolume, osc.Volume{}) || tc.existingVolumeError != nil {
 				mockEC2.EXPECT().ReadVolumes(gomock.Eq(ctx), gomock.Any()).Return(
 					osc.ReadVolumesResponse{
-						Volumes: []osc.Volume{
+						Volumes: &[]osc.Volume{
 							tc.existingVolume,
 						},
 					},
@@ -976,16 +967,16 @@ func TestResizeDisk(t *testing.T) {
 					tc.existingVolumeError,
 				)
 
-				if tc.expErr == nil && int32(tc.existingVolume.Size) != int32(tc.reqSizeGiB) {
+				if tc.expErr == nil && int32(tc.existingVolume.GetSize()) != int32(tc.reqSizeGiB) {
 					resizedVolume := osc.Volume{
-						VolumeId:      "vol-test",
-						Size:          tc.reqSizeGiB,
-						SubregionName: defaultZone,
-						State:         "available",
+						VolumeId:      &volumeId,
+						Size:          &tc.reqSizeGiB,
+						SubregionName: &defaultZoneVar,
+						State:         &state,
 					}
 					mockEC2.EXPECT().ReadVolumes(gomock.Eq(ctx), gomock.Any()).Return(
 						osc.ReadVolumesResponse{
-							Volumes: []osc.Volume{
+							Volumes: &[]osc.Volume{
 								resizedVolume,
 							},
 						},

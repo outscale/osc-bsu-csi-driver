@@ -25,7 +25,6 @@ import (
 
 	"os"
 
-	oscV1 "github.com/outscale/osc-sdk-go/osc"
 	osc "github.com/outscale/osc-sdk-go/v2"
 
 	"github.com/aws/aws-sdk-go/aws/awserr"
@@ -33,8 +32,6 @@ import (
 	"github.com/outscale-dev/osc-bsu-csi-driver/pkg/util"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/klog/v2"
-
-	"reflect"
 )
 
 // AWS volume types
@@ -471,7 +468,7 @@ func (c *cloud) AttachDisk(ctx context.Context, volumeID, nodeID string) (string
 		return "", err
 	}
 
-	device, err := c.dm.NewDevice(instance, volumeID)
+	device, err := c.dm.NewDevice(*instance, volumeID)
 	if err != nil {
 		return "", err
 	}
@@ -541,12 +538,10 @@ func (c *cloud) DetachDisk(ctx context.Context, volumeID, nodeID string) error {
 		volume, err := c.getVolume(ctx, request)
 		klog.Infof("Check Volume state before detaching volume: %+v err: %+v",
 			volume, err)
-		if err == nil && !reflect.DeepEqual(volume, oscV1.Volume{}) {
-			if volume.GetState() != "" && volume.GetState() == "available" {
-				klog.Warningf("Tolerate DetachDisk called on available volume: %s on %s",
-					volumeID, nodeID)
-				return nil
-			}
+		if err == nil && volume.HasState() && volume.GetState() == "available" {
+			klog.Warningf("Tolerate DetachDisk called on available volume: %s on %s",
+				volumeID, nodeID)
+			return nil
 		}
 	}
 	klog.Infof("Debug Continue DetachDisk: %+v, %v\n", volumeID, nodeID)
@@ -556,7 +551,7 @@ func (c *cloud) DetachDisk(ctx context.Context, volumeID, nodeID string) error {
 	}
 
 	// TODO: check if attached
-	device, err := c.dm.GetDevice(instance, volumeID)
+	device, err := c.dm.GetDevice(*instance, volumeID)
 	if err != nil {
 		return err
 	}
@@ -691,11 +686,8 @@ func (c *cloud) GetDiskByID(ctx context.Context, volumeID string) (Disk, error) 
 
 func (c *cloud) IsExistInstance(ctx context.Context, nodeID string) bool {
 	klog.Infof("Debug IsExistInstance : %+v\n", nodeID)
-	instance, err := c.getInstance(ctx, nodeID)
-	if err != nil || reflect.DeepEqual(instance, oscV1.Vm{}) {
-		return false
-	}
-	return true
+	_, err := c.getInstance(ctx, nodeID)
+	return err == nil
 }
 
 func (c *cloud) CreateSnapshot(ctx context.Context, volumeID string, snapshotOptions *SnapshotOptions) (snapshot Snapshot, err error) {
@@ -931,7 +923,7 @@ func keepRetryWithError(requestStr string, err error, allowedErrors []string) bo
 }
 
 // Pagination not supported
-func (c *cloud) getVolume(ctx context.Context, request osc.ReadVolumesRequest) (osc.Volume, error) {
+func (c *cloud) getVolume(ctx context.Context, request osc.ReadVolumesRequest) (*osc.Volume, error) {
 	klog.Infof("Debug getVolume : %+v\n", request)
 	var volume osc.Volume
 	getVolumeCallback := func() (bool, error) {
@@ -973,14 +965,14 @@ func (c *cloud) getVolume(ctx context.Context, request osc.ReadVolumesRequest) (
 	waitErr := wait.ExponentialBackoff(backoff, getVolumeCallback)
 
 	if waitErr != nil {
-		return osc.Volume{}, waitErr
+		return nil, waitErr
 	}
 
-	return volume, nil
+	return &volume, nil
 }
 
 // Pagination not supported
-func (c *cloud) getInstance(ctx context.Context, vmID string) (osc.Vm, error) {
+func (c *cloud) getInstance(ctx context.Context, vmID string) (*osc.Vm, error) {
 	klog.Infof("Debug  getInstance : %+v\n", vmID)
 	var instances []osc.Vm
 
@@ -1015,16 +1007,16 @@ func (c *cloud) getInstance(ctx context.Context, vmID string) (osc.Vm, error) {
 	backoff := util.EnvBackoff()
 	waitErr := wait.ExponentialBackoff(backoff, getInstanceCallback)
 	if waitErr != nil {
-		return osc.Vm{}, waitErr
+		return nil, waitErr
 	}
 
 	if l := len(instances); l > 1 {
-		return osc.Vm{}, fmt.Errorf("found %d instances with ID %q", l, vmID)
+		return nil, fmt.Errorf("found %d instances with ID %q", l, vmID)
 	} else if l < 1 {
-		return osc.Vm{}, ErrNotFound
+		return nil, ErrNotFound
 	}
 
-	return instances[0], nil
+	return &instances[0], nil
 }
 
 // Pagination not supported
@@ -1149,7 +1141,7 @@ func (c *cloud) ResizeDisk(ctx context.Context, volumeID string, newSizeBytes in
 	}
 	volume, err := c.getVolume(ctx, request)
 	klog.Infof("Check Volume state before resizing volume: %+v err: %+v", volume, err)
-	if err != nil || reflect.DeepEqual(volume, oscV1.Volume{}) {
+	if err != nil {
 		klog.Errorf("Empty or error during getting the volume %s", volumeID)
 		return 0, err
 	}

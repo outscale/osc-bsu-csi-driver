@@ -181,7 +181,7 @@ type Cloud interface {
 
 type OscInterface interface {
 	CreateVolume(ctx context.Context, localVarOptionals osc.CreateVolumeRequest) (osc.CreateVolumeResponse, *_nethttp.Response, error)
-	CreateTags(ctx context.Context, localVarOptionals *oscV1.CreateTagsOpts) (oscV1.CreateTagsResponse, *_nethttp.Response, error)
+	CreateTags(ctx context.Context, localVarOptionals osc.CreateTagsRequest) (osc.CreateTagsResponse, *_nethttp.Response, error)
 	ReadVolumes(ctx context.Context, localVarOptionals *oscV1.ReadVolumesOpts) (oscV1.ReadVolumesResponse, *_nethttp.Response, error)
 	DeleteVolume(ctx context.Context, localVarOptionals *oscV1.DeleteVolumeOpts) (oscV1.DeleteVolumeResponse, *_nethttp.Response, error)
 	LinkVolume(ctx context.Context, localVarOptionals *oscV1.LinkVolumeOpts) (oscV1.LinkVolumeResponse, *_nethttp.Response, error)
@@ -207,8 +207,8 @@ func (client *OscClient) CreateVolume(ctx context.Context, localVarOptionals osc
 	return client.api.VolumeApi.CreateVolume(client.auth).CreateVolumeRequest(localVarOptionals).Execute()
 }
 
-func (client *OscClient) CreateTags(ctx context.Context, localVarOptionals *oscV1.CreateTagsOpts) (oscV1.CreateTagsResponse, *_nethttp.Response, error) {
-	return client.apiV1.TagApi.CreateTags(client.authV1, localVarOptionals)
+func (client *OscClient) CreateTags(ctx context.Context, localVarOptionals osc.CreateTagsRequest) (osc.CreateTagsResponse, *_nethttp.Response, error) {
+	return client.api.TagApi.CreateTags(client.auth).CreateTagsRequest(localVarOptionals).Execute()
 }
 
 func (client *OscClient) ReadVolumes(ctx context.Context, localVarOptionals *oscV1.ReadVolumesOpts) (oscV1.ReadVolumesResponse, *_nethttp.Response, error) {
@@ -338,11 +338,11 @@ func (c *cloud) CreateDisk(ctx context.Context, volumeName string, diskOptions *
 		return Disk{}, fmt.Errorf("invalid OSC VolumeType %q", diskOptions.VolumeType)
 	}
 
-	var resourceTag []oscV1.ResourceTag
+	var resourceTag []osc.ResourceTag
 	for key, value := range diskOptions.Tags {
 		copiedKey := key
 		copiedValue := value
-		resourceTag = append(resourceTag, oscV1.ResourceTag{Key: copiedKey, Value: copiedValue})
+		resourceTag = append(resourceTag, osc.ResourceTag{Key: copiedKey, Value: copiedValue})
 	}
 
 	zone := diskOptions.AvailabilityZone
@@ -413,16 +413,13 @@ func (c *cloud) CreateDisk(ctx context.Context, volumeName string, diskOptions *
 		return Disk{}, fmt.Errorf("disk size was not returned by CreateVolume")
 	}
 
-	requestTag := oscV1.CreateTagsOpts{
-		CreateTagsRequest: optional.NewInterface(
-			oscV1.CreateTagsRequest{
-				ResourceIds: []string{volumeID},
-				Tags:        resourceTag,
-			}),
+	requestTag := osc.CreateTagsRequest{
+		ResourceIds: []string{volumeID},
+		Tags:        resourceTag,
 	}
 
 	createTagsCallBack := func() (bool, error) {
-		resTag, httpRes, err := c.client.CreateTags(ctx, &requestTag)
+		resTag, httpRes, err := c.client.CreateTags(ctx, requestTag)
 		klog.Infof("Debug response CreateTags: response(%+v), err(%v), httpRes(%v)", resTag, err, httpRes)
 		if err != nil {
 			if httpRes != nil {
@@ -746,9 +743,9 @@ func (c *cloud) CreateSnapshot(ctx context.Context, volumeID string, snapshotOpt
 	descriptions := "Created by AWS EBS CSI driver for volume " + volumeID
 	klog.Infof("Debug CreateSnapshot : %+v, %+v\n", volumeID, snapshotOptions)
 
-	var resourceTag []oscV1.ResourceTag
+	var resourceTag []osc.ResourceTag
 	for key, value := range snapshotOptions.Tags {
-		resourceTag = append(resourceTag, oscV1.ResourceTag{Key: key, Value: value})
+		resourceTag = append(resourceTag, osc.ResourceTag{Key: key, Value: value})
 	}
 	klog.Infof("Debug tags = append( %+v ) \n", resourceTag)
 
@@ -794,20 +791,17 @@ func (c *cloud) CreateSnapshot(ctx context.Context, volumeID string, snapshotOpt
 	}
 	klog.Infof("Debug res, err := c.ec2.CreateSnapshotWithContext(ctx, request) : %+v\n", res)
 
-	requestTag := oscV1.CreateTagsOpts{
-		CreateTagsRequest: optional.NewInterface(
-			oscV1.CreateTagsRequest{
-				ResourceIds: []string{res.Snapshot.SnapshotId},
-				Tags:        resourceTag,
-			}),
+	requestTag := osc.CreateTagsRequest{
+		ResourceIds: []string{res.Snapshot.SnapshotId},
+		Tags:        resourceTag,
 	}
 
 	klog.Infof("Debug requestTag(%+v)\n", requestTag)
-	var resTag oscV1.CreateTagsResponse
+	var resTag osc.CreateTagsResponse
 	createTagCallback := func() (bool, error) {
 		var httpResTag *_nethttp.Response
 		var errTag error
-		resTag, httpResTag, errTag = c.client.CreateTags(ctx, &requestTag)
+		resTag, httpResTag, errTag = c.client.CreateTags(ctx, requestTag)
 		klog.Infof("Debug resTag( %+v ) errTag( %+v ), httpResTag(%+v)\n", resTag, errTag, httpResTag)
 		if errTag != nil {
 			if httpResTag != nil {

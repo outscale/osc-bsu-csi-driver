@@ -185,7 +185,7 @@ type OscInterface interface {
 	ReadVolumes(ctx context.Context, localVarOptionals osc.ReadVolumesRequest) (osc.ReadVolumesResponse, *_nethttp.Response, error)
 	DeleteVolume(ctx context.Context, localVarOptionals osc.DeleteVolumeRequest) (osc.DeleteVolumeResponse, *_nethttp.Response, error)
 	LinkVolume(ctx context.Context, localVarOptionals osc.LinkVolumeRequest) (osc.LinkVolumeResponse, *_nethttp.Response, error)
-	UnlinkVolume(ctx context.Context, localVarOptionals *oscV1.UnlinkVolumeOpts) (oscV1.UnlinkVolumeResponse, *_nethttp.Response, error)
+	UnlinkVolume(ctx context.Context, localVarOptionals osc.UnlinkVolumeRequest) (osc.UnlinkVolumeResponse, *_nethttp.Response, error)
 	CreateSnapshot(ctx context.Context, localVarOptionals *oscV1.CreateSnapshotOpts) (oscV1.CreateSnapshotResponse, *_nethttp.Response, error)
 	ReadSnapshots(ctx context.Context, localVarOptionals *oscV1.ReadSnapshotsOpts) (oscV1.ReadSnapshotsResponse, *_nethttp.Response, error)
 	DeleteSnapshot(ctx context.Context, localVarOptionals *oscV1.DeleteSnapshotOpts) (oscV1.DeleteSnapshotResponse, *_nethttp.Response, error)
@@ -223,8 +223,8 @@ func (client *OscClient) LinkVolume(ctx context.Context, localVarOptionals osc.L
 	return client.api.VolumeApi.LinkVolume(client.auth).LinkVolumeRequest(localVarOptionals).Execute()
 }
 
-func (client *OscClient) UnlinkVolume(ctx context.Context, localVarOptionals *oscV1.UnlinkVolumeOpts) (oscV1.UnlinkVolumeResponse, *_nethttp.Response, error) {
-	return client.apiV1.VolumeApi.UnlinkVolume(client.authV1, localVarOptionals)
+func (client *OscClient) UnlinkVolume(ctx context.Context, localVarOptionals osc.UnlinkVolumeRequest) (osc.UnlinkVolumeResponse, *_nethttp.Response, error) {
+	return client.api.VolumeApi.UnlinkVolume(client.auth).UnlinkVolumeRequest(localVarOptionals).Execute()
 }
 
 func (client *OscClient) CreateSnapshot(ctx context.Context, localVarOptionals *oscV1.CreateSnapshotOpts) (oscV1.CreateSnapshotResponse, *_nethttp.Response, error) {
@@ -582,15 +582,12 @@ func (c *cloud) DetachDisk(ctx context.Context, volumeID, nodeID string) error {
 		klog.Warningf("DetachDisk called on non-attached volume: %s", volumeID)
 	}
 
-	request := oscV1.UnlinkVolumeOpts{
-		UnlinkVolumeRequest: optional.NewInterface(
-			oscV1.UnlinkVolumeRequest{
-				VolumeId: volumeID,
-			}),
+	request := osc.UnlinkVolumeRequest{
+		VolumeId: volumeID,
 	}
 
 	unlinkVolumeCallBack := func() (bool, error) {
-		resp, httpRes, err := c.client.UnlinkVolume(ctx, &request)
+		resp, httpRes, err := c.client.UnlinkVolume(ctx, request)
 		klog.Infof("Debug response DetachVolume: response(%+v), err(%v) httpRes(%v)\n", resp, err, httpRes)
 		if err != nil {
 			if httpRes != nil {

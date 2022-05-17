@@ -190,7 +190,7 @@ type OscInterface interface {
 	ReadSnapshots(ctx context.Context, localVarOptionals osc.ReadSnapshotsRequest) (osc.ReadSnapshotsResponse, *_nethttp.Response, error)
 	DeleteSnapshot(ctx context.Context, localVarOptionals osc.DeleteSnapshotRequest) (osc.DeleteSnapshotResponse, *_nethttp.Response, error)
 	ReadSubregions(ctx context.Context, localVarOptionals osc.ReadSubregionsRequest) (osc.ReadSubregionsResponse, *_nethttp.Response, error)
-	ReadVms(ctx context.Context, localVarOptionals *oscV1.ReadVmsOpts) (oscV1.ReadVmsResponse, *_nethttp.Response, error)
+	ReadVms(ctx context.Context, localVarOptionals osc.ReadVmsRequest) (osc.ReadVmsResponse, *_nethttp.Response, error)
 	UpdateVolume(ctx context.Context, localVarOptionals *oscV1.UpdateVolumeOpts) (oscV1.UpdateVolumeResponse, *_nethttp.Response, error)
 }
 
@@ -243,8 +243,8 @@ func (client *OscClient) ReadSubregions(ctx context.Context, localVarOptionals o
 	return client.api.SubregionApi.ReadSubregions(client.auth).ReadSubregionsRequest(localVarOptionals).Execute()
 }
 
-func (client *OscClient) ReadVms(ctx context.Context, localVarOptionals *oscV1.ReadVmsOpts) (oscV1.ReadVmsResponse, *_nethttp.Response, error) {
-	return client.apiV1.VmApi.ReadVms(client.authV1, localVarOptionals)
+func (client *OscClient) ReadVms(ctx context.Context, localVarOptionals osc.ReadVmsRequest) (osc.ReadVmsResponse, *_nethttp.Response, error) {
+	return client.api.VmApi.ReadVms(client.auth).ReadVmsRequest(localVarOptionals).Execute()
 }
 
 func (client *OscClient) UpdateVolume(ctx context.Context, localVarOptionals *oscV1.UpdateVolumeOpts) (oscV1.UpdateVolumeResponse, *_nethttp.Response, error) {
@@ -996,21 +996,18 @@ func (c *cloud) getVolume(ctx context.Context, request osc.ReadVolumesRequest) (
 }
 
 // Pagination not supported
-func (c *cloud) getInstance(ctx context.Context, vmID string) (oscV1.Vm, error) {
+func (c *cloud) getInstance(ctx context.Context, vmID string) (osc.Vm, error) {
 	klog.Infof("Debug  getInstance : %+v\n", vmID)
-	var instances []oscV1.Vm
+	var instances []osc.Vm
 
-	request := oscV1.ReadVmsOpts{
-		ReadVmsRequest: optional.NewInterface(
-			oscV1.ReadVmsRequest{
-				Filters: oscV1.FiltersVm{
-					VmIds: []string{vmID},
-				},
-			}),
+	request := osc.ReadVmsRequest{
+		Filters: &osc.FiltersVm{
+			VmIds: &[]string{vmID},
+		},
 	}
 
 	getInstanceCallback := func() (bool, error) {
-		response, httpRes, err := c.client.ReadVms(ctx, &request)
+		response, httpRes, err := c.client.ReadVms(ctx, request)
 		klog.Infof("Debug response DescribeInstances: response(%+v), err(%v), httpRes(%v)\n", response, err, httpRes)
 		if err != nil {
 			if httpRes != nil {
@@ -1026,7 +1023,7 @@ func (c *cloud) getInstance(ctx context.Context, vmID string) (oscV1.Vm, error) 
 			return false, fmt.Errorf("error listing OSC instances: %q", err)
 		}
 
-		instances = append(instances, response.Vms...)
+		instances = append(instances, response.GetVms()...)
 
 		return true, nil
 	}
@@ -1034,13 +1031,13 @@ func (c *cloud) getInstance(ctx context.Context, vmID string) (oscV1.Vm, error) 
 	backoff := util.EnvBackoff()
 	waitErr := wait.ExponentialBackoff(backoff, getInstanceCallback)
 	if waitErr != nil {
-		return oscV1.Vm{}, waitErr
+		return osc.Vm{}, waitErr
 	}
 
 	if l := len(instances); l > 1 {
-		return oscV1.Vm{}, fmt.Errorf("found %d instances with ID %q", l, vmID)
+		return osc.Vm{}, fmt.Errorf("found %d instances with ID %q", l, vmID)
 	} else if l < 1 {
-		return oscV1.Vm{}, ErrNotFound
+		return osc.Vm{}, ErrNotFound
 	}
 
 	return instances[0], nil

@@ -26,7 +26,8 @@ import (
 	"os"
 
 	"github.com/antihax/optional"
-	"github.com/outscale/osc-sdk-go/osc"
+	oscV1 "github.com/outscale/osc-sdk-go/osc"
+	osc "github.com/outscale/osc-sdk-go/v2"
 
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	dm "github.com/outscale-dev/osc-bsu-csi-driver/pkg/cloud/devicemanager"
@@ -158,7 +159,7 @@ type SnapshotOptions struct {
 
 // oscListSnapshotsResponse is a helper struct returned from the AWS API calling function to the main ListSnapshots function
 type oscListSnapshotsResponse struct {
-	Snapshots []osc.Snapshot
+	Snapshots []oscV1.Snapshot
 }
 
 type Cloud interface {
@@ -179,71 +180,74 @@ type Cloud interface {
 }
 
 type OscInterface interface {
-	CreateVolume(ctx context.Context, localVarOptionals *osc.CreateVolumeOpts) (osc.CreateVolumeResponse, *_nethttp.Response, error)
-	CreateTags(ctx context.Context, localVarOptionals *osc.CreateTagsOpts) (osc.CreateTagsResponse, *_nethttp.Response, error)
-	ReadVolumes(ctx context.Context, localVarOptionals *osc.ReadVolumesOpts) (osc.ReadVolumesResponse, *_nethttp.Response, error)
-	DeleteVolume(ctx context.Context, localVarOptionals *osc.DeleteVolumeOpts) (osc.DeleteVolumeResponse, *_nethttp.Response, error)
-	LinkVolume(ctx context.Context, localVarOptionals *osc.LinkVolumeOpts) (osc.LinkVolumeResponse, *_nethttp.Response, error)
-	UnlinkVolume(ctx context.Context, localVarOptionals *osc.UnlinkVolumeOpts) (osc.UnlinkVolumeResponse, *_nethttp.Response, error)
-	CreateSnapshot(ctx context.Context, localVarOptionals *osc.CreateSnapshotOpts) (osc.CreateSnapshotResponse, *_nethttp.Response, error)
-	ReadSnapshots(ctx context.Context, localVarOptionals *osc.ReadSnapshotsOpts) (osc.ReadSnapshotsResponse, *_nethttp.Response, error)
-	DeleteSnapshot(ctx context.Context, localVarOptionals *osc.DeleteSnapshotOpts) (osc.DeleteSnapshotResponse, *_nethttp.Response, error)
-	ReadSubregions(ctx context.Context, localVarOptionals *osc.ReadSubregionsOpts) (osc.ReadSubregionsResponse, *_nethttp.Response, error)
-	ReadVms(ctx context.Context, localVarOptionals *osc.ReadVmsOpts) (osc.ReadVmsResponse, *_nethttp.Response, error)
-	UpdateVolume(ctx context.Context, localVarOptionals *osc.UpdateVolumeOpts) (osc.UpdateVolumeResponse, *_nethttp.Response, error)
+	CreateVolume(ctx context.Context, localVarOptionals *oscV1.CreateVolumeOpts) (oscV1.CreateVolumeResponse, *_nethttp.Response, error)
+	CreateTags(ctx context.Context, localVarOptionals *oscV1.CreateTagsOpts) (oscV1.CreateTagsResponse, *_nethttp.Response, error)
+	ReadVolumes(ctx context.Context, localVarOptionals *oscV1.ReadVolumesOpts) (oscV1.ReadVolumesResponse, *_nethttp.Response, error)
+	DeleteVolume(ctx context.Context, localVarOptionals *oscV1.DeleteVolumeOpts) (oscV1.DeleteVolumeResponse, *_nethttp.Response, error)
+	LinkVolume(ctx context.Context, localVarOptionals *oscV1.LinkVolumeOpts) (oscV1.LinkVolumeResponse, *_nethttp.Response, error)
+	UnlinkVolume(ctx context.Context, localVarOptionals *oscV1.UnlinkVolumeOpts) (oscV1.UnlinkVolumeResponse, *_nethttp.Response, error)
+	CreateSnapshot(ctx context.Context, localVarOptionals *oscV1.CreateSnapshotOpts) (oscV1.CreateSnapshotResponse, *_nethttp.Response, error)
+	ReadSnapshots(ctx context.Context, localVarOptionals *oscV1.ReadSnapshotsOpts) (oscV1.ReadSnapshotsResponse, *_nethttp.Response, error)
+	DeleteSnapshot(ctx context.Context, localVarOptionals *oscV1.DeleteSnapshotOpts) (oscV1.DeleteSnapshotResponse, *_nethttp.Response, error)
+	ReadSubregions(ctx context.Context, localVarOptionals *oscV1.ReadSubregionsOpts) (oscV1.ReadSubregionsResponse, *_nethttp.Response, error)
+	ReadVms(ctx context.Context, localVarOptionals *oscV1.ReadVmsOpts) (oscV1.ReadVmsResponse, *_nethttp.Response, error)
+	UpdateVolume(ctx context.Context, localVarOptionals *oscV1.UpdateVolumeOpts) (oscV1.UpdateVolumeResponse, *_nethttp.Response, error)
 }
 
 type OscClient struct {
-	config *osc.Configuration
-	auth   context.Context
-	api    *osc.APIClient
+	configV1 *oscV1.Configuration
+	config   *osc.Configuration
+	authV1   context.Context
+	auth     context.Context
+	apiV1    *oscV1.APIClient
+	api      *osc.APIClient
 }
 
-func (client *OscClient) CreateVolume(ctx context.Context, localVarOptionals *osc.CreateVolumeOpts) (osc.CreateVolumeResponse, *_nethttp.Response, error) {
-	return client.api.VolumeApi.CreateVolume(client.auth, localVarOptionals)
+func (client *OscClient) CreateVolume(ctx context.Context, localVarOptionals *oscV1.CreateVolumeOpts) (oscV1.CreateVolumeResponse, *_nethttp.Response, error) {
+	return client.apiV1.VolumeApi.CreateVolume(client.authV1, localVarOptionals)
 }
-func (client *OscClient) CreateTags(ctx context.Context, localVarOptionals *osc.CreateTagsOpts) (osc.CreateTagsResponse, *_nethttp.Response, error) {
-	return client.api.TagApi.CreateTags(client.auth, localVarOptionals)
-}
-
-func (client *OscClient) ReadVolumes(ctx context.Context, localVarOptionals *osc.ReadVolumesOpts) (osc.ReadVolumesResponse, *_nethttp.Response, error) {
-	return client.api.VolumeApi.ReadVolumes(client.auth, localVarOptionals)
+func (client *OscClient) CreateTags(ctx context.Context, localVarOptionals *oscV1.CreateTagsOpts) (oscV1.CreateTagsResponse, *_nethttp.Response, error) {
+	return client.apiV1.TagApi.CreateTags(client.authV1, localVarOptionals)
 }
 
-func (client *OscClient) DeleteVolume(ctx context.Context, localVarOptionals *osc.DeleteVolumeOpts) (osc.DeleteVolumeResponse, *_nethttp.Response, error) {
-	return client.api.VolumeApi.DeleteVolume(client.auth, localVarOptionals)
+func (client *OscClient) ReadVolumes(ctx context.Context, localVarOptionals *oscV1.ReadVolumesOpts) (oscV1.ReadVolumesResponse, *_nethttp.Response, error) {
+	return client.apiV1.VolumeApi.ReadVolumes(client.authV1, localVarOptionals)
 }
 
-func (client *OscClient) LinkVolume(ctx context.Context, localVarOptionals *osc.LinkVolumeOpts) (osc.LinkVolumeResponse, *_nethttp.Response, error) {
-	return client.api.VolumeApi.LinkVolume(client.auth, localVarOptionals)
+func (client *OscClient) DeleteVolume(ctx context.Context, localVarOptionals *oscV1.DeleteVolumeOpts) (oscV1.DeleteVolumeResponse, *_nethttp.Response, error) {
+	return client.apiV1.VolumeApi.DeleteVolume(client.authV1, localVarOptionals)
 }
 
-func (client *OscClient) UnlinkVolume(ctx context.Context, localVarOptionals *osc.UnlinkVolumeOpts) (osc.UnlinkVolumeResponse, *_nethttp.Response, error) {
-	return client.api.VolumeApi.UnlinkVolume(client.auth, localVarOptionals)
+func (client *OscClient) LinkVolume(ctx context.Context, localVarOptionals *oscV1.LinkVolumeOpts) (oscV1.LinkVolumeResponse, *_nethttp.Response, error) {
+	return client.apiV1.VolumeApi.LinkVolume(client.authV1, localVarOptionals)
 }
 
-func (client *OscClient) CreateSnapshot(ctx context.Context, localVarOptionals *osc.CreateSnapshotOpts) (osc.CreateSnapshotResponse, *_nethttp.Response, error) {
-	return client.api.SnapshotApi.CreateSnapshot(client.auth, localVarOptionals)
+func (client *OscClient) UnlinkVolume(ctx context.Context, localVarOptionals *oscV1.UnlinkVolumeOpts) (oscV1.UnlinkVolumeResponse, *_nethttp.Response, error) {
+	return client.apiV1.VolumeApi.UnlinkVolume(client.authV1, localVarOptionals)
 }
 
-func (client *OscClient) ReadSnapshots(ctx context.Context, localVarOptionals *osc.ReadSnapshotsOpts) (osc.ReadSnapshotsResponse, *_nethttp.Response, error) {
-	return client.api.SnapshotApi.ReadSnapshots(client.auth, localVarOptionals)
+func (client *OscClient) CreateSnapshot(ctx context.Context, localVarOptionals *oscV1.CreateSnapshotOpts) (oscV1.CreateSnapshotResponse, *_nethttp.Response, error) {
+	return client.apiV1.SnapshotApi.CreateSnapshot(client.authV1, localVarOptionals)
 }
 
-func (client *OscClient) DeleteSnapshot(ctx context.Context, localVarOptionals *osc.DeleteSnapshotOpts) (osc.DeleteSnapshotResponse, *_nethttp.Response, error) {
-	return client.api.SnapshotApi.DeleteSnapshot(client.auth, localVarOptionals)
+func (client *OscClient) ReadSnapshots(ctx context.Context, localVarOptionals *oscV1.ReadSnapshotsOpts) (oscV1.ReadSnapshotsResponse, *_nethttp.Response, error) {
+	return client.apiV1.SnapshotApi.ReadSnapshots(client.authV1, localVarOptionals)
 }
 
-func (client *OscClient) ReadSubregions(ctx context.Context, localVarOptionals *osc.ReadSubregionsOpts) (osc.ReadSubregionsResponse, *_nethttp.Response, error) {
-	return client.api.SubregionApi.ReadSubregions(client.auth, localVarOptionals)
+func (client *OscClient) DeleteSnapshot(ctx context.Context, localVarOptionals *oscV1.DeleteSnapshotOpts) (oscV1.DeleteSnapshotResponse, *_nethttp.Response, error) {
+	return client.apiV1.SnapshotApi.DeleteSnapshot(client.authV1, localVarOptionals)
 }
 
-func (client *OscClient) ReadVms(ctx context.Context, localVarOptionals *osc.ReadVmsOpts) (osc.ReadVmsResponse, *_nethttp.Response, error) {
-	return client.api.VmApi.ReadVms(client.auth, localVarOptionals)
+func (client *OscClient) ReadSubregions(ctx context.Context, localVarOptionals *oscV1.ReadSubregionsOpts) (oscV1.ReadSubregionsResponse, *_nethttp.Response, error) {
+	return client.apiV1.SubregionApi.ReadSubregions(client.authV1, localVarOptionals)
 }
 
-func (client *OscClient) UpdateVolume(ctx context.Context, localVarOptionals *osc.UpdateVolumeOpts) (osc.UpdateVolumeResponse, *_nethttp.Response, error) {
-	return client.api.VolumeApi.UpdateVolume(client.auth, localVarOptionals)
+func (client *OscClient) ReadVms(ctx context.Context, localVarOptionals *oscV1.ReadVmsOpts) (oscV1.ReadVmsResponse, *_nethttp.Response, error) {
+	return client.apiV1.VmApi.ReadVms(client.authV1, localVarOptionals)
+}
+
+func (client *OscClient) UpdateVolume(ctx context.Context, localVarOptionals *oscV1.UpdateVolumeOpts) (oscV1.UpdateVolumeResponse, *_nethttp.Response, error) {
+	return client.apiV1.VolumeApi.UpdateVolume(client.authV1, localVarOptionals)
 }
 
 var _ OscInterface = &OscClient{}
@@ -264,19 +268,33 @@ func NewCloud(region string) (Cloud, error) {
 
 func newOscCloud(region string) (Cloud, error) {
 	client := &OscClient{}
-	client.config = osc.NewConfiguration()
-	client.config.Debug = true
+	// SDK V1
+	client.configV1 = oscV1.NewConfiguration()
+	client.configV1.Debug = true
 
 	// Set User-Agent with name and version of the CSI driver
 	version := util.GetVersion()
+	client.configV1.UserAgent = fmt.Sprintf("osc-bsu-csi-driver/%s", version.DriverVersion)
+
+	client.configV1.BasePath, _ = client.configV1.ServerUrl(0, map[string]string{"region": region})
+	client.apiV1 = oscV1.NewAPIClient(client.configV1)
+	client.authV1 = context.WithValue(context.Background(), oscV1.ContextAWSv4, oscV1.AWSv4{
+		AccessKey: os.Getenv("OSC_ACCESS_KEY"),
+		SecretKey: os.Getenv("OSC_SECRET_KEY"),
+	})
+
+	client.config = osc.NewConfiguration()
+	client.config.Debug = true
 	client.config.UserAgent = fmt.Sprintf("osc-bsu-csi-driver/%s", version.DriverVersion)
 
-	client.config.BasePath, _ = client.config.ServerUrl(0, map[string]string{"region": region})
 	client.api = osc.NewAPIClient(client.config)
+
 	client.auth = context.WithValue(context.Background(), osc.ContextAWSv4, osc.AWSv4{
 		AccessKey: os.Getenv("OSC_ACCESS_KEY"),
 		SecretKey: os.Getenv("OSC_SECRET_KEY"),
 	})
+	client.auth = context.WithValue(client.auth, osc.ContextServerIndex, 0)
+	client.auth = context.WithValue(client.auth, osc.ContextServerVariables, map[string]string{"region": region})
 
 	return &cloud{
 		region: region,
@@ -319,11 +337,11 @@ func (c *cloud) CreateDisk(ctx context.Context, volumeName string, diskOptions *
 		return Disk{}, fmt.Errorf("invalid OSC VolumeType %q", diskOptions.VolumeType)
 	}
 
-	var resourceTag []osc.ResourceTag
+	var resourceTag []oscV1.ResourceTag
 	for key, value := range diskOptions.Tags {
 		copiedKey := key
 		copiedValue := value
-		resourceTag = append(resourceTag, osc.ResourceTag{Key: copiedKey, Value: copiedValue})
+		resourceTag = append(resourceTag, oscV1.ResourceTag{Key: copiedKey, Value: copiedValue})
 	}
 
 	zone := diskOptions.AvailabilityZone
@@ -342,9 +360,9 @@ func (c *cloud) CreateDisk(ctx context.Context, volumeName string, diskOptions *
 	}
 
 	snapshotID := diskOptions.SnapshotID
-	request := osc.CreateVolumeOpts{
+	request := oscV1.CreateVolumeOpts{
 		CreateVolumeRequest: optional.NewInterface(
-			osc.CreateVolumeRequest{
+			oscV1.CreateVolumeRequest{
 				Size:          int32(capacityGiB),
 				VolumeType:    createType,
 				SubregionName: zone,
@@ -353,7 +371,7 @@ func (c *cloud) CreateDisk(ctx context.Context, volumeName string, diskOptions *
 			}),
 	}
 
-	var creation osc.CreateVolumeResponse
+	var creation oscV1.CreateVolumeResponse
 	createVolumeCallBack := func() (bool, error) {
 		var httpRes *_nethttp.Response
 		var err error
@@ -391,9 +409,9 @@ func (c *cloud) CreateDisk(ctx context.Context, volumeName string, diskOptions *
 		return Disk{}, fmt.Errorf("disk size was not returned by CreateVolume")
 	}
 
-	requestTag := osc.CreateTagsOpts{
+	requestTag := oscV1.CreateTagsOpts{
 		CreateTagsRequest: optional.NewInterface(
-			osc.CreateTagsRequest{
+			oscV1.CreateTagsRequest{
 				ResourceIds: []string{creation.Volume.VolumeId},
 				Tags:        resourceTag,
 			}),
@@ -433,9 +451,9 @@ func (c *cloud) CreateDisk(ctx context.Context, volumeName string, diskOptions *
 
 func (c *cloud) DeleteDisk(ctx context.Context, volumeID string) (bool, error) {
 	klog.Infof("Debug DeleteDisk: %+v", volumeID)
-	request := osc.DeleteVolumeOpts{
+	request := oscV1.DeleteVolumeOpts{
 		DeleteVolumeRequest: optional.NewInterface(
-			osc.DeleteVolumeRequest{
+			oscV1.DeleteVolumeRequest{
 				VolumeId: volumeID,
 			}),
 	}
@@ -482,15 +500,15 @@ func (c *cloud) AttachDisk(ctx context.Context, volumeID, nodeID string) (string
 	defer device.Release(false)
 
 	if !device.IsAlreadyAssigned {
-		request := osc.LinkVolumeOpts{
+		request := oscV1.LinkVolumeOpts{
 			LinkVolumeRequest: optional.NewInterface(
-				osc.LinkVolumeRequest{
+				oscV1.LinkVolumeRequest{
 					DeviceName: device.Path,
 					VmId:       nodeID,
 					VolumeId:   volumeID,
 				}),
 		}
-		var resp osc.LinkVolumeResponse
+		var resp oscV1.LinkVolumeResponse
 		var httpRes *_nethttp.Response
 		linkVolumeCallBack := func() (bool, error) {
 			resp, httpRes, err = c.client.LinkVolume(ctx, &request)
@@ -539,10 +557,10 @@ func (c *cloud) DetachDisk(ctx context.Context, volumeID, nodeID string) error {
 	{
 		klog.Infof("Check Volume state before detaching")
 		//Check if the volume is attached to VM
-		request := osc.ReadVolumesOpts{
+		request := oscV1.ReadVolumesOpts{
 			ReadVolumesRequest: optional.NewInterface(
-				osc.ReadVolumesRequest{
-					Filters: osc.FiltersVolume{
+				oscV1.ReadVolumesRequest{
+					Filters: oscV1.FiltersVolume{
 						VolumeIds: []string{volumeID},
 					},
 				}),
@@ -551,7 +569,7 @@ func (c *cloud) DetachDisk(ctx context.Context, volumeID, nodeID string) error {
 		volume, err := c.getVolume(ctx, &request)
 		klog.Infof("Check Volume state before detaching volume: %+v err: %+v",
 			volume, err)
-		if err == nil && !reflect.DeepEqual(volume, osc.Volume{}) {
+		if err == nil && !reflect.DeepEqual(volume, oscV1.Volume{}) {
 			if volume.State != "" && volume.State == "available" {
 				klog.Warningf("Tolerate DetachDisk called on available volume: %s on %s",
 					volumeID, nodeID)
@@ -576,9 +594,9 @@ func (c *cloud) DetachDisk(ctx context.Context, volumeID, nodeID string) error {
 		klog.Warningf("DetachDisk called on non-attached volume: %s", volumeID)
 	}
 
-	request := osc.UnlinkVolumeOpts{
+	request := oscV1.UnlinkVolumeOpts{
 		UnlinkVolumeRequest: optional.NewInterface(
-			osc.UnlinkVolumeRequest{
+			oscV1.UnlinkVolumeRequest{
 				VolumeId: volumeID,
 			}),
 	}
@@ -623,10 +641,10 @@ func (c *cloud) WaitForAttachmentState(ctx context.Context, volumeID, state stri
 	// we get [1, 1.8, 3.24, 5.832000000000001, 10.4976].
 	// In total we wait for 2601 seconds.
 	verifyVolumeFunc := func() (bool, error) {
-		request := osc.ReadVolumesOpts{
+		request := oscV1.ReadVolumesOpts{
 			ReadVolumesRequest: optional.NewInterface(
-				osc.ReadVolumesRequest{
-					Filters: osc.FiltersVolume{
+				oscV1.ReadVolumesRequest{
+					Filters: oscV1.FiltersVolume{
 						VolumeIds: []string{volumeID},
 					},
 				}),
@@ -661,10 +679,10 @@ func (c *cloud) WaitForAttachmentState(ctx context.Context, volumeID, state stri
 
 func (c *cloud) GetDiskByName(ctx context.Context, name string, capacityBytes int64) (Disk, error) {
 	klog.Infof("Debug GetDiskByName: %+v, %v\n", name, capacityBytes)
-	request := osc.ReadVolumesOpts{
+	request := oscV1.ReadVolumesOpts{
 		ReadVolumesRequest: optional.NewInterface(
-			osc.ReadVolumesRequest{
-				Filters: osc.FiltersVolume{
+			oscV1.ReadVolumesRequest{
+				Filters: oscV1.FiltersVolume{
 					TagKeys:   []string{VolumeNameTagKey},
 					TagValues: []string{name},
 				},
@@ -690,10 +708,10 @@ func (c *cloud) GetDiskByName(ctx context.Context, name string, capacityBytes in
 
 func (c *cloud) GetDiskByID(ctx context.Context, volumeID string) (Disk, error) {
 	klog.Infof("Debug GetDiskByID : %+v\n", volumeID)
-	request := osc.ReadVolumesOpts{
+	request := oscV1.ReadVolumesOpts{
 		ReadVolumesRequest: optional.NewInterface(
-			osc.ReadVolumesRequest{
-				Filters: osc.FiltersVolume{
+			oscV1.ReadVolumesRequest{
+				Filters: oscV1.FiltersVolume{
 					VolumeIds: []string{volumeID},
 				},
 			}),
@@ -714,7 +732,7 @@ func (c *cloud) GetDiskByID(ctx context.Context, volumeID string) (Disk, error) 
 func (c *cloud) IsExistInstance(ctx context.Context, nodeID string) bool {
 	klog.Infof("Debug IsExistInstance : %+v\n", nodeID)
 	instance, err := c.getInstance(ctx, nodeID)
-	if err != nil || reflect.DeepEqual(instance, osc.Vm{}) {
+	if err != nil || reflect.DeepEqual(instance, oscV1.Vm{}) {
 		return false
 	}
 	return true
@@ -724,15 +742,15 @@ func (c *cloud) CreateSnapshot(ctx context.Context, volumeID string, snapshotOpt
 	descriptions := "Created by AWS EBS CSI driver for volume " + volumeID
 	klog.Infof("Debug CreateSnapshot : %+v, %+v\n", volumeID, snapshotOptions)
 
-	var resourceTag []osc.ResourceTag
+	var resourceTag []oscV1.ResourceTag
 	for key, value := range snapshotOptions.Tags {
-		resourceTag = append(resourceTag, osc.ResourceTag{Key: key, Value: value})
+		resourceTag = append(resourceTag, oscV1.ResourceTag{Key: key, Value: value})
 	}
 	klog.Infof("Debug tags = append( %+v ) \n", resourceTag)
 
-	request := osc.CreateSnapshotOpts{
+	request := oscV1.CreateSnapshotOpts{
 		CreateSnapshotRequest: optional.NewInterface(
-			osc.CreateSnapshotRequest{
+			oscV1.CreateSnapshotRequest{
 				VolumeId:    volumeID,
 				DryRun:      false,
 				Description: descriptions,
@@ -740,7 +758,7 @@ func (c *cloud) CreateSnapshot(ctx context.Context, volumeID string, snapshotOpt
 	}
 
 	klog.Infof("Debug request := CreateSnapshotInput %+v  \n", request)
-	var res osc.CreateSnapshotResponse
+	var res oscV1.CreateSnapshotResponse
 	createSnapshotCallBack := func() (bool, error) {
 		var httpRes *_nethttp.Response
 		res, httpRes, err = c.client.CreateSnapshot(ctx, &request)
@@ -767,21 +785,21 @@ func (c *cloud) CreateSnapshot(ctx context.Context, volumeID string, snapshotOpt
 		return Snapshot{}, waitErr
 	}
 
-	if reflect.DeepEqual(res, osc.CreateSnapshotResponse{}) {
+	if reflect.DeepEqual(res, oscV1.CreateSnapshotResponse{}) {
 		return Snapshot{}, fmt.Errorf("nil CreateSnapshotResponse")
 	}
 	klog.Infof("Debug res, err := c.ec2.CreateSnapshotWithContext(ctx, request) : %+v\n", res)
 
-	requestTag := osc.CreateTagsOpts{
+	requestTag := oscV1.CreateTagsOpts{
 		CreateTagsRequest: optional.NewInterface(
-			osc.CreateTagsRequest{
+			oscV1.CreateTagsRequest{
 				ResourceIds: []string{res.Snapshot.SnapshotId},
 				Tags:        resourceTag,
 			}),
 	}
 
 	klog.Infof("Debug requestTag(%+v)\n", requestTag)
-	var resTag osc.CreateTagsResponse
+	var resTag oscV1.CreateTagsResponse
 	createTagCallback := func() (bool, error) {
 		var httpResTag *_nethttp.Response
 		var errTag error
@@ -814,9 +832,9 @@ func (c *cloud) CreateSnapshot(ctx context.Context, volumeID string, snapshotOpt
 
 func (c *cloud) DeleteSnapshot(ctx context.Context, snapshotID string) (success bool, err error) {
 	klog.Infof("Debug DeleteSnapshot : %+v\n", snapshotID)
-	request := osc.DeleteSnapshotOpts{
+	request := oscV1.DeleteSnapshotOpts{
 		DeleteSnapshotRequest: optional.NewInterface(
-			osc.DeleteSnapshotRequest{
+			oscV1.DeleteSnapshotRequest{
 				SnapshotId: snapshotID,
 				DryRun:     false,
 			}),
@@ -852,10 +870,10 @@ func (c *cloud) DeleteSnapshot(ctx context.Context, snapshotID string) (success 
 
 func (c *cloud) GetSnapshotByName(ctx context.Context, name string) (snapshot Snapshot, err error) {
 	klog.Infof("Debug GetSnapshotByName : %+v\n", name)
-	request := osc.ReadSnapshotsOpts{
+	request := oscV1.ReadSnapshotsOpts{
 		ReadSnapshotsRequest: optional.NewInterface(
-			osc.ReadSnapshotsRequest{
-				Filters: osc.FiltersSnapshot{
+			oscV1.ReadSnapshotsRequest{
+				Filters: oscV1.FiltersSnapshot{
 					TagKeys:   []string{SnapshotNameTagKey},
 					TagValues: []string{name},
 				},
@@ -872,10 +890,10 @@ func (c *cloud) GetSnapshotByName(ctx context.Context, name string) (snapshot Sn
 
 func (c *cloud) GetSnapshotByID(ctx context.Context, snapshotID string) (snapshot Snapshot, err error) {
 	klog.Infof("Debug GetSnapshotByID : %+v\n", snapshotID)
-	request := osc.ReadSnapshotsOpts{
+	request := oscV1.ReadSnapshotsOpts{
 		ReadSnapshotsRequest: optional.NewInterface(
-			osc.ReadSnapshotsRequest{
-				Filters: osc.FiltersSnapshot{
+			oscV1.ReadSnapshotsRequest{
+				Filters: oscV1.FiltersSnapshot{
 					SnapshotIds: []string{snapshotID},
 				},
 			}),
@@ -896,20 +914,20 @@ func (c *cloud) GetSnapshotByID(ctx context.Context, snapshotID string) (snapsho
 func (c *cloud) ListSnapshots(ctx context.Context, volumeID string, maxResults int64, nextToken string) (listSnapshotsResponse ListSnapshotsResponse, err error) {
 	klog.Infof("Debug ListSnapshots : %+v, %+v, %+v\n", volumeID, maxResults, nextToken)
 
-	request := osc.ReadSnapshotsOpts{
+	request := oscV1.ReadSnapshotsOpts{
 		ReadSnapshotsRequest: optional.NewInterface(
-			osc.ReadSnapshotsRequest{
-				Filters: osc.FiltersSnapshot{
+			oscV1.ReadSnapshotsRequest{
+				Filters: oscV1.FiltersSnapshot{
 					VolumeIds: []string{},
 				},
 			}),
 	}
 
 	if len(volumeID) != 0 {
-		request = osc.ReadSnapshotsOpts{
+		request = oscV1.ReadSnapshotsOpts{
 			ReadSnapshotsRequest: optional.NewInterface(
-				osc.ReadSnapshotsRequest{
-					Filters: osc.FiltersSnapshot{
+				oscV1.ReadSnapshotsRequest{
+					Filters: oscV1.FiltersSnapshot{
 						VolumeIds: []string{volumeID},
 					},
 				}),
@@ -935,9 +953,9 @@ func (c *cloud) ListSnapshots(ctx context.Context, volumeID string, maxResults i
 	}, nil
 }
 
-func (c *cloud) oscSnapshotResponseToStruct(oscSnapshot osc.Snapshot) Snapshot {
+func (c *cloud) oscSnapshotResponseToStruct(oscSnapshot oscV1.Snapshot) Snapshot {
 	klog.Infof("Debug oscSnapshotResponseToStruct : %+v\n", oscSnapshot)
-	if reflect.DeepEqual(oscSnapshot, osc.Snapshot{}) {
+	if reflect.DeepEqual(oscSnapshot, oscV1.Snapshot{}) {
 		return Snapshot{}
 	}
 	snapshotSize := util.GiBToBytes(int64(oscSnapshot.VolumeSize))
@@ -973,13 +991,13 @@ func keepRetryWithError(requestStr string, err error, allowedErrors []string) bo
 }
 
 // Pagination not supported
-func (c *cloud) getVolume(ctx context.Context, request *osc.ReadVolumesOpts) (osc.Volume, error) {
+func (c *cloud) getVolume(ctx context.Context, request *oscV1.ReadVolumesOpts) (oscV1.Volume, error) {
 	klog.Infof("Debug getVolume : %+v\n", request)
-	var volume osc.Volume
+	var volume oscV1.Volume
 	getVolumeCallback := func() (bool, error) {
-		var volumes []osc.Volume
+		var volumes []oscV1.Volume
 
-		var response osc.ReadVolumesResponse
+		var response oscV1.ReadVolumesResponse
 		var httpRes *_nethttp.Response
 		var err error
 
@@ -1015,21 +1033,21 @@ func (c *cloud) getVolume(ctx context.Context, request *osc.ReadVolumesOpts) (os
 	waitErr := wait.ExponentialBackoff(backoff, getVolumeCallback)
 
 	if waitErr != nil {
-		return osc.Volume{}, waitErr
+		return oscV1.Volume{}, waitErr
 	}
 
 	return volume, nil
 }
 
 // Pagination not supported
-func (c *cloud) getInstance(ctx context.Context, vmID string) (osc.Vm, error) {
+func (c *cloud) getInstance(ctx context.Context, vmID string) (oscV1.Vm, error) {
 	klog.Infof("Debug  getInstance : %+v\n", vmID)
-	var instances []osc.Vm
+	var instances []oscV1.Vm
 
-	request := osc.ReadVmsOpts{
+	request := oscV1.ReadVmsOpts{
 		ReadVmsRequest: optional.NewInterface(
-			osc.ReadVmsRequest{
-				Filters: osc.FiltersVm{
+			oscV1.ReadVmsRequest{
+				Filters: oscV1.FiltersVm{
 					VmIds: []string{vmID},
 				},
 			}),
@@ -1060,22 +1078,22 @@ func (c *cloud) getInstance(ctx context.Context, vmID string) (osc.Vm, error) {
 	backoff := util.EnvBackoff()
 	waitErr := wait.ExponentialBackoff(backoff, getInstanceCallback)
 	if waitErr != nil {
-		return osc.Vm{}, waitErr
+		return oscV1.Vm{}, waitErr
 	}
 
 	if l := len(instances); l > 1 {
-		return osc.Vm{}, fmt.Errorf("found %d instances with ID %q", l, vmID)
+		return oscV1.Vm{}, fmt.Errorf("found %d instances with ID %q", l, vmID)
 	} else if l < 1 {
-		return osc.Vm{}, ErrNotFound
+		return oscV1.Vm{}, ErrNotFound
 	}
 
 	return instances[0], nil
 }
 
 // Pagination not supported
-func (c *cloud) getSnapshot(ctx context.Context, request *osc.ReadSnapshotsOpts) (osc.Snapshot, error) {
+func (c *cloud) getSnapshot(ctx context.Context, request *oscV1.ReadSnapshotsOpts) (oscV1.Snapshot, error) {
 	klog.Infof("Debug  getSnapshot: %+v\n", request)
-	var snapshots []osc.Snapshot
+	var snapshots []oscV1.Snapshot
 	getSnapshotsCallback := func() (bool, error) {
 		response, httpRes, err := c.client.ReadSnapshots(ctx, request)
 		klog.Infof("Debug response DescribeSnapshots: response(%+v), err(%v)\n", response, err)
@@ -1099,13 +1117,13 @@ func (c *cloud) getSnapshot(ctx context.Context, request *osc.ReadSnapshotsOpts)
 	backoff := util.EnvBackoff()
 	waitErr := wait.ExponentialBackoff(backoff, getSnapshotsCallback)
 	if waitErr != nil {
-		return osc.Snapshot{}, waitErr
+		return oscV1.Snapshot{}, waitErr
 	}
 	klog.Infof("Debug snapshots: %+v, len(snapshots): %+v\n", snapshots, len(snapshots))
 	if l := len(snapshots); l > 1 {
-		return osc.Snapshot{}, ErrMultiSnapshots
+		return oscV1.Snapshot{}, ErrMultiSnapshots
 	} else if l < 1 {
-		return osc.Snapshot{}, ErrNotFound
+		return oscV1.Snapshot{}, ErrNotFound
 	}
 	klog.Infof("Debug (snapshots[0]): %+v\n", snapshots[0])
 	return snapshots[0], nil
@@ -1113,10 +1131,10 @@ func (c *cloud) getSnapshot(ctx context.Context, request *osc.ReadSnapshotsOpts)
 
 // listSnapshots returns all snapshots based from a request
 // Pagination not supported
-func (c *cloud) listSnapshots(ctx context.Context, request *osc.ReadSnapshotsOpts) (oscListSnapshotsResponse, error) {
+func (c *cloud) listSnapshots(ctx context.Context, request *oscV1.ReadSnapshotsOpts) (oscListSnapshotsResponse, error) {
 	klog.Infof("Debug listSnapshots : %+v\n", request)
-	var snapshots []osc.Snapshot
-	var response osc.ReadSnapshotsResponse
+	var snapshots []oscV1.Snapshot
+	var response oscV1.ReadSnapshotsResponse
 	var httpRes *_nethttp.Response
 	var err error
 	listSnapshotsCallBack := func() (bool, error) {
@@ -1164,10 +1182,10 @@ func (c *cloud) waitForVolume(ctx context.Context, volumeID string) error {
 		checkTimeout = 1 * time.Minute
 	)
 
-	request := osc.ReadVolumesOpts{
+	request := oscV1.ReadVolumesOpts{
 		ReadVolumesRequest: optional.NewInterface(
-			osc.ReadVolumesRequest{
-				Filters: osc.FiltersVolume{
+			oscV1.ReadVolumesRequest{
+				Filters: oscV1.FiltersVolume{
 					VolumeIds: []string{volumeID},
 				},
 			}),
@@ -1190,17 +1208,17 @@ func (c *cloud) waitForVolume(ctx context.Context, volumeID string) error {
 // ResizeDisk resizes an BSU volume in GiB increments, rouding up to the next possible allocatable unit.
 // It returns the volume size after this call or an error if the size couldn't be determined.
 func (c *cloud) ResizeDisk(ctx context.Context, volumeID string, newSizeBytes int64) (int64, error) {
-	request := osc.ReadVolumesOpts{
+	request := oscV1.ReadVolumesOpts{
 		ReadVolumesRequest: optional.NewInterface(
-			osc.ReadVolumesRequest{
-				Filters: osc.FiltersVolume{
+			oscV1.ReadVolumesRequest{
+				Filters: oscV1.FiltersVolume{
 					VolumeIds: []string{volumeID},
 				},
 			}),
 	}
 	volume, err := c.getVolume(ctx, &request)
 	klog.Infof("Check Volume state before resizing volume: %+v err: %+v", volume, err)
-	if err != nil || reflect.DeepEqual(volume, osc.Volume{}) {
+	if err != nil || reflect.DeepEqual(volume, oscV1.Volume{}) {
 		klog.Errorf("Empty or error during getting the volume %s", volumeID)
 		return 0, err
 	}
@@ -1221,9 +1239,9 @@ func (c *cloud) ResizeDisk(ctx context.Context, volumeID string, newSizeBytes in
 	}
 
 	klog.Infof("expanding volume %q to size %d", volumeID, newSizeGiB)
-	req := osc.UpdateVolumeOpts{
+	req := oscV1.UpdateVolumeOpts{
 		UpdateVolumeRequest: optional.NewInterface(
-			osc.UpdateVolumeRequest{
+			oscV1.UpdateVolumeRequest{
 				Size:     int32(newSizeGiB),
 				VolumeId: volumeID,
 			}),
@@ -1263,10 +1281,10 @@ func (c *cloud) ResizeDisk(ctx context.Context, volumeID string, newSizeBytes in
 // This is to get around potential eventual consistency problems with describing volume modifications
 // objects and ensuring that we read two different objects to verify volume state.
 func (c *cloud) checkDesiredSize(ctx context.Context, volumeID string, newSizeGiB int64) (int64, error) {
-	request := osc.ReadVolumesOpts{
+	request := oscV1.ReadVolumesOpts{
 		ReadVolumesRequest: optional.NewInterface(
-			osc.ReadVolumesRequest{
-				Filters: osc.FiltersVolume{
+			oscV1.ReadVolumesRequest{
+				Filters: oscV1.FiltersVolume{
 					VolumeIds: []string{volumeID},
 				},
 			}),
@@ -1289,7 +1307,7 @@ func (c *cloud) checkDesiredSize(ctx context.Context, volumeID string, newSizeGi
 func (c *cloud) randomAvailabilityZone(ctx context.Context, region string) (string, error) {
 	klog.Infof("Debug randomAvailabilityZone: %+v\n", region)
 
-	var response osc.ReadSubregionsResponse
+	var response oscV1.ReadSubregionsResponse
 	readSubregionsCallback := func() (bool, error) {
 		var httpRes *_nethttp.Response
 		var err error
@@ -1332,11 +1350,11 @@ func NewCloudWithoutMetadata(region string) (Cloud, error) {
 	}
 
 	client := &OscClient{}
-	client.config = osc.NewConfiguration()
-	client.config.Debug = true
-	client.config.BasePath, _ = client.config.ServerUrl(0, map[string]string{"region": region})
-	client.api = osc.NewAPIClient(client.config)
-	client.auth = context.WithValue(context.Background(), osc.ContextAWSv4, osc.AWSv4{
+	client.configV1 = oscV1.NewConfiguration()
+	client.configV1.Debug = true
+	client.configV1.BasePath, _ = client.configV1.ServerUrl(0, map[string]string{"region": region})
+	client.apiV1 = oscV1.NewAPIClient(client.configV1)
+	client.authV1 = context.WithValue(context.Background(), oscV1.ContextAWSv4, oscV1.AWSv4{
 		AccessKey: os.Getenv("OSC_ACCESS_KEY"),
 		SecretKey: os.Getenv("OSC_SECRET_KEY"),
 	})

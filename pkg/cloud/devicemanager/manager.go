@@ -21,7 +21,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/outscale/osc-sdk-go/osc"
+	osc "github.com/outscale/osc-sdk-go/v2"
 
 	"k8s.io/klog/v2"
 )
@@ -52,11 +52,11 @@ func (d *Device) Taint() {
 }
 
 func IsNilDevice(d Device) bool {
-	return d.Instance.VmId == ""
+	return !d.Instance.HasVmId()
 }
 
 func IsNilVm(vm osc.Vm) bool {
-	return vm.VmId == ""
+	return !vm.HasVmId()
 }
 
 type DeviceManager interface {
@@ -211,10 +211,10 @@ func (d *deviceManager) release(device Device) error {
 // getDeviceNamesInUse returns the device to volume ID mapping
 // the mapping includes both already attached and being attached volumes
 func (d *deviceManager) getDeviceNamesInUse(instance osc.Vm) map[string]string {
-	nodeID := instance.VmId
+	nodeID := instance.GetVmId()
 	inUse := map[string]string{}
-	for _, blockDevice := range instance.BlockDeviceMappings {
-		name := blockDevice.DeviceName
+	for _, blockDevice := range instance.GetBlockDeviceMappings() {
+		name := blockDevice.GetDeviceName()
 		// trims /dev/sd or /dev/xvd from device name
 		name = strings.TrimPrefix(name, "/dev/sd")
 		name = strings.TrimPrefix(name, "/dev/xvd")
@@ -222,7 +222,7 @@ func (d *deviceManager) getDeviceNamesInUse(instance osc.Vm) map[string]string {
 		if len(name) < 1 || len(name) > 2 {
 			klog.Warningf("Unexpected EBS DeviceName: %q", blockDevice.DeviceName)
 		}
-		inUse[name] = blockDevice.Bsu.VolumeId
+		inUse[name] = blockDevice.Bsu.GetVolumeId()
 	}
 
 	for name, volumeID := range d.inFlight.GetNames(nodeID) {
@@ -245,5 +245,5 @@ func getInstanceID(instance osc.Vm) (string, error) {
 	if IsNilVm(instance) {
 		return "", fmt.Errorf("can't get ID from a nil instance")
 	}
-	return instance.VmId, nil
+	return instance.GetVmId(), nil
 }

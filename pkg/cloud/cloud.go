@@ -182,7 +182,7 @@ type Cloud interface {
 type OscInterface interface {
 	CreateVolume(ctx context.Context, localVarOptionals osc.CreateVolumeRequest) (osc.CreateVolumeResponse, *_nethttp.Response, error)
 	CreateTags(ctx context.Context, localVarOptionals osc.CreateTagsRequest) (osc.CreateTagsResponse, *_nethttp.Response, error)
-	ReadVolumes(ctx context.Context, localVarOptionals *oscV1.ReadVolumesOpts) (oscV1.ReadVolumesResponse, *_nethttp.Response, error)
+	ReadVolumes(ctx context.Context, localVarOptionals osc.ReadVolumesRequest) (osc.ReadVolumesResponse, *_nethttp.Response, error)
 	DeleteVolume(ctx context.Context, localVarOptionals *oscV1.DeleteVolumeOpts) (oscV1.DeleteVolumeResponse, *_nethttp.Response, error)
 	LinkVolume(ctx context.Context, localVarOptionals *oscV1.LinkVolumeOpts) (oscV1.LinkVolumeResponse, *_nethttp.Response, error)
 	UnlinkVolume(ctx context.Context, localVarOptionals *oscV1.UnlinkVolumeOpts) (oscV1.UnlinkVolumeResponse, *_nethttp.Response, error)
@@ -211,8 +211,8 @@ func (client *OscClient) CreateTags(ctx context.Context, localVarOptionals osc.C
 	return client.api.TagApi.CreateTags(client.auth).CreateTagsRequest(localVarOptionals).Execute()
 }
 
-func (client *OscClient) ReadVolumes(ctx context.Context, localVarOptionals *oscV1.ReadVolumesOpts) (oscV1.ReadVolumesResponse, *_nethttp.Response, error) {
-	return client.apiV1.VolumeApi.ReadVolumes(client.authV1, localVarOptionals)
+func (client *OscClient) ReadVolumes(ctx context.Context, localVarOptionals osc.ReadVolumesRequest) (osc.ReadVolumesResponse, *_nethttp.Response, error) {
+	return client.api.VolumeApi.ReadVolumes(client.auth).ReadVolumesRequest(localVarOptionals).Execute()
 }
 
 func (client *OscClient) DeleteVolume(ctx context.Context, localVarOptionals *oscV1.DeleteVolumeOpts) (oscV1.DeleteVolumeResponse, *_nethttp.Response, error) {
@@ -554,20 +554,17 @@ func (c *cloud) DetachDisk(ctx context.Context, volumeID, nodeID string) error {
 	{
 		klog.Infof("Check Volume state before detaching")
 		//Check if the volume is attached to VM
-		request := oscV1.ReadVolumesOpts{
-			ReadVolumesRequest: optional.NewInterface(
-				oscV1.ReadVolumesRequest{
-					Filters: oscV1.FiltersVolume{
-						VolumeIds: []string{volumeID},
-					},
-				}),
+		request := osc.ReadVolumesRequest{
+			Filters: &osc.FiltersVolume{
+				VolumeIds: &[]string{volumeID},
+			},
 		}
 
-		volume, err := c.getVolume(ctx, &request)
+		volume, err := c.getVolume(ctx, request)
 		klog.Infof("Check Volume state before detaching volume: %+v err: %+v",
 			volume, err)
 		if err == nil && !reflect.DeepEqual(volume, oscV1.Volume{}) {
-			if volume.State != "" && volume.State == "available" {
+			if volume.GetState() != "" && volume.GetState() == "available" {
 				klog.Warningf("Tolerate DetachDisk called on available volume: %s on %s",
 					volumeID, nodeID)
 				return nil
@@ -638,32 +635,29 @@ func (c *cloud) WaitForAttachmentState(ctx context.Context, volumeID, state stri
 	// we get [1, 1.8, 3.24, 5.832000000000001, 10.4976].
 	// In total we wait for 2601 seconds.
 	verifyVolumeFunc := func() (bool, error) {
-		request := oscV1.ReadVolumesOpts{
-			ReadVolumesRequest: optional.NewInterface(
-				oscV1.ReadVolumesRequest{
-					Filters: oscV1.FiltersVolume{
-						VolumeIds: []string{volumeID},
-					},
-				}),
+		request := osc.ReadVolumesRequest{
+			Filters: &osc.FiltersVolume{
+				VolumeIds: &[]string{volumeID},
+			},
 		}
 
-		volume, err := c.getVolume(ctx, &request)
+		volume, err := c.getVolume(ctx, request)
 		if err != nil {
 			return false, err
 		}
 
-		if len(volume.LinkedVolumes) == 0 {
+		if len(volume.GetLinkedVolumes()) == 0 {
 			if state == "detached" {
 				return true, nil
 			}
 		}
 
-		for _, a := range volume.LinkedVolumes {
-			if a.State == "" {
+		for _, a := range volume.GetLinkedVolumes() {
+			if a.GetState() == "" {
 				klog.Warningf("Ignoring nil attachment state for volume %q: %v", volumeID, a)
 				continue
 			}
-			if a.State == state {
+			if a.GetState() == state {
 				return true, nil
 			}
 		}
@@ -676,53 +670,47 @@ func (c *cloud) WaitForAttachmentState(ctx context.Context, volumeID, state stri
 
 func (c *cloud) GetDiskByName(ctx context.Context, name string, capacityBytes int64) (Disk, error) {
 	klog.Infof("Debug GetDiskByName: %+v, %v\n", name, capacityBytes)
-	request := oscV1.ReadVolumesOpts{
-		ReadVolumesRequest: optional.NewInterface(
-			oscV1.ReadVolumesRequest{
-				Filters: oscV1.FiltersVolume{
-					TagKeys:   []string{VolumeNameTagKey},
-					TagValues: []string{name},
-				},
-			}),
+	request := osc.ReadVolumesRequest{
+		Filters: &osc.FiltersVolume{
+			TagKeys:   &[]string{VolumeNameTagKey},
+			TagValues: &[]string{name},
+		},
 	}
 
-	volume, err := c.getVolume(ctx, &request)
+	volume, err := c.getVolume(ctx, request)
 	if err != nil {
 		return Disk{}, err
 	}
 
-	volSizeBytes := volume.Size
+	volSizeBytes := volume.GetSize()
 	if int64(volSizeBytes) != util.BytesToGiB(capacityBytes) {
 		return Disk{}, ErrDiskExistsDiffSize
 	}
 
 	return Disk{
-		VolumeID:         volume.VolumeId,
+		VolumeID:         volume.GetVolumeId(),
 		CapacityGiB:      int64(volSizeBytes),
-		AvailabilityZone: volume.SubregionName,
+		AvailabilityZone: volume.GetSubregionName(),
 	}, nil
 }
 
 func (c *cloud) GetDiskByID(ctx context.Context, volumeID string) (Disk, error) {
 	klog.Infof("Debug GetDiskByID : %+v\n", volumeID)
-	request := oscV1.ReadVolumesOpts{
-		ReadVolumesRequest: optional.NewInterface(
-			oscV1.ReadVolumesRequest{
-				Filters: oscV1.FiltersVolume{
-					VolumeIds: []string{volumeID},
-				},
-			}),
+	request := osc.ReadVolumesRequest{
+		Filters: &osc.FiltersVolume{
+			VolumeIds: &[]string{volumeID},
+		},
 	}
 
-	volume, err := c.getVolume(ctx, &request)
+	volume, err := c.getVolume(ctx, request)
 	if err != nil {
 		return Disk{}, err
 	}
 
 	return Disk{
-		VolumeID:         volume.VolumeId,
-		CapacityGiB:      int64(volume.Size),
-		AvailabilityZone: volume.SubregionName,
+		VolumeID:         volume.GetVolumeId(),
+		CapacityGiB:      int64(volume.GetSize()),
+		AvailabilityZone: volume.GetSubregionName(),
 	}, nil
 }
 
@@ -985,13 +973,13 @@ func keepRetryWithError(requestStr string, err error, allowedErrors []string) bo
 }
 
 // Pagination not supported
-func (c *cloud) getVolume(ctx context.Context, request *oscV1.ReadVolumesOpts) (oscV1.Volume, error) {
+func (c *cloud) getVolume(ctx context.Context, request osc.ReadVolumesRequest) (osc.Volume, error) {
 	klog.Infof("Debug getVolume : %+v\n", request)
-	var volume oscV1.Volume
+	var volume osc.Volume
 	getVolumeCallback := func() (bool, error) {
-		var volumes []oscV1.Volume
+		var volumes []osc.Volume
 
-		var response oscV1.ReadVolumesResponse
+		var response osc.ReadVolumesResponse
 		var httpRes *_nethttp.Response
 		var err error
 
@@ -1011,7 +999,7 @@ func (c *cloud) getVolume(ctx context.Context, request *oscV1.ReadVolumesOpts) (
 			}
 			return false, err
 		}
-		volumes = append(volumes, response.Volumes...)
+		volumes = append(volumes, response.GetVolumes()...)
 
 		if l := len(volumes); l > 1 {
 			return false, ErrMultiDisks
@@ -1027,7 +1015,7 @@ func (c *cloud) getVolume(ctx context.Context, request *oscV1.ReadVolumesOpts) (
 	waitErr := wait.ExponentialBackoff(backoff, getVolumeCallback)
 
 	if waitErr != nil {
-		return oscV1.Volume{}, waitErr
+		return osc.Volume{}, waitErr
 	}
 
 	return volume, nil
@@ -1176,22 +1164,19 @@ func (c *cloud) waitForVolume(ctx context.Context, volumeID string) error {
 		checkTimeout = 1 * time.Minute
 	)
 
-	request := oscV1.ReadVolumesOpts{
-		ReadVolumesRequest: optional.NewInterface(
-			oscV1.ReadVolumesRequest{
-				Filters: oscV1.FiltersVolume{
-					VolumeIds: []string{volumeID},
-				},
-			}),
+	request := osc.ReadVolumesRequest{
+		Filters: &osc.FiltersVolume{
+			VolumeIds: &[]string{volumeID},
+		},
 	}
 
 	err := wait.Poll(checkInterval, checkTimeout, func() (done bool, err error) {
-		vol, err := c.getVolume(ctx, &request)
+		vol, err := c.getVolume(ctx, request)
 		if err != nil {
 			return true, err
 		}
-		if vol.State != "" {
-			return vol.State == "available", nil
+		if vol.GetState() != "" {
+			return vol.GetState() == "available", nil
 		}
 		return false, nil
 	})
@@ -1202,28 +1187,25 @@ func (c *cloud) waitForVolume(ctx context.Context, volumeID string) error {
 // ResizeDisk resizes an BSU volume in GiB increments, rouding up to the next possible allocatable unit.
 // It returns the volume size after this call or an error if the size couldn't be determined.
 func (c *cloud) ResizeDisk(ctx context.Context, volumeID string, newSizeBytes int64) (int64, error) {
-	request := oscV1.ReadVolumesOpts{
-		ReadVolumesRequest: optional.NewInterface(
-			oscV1.ReadVolumesRequest{
-				Filters: oscV1.FiltersVolume{
-					VolumeIds: []string{volumeID},
-				},
-			}),
+	request := osc.ReadVolumesRequest{
+		Filters: &osc.FiltersVolume{
+			VolumeIds: &[]string{volumeID},
+		},
 	}
-	volume, err := c.getVolume(ctx, &request)
+	volume, err := c.getVolume(ctx, request)
 	klog.Infof("Check Volume state before resizing volume: %+v err: %+v", volume, err)
 	if err != nil || reflect.DeepEqual(volume, oscV1.Volume{}) {
 		klog.Errorf("Empty or error during getting the volume %s", volumeID)
 		return 0, err
 	}
 
-	if volume.State != "available" {
+	if volume.GetState() != "available" {
 		return 0, fmt.Errorf("could not modify OSC volume in non 'available' state: %v", volume)
 	}
 
 	//resizes in chunks of GiB (not GB)
 	newSizeGiB := int32(util.RoundUpGiB(newSizeBytes))
-	oldSizeGiB := int32(volume.Size)
+	oldSizeGiB := volume.GetSize()
 
 	// Even if existing volume size is greater than user requested size, we should ensure that there are no pending
 	// volume modifications objects or volume has completed previously issued modification request.
@@ -1275,21 +1257,18 @@ func (c *cloud) ResizeDisk(ctx context.Context, volumeID string, newSizeBytes in
 // This is to get around potential eventual consistency problems with describing volume modifications
 // objects and ensuring that we read two different objects to verify volume state.
 func (c *cloud) checkDesiredSize(ctx context.Context, volumeID string, newSizeGiB int64) (int64, error) {
-	request := oscV1.ReadVolumesOpts{
-		ReadVolumesRequest: optional.NewInterface(
-			oscV1.ReadVolumesRequest{
-				Filters: oscV1.FiltersVolume{
-					VolumeIds: []string{volumeID},
-				},
-			}),
+	request := osc.ReadVolumesRequest{
+		Filters: &osc.FiltersVolume{
+			VolumeIds: &[]string{volumeID},
+		},
 	}
-	volume, err := c.getVolume(ctx, &request)
+	volume, err := c.getVolume(ctx, request)
 	if err != nil {
 		return 0, err
 	}
 
 	//resizes in chunks of GiB (not GB)
-	oldSizeGiB := int32(volume.Size)
+	oldSizeGiB := volume.GetSize()
 	if oldSizeGiB >= int32(newSizeGiB) {
 		return int64(oldSizeGiB), nil
 	}

@@ -180,7 +180,7 @@ type Cloud interface {
 }
 
 type OscInterface interface {
-	CreateVolume(ctx context.Context, localVarOptionals *oscV1.CreateVolumeOpts) (oscV1.CreateVolumeResponse, *_nethttp.Response, error)
+	CreateVolume(ctx context.Context, localVarOptionals osc.CreateVolumeRequest) (osc.CreateVolumeResponse, *_nethttp.Response, error)
 	CreateTags(ctx context.Context, localVarOptionals *oscV1.CreateTagsOpts) (oscV1.CreateTagsResponse, *_nethttp.Response, error)
 	ReadVolumes(ctx context.Context, localVarOptionals *oscV1.ReadVolumesOpts) (oscV1.ReadVolumesResponse, *_nethttp.Response, error)
 	DeleteVolume(ctx context.Context, localVarOptionals *oscV1.DeleteVolumeOpts) (oscV1.DeleteVolumeResponse, *_nethttp.Response, error)
@@ -203,9 +203,10 @@ type OscClient struct {
 	api      *osc.APIClient
 }
 
-func (client *OscClient) CreateVolume(ctx context.Context, localVarOptionals *oscV1.CreateVolumeOpts) (oscV1.CreateVolumeResponse, *_nethttp.Response, error) {
-	return client.apiV1.VolumeApi.CreateVolume(client.authV1, localVarOptionals)
+func (client *OscClient) CreateVolume(ctx context.Context, localVarOptionals osc.CreateVolumeRequest) (osc.CreateVolumeResponse, *_nethttp.Response, error) {
+	return client.api.VolumeApi.CreateVolume(client.auth).CreateVolumeRequest(localVarOptionals).Execute()
 }
+
 func (client *OscClient) CreateTags(ctx context.Context, localVarOptionals *oscV1.CreateTagsOpts) (oscV1.CreateTagsResponse, *_nethttp.Response, error) {
 	return client.apiV1.TagApi.CreateTags(client.authV1, localVarOptionals)
 }
@@ -360,22 +361,21 @@ func (c *cloud) CreateDisk(ctx context.Context, volumeName string, diskOptions *
 	}
 
 	snapshotID := diskOptions.SnapshotID
-	request := oscV1.CreateVolumeOpts{
-		CreateVolumeRequest: optional.NewInterface(
-			oscV1.CreateVolumeRequest{
-				Size:          int32(capacityGiB),
-				VolumeType:    createType,
-				SubregionName: zone,
-				Iops:          int32(iops),
-				SnapshotId:    snapshotID,
-			}),
+	requestSize := int32(capacityGiB)
+	requestIops := int32(iops)
+	request := osc.CreateVolumeRequest{
+		Size:          &requestSize,
+		VolumeType:    &createType,
+		SubregionName: zone,
+		Iops:          &requestIops,
+		SnapshotId:    &snapshotID,
 	}
 
-	var creation oscV1.CreateVolumeResponse
+	var creation osc.CreateVolumeResponse
 	createVolumeCallBack := func() (bool, error) {
 		var httpRes *_nethttp.Response
 		var err error
-		creation, httpRes, err = c.client.CreateVolume(ctx, &request)
+		creation, httpRes, err = c.client.CreateVolume(ctx, request)
 		klog.Infof("Debug response CreateVolume: response(%+v), err(%v), httpRes(%v)", creation, err, httpRes)
 		if err != nil {
 			if httpRes != nil {
@@ -399,12 +399,16 @@ func (c *cloud) CreateDisk(ctx context.Context, volumeName string, diskOptions *
 		return Disk{}, waitErr
 	}
 
-	volumeID := creation.Volume.VolumeId
+	if !creation.HasVolume() {
+		return Disk{}, fmt.Errorf("volume is empty when returned by CreateVolume")
+	}
+
+	volumeID := creation.Volume.GetVolumeId()
 	if len(volumeID) == 0 {
 		return Disk{}, fmt.Errorf("volume ID was not returned by CreateVolume")
 	}
 
-	size := creation.Volume.Size
+	size := creation.Volume.GetSize()
 	if size == 0 {
 		return Disk{}, fmt.Errorf("disk size was not returned by CreateVolume")
 	}
@@ -412,7 +416,7 @@ func (c *cloud) CreateDisk(ctx context.Context, volumeName string, diskOptions *
 	requestTag := oscV1.CreateTagsOpts{
 		CreateTagsRequest: optional.NewInterface(
 			oscV1.CreateTagsRequest{
-				ResourceIds: []string{creation.Volume.VolumeId},
+				ResourceIds: []string{volumeID},
 				Tags:        resourceTag,
 			}),
 	}

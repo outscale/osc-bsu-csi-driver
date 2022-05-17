@@ -189,7 +189,7 @@ type OscInterface interface {
 	CreateSnapshot(ctx context.Context, localVarOptionals osc.CreateSnapshotRequest) (osc.CreateSnapshotResponse, *_nethttp.Response, error)
 	ReadSnapshots(ctx context.Context, localVarOptionals osc.ReadSnapshotsRequest) (osc.ReadSnapshotsResponse, *_nethttp.Response, error)
 	DeleteSnapshot(ctx context.Context, localVarOptionals osc.DeleteSnapshotRequest) (osc.DeleteSnapshotResponse, *_nethttp.Response, error)
-	ReadSubregions(ctx context.Context, localVarOptionals *oscV1.ReadSubregionsOpts) (oscV1.ReadSubregionsResponse, *_nethttp.Response, error)
+	ReadSubregions(ctx context.Context, localVarOptionals osc.ReadSubregionsRequest) (osc.ReadSubregionsResponse, *_nethttp.Response, error)
 	ReadVms(ctx context.Context, localVarOptionals *oscV1.ReadVmsOpts) (oscV1.ReadVmsResponse, *_nethttp.Response, error)
 	UpdateVolume(ctx context.Context, localVarOptionals *oscV1.UpdateVolumeOpts) (oscV1.UpdateVolumeResponse, *_nethttp.Response, error)
 }
@@ -239,8 +239,8 @@ func (client *OscClient) DeleteSnapshot(ctx context.Context, localVarOptionals o
 	return client.api.SnapshotApi.DeleteSnapshot(client.auth).DeleteSnapshotRequest(localVarOptionals).Execute()
 }
 
-func (client *OscClient) ReadSubregions(ctx context.Context, localVarOptionals *oscV1.ReadSubregionsOpts) (oscV1.ReadSubregionsResponse, *_nethttp.Response, error) {
-	return client.apiV1.SubregionApi.ReadSubregions(client.authV1, localVarOptionals)
+func (client *OscClient) ReadSubregions(ctx context.Context, localVarOptionals osc.ReadSubregionsRequest) (osc.ReadSubregionsResponse, *_nethttp.Response, error) {
+	return client.api.SubregionApi.ReadSubregions(client.auth).ReadSubregionsRequest(localVarOptionals).Execute()
 }
 
 func (client *OscClient) ReadVms(ctx context.Context, localVarOptionals *oscV1.ReadVmsOpts) (oscV1.ReadVmsResponse, *_nethttp.Response, error) {

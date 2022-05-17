@@ -19,7 +19,7 @@ package devicemanager
 import (
 	"testing"
 
-	"github.com/outscale/osc-sdk-go/osc"
+	osc "github.com/outscale/osc-sdk-go/v2"
 )
 
 func TestNewDevice(t *testing.T) {
@@ -170,11 +170,11 @@ func TestReleaseDevice(t *testing.T) {
 
 func newFakeInstance(instanceID, volumeID, devicePath string) osc.Vm {
 	return osc.Vm{
-		VmId: instanceID,
-		BlockDeviceMappings: []osc.BlockDeviceMappingCreated{
+		VmId: &instanceID,
+		BlockDeviceMappings: &[]osc.BlockDeviceMappingCreated{
 			{
-				DeviceName: devicePath,
-				Bsu:        osc.BsuCreated{VolumeId: volumeID},
+				DeviceName: &devicePath,
+				Bsu:        &osc.BsuCreated{VolumeId: &volumeID},
 			},
 		},
 	}

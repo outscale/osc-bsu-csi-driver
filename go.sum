@@ -496,6 +496,8 @@ github.com/opencontainers/selinux v1.8.2/go.mod h1:MUIHuUEvKB1wtJjQdOyYRgOnLD2xA
 github.com/opentracing/opentracing-go v1.1.0/go.mod h1:UkNAQd3GIcIGf0SeVgPpRdFStlNbqXla1AfSYxPUl2o=
 github.com/outscale/osc-sdk-go v1.14.0 h1:C+n8gWnBR+iwzM0Azyzf/YCKSlzxwQ1GwPixgkd7QOs=
 github.com/outscale/osc-sdk-go v1.14.0/go.mod h1:zy/36e/y+J4GGMfb6IZMglAA3lvaqXK/Jm+x7bbA2wI=
+github.com/outscale/osc-sdk-go/v2 v2.9.0 h1:c1kOgzd9hw1QTu3uvRIDFbJP6uaYf7quQroztJUvMtg=
+github.com/outscale/osc-sdk-go/v2 v2.9.0/go.mod h1:G3V/TOCGniLSoS1VqEs775JM5FC1hfBd8wqGjs/ig5Q=
 github.com/pascaldekloe/goe v0.0.0-20180627143212-57f6aae5913c/go.mod h1:lzWF7FIEvWOWxwDKqyGYQf6ZUaNfKdP144TG7ZOy1lc=
 github.com/pelletier/go-toml v1.2.0/go.mod h1:5z9KED0ma1S8pY6P1sdut58dfprrGBbd/94hg7ilaic=
 github.com/pelletier/go-toml v1.9.3/go.mod h1:u1nR/EPcESfeI/szUZKdtJ0xRNbUoANCkoOuaOx1Y+c=

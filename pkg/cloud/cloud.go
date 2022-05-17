@@ -159,7 +159,7 @@ type SnapshotOptions struct {
 
 // oscListSnapshotsResponse is a helper struct returned from the AWS API calling function to the main ListSnapshots function
 type oscListSnapshotsResponse struct {
-	Snapshots []oscV1.Snapshot
+	Snapshots []osc.Snapshot
 }
 
 type Cloud interface {
@@ -186,9 +186,9 @@ type OscInterface interface {
 	DeleteVolume(ctx context.Context, localVarOptionals osc.DeleteVolumeRequest) (osc.DeleteVolumeResponse, *_nethttp.Response, error)
 	LinkVolume(ctx context.Context, localVarOptionals osc.LinkVolumeRequest) (osc.LinkVolumeResponse, *_nethttp.Response, error)
 	UnlinkVolume(ctx context.Context, localVarOptionals osc.UnlinkVolumeRequest) (osc.UnlinkVolumeResponse, *_nethttp.Response, error)
-	CreateSnapshot(ctx context.Context, localVarOptionals *oscV1.CreateSnapshotOpts) (oscV1.CreateSnapshotResponse, *_nethttp.Response, error)
-	ReadSnapshots(ctx context.Context, localVarOptionals *oscV1.ReadSnapshotsOpts) (oscV1.ReadSnapshotsResponse, *_nethttp.Response, error)
-	DeleteSnapshot(ctx context.Context, localVarOptionals *oscV1.DeleteSnapshotOpts) (oscV1.DeleteSnapshotResponse, *_nethttp.Response, error)
+	CreateSnapshot(ctx context.Context, localVarOptionals osc.CreateSnapshotRequest) (osc.CreateSnapshotResponse, *_nethttp.Response, error)
+	ReadSnapshots(ctx context.Context, localVarOptionals osc.ReadSnapshotsRequest) (osc.ReadSnapshotsResponse, *_nethttp.Response, error)
+	DeleteSnapshot(ctx context.Context, localVarOptionals osc.DeleteSnapshotRequest) (osc.DeleteSnapshotResponse, *_nethttp.Response, error)
 	ReadSubregions(ctx context.Context, localVarOptionals *oscV1.ReadSubregionsOpts) (oscV1.ReadSubregionsResponse, *_nethttp.Response, error)
 	ReadVms(ctx context.Context, localVarOptionals *oscV1.ReadVmsOpts) (oscV1.ReadVmsResponse, *_nethttp.Response, error)
 	UpdateVolume(ctx context.Context, localVarOptionals *oscV1.UpdateVolumeOpts) (oscV1.UpdateVolumeResponse, *_nethttp.Response, error)
@@ -227,16 +227,16 @@ func (client *OscClient) UnlinkVolume(ctx context.Context, localVarOptionals osc
 	return client.api.VolumeApi.UnlinkVolume(client.auth).UnlinkVolumeRequest(localVarOptionals).Execute()
 }
 
-func (client *OscClient) CreateSnapshot(ctx context.Context, localVarOptionals *oscV1.CreateSnapshotOpts) (oscV1.CreateSnapshotResponse, *_nethttp.Response, error) {
-	return client.apiV1.SnapshotApi.CreateSnapshot(client.authV1, localVarOptionals)
+func (client *OscClient) CreateSnapshot(ctx context.Context, localVarOptionals osc.CreateSnapshotRequest) (osc.CreateSnapshotResponse, *_nethttp.Response, error) {
+	return client.api.SnapshotApi.CreateSnapshot(client.auth).CreateSnapshotRequest(localVarOptionals).Execute()
 }
 
-func (client *OscClient) ReadSnapshots(ctx context.Context, localVarOptionals *oscV1.ReadSnapshotsOpts) (oscV1.ReadSnapshotsResponse, *_nethttp.Response, error) {
-	return client.apiV1.SnapshotApi.ReadSnapshots(client.authV1, localVarOptionals)
+func (client *OscClient) ReadSnapshots(ctx context.Context, localVarOptionals osc.ReadSnapshotsRequest) (osc.ReadSnapshotsResponse, *_nethttp.Response, error) {
+	return client.api.SnapshotApi.ReadSnapshots(client.auth).ReadSnapshotsRequest(localVarOptionals).Execute()
 }
 
-func (client *OscClient) DeleteSnapshot(ctx context.Context, localVarOptionals *oscV1.DeleteSnapshotOpts) (oscV1.DeleteSnapshotResponse, *_nethttp.Response, error) {
-	return client.apiV1.SnapshotApi.DeleteSnapshot(client.authV1, localVarOptionals)
+func (client *OscClient) DeleteSnapshot(ctx context.Context, localVarOptionals osc.DeleteSnapshotRequest) (osc.DeleteSnapshotResponse, *_nethttp.Response, error) {
+	return client.api.SnapshotApi.DeleteSnapshot(client.auth).DeleteSnapshotRequest(localVarOptionals).Execute()
 }
 
 func (client *OscClient) ReadSubregions(ctx context.Context, localVarOptionals *oscV1.ReadSubregionsOpts) (oscV1.ReadSubregionsResponse, *_nethttp.Response, error) {
@@ -724,20 +724,16 @@ func (c *cloud) CreateSnapshot(ctx context.Context, volumeID string, snapshotOpt
 	}
 	klog.Infof("Debug tags = append( %+v ) \n", resourceTag)
 
-	request := oscV1.CreateSnapshotOpts{
-		CreateSnapshotRequest: optional.NewInterface(
-			oscV1.CreateSnapshotRequest{
-				VolumeId:    volumeID,
-				DryRun:      false,
-				Description: descriptions,
-			}),
+	request := osc.CreateSnapshotRequest{
+		VolumeId:    &volumeID,
+		Description: &descriptions,
 	}
 
 	klog.Infof("Debug request := CreateSnapshotInput %+v  \n", request)
-	var res oscV1.CreateSnapshotResponse
+	var res osc.CreateSnapshotResponse
 	createSnapshotCallBack := func() (bool, error) {
 		var httpRes *_nethttp.Response
-		res, httpRes, err = c.client.CreateSnapshot(ctx, &request)
+		res, httpRes, err = c.client.CreateSnapshot(ctx, request)
 		klog.Infof("Debug response CreateSnapshot: response(%+v), err(%v), httpRes(%v)\n", res, err, httpRes)
 		if err != nil {
 			if httpRes != nil {
@@ -761,13 +757,13 @@ func (c *cloud) CreateSnapshot(ctx context.Context, volumeID string, snapshotOpt
 		return Snapshot{}, waitErr
 	}
 
-	if reflect.DeepEqual(res, oscV1.CreateSnapshotResponse{}) {
+	if !res.HasSnapshot() {
 		return Snapshot{}, fmt.Errorf("nil CreateSnapshotResponse")
 	}
 	klog.Infof("Debug res, err := c.ec2.CreateSnapshotWithContext(ctx, request) : %+v\n", res)
 
 	requestTag := osc.CreateTagsRequest{
-		ResourceIds: []string{res.Snapshot.SnapshotId},
+		ResourceIds: []string{res.Snapshot.GetSnapshotId()},
 		Tags:        resourceTag,
 	}
 
@@ -800,21 +796,18 @@ func (c *cloud) CreateSnapshot(ctx context.Context, volumeID string, snapshotOpt
 		return Snapshot{}, waitErr
 	}
 
-	return c.oscSnapshotResponseToStruct(res.Snapshot), nil
+	return c.oscSnapshotResponseToStruct(res.GetSnapshot()), nil
 }
 
 func (c *cloud) DeleteSnapshot(ctx context.Context, snapshotID string) (success bool, err error) {
 	klog.Infof("Debug DeleteSnapshot : %+v\n", snapshotID)
-	request := oscV1.DeleteSnapshotOpts{
-		DeleteSnapshotRequest: optional.NewInterface(
-			oscV1.DeleteSnapshotRequest{
-				SnapshotId: snapshotID,
-				DryRun:     false,
-			}),
+
+	request := osc.DeleteSnapshotRequest{
+		SnapshotId: snapshotID,
 	}
 
 	deleteSnapshotCallBack := func() (bool, error) {
-		response, httpRes, err := c.client.DeleteSnapshot(ctx, &request)
+		response, httpRes, err := c.client.DeleteSnapshot(ctx, request)
 		klog.Infof("Debug response DeleteSnapshot: response(%+v), err(%v), httpRes(%v)\n", response, err, httpRes)
 		if err != nil {
 			if httpRes != nil {
@@ -843,17 +836,14 @@ func (c *cloud) DeleteSnapshot(ctx context.Context, snapshotID string) (success 
 
 func (c *cloud) GetSnapshotByName(ctx context.Context, name string) (snapshot Snapshot, err error) {
 	klog.Infof("Debug GetSnapshotByName : %+v\n", name)
-	request := oscV1.ReadSnapshotsOpts{
-		ReadSnapshotsRequest: optional.NewInterface(
-			oscV1.ReadSnapshotsRequest{
-				Filters: oscV1.FiltersSnapshot{
-					TagKeys:   []string{SnapshotNameTagKey},
-					TagValues: []string{name},
-				},
-			}),
+	request := osc.ReadSnapshotsRequest{
+		Filters: &osc.FiltersSnapshot{
+			TagKeys:   &[]string{SnapshotNameTagKey},
+			TagValues: &[]string{name},
+		},
 	}
 
-	oscsnapshot, err := c.getSnapshot(ctx, &request)
+	oscsnapshot, err := c.getSnapshot(ctx, request)
 	if err != nil {
 		return Snapshot{}, err
 	}
@@ -863,16 +853,13 @@ func (c *cloud) GetSnapshotByName(ctx context.Context, name string) (snapshot Sn
 
 func (c *cloud) GetSnapshotByID(ctx context.Context, snapshotID string) (snapshot Snapshot, err error) {
 	klog.Infof("Debug GetSnapshotByID : %+v\n", snapshotID)
-	request := oscV1.ReadSnapshotsOpts{
-		ReadSnapshotsRequest: optional.NewInterface(
-			oscV1.ReadSnapshotsRequest{
-				Filters: oscV1.FiltersSnapshot{
-					SnapshotIds: []string{snapshotID},
-				},
-			}),
+	request := osc.ReadSnapshotsRequest{
+		Filters: &osc.FiltersSnapshot{
+			SnapshotIds: &[]string{snapshotID},
+		},
 	}
 
-	oscsnapshot, err := c.getSnapshot(ctx, &request)
+	oscsnapshot, err := c.getSnapshot(ctx, request)
 	if err != nil {
 		return Snapshot{}, err
 	}
@@ -887,27 +874,21 @@ func (c *cloud) GetSnapshotByID(ctx context.Context, snapshotID string) (snapsho
 func (c *cloud) ListSnapshots(ctx context.Context, volumeID string, maxResults int64, nextToken string) (listSnapshotsResponse ListSnapshotsResponse, err error) {
 	klog.Infof("Debug ListSnapshots : %+v, %+v, %+v\n", volumeID, maxResults, nextToken)
 
-	request := oscV1.ReadSnapshotsOpts{
-		ReadSnapshotsRequest: optional.NewInterface(
-			oscV1.ReadSnapshotsRequest{
-				Filters: oscV1.FiltersSnapshot{
-					VolumeIds: []string{},
-				},
-			}),
+	request := osc.ReadSnapshotsRequest{
+		Filters: &osc.FiltersSnapshot{
+			VolumeIds: &[]string{},
+		},
 	}
 
 	if len(volumeID) != 0 {
-		request = oscV1.ReadSnapshotsOpts{
-			ReadSnapshotsRequest: optional.NewInterface(
-				oscV1.ReadSnapshotsRequest{
-					Filters: oscV1.FiltersSnapshot{
-						VolumeIds: []string{volumeID},
-					},
-				}),
+		request = osc.ReadSnapshotsRequest{
+			Filters: &osc.FiltersSnapshot{
+				VolumeIds: &[]string{volumeID},
+			},
 		}
 	}
 
-	oscSnapshotsResponse, err := c.listSnapshots(ctx, &request)
+	oscSnapshotsResponse, err := c.listSnapshots(ctx, request)
 	if err != nil {
 		return ListSnapshotsResponse{}, err
 	}
@@ -926,20 +907,22 @@ func (c *cloud) ListSnapshots(ctx context.Context, volumeID string, maxResults i
 	}, nil
 }
 
-func (c *cloud) oscSnapshotResponseToStruct(oscSnapshot oscV1.Snapshot) Snapshot {
+func (c *cloud) oscSnapshotResponseToStruct(oscSnapshot osc.Snapshot) Snapshot {
 	klog.Infof("Debug oscSnapshotResponseToStruct : %+v\n", oscSnapshot)
-	if reflect.DeepEqual(oscSnapshot, oscV1.Snapshot{}) {
+	if !oscSnapshot.HasSnapshotId() ||
+		!oscSnapshot.HasVolumeId() ||
+		!oscSnapshot.HasState() {
 		return Snapshot{}
 	}
-	snapshotSize := util.GiBToBytes(int64(oscSnapshot.VolumeSize))
+	snapshotSize := util.GiBToBytes(int64(oscSnapshot.GetVolumeSize()))
 	snapshot := Snapshot{
-		SnapshotID:     oscSnapshot.SnapshotId,
-		SourceVolumeID: oscSnapshot.VolumeId,
+		SnapshotID:     oscSnapshot.GetSnapshotId(),
+		SourceVolumeID: oscSnapshot.GetVolumeId(),
 		Size:           snapshotSize,
 		//No StartTime for osc.Snapshot
 		//CreationTime:   oscSnapshot.StartTime,
 	}
-	if oscSnapshot.State == "completed" {
+	if oscSnapshot.GetState() == "completed" {
 		snapshot.ReadyToUse = true
 	} else {
 		snapshot.ReadyToUse = false
@@ -1064,9 +1047,9 @@ func (c *cloud) getInstance(ctx context.Context, vmID string) (oscV1.Vm, error) 
 }
 
 // Pagination not supported
-func (c *cloud) getSnapshot(ctx context.Context, request *oscV1.ReadSnapshotsOpts) (oscV1.Snapshot, error) {
+func (c *cloud) getSnapshot(ctx context.Context, request osc.ReadSnapshotsRequest) (osc.Snapshot, error) {
 	klog.Infof("Debug  getSnapshot: %+v\n", request)
-	var snapshots []oscV1.Snapshot
+	var snapshots []osc.Snapshot
 	getSnapshotsCallback := func() (bool, error) {
 		response, httpRes, err := c.client.ReadSnapshots(ctx, request)
 		klog.Infof("Debug response DescribeSnapshots: response(%+v), err(%v)\n", response, err)
@@ -1083,20 +1066,20 @@ func (c *cloud) getSnapshot(ctx context.Context, request *oscV1.ReadSnapshotsOpt
 			}
 			return false, err
 		}
-		snapshots = append(snapshots, response.Snapshots...)
+		snapshots = append(snapshots, response.GetSnapshots()...)
 		return true, nil
 	}
 
 	backoff := util.EnvBackoff()
 	waitErr := wait.ExponentialBackoff(backoff, getSnapshotsCallback)
 	if waitErr != nil {
-		return oscV1.Snapshot{}, waitErr
+		return osc.Snapshot{}, waitErr
 	}
 	klog.Infof("Debug snapshots: %+v, len(snapshots): %+v\n", snapshots, len(snapshots))
 	if l := len(snapshots); l > 1 {
-		return oscV1.Snapshot{}, ErrMultiSnapshots
+		return osc.Snapshot{}, ErrMultiSnapshots
 	} else if l < 1 {
-		return oscV1.Snapshot{}, ErrNotFound
+		return osc.Snapshot{}, ErrNotFound
 	}
 	klog.Infof("Debug (snapshots[0]): %+v\n", snapshots[0])
 	return snapshots[0], nil
@@ -1104,10 +1087,10 @@ func (c *cloud) getSnapshot(ctx context.Context, request *oscV1.ReadSnapshotsOpt
 
 // listSnapshots returns all snapshots based from a request
 // Pagination not supported
-func (c *cloud) listSnapshots(ctx context.Context, request *oscV1.ReadSnapshotsOpts) (oscListSnapshotsResponse, error) {
+func (c *cloud) listSnapshots(ctx context.Context, request osc.ReadSnapshotsRequest) (oscListSnapshotsResponse, error) {
 	klog.Infof("Debug listSnapshots : %+v\n", request)
-	var snapshots []oscV1.Snapshot
-	var response oscV1.ReadSnapshotsResponse
+	var snapshots []osc.Snapshot
+	var response osc.ReadSnapshotsResponse
 	var httpRes *_nethttp.Response
 	var err error
 	listSnapshotsCallBack := func() (bool, error) {
@@ -1137,7 +1120,7 @@ func (c *cloud) listSnapshots(ctx context.Context, request *oscV1.ReadSnapshotsO
 	}
 
 	klog.Infof("Debug response.Snapshots : %+v\n", response.Snapshots)
-	snapshots = append(snapshots, response.Snapshots...)
+	snapshots = append(snapshots, response.GetSnapshots()...)
 
 	return oscListSnapshotsResponse{
 		Snapshots: snapshots,

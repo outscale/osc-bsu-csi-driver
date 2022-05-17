@@ -184,7 +184,7 @@ type OscInterface interface {
 	CreateTags(ctx context.Context, localVarOptionals osc.CreateTagsRequest) (osc.CreateTagsResponse, *_nethttp.Response, error)
 	ReadVolumes(ctx context.Context, localVarOptionals osc.ReadVolumesRequest) (osc.ReadVolumesResponse, *_nethttp.Response, error)
 	DeleteVolume(ctx context.Context, localVarOptionals osc.DeleteVolumeRequest) (osc.DeleteVolumeResponse, *_nethttp.Response, error)
-	LinkVolume(ctx context.Context, localVarOptionals *oscV1.LinkVolumeOpts) (oscV1.LinkVolumeResponse, *_nethttp.Response, error)
+	LinkVolume(ctx context.Context, localVarOptionals osc.LinkVolumeRequest) (osc.LinkVolumeResponse, *_nethttp.Response, error)
 	UnlinkVolume(ctx context.Context, localVarOptionals *oscV1.UnlinkVolumeOpts) (oscV1.UnlinkVolumeResponse, *_nethttp.Response, error)
 	CreateSnapshot(ctx context.Context, localVarOptionals *oscV1.CreateSnapshotOpts) (oscV1.CreateSnapshotResponse, *_nethttp.Response, error)
 	ReadSnapshots(ctx context.Context, localVarOptionals *oscV1.ReadSnapshotsOpts) (oscV1.ReadSnapshotsResponse, *_nethttp.Response, error)
@@ -219,8 +219,8 @@ func (client *OscClient) DeleteVolume(ctx context.Context, localVarOptionals osc
 	return client.api.VolumeApi.DeleteVolume(client.auth).DeleteVolumeRequest(localVarOptionals).Execute()
 }
 
-func (client *OscClient) LinkVolume(ctx context.Context, localVarOptionals *oscV1.LinkVolumeOpts) (oscV1.LinkVolumeResponse, *_nethttp.Response, error) {
-	return client.apiV1.VolumeApi.LinkVolume(client.authV1, localVarOptionals)
+func (client *OscClient) LinkVolume(ctx context.Context, localVarOptionals osc.LinkVolumeRequest) (osc.LinkVolumeResponse, *_nethttp.Response, error) {
+	return client.api.VolumeApi.LinkVolume(client.auth).LinkVolumeRequest(localVarOptionals).Execute()
 }
 
 func (client *OscClient) UnlinkVolume(ctx context.Context, localVarOptionals *oscV1.UnlinkVolumeOpts) (oscV1.UnlinkVolumeResponse, *_nethttp.Response, error) {
@@ -494,18 +494,15 @@ func (c *cloud) AttachDisk(ctx context.Context, volumeID, nodeID string) (string
 	defer device.Release(false)
 
 	if !device.IsAlreadyAssigned {
-		request := oscV1.LinkVolumeOpts{
-			LinkVolumeRequest: optional.NewInterface(
-				oscV1.LinkVolumeRequest{
-					DeviceName: device.Path,
-					VmId:       nodeID,
-					VolumeId:   volumeID,
-				}),
+		request := osc.LinkVolumeRequest{
+			DeviceName: device.Path,
+			VmId:       nodeID,
+			VolumeId:   volumeID,
 		}
-		var resp oscV1.LinkVolumeResponse
+		var resp osc.LinkVolumeResponse
 		var httpRes *_nethttp.Response
 		linkVolumeCallBack := func() (bool, error) {
-			resp, httpRes, err = c.client.LinkVolume(ctx, &request)
+			resp, httpRes, err = c.client.LinkVolume(ctx, request)
 			klog.Infof("Debug response AttachVolume: response(%+v), err(%v), httpRes(%v)\n", resp, err, httpRes)
 			if err != nil {
 				if httpRes != nil {

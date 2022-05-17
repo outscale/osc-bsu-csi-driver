@@ -183,7 +183,7 @@ type OscInterface interface {
 	CreateVolume(ctx context.Context, localVarOptionals osc.CreateVolumeRequest) (osc.CreateVolumeResponse, *_nethttp.Response, error)
 	CreateTags(ctx context.Context, localVarOptionals osc.CreateTagsRequest) (osc.CreateTagsResponse, *_nethttp.Response, error)
 	ReadVolumes(ctx context.Context, localVarOptionals osc.ReadVolumesRequest) (osc.ReadVolumesResponse, *_nethttp.Response, error)
-	DeleteVolume(ctx context.Context, localVarOptionals *oscV1.DeleteVolumeOpts) (oscV1.DeleteVolumeResponse, *_nethttp.Response, error)
+	DeleteVolume(ctx context.Context, localVarOptionals osc.DeleteVolumeRequest) (osc.DeleteVolumeResponse, *_nethttp.Response, error)
 	LinkVolume(ctx context.Context, localVarOptionals *oscV1.LinkVolumeOpts) (oscV1.LinkVolumeResponse, *_nethttp.Response, error)
 	UnlinkVolume(ctx context.Context, localVarOptionals *oscV1.UnlinkVolumeOpts) (oscV1.UnlinkVolumeResponse, *_nethttp.Response, error)
 	CreateSnapshot(ctx context.Context, localVarOptionals *oscV1.CreateSnapshotOpts) (oscV1.CreateSnapshotResponse, *_nethttp.Response, error)
@@ -215,8 +215,8 @@ func (client *OscClient) ReadVolumes(ctx context.Context, localVarOptionals osc.
 	return client.api.VolumeApi.ReadVolumes(client.auth).ReadVolumesRequest(localVarOptionals).Execute()
 }
 
-func (client *OscClient) DeleteVolume(ctx context.Context, localVarOptionals *oscV1.DeleteVolumeOpts) (oscV1.DeleteVolumeResponse, *_nethttp.Response, error) {
-	return client.apiV1.VolumeApi.DeleteVolume(client.authV1, localVarOptionals)
+func (client *OscClient) DeleteVolume(ctx context.Context, localVarOptionals osc.DeleteVolumeRequest) (osc.DeleteVolumeResponse, *_nethttp.Response, error) {
+	return client.api.VolumeApi.DeleteVolume(client.auth).DeleteVolumeRequest(localVarOptionals).Execute()
 }
 
 func (client *OscClient) LinkVolume(ctx context.Context, localVarOptionals *oscV1.LinkVolumeOpts) (oscV1.LinkVolumeResponse, *_nethttp.Response, error) {
@@ -448,15 +448,12 @@ func (c *cloud) CreateDisk(ctx context.Context, volumeName string, diskOptions *
 
 func (c *cloud) DeleteDisk(ctx context.Context, volumeID string) (bool, error) {
 	klog.Infof("Debug DeleteDisk: %+v", volumeID)
-	request := oscV1.DeleteVolumeOpts{
-		DeleteVolumeRequest: optional.NewInterface(
-			oscV1.DeleteVolumeRequest{
-				VolumeId: volumeID,
-			}),
+	request := osc.DeleteVolumeRequest{
+		VolumeId: volumeID,
 	}
 
 	deleteVolumeCallBack := func() (bool, error) {
-		response, httpRes, err := c.client.DeleteVolume(ctx, &request)
+		response, httpRes, err := c.client.DeleteVolume(ctx, request)
 		klog.Infof("Debug response DeleteVolume: response(%+v), err(%v), httpRes(%v)", response, err, httpRes)
 		if err != nil {
 			if httpRes != nil {

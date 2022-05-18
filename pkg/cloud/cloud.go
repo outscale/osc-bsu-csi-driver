@@ -298,8 +298,10 @@ func (c *cloud) CreateDisk(ctx context.Context, volumeName string, diskOptions *
 	var (
 		createType string
 		iops       int64
+		request    osc.CreateVolumeRequest
 	)
 	capacityGiB := util.BytesToGiB(diskOptions.CapacityBytes)
+	request.SetSize(int32(capacityGiB))
 
 	switch diskOptions.VolumeType {
 	case VolumeTypeGP2, VolumeTypeSTANDARD:
@@ -313,11 +315,14 @@ func (c *cloud) CreateDisk(ctx context.Context, volumeName string, diskOptions *
 		if iops > MaxTotalIOPS {
 			iops = MaxTotalIOPS
 		}
+		request.SetIops(int32(iops))
 	case "":
 		createType = DefaultVolumeType
 	default:
 		return Disk{}, fmt.Errorf("invalid OSC VolumeType %q", diskOptions.VolumeType)
 	}
+
+	request.SetVolumeType(createType)
 
 	var resourceTag []osc.ResourceTag
 	for key, value := range diskOptions.Tags {
@@ -332,20 +337,16 @@ func (c *cloud) CreateDisk(ctx context.Context, volumeName string, diskOptions *
 		zone = fmt.Sprintf("%va", c.region)
 	}
 
+	request.SetSubregionName(zone)
+
 	// NOT SUPPORTED YET BY OSC API
 	if len(diskOptions.KmsKeyID) > 0 {
 		return Disk{}, fmt.Errorf("Encryption is not supported yet by OSC API")
 	}
 
 	snapshotID := diskOptions.SnapshotID
-	requestSize := int32(capacityGiB)
-	requestIops := int32(iops)
-	request := osc.CreateVolumeRequest{
-		Size:          &requestSize,
-		VolumeType:    &createType,
-		SubregionName: zone,
-		Iops:          &requestIops,
-		SnapshotId:    &snapshotID,
+	if len(snapshotID) != 0 {
+		request.SetSnapshotId(snapshotID)
 	}
 
 	var creation osc.CreateVolumeResponse

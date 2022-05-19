@@ -63,9 +63,6 @@ spec:
             {{- if .Values.extraVolumeTags }}
               {{- include "aws-ebs-csi-driver.extra-volume-tags" . | nindent 12 }}
             {{- end }}
-            {{- if .Values.k8sTagClusterId }}
-            - --k8s-tag-cluster-id={{ .Values.k8sTagClusterId }}
-            {{- end }}
             - --logtostderr
             - --v={{ .Values.verbosity }}
           env:

@@ -14,14 +14,10 @@ jobs:
     - uses: actions/checkout@v2
     - name: Docker Lint
       run: bash -c "make dockerlint"
-    - name: Build Env
-      run: bash -c "make build_env"
-    - name: Build
-      run: bash -c "make run_cmd RUN_CMD=osc-cloud-controller-manager"
     - name: Check
-      run: bash -c "make run_cmd RUN_CMD=check"
+      run: bash -c "make verify"
     - name: Test
-      run: bash -c "make run_cmd RUN_CMD=test"
+      run: bash -c "make test"
     - name: Image
       run: bash -c "make build-image"
     - name: Trivy-Scan

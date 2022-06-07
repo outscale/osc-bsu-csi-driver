@@ -62,8 +62,8 @@ jobs:
     - name: Push the Docker image
       run: |
         make build-image
-        docker tag osc/cloud-provider-osc:v$VERSION localhost:4242/osc/cloud-provider-osc:v$VERSION
-        docker push localhost:4242/osc/cloud-provider-osc:v$VERSION
+        docker tag osc/cloud-provider-osc:$VERSION localhost:4242/osc/cloud-provider-osc:$VERSION
+        docker push localhost:4242/osc/cloud-provider-osc:$VERSION
         docker image prune -a -f
       env:
         VERSION: ${{ format('{0}.{1}', github.sha, github.run_attempt) }}
@@ -79,7 +79,7 @@ jobs:
         helm install --wait --wait-for-jobs k8s-osc-ccm deploy/k8s-osc-ccm --set oscSecretName=osc-secret --set image.repository=${nodeport_ip}:${nodeport_port}/osc/cloud-provider-osc --set image.tag=${VERSION}
       env:
         KUBECONFIG: set-up-rke-cluster/rke/kube_config_cluster.yml
-        VERSION: ${{ format('v{0}.{1}', github.sha, github.run_attempt) }}
+        VERSION: ${{ format('{0}.{1}', github.sha, github.run_attempt) }}
     - name: Run e2e tests
       env:
         OSC_ACCESS_KEY: ${{ secrets.OSC_ACCESS_KEY }}

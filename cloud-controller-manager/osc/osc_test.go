@@ -30,6 +30,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/aws/aws-sdk-go/service/elb"
+	"github.com/outscale/osc-sdk-go/v2"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -526,7 +527,7 @@ func TestNewAWSCloud(t *testing.T) {
 	}
 }
 
-func mockInstancesResp(selfInstance *ec2.Instance, instances []*ec2.Instance) (*Cloud, *FakeOscServices) {
+func mockInstancesResp(selfInstance *osc.Vm, instances []*osc.Vm) (*Cloud, *FakeOscServices) {
 	awsServices := newMockedFakeAWSServices(TestClusterID)
 	awsServices.instances = instances
 	awsServices.selfInstance = selfInstance
@@ -560,68 +561,64 @@ func testHasNodeAddress(t *testing.T, addrs []v1.NodeAddress, addressType v1.Nod
 func TestNodeAddresses(t *testing.T) {
 	// Note these instances have the same name
 	// (we test that this produces an error)
-	var instance0 ec2.Instance
-	var instance1 ec2.Instance
-	var instance2 ec2.Instance
+	var instance0 osc.Vm
+	var instance1 osc.Vm
+	var instance2 osc.Vm
 
 	// ClusterID needs to be set
-	tags := []*ec2.Tag{
-		{Key: aws.String(TagNameKubernetesClusterPrefix + TestClusterID), Value: aws.String(ResourceLifecycleOwned)},
-		{Key: aws.String(TagNameClusterNode), Value: aws.String("instance-same.ec2.internal")},
+	tags := []osc.ResourceTag{
+		{Key: TagNameKubernetesClusterPrefix + TestClusterID, Value: ResourceLifecycleOwned},
+		{Key: TagNameClusterNode, Value: "instance-same.ec2.internal"},
 	}
 
 	//0
-	instance0.InstanceId = aws.String("i-0")
-	instance0.PrivateDnsName = aws.String("instance-same.ec2.internal")
-	instance0.PrivateIpAddress = aws.String("192.168.0.1")
-	instance0.PublicDnsName = aws.String("instance-same.ec2.external")
-	instance0.PublicIpAddress = aws.String("1.2.3.4")
-	instance0.NetworkInterfaces = []*ec2.InstanceNetworkInterface{
+	instance0.SetVmId("i-0")
+	instance0.SetPrivateDnsName("instance-same.ec2.internal")
+	instance0.SetPrivateIp("192.168.0.1")
+	instance0.SetPublicDnsName("instance-same.ec2.external")
+	instance0.SetPublicIp("1.2.3.4")
+	nicState := "in-use"
+	privateIp := "192.168.0.1"
+	instance0.SetNics([]osc.NicLight{
 		{
-			Status: aws.String(ec2.NetworkInterfaceStatusInUse),
-			PrivateIpAddresses: []*ec2.InstancePrivateIpAddress{
+			State: &nicState,
+			PrivateIps: &[]osc.PrivateIpLightForVm{
 				{
-					PrivateIpAddress: aws.String("192.168.0.1"),
+					PrivateIp: &privateIp,
 				},
 			},
 		},
-	}
-	instance0.InstanceType = aws.String("c3.large")
-	instance0.Placement = &ec2.Placement{AvailabilityZone: aws.String("us-east-1a")}
-	instance0.Tags = tags
-	state0 := ec2.InstanceState{
-		Name: aws.String("running"),
-	}
+	})
+	instance0.SetVmId("c3.large")
+	instance0.SetPlacement(osc.Placement{SubregionName: aws.String("us-east-1a")})
+	instance0.SetTags(tags)
+	state0 := "running"
 	instance0.State = &state0
 
 	//1
-	instance1.InstanceId = aws.String("i-1")
-	instance1.PrivateDnsName = aws.String("instance-same.ec2.internal")
-	instance1.PrivateIpAddress = aws.String("192.168.0.2")
-	instance1.InstanceType = aws.String("c3.large")
-	instance1.Placement = &ec2.Placement{AvailabilityZone: aws.String("us-east-1a")}
-	instance1.Tags = tags
-	state1 := ec2.InstanceState{
-		Name: aws.String("running"),
-	}
+	instance1.SetVmId("i-1")
+	instance1.SetPrivateDnsName("instance-same.ec2.internal")
+	instance1.SetPrivateIp("192.168.0.2")
+	instance1.SetVmType("c3.large")
+	instance1.SetPlacement(osc.Placement{SubregionName: aws.String("us-east-1a")})
+	instance1.SetTags(tags)
+	state1 := "running"
 	instance1.State = &state1
 
 	//2
-	instance2.InstanceId = aws.String("i-2")
-	instance2.PrivateDnsName = aws.String("instance-other.ec2.internal")
-	instance2.PrivateIpAddress = aws.String("192.168.0.1")
-	instance2.PublicIpAddress = aws.String("1.2.3.4")
-	instance2.InstanceType = aws.String("c3.large")
-	instance2.Placement = &ec2.Placement{AvailabilityZone: aws.String("us-east-1a")}
-	instance2.Tags = tags
-	state2 := ec2.InstanceState{
-		Name: aws.String("running"),
-	}
+	instance2.SetVmId("i-2")
+	instance2.SetPrivateDnsName("instance-other.ec2.internal")
+	instance2.SetPrivateIp("192.168.0.1")
+	instance2.SetPublicIp("1.2.3.4")
+	instance2.SetVmType("c3.large")
+	instance2.SetPlacement(osc.Placement{SubregionName: aws.String("us-east-1a")})
+	instance2.SetTags(tags)
+	state2 := "running"
 	instance2.State = &state2
 
-	instances := []*ec2.Instance{&instance0, &instance1, &instance2}
+	instances := []*osc.Vm{&instance0, &instance1, &instance2}
 
-	aws1, _ := mockInstancesResp(&instance0, []*ec2.Instance{&instance0})
+	aws1, _ := mockInstancesResp(&instance0, []*osc.Vm{&instance0})
 	_, err1 := aws1.NodeAddresses(context.TODO(), "instance-mismatch.ec2.internal")
 	if err1 == nil {
 		t.Errorf("Should error when no instance found")
@@ -651,27 +648,25 @@ func TestNodeAddresses(t *testing.T) {
 }
 
 func TestNodeAddressesWithMetadata(t *testing.T) {
-	var instance ec2.Instance
+	var instance osc.Vm
 
 	// ClusterID needs to be set
-	var tag ec2.Tag
-	tag.Key = aws.String(TagNameKubernetesClusterLegacy)
-	tag.Value = aws.String(TestClusterID)
-	tags := []*ec2.Tag{&tag}
+	var tag osc.ResourceTag
+	tag.SetKey(TagNameKubernetesClusterLegacy)
+	tag.SetValue(TestClusterID)
+	tags := []osc.ResourceTag{tag}
 
 	instanceName := "instance.ec2.internal"
-	instance.InstanceId = aws.String("i-0")
-	instance.PrivateDnsName = &instanceName
-	instance.PublicIpAddress = aws.String("2.3.4.5")
-	instance.InstanceType = aws.String("c3.large")
-	instance.Placement = &ec2.Placement{AvailabilityZone: aws.String("us-east-1a")}
-	instance.Tags = tags
-	state := ec2.InstanceState{
-		Name: aws.String("running"),
-	}
+	instance.SetVmId("i-0")
+	instance.SetPrivateDnsName(instanceName)
+	instance.SetPublicIp("2.3.4.5")
+	instance.SetVmType("c3.large")
+	instance.SetPlacement(osc.Placement{SubregionName: aws.String("us-east-1a")})
+	instance.SetTags(tags)
+	state := "running"
 	instance.State = &state
 
-	instances := []*ec2.Instance{&instance}
+	instances := []*osc.Vm{&instance}
 	awsCloud, awsServices := mockInstancesResp(&instance, instances)
 
 	awsServices.networkInterfacesMacs = []string{"0a:26:89:f3:9c:f6", "0a:77:64:c4:6a:48"}
@@ -1149,32 +1144,32 @@ func TestFindInstanceByNodeNameExcludesTerminatedInstances(t *testing.T) {
 		state    string
 		expected bool
 	}{
-		{0, ec2.InstanceStateNamePending, true},
-		{16, ec2.InstanceStateNameRunning, true},
-		{32, ec2.InstanceStateNameShuttingDown, true},
-		{48, ec2.InstanceStateNameTerminated, false},
-		{64, ec2.InstanceStateNameStopping, true},
-		{80, ec2.InstanceStateNameStopped, true},
+		{0, "pending", true},
+		{16, "running", true},
+		{32, "shutting-down", true},
+		{48, "terminated", false},
+		{64, "stopping", true},
+		{80, "stopped", true},
 	}
 	awsServices := newMockedFakeAWSServices(TestClusterID)
 
 	nodeName := types.NodeName("my-dns.internal")
 
 	// ClusterID needs to be set
-	tags := []*ec2.Tag{
-		{Key: aws.String(TagNameKubernetesClusterPrefix + TestClusterID), Value: aws.String(ResourceLifecycleOwned)},
-		{Key: aws.String(TagNameClusterNode), Value: aws.String(string(nodeName))},
+	tags := []osc.ResourceTag{
+		{Key: TagNameKubernetesClusterPrefix + TestClusterID, Value: ResourceLifecycleOwned},
+		{Key: TagNameClusterNode, Value: string(nodeName)},
 	}
 
-	var testInstance ec2.Instance
-	testInstance.PrivateDnsName = aws.String(string(nodeName))
-	testInstance.Tags = tags
+	var testInstance osc.Vm
+	testInstance.SetPrivateDnsName(string(nodeName))
+	testInstance.SetTags(tags)
 
 	awsDefaultInstances := awsServices.instances
 	for _, awsState := range awsStates {
 		id := "i-" + awsState.state
-		testInstance.InstanceId = aws.String(id)
-		testInstance.State = &ec2.InstanceState{Code: aws.Int64(awsState.id), Name: aws.String(awsState.state)}
+		testInstance.SetVmId(id)
+		testInstance.SetState(awsState.state)
 
 		awsServices.instances = append(awsDefaultInstances, &testInstance)
 
@@ -1188,16 +1183,16 @@ func TestFindInstanceByNodeNameExcludesTerminatedInstances(t *testing.T) {
 
 		if awsState.expected {
 			if err != nil || resultInstance == nil {
-				t.Errorf("Expected to find instance %v", *testInstance.InstanceId)
+				t.Errorf("Expected to find instance %v", testInstance.GetVmId())
 				return
 			}
-			if *resultInstance.InstanceId != *testInstance.InstanceId {
-				t.Errorf("Wrong instance returned by findInstanceByNodeName() expected: %v, actual: %v", *testInstance.InstanceId, *resultInstance.InstanceId)
+			if resultInstance.GetVmId() != testInstance.GetVmId() {
+				t.Errorf("Wrong instance returned by findInstanceByNodeName() expected: %v, actual: %v", resultInstance.GetVmId(), testInstance.GetVmId())
 				return
 			}
 		} else {
 			if err == nil && resultInstance != nil {
-				t.Errorf("Did not expect to find instance %v", *resultInstance.InstanceId)
+				t.Errorf("Did not expect to find instance %v", resultInstance.GetVmId())
 				return
 			}
 		}
@@ -1208,21 +1203,21 @@ func TestGetInstanceByNodeNameBatching(t *testing.T) {
 	awsServices := newMockedFakeAWSServices(TestClusterID)
 	c, err := newCloud(CloudConfig{}, awsServices)
 	assert.Nil(t, err, "Error building aws cloud: %v", err)
-	var tag ec2.Tag
-	tag.Key = aws.String(TagNameKubernetesClusterPrefix + TestClusterID)
-	tag.Value = aws.String("")
-	tags := []*ec2.Tag{&tag}
+	var tag osc.ResourceTag
+	tag.SetKey(TagNameKubernetesClusterPrefix + TestClusterID)
+	tag.SetValue("")
+	tags := []osc.ResourceTag{tag}
 	nodeNames := []string{}
 	for i := 0; i < 200; i++ {
 		nodeName := fmt.Sprintf("ip-171-20-42-%d.ec2.internal", i)
 		nodeNames = append(nodeNames, nodeName)
-		ec2Instance := &ec2.Instance{}
+		oscInstance := &osc.Vm{}
 		instanceID := fmt.Sprintf("i-abcedf%d", i)
-		ec2Instance.InstanceId = aws.String(instanceID)
-		ec2Instance.PrivateDnsName = aws.String(nodeName)
-		ec2Instance.State = &ec2.InstanceState{Code: aws.Int64(48), Name: aws.String("running")}
-		ec2Instance.Tags = tags
-		awsServices.instances = append(awsServices.instances, ec2Instance)
+		oscInstance.SetVmId(instanceID)
+		oscInstance.SetPrivateDnsName(nodeName)
+		oscInstance.SetState("running")
+		oscInstance.SetTags(tags)
+		awsServices.instances = append(awsServices.instances, oscInstance)
 
 	}
 
@@ -1701,7 +1696,11 @@ func TestEnsureLoadBalancerHealthCheck(t *testing.T) {
 
 func TestFindSecurityGroupForInstance(t *testing.T) {
 	groups := map[string]*ec2.SecurityGroup{"sg123": {GroupId: aws.String("sg123")}}
-	id, err := findSecurityGroupForInstance(&ec2.Instance{SecurityGroups: []*ec2.GroupIdentifier{{GroupId: aws.String("sg123"), GroupName: aws.String("my_group")}}}, groups)
+	id, err := findSecurityGroupForInstance(&osc.Vm{
+		SecurityGroups: &[]osc.SecurityGroupLight{
+			{SecurityGroupId: aws.String("sg123"), SecurityGroupName: aws.String("my_group")},
+		},
+	}, groups)
 	if err != nil {
 		t.Error()
 	}
@@ -1711,10 +1710,10 @@ func TestFindSecurityGroupForInstance(t *testing.T) {
 
 func TestFindSecurityGroupForInstanceMultipleTagged(t *testing.T) {
 	groups := map[string]*ec2.SecurityGroup{"sg123": {GroupId: aws.String("sg123")}}
-	_, err := findSecurityGroupForInstance(&ec2.Instance{
-		SecurityGroups: []*ec2.GroupIdentifier{
-			{GroupId: aws.String("sg123"), GroupName: aws.String("my_group")},
-			{GroupId: aws.String("sg123"), GroupName: aws.String("another_group")},
+	_, err := findSecurityGroupForInstance(&osc.Vm{
+		SecurityGroups: &[]osc.SecurityGroupLight{
+			{SecurityGroupId: aws.String("sg123"), SecurityGroupName: aws.String("my_group")},
+			{SecurityGroupId: aws.String("sg123"), SecurityGroupName: aws.String("another_group")},
 		},
 	}, groups)
 	require.Error(t, err)
@@ -1724,8 +1723,8 @@ func TestFindSecurityGroupForInstanceMultipleTagged(t *testing.T) {
 
 func TestRegionIsValid(t *testing.T) {
 	fake := newMockedFakeAWSServices("fakeCluster")
-	fake.selfInstance.Placement = &ec2.Placement{
-		AvailabilityZone: aws.String("pl-fake-999a"),
+	fake.selfInstance.Placement = &osc.Placement{
+		SubregionName: aws.String("pl-fake-999a"),
 	}
 
 	// This is the legacy list that was removed, using this to ensure we avoid

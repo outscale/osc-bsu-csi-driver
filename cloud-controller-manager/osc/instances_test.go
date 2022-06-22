@@ -23,11 +23,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/service/ec2"
+	osc "github.com/outscale/osc-sdk-go/v2"
 	"github.com/stretchr/testify/assert"
-
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 )
 
 func TestMapToAWSInstanceIDs(t *testing.T) {
@@ -146,8 +144,8 @@ func TestSnapshotMeetsCriteria(t *testing.T) {
 		t.Errorf("Snapshot did not honor HasInstances with missing instances")
 	}
 
-	snapshot.instances = make(map[InstanceID]*ec2.Instance)
-	snapshot.instances[InstanceID("i-12345678")] = &ec2.Instance{}
+	snapshot.instances = make(map[InstanceID]*osc.Vm)
+	snapshot.instances[InstanceID("i-12345678")] = &osc.Vm{}
 
 	if !snapshot.MeetsCriteria(cacheCriteria{HasInstances: []InstanceID{InstanceID("i-12345678")}}) {
 		t.Errorf("Snapshot did not honor HasInstances with matching instances")
@@ -173,14 +171,16 @@ func TestOlderThan(t *testing.T) {
 func TestSnapshotFindInstances(t *testing.T) {
 	snapshot := &allInstancesSnapshot{}
 
-	snapshot.instances = make(map[InstanceID]*ec2.Instance)
+	snapshot.instances = make(map[InstanceID]*osc.Vm)
 	{
 		id := InstanceID("i-12345678")
-		snapshot.instances[id] = &ec2.Instance{InstanceId: id.awsString()}
+		idString := "i-12345678"
+		snapshot.instances[id] = &osc.Vm{VmId: &idString}
 	}
 	{
 		id := InstanceID("i-23456789")
-		snapshot.instances[id] = &ec2.Instance{InstanceId: id.awsString()}
+		idString := "i-23456789"
+		snapshot.instances[id] = &osc.Vm{VmId: &idString}
 	}
 
 	instances := snapshot.FindInstances([]InstanceID{InstanceID("i-12345678"), InstanceID("i-23456789"), InstanceID("i-00000000")})
@@ -194,7 +194,7 @@ func TestSnapshotFindInstances(t *testing.T) {
 			t.Errorf("findInstances did not return %s", id)
 			continue
 		}
-		if aws.StringValue(i.InstanceId) != string(id) {
+		if i.GetVmId() != string(id) {
 			t.Errorf("findInstances did not return expected instanceId for %s", id)
 		}
 		if i != snapshot.instances[id] {

@@ -24,6 +24,7 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/ec2"
+	"github.com/outscale/osc-sdk-go/v2"
 )
 
 func TestFilterTags(t *testing.T) {
@@ -90,11 +91,11 @@ func TestFindClusterID(t *testing.T) {
 		},
 	}
 	for _, g := range grid {
-		var ec2Tags []*ec2.Tag
+		var ec2Tags []osc.ResourceTag
 		for k, v := range g.Tags {
-			ec2Tags = append(ec2Tags, &ec2.Tag{Key: aws.String(k), Value: aws.String(v)})
+			ec2Tags = append(ec2Tags, osc.ResourceTag{Key: k, Value: v})
 		}
-		actualLegacy, actualNew, err := findClusterIDs(ec2Tags)
+		actualLegacy, actualNew, err := findClusterIDs(&ec2Tags)
 		if g.ExpectError {
 			if err == nil {
 				t.Errorf("expected error for tags %v", g.Tags)
@@ -177,7 +178,7 @@ func TestHasClusterTag(t *testing.T) {
 		for k, v := range g.Tags {
 			ec2Tags = append(ec2Tags, &ec2.Tag{Key: aws.String(k), Value: aws.String(v)})
 		}
-		result := c.tagging.hasClusterTag(ec2Tags)
+		result := c.tagging.hasClusterAWSTag(ec2Tags)
 		if result != g.Expected {
 			t.Errorf("Unexpected result for tags %v: %t", g.Tags, result)
 		}

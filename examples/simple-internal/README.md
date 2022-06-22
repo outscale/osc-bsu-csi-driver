@@ -4,6 +4,8 @@ This example creates a deployment named echoheaders on your cluster, which will 
 of the echoserver container, listening on port 8080.
 Then create a Service that exposes our new application to the internal vpc over an Outscale Load Balancer unit (LBU) with schema setted to internal.
 
+- Add `kubernetes.io/role/internal-elb` to private subnet
+
 - Create ns
 
 ```

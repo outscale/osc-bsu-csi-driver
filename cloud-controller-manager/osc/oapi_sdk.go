@@ -42,17 +42,17 @@ func (s *oscSdkCompute) ReadVms(request *osc.ReadVmsRequest) ([]osc.Vm, error) {
 	var results []osc.Vm
 	requestTime := time.Now()
 	response, httpRes, err := s.client.VmApi.ReadVms(s.ctx).ReadVmsRequest(*request).Execute()
-		if err != nil {
-			recordAWSMetric("describe_instance", 0, err)
+	if err != nil {
+		recordAWSMetric("describe_instance", 0, err)
 		if httpRes != nil {
 			return nil, fmt.Errorf("error listing AWS instances: %q (Status:%v)", err, httpRes.Status)
 		}
-			return nil, fmt.Errorf("error listing AWS instances: %q", err)
-		}
+		return nil, fmt.Errorf("error listing AWS instances: %q", err)
+	}
 
 	if !response.HasVms() {
 		return nil, errors.New("error listing AWS instances: Vm has not been set")
-		}
+	}
 
 	results = *response.Vms
 	timeTaken := time.Since(requestTime).Seconds()
@@ -67,7 +67,7 @@ func (s *oscSdkCompute) ReadSecurityGroups(request *ec2.DescribeSecurityGroupsIn
 	var nextToken *string
 	requestTime := time.Now()
 	for {
-		response, err := s.oapi.DescribeSecurityGroups(request)
+		response, err := s.ec2.DescribeSecurityGroups(request)
 		if err != nil {
 			recordAWSMetric("describe_security_groups", 0, err)
 			return nil, fmt.Errorf("error listing AWS security groups: %q", err)
@@ -88,7 +88,7 @@ func (s *oscSdkCompute) ReadSecurityGroups(request *ec2.DescribeSecurityGroupsIn
 
 func (s *oscSdkCompute) DescribeSubnets(request *ec2.DescribeSubnetsInput) ([]*ec2.Subnet, error) {
 	// Subnets are not paged
-	response, err := s.oapi.DescribeSubnets(request)
+	response, err := s.ec2.DescribeSubnets(request)
 	if err != nil {
 		return nil, fmt.Errorf("error listing AWS subnets: %q", err)
 	}
@@ -96,25 +96,25 @@ func (s *oscSdkCompute) DescribeSubnets(request *ec2.DescribeSubnetsInput) ([]*e
 }
 
 func (s *oscSdkCompute) CreateSecurityGroup(request *ec2.CreateSecurityGroupInput) (*ec2.CreateSecurityGroupOutput, error) {
-	return s.oapi.CreateSecurityGroup(request)
+	return s.ec2.CreateSecurityGroup(request)
 }
 
 func (s *oscSdkCompute) DeleteSecurityGroup(request *ec2.DeleteSecurityGroupInput) (*ec2.DeleteSecurityGroupOutput, error) {
-	return s.oapi.DeleteSecurityGroup(request)
+	return s.ec2.DeleteSecurityGroup(request)
 }
 
 func (s *oscSdkCompute) CreateSecurityGroupRule(request *ec2.AuthorizeSecurityGroupIngressInput) (*ec2.AuthorizeSecurityGroupIngressOutput, error) {
-	return s.oapi.AuthorizeSecurityGroupIngress(request)
+	return s.ec2.AuthorizeSecurityGroupIngress(request)
 }
 
 func (s *oscSdkCompute) DeleteSecurityGroupRule(request *ec2.RevokeSecurityGroupIngressInput) (*ec2.RevokeSecurityGroupIngressOutput, error) {
-	return s.oapi.RevokeSecurityGroupIngress(request)
+	return s.ec2.RevokeSecurityGroupIngress(request)
 }
 
 func (s *oscSdkCompute) CreateTags(request *ec2.CreateTagsInput) (*ec2.CreateTagsOutput, error) {
 	debugPrintCallerFunctionName()
 	requestTime := time.Now()
-	resp, err := s.oapi.CreateTags(request)
+	resp, err := s.ec2.CreateTags(request)
 	timeTaken := time.Since(requestTime).Seconds()
 	recordAWSMetric("create_tags", timeTaken, err)
 	return resp, err
@@ -125,7 +125,7 @@ func (s *oscSdkCompute) ReadRouteTables(request *ec2.DescribeRouteTablesInput) (
 	var nextToken *string
 	requestTime := time.Now()
 	for {
-		response, err := s.oapi.DescribeRouteTables(request)
+		response, err := s.ec2.DescribeRouteTables(request)
 		if err != nil {
 			recordAWSMetric("describe_route_tables", 0, err)
 			return nil, fmt.Errorf("error listing AWS route tables: %q", err)
@@ -145,17 +145,17 @@ func (s *oscSdkCompute) ReadRouteTables(request *ec2.DescribeRouteTablesInput) (
 }
 
 func (s *oscSdkCompute) CreateRoute(request *ec2.CreateRouteInput) (*ec2.CreateRouteOutput, error) {
-	return s.oapi.CreateRoute(request)
+	return s.ec2.CreateRoute(request)
 }
 
 func (s *oscSdkCompute) DeleteRoute(request *ec2.DeleteRouteInput) (*ec2.DeleteRouteOutput, error) {
-	return s.oapi.DeleteRoute(request)
+	return s.ec2.DeleteRoute(request)
 }
 
 func (s *oscSdkCompute) UpdateVM(request *ec2.ModifyInstanceAttributeInput) (*ec2.ModifyInstanceAttributeOutput, error) {
-	return s.oapi.ModifyInstanceAttribute(request)
+	return s.ec2.ModifyInstanceAttribute(request)
 }
 
 func (s *oscSdkCompute) ReadNets(request *ec2.DescribeVpcsInput) (*ec2.DescribeVpcsOutput, error) {
-	return s.oapi.DescribeVpcs(request)
+	return s.ec2.DescribeVpcs(request)
 }

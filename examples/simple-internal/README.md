@@ -13,13 +13,15 @@ $ /usr/local/bin/kubectl create namespace simple-internal
 namespace/simple-internal created
 ```
 
-- Create bucket for logs 
+- Create bucket for logs. Be sure to change bucket name (they are unique per region).
 ```
 $ aws s3 mb s3://ccm-examples  --endpoint https://osu.eu-west-2.outscale.com
 make_bucket: ccm-examples
 ```
 
-- Deploy the application ,which a simple server that responds with the http headers it received, along with the Loadbalancer
+- Adapt `service.beta.kubernetes.io/aws-load-balancer-access-log-s3-bucket-name` annotation in [specs/svc.yaml](specs/svc.yaml) with your bucket name.
+
+- Deploy the application, which a simple server that responds with the http headers it received, along with the Loadbalancer
 
 ```
 $ /usr/local/bin/kubectl apply  -f examples/simple-internal/specs/

@@ -10,7 +10,7 @@ metadata:
     service.beta.kubernetes.io/aws-load-balancer-access-log-emit-interval: "5"
     service.beta.kubernetes.io/aws-load-balancer-access-log-s3-bucket-name: "ccm-examples"
     service.beta.kubernetes.io/aws-load-balancer-access-log-s3-bucket-prefix: "logs/lb"
-    service.beta.kubernetes.io/aws-load-balancer-internal: 0.0.0.0/0
+    service.beta.kubernetes.io/aws-load-balancer-internal: "true"
 
 spec:
   ports:

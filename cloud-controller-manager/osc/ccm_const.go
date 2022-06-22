@@ -19,7 +19,6 @@ package osc
 import (
 	"time"
 
-	"github.com/aws/aws-sdk-go/service/ec2"
 	"k8s.io/apimachinery/pkg/util/sets"
 )
 
@@ -174,10 +173,6 @@ const (
 	createTagInitialDelay = 1 * time.Second
 	createTagFactor       = 2.0
 	createTagSteps        = 9
-
-	// Number of node names that can be added to a filter. The AWS limit is 200
-	// but we are using a lower limit on purpose
-	filterNodeLimit = 150
 )
 
 // awsTagNameMasterRoles is a set of well-known AWS tag names that indicate the instance is a master
@@ -213,11 +208,3 @@ const DefaultSrcSgName = "outscale-elb-sg"
 
 // DefaultSgOwnerID default SG Id used when creating LB Public Cloud
 const DefaultSgOwnerID = "outscale-elb"
-
-var aliveFilter = []string{
-	ec2.InstanceStateNamePending,
-	ec2.InstanceStateNameRunning,
-	ec2.InstanceStateNameShuttingDown,
-	ec2.InstanceStateNameStopping,
-	ec2.InstanceStateNameStopped,
-}

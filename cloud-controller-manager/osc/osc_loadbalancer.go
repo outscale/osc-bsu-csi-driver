@@ -29,6 +29,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/aws/aws-sdk-go/service/elb"
+	"github.com/outscale/osc-sdk-go/v2"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/klog/v2"
 
@@ -125,7 +126,7 @@ func (c *Cloud) getVpcCidrBlocks() ([]string, error) {
 
 // updateInstanceSecurityGroupsForNLB will adjust securityGroup's settings to allow inbound traffic into instances from clientCIDRs and portMappings.
 // TIP: if either instances or clientCIDRs or portMappings are nil, then the securityGroup rules for lbName are cleared.
-func (c *Cloud) updateInstanceSecurityGroupsForNLB(lbName string, instances map[InstanceID]*ec2.Instance, clientCIDRs []string, portMappings []nlbPortMapping) error {
+func (c *Cloud) updateInstanceSecurityGroupsForNLB(lbName string, instances map[InstanceID]*osc.Vm, clientCIDRs []string, portMappings []nlbPortMapping) error {
 	debugPrintCallerFunctionName()
 
 	if c.cfg.Global.DisableSecurityGroupIngress {
@@ -144,7 +145,7 @@ func (c *Cloud) updateInstanceSecurityGroupsForNLB(lbName string, instances map[
 			return err
 		}
 		if sg == nil {
-			klog.Warningf("Ignoring instance without security group: %s", aws.StringValue(instance.InstanceId))
+			klog.Warningf("Ignoring instance without security group: %s", instance.GetVmId())
 			continue
 		}
 		desiredSGIDs.Insert(aws.StringValue(sg.GroupId))
@@ -738,7 +739,7 @@ func (c *Cloud) ensureLoadBalancerHealthCheck(loadBalancer *elb.LoadBalancerDesc
 // Makes sure that exactly the specified hosts are registered as instances with the load balancer
 func (c *Cloud) ensureLoadBalancerInstances(loadBalancerName string,
 	lbInstances []*elb.Instance,
-	instanceIDs map[InstanceID]*ec2.Instance) error {
+	instanceIDs map[InstanceID]*osc.Vm) error {
 	debugPrintCallerFunctionName()
 	klog.V(10).Infof("ensureLoadBalancerInstances(%v,%v, %v)", loadBalancerName, lbInstances, instanceIDs)
 	expected := sets.NewString()
@@ -939,7 +940,7 @@ func proxyProtocolEnabled(backend *elb.BackendServerDescription) bool {
 // findInstancesForELB gets the EC2 instances corresponding to the Nodes, for setting up an ELB
 // We ignore Nodes (with a log message) where the instanceid cannot be determined from the provider,
 // and we ignore instances which are not found
-func (c *Cloud) findInstancesForELB(nodes []*v1.Node) (map[InstanceID]*ec2.Instance, error) {
+func (c *Cloud) findInstancesForELB(nodes []*v1.Node) (map[InstanceID]*osc.Vm, error) {
 	debugPrintCallerFunctionName()
 	klog.V(10).Infof("findInstancesForELB(%v)", nodes)
 
@@ -947,7 +948,7 @@ func (c *Cloud) findInstancesForELB(nodes []*v1.Node) (map[InstanceID]*ec2.Insta
 		if node.Spec.ProviderID == "" {
 			// TODO  Need to be optimize by setting providerID which is not possible actualy
 			instance, _ := c.findInstanceByNodeName(types.NodeName(node.Name))
-			node.Spec.ProviderID = aws.StringValue(instance.InstanceId)
+			node.Spec.ProviderID = instance.GetVmId()
 		}
 	}
 

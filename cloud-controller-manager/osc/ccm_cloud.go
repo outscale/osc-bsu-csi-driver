@@ -30,6 +30,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/aws/aws-sdk-go/service/elb"
+	"github.com/outscale/osc-sdk-go/v2"
 
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -298,9 +299,9 @@ func (c *Cloud) InstanceExistsByProviderID(ctx context.Context, providerID strin
 		return false, err
 	}
 
-	request := &ec2.DescribeInstancesInput{
-		Filters: []*ec2.Filter{
-			newEc2Filter("instance-id", string(instanceID)),
+	request := &osc.ReadVmsRequest{
+		Filters: &osc.FiltersVm{
+			VmIds: &[]string{string(instanceID)},
 		},
 	}
 
@@ -315,8 +316,8 @@ func (c *Cloud) InstanceExistsByProviderID(ctx context.Context, providerID strin
 		return false, fmt.Errorf("multiple instances found for instance: %s", instanceID)
 	}
 
-	state := instances[0].State.Name
-	if *state == ec2.InstanceStateNameTerminated {
+	state := instances[0].State
+	if *state == "terminated" {
 		klog.Warningf("the instance %s is terminated", instanceID)
 		return false, nil
 	}
@@ -333,8 +334,10 @@ func (c *Cloud) InstanceShutdownByProviderID(ctx context.Context, providerID str
 		return false, err
 	}
 
-	request := &ec2.DescribeInstancesInput{
-		InstanceIds: []*string{instanceID.awsString()},
+	request := &osc.ReadVmsRequest{
+		Filters: &osc.FiltersVm{
+			VmIds: &[]string{string(instanceID)},
+		},
 	}
 
 	instances, err := c.compute.ReadVms(request)
@@ -353,9 +356,8 @@ func (c *Cloud) InstanceShutdownByProviderID(ctx context.Context, providerID str
 
 	instance := instances[0]
 	if instance.State != nil {
-		state := aws.StringValue(instance.State.Name)
 		// valid state for detaching volumes
-		if state == ec2.InstanceStateNameStopped {
+		if *instance.State == "stopped" {
 			return true, nil
 		}
 	}
@@ -379,7 +381,7 @@ func (c *Cloud) InstanceID(ctx context.Context, nodeName types.NodeName) (string
 		}
 		return "", fmt.Errorf("getInstanceByNodeName failed for %q with %q", nodeName, err)
 	}
-	return "/" + aws.StringValue(inst.Placement.AvailabilityZone) + "/" + aws.StringValue(inst.InstanceId), nil
+	return "/" + inst.Placement.GetSubregionName() + "/" + inst.GetVmId(), nil
 }
 
 // InstanceTypeByProviderID returns the cloudprovider instance type of the node with the specified unique providerID
@@ -398,7 +400,7 @@ func (c *Cloud) InstanceTypeByProviderID(ctx context.Context, providerID string)
 		return "", err
 	}
 
-	return aws.StringValue(instance.InstanceType), nil
+	return instance.GetVmType(), nil
 }
 
 // InstanceType returns the type of the node with the specified nodeName.
@@ -412,7 +414,7 @@ func (c *Cloud) InstanceType(ctx context.Context, nodeName types.NodeName) (stri
 	if err != nil {
 		return "", fmt.Errorf("getInstanceByNodeName failed for %q with %q", nodeName, err)
 	}
-	return aws.StringValue(inst.InstanceType), nil
+	return inst.GetVmType(), nil
 }
 
 // GetZone implements Zones.GetZone
@@ -440,7 +442,7 @@ func (c *Cloud) GetZoneByProviderID(ctx context.Context, providerID string) (clo
 	}
 
 	zone := cloudprovider.Zone{
-		FailureDomain: *(instance.Placement.AvailabilityZone),
+		FailureDomain: instance.Placement.GetSubregionName(),
 		Region:        c.region,
 	}
 
@@ -458,7 +460,7 @@ func (c *Cloud) GetZoneByNodeName(ctx context.Context, nodeName types.NodeName) 
 		return cloudprovider.Zone{}, err
 	}
 	zone := cloudprovider.Zone{
-		FailureDomain: *(instance.Placement.AvailabilityZone),
+		FailureDomain: instance.Placement.GetSubregionName(),
 		Region:        c.region,
 	}
 
@@ -1462,7 +1464,7 @@ func (c *Cloud) getTaggedSecurityGroups() (map[string]*ec2.SecurityGroup, error)
 
 	m := make(map[string]*ec2.SecurityGroup)
 	for _, group := range groups {
-		if !c.tagging.hasClusterTag(group.Tags) {
+		if !c.tagging.hasClusterAWSTag(group.Tags) {
 			continue
 		}
 
@@ -1479,7 +1481,7 @@ func (c *Cloud) getTaggedSecurityGroups() (map[string]*ec2.SecurityGroup, error)
 // Open security group ingress rules on the instances so that the load balancer can talk to them
 // Will also remove any security groups ingress rules for the load balancer that are _not_ needed for allInstances
 func (c *Cloud) updateInstanceSecurityGroupsForLoadBalancer(lb *elb.LoadBalancerDescription,
-	instances map[InstanceID]*ec2.Instance,
+	instances map[InstanceID]*osc.Vm,
 	securityGroupIDs []string) error {
 	debugPrintCallerFunctionName()
 	klog.V(10).Infof("updateInstanceSecurityGroupsForLoadBalancer(%v, %v, %v)", lb, instances, securityGroupIDs)
@@ -1534,7 +1536,7 @@ func (c *Cloud) updateInstanceSecurityGroupsForLoadBalancer(lb *elb.LoadBalancer
 			return fmt.Errorf("error querying security groups for ELB: %q", err)
 		}
 		for _, sg := range response {
-			if !c.tagging.hasClusterTag(sg.Tags) {
+			if !c.tagging.hasClusterAWSTag(sg.Tags) {
 				continue
 			}
 			actualGroups = append(actualGroups, sg)
@@ -1565,7 +1567,7 @@ func (c *Cloud) updateInstanceSecurityGroupsForLoadBalancer(lb *elb.LoadBalancer
 		}
 
 		if securityGroup == nil {
-			klog.Warning("Ignoring instance without security group: ", aws.StringValue(instance.InstanceId))
+			klog.Warning("Ignoring instance without security group: ", instance.GetVmId())
 			continue
 		}
 		id := aws.StringValue(securityGroup.GroupId)
@@ -1668,7 +1670,7 @@ func (c *Cloud) EnsureLoadBalancerDeleted(ctx context.Context, clusterName strin
 		// De-register the load balancer security group from the instances security group
 		err = c.ensureLoadBalancerInstances(aws.StringValue(lb.LoadBalancerName),
 			lb.Instances,
-			map[InstanceID]*ec2.Instance{})
+			map[InstanceID]*osc.Vm{})
 		if err != nil {
 			klog.Errorf("ensureLoadBalancerInstances deregistering load balancer %v,%v,%v : %q",
 				aws.StringValue(lb.LoadBalancerName),
@@ -1726,7 +1728,7 @@ func (c *Cloud) EnsureLoadBalancerDeleted(ctx context.Context, clusterName strin
 				continue
 			}
 
-			if !c.tagging.hasClusterTag(sg.Tags) {
+			if !c.tagging.hasClusterAWSTag(sg.Tags) {
 				klog.Warningf("Ignoring security group with no cluster tag in %s", service.Name)
 				continue
 			}
@@ -1833,10 +1835,10 @@ func (c *Cloud) UpdateLoadBalancer(ctx context.Context, clusterName string, serv
 // ********************* CCM Node Resource Functions  *********************
 
 // Returns the instance with the specified ID
-func (c *Cloud) getInstanceByID(instanceID string) (*ec2.Instance, error) {
+func (c *Cloud) getInstanceByID(instanceID string) (*osc.Vm, error) {
 	debugPrintCallerFunctionName()
 	klog.V(10).Infof("getInstanceByID(%v)", instanceID)
-	instances, err := c.getInstancesByIDs([]*string{&instanceID})
+	instances, err := c.getInstancesByIDs(&[]string{instanceID})
 	if err != nil {
 		return nil, err
 	}
@@ -1851,17 +1853,19 @@ func (c *Cloud) getInstanceByID(instanceID string) (*ec2.Instance, error) {
 	return instances[instanceID], nil
 }
 
-func (c *Cloud) getInstancesByIDs(instanceIDs []*string) (map[string]*ec2.Instance, error) {
+func (c *Cloud) getInstancesByIDs(instanceIDs *[]string) (map[string]*osc.Vm, error) {
 	debugPrintCallerFunctionName()
 	klog.V(10).Infof("getInstancesByIDs(%v)", instanceIDs)
 
-	instancesByID := make(map[string]*ec2.Instance)
-	if len(instanceIDs) == 0 {
+	instancesByID := make(map[string]*osc.Vm)
+	if instanceIDs == nil || len(*instanceIDs) == 0 {
 		return instancesByID, nil
 	}
 
-	request := &ec2.DescribeInstancesInput{
-		InstanceIds: instanceIDs,
+	request := &osc.ReadVmsRequest{
+		Filters: &osc.FiltersVm{
+			VmIds: instanceIDs,
+		},
 	}
 
 	instances, err := c.compute.ReadVms(request)
@@ -1870,63 +1874,53 @@ func (c *Cloud) getInstancesByIDs(instanceIDs []*string) (map[string]*ec2.Instan
 	}
 
 	for _, instance := range instances {
-		instanceID := aws.StringValue(instance.InstanceId)
+		instanceRef := instance
+		instanceID := instance.GetVmId()
 		if instanceID == "" {
 			continue
 		}
 
-		instancesByID[instanceID] = instance
+		instancesByID[instanceID] = &instanceRef
 	}
 
 	return instancesByID, nil
 }
 
-func (c *Cloud) getInstancesByNodeNames(nodeNames []string, states ...string) ([]*ec2.Instance, error) {
+func (c *Cloud) getInstancesByNodeNames(nodeNames []string, states ...string) ([]*osc.Vm, error) {
 	debugPrintCallerFunctionName()
 	klog.V(10).Infof("getInstancesByNodeNames(%v, %v)", nodeNames, states)
 
-	names := aws.StringSlice(nodeNames)
-	ec2Instances := []*ec2.Instance{}
+	names := nodeNames
+	oscInstances := []*osc.Vm{}
 
-	for i := 0; i < len(names); i += filterNodeLimit {
-		end := i + filterNodeLimit
-		if end > len(names) {
-			end = len(names)
-		}
+	filters := osc.FiltersVm{}
 
-		nameSlice := names[i:end]
-
-		nodeNameFilter := &ec2.Filter{
-			Name:   aws.String("private-dns-name"),
-			Values: nameSlice,
-		}
-
-		filters := []*ec2.Filter{nodeNameFilter}
-		if len(states) > 0 {
-			filters = append(filters, newEc2Filter("instance-state-name", states...))
-		}
-
-		instances, err := c.describeInstances(filters)
+	instances, err := c.describeInstances(&filters)
 		if err != nil {
 			klog.V(2).Infof("Failed to describe instances %v", nodeNames)
 			return nil, err
 		}
-		ec2Instances = append(ec2Instances, instances...)
+
+	for _, instance := range instances {
+		if Contains(names, instance.GetPrivateDnsName()) &&
+			(len(states) == 0 || Contains(states, instance.GetState())) {
+			oscInstances = append(oscInstances, instance)
+		}
 	}
 
-	if len(ec2Instances) == 0 {
+	if len(oscInstances) == 0 {
 		klog.V(3).Infof("Failed to find any instances %v", nodeNames)
 		return nil, nil
 	}
-	return ec2Instances, nil
+	return oscInstances, nil
 }
 
 // TODO: Move to instanceCache
-func (c *Cloud) describeInstances(filters []*ec2.Filter) ([]*ec2.Instance, error) {
+func (c *Cloud) describeInstances(filters *osc.FiltersVm) ([]*osc.Vm, error) {
 	debugPrintCallerFunctionName()
 	klog.V(10).Infof("describeInstances(%v)", filters)
 
-	request := &ec2.DescribeInstancesInput{
+	request := &osc.ReadVmsRequest{
 		Filters: filters,
 	}
 
@@ -1935,10 +1929,11 @@ func (c *Cloud) describeInstances(filters []*ec2.Filter) ([]*ec2.Instance, error
 		return nil, err
 	}
 
-	var matches []*ec2.Instance
+	var matches []*osc.Vm
 	for _, instance := range response {
 		if c.tagging.hasClusterTag(instance.Tags) {
-			matches = append(matches, instance)
+			instanceRef := instance
+			matches = append(matches, &instanceRef)
 		}
 	}
 	return matches, nil
@@ -1946,20 +1941,21 @@ func (c *Cloud) describeInstances(filters []*ec2.Filter) ([]*ec2.Instance, error
 
 // Returns the instance with the specified node name
 // Returns nil if it does not exist
-func (c *Cloud) findInstanceByNodeName(nodeName types.NodeName) (*ec2.Instance, error) {
+func (c *Cloud) findInstanceByNodeName(nodeName types.NodeName) (*osc.Vm, error) {
 	debugPrintCallerFunctionName()
 	klog.V(10).Infof("findInstanceByNodeName(%v)", nodeName)
 
 	privateDNSName := mapNodeNameToPrivateDNSName(nodeName)
-	filters := []*ec2.Filter{
-		newEc2Filter("tag:"+TagNameClusterNode, privateDNSName),
-		// exclude instances in "terminated" state
-		newEc2Filter("instance-state-name", aliveFilter...),
-		newEc2Filter("tag:"+c.tagging.clusterTagKey(),
-			[]string{ResourceLifecycleOwned, ResourceLifecycleShared}...),
+	filters := osc.FiltersVm{
+		TagKeys: &[]string{
+			c.tagging.clusterTagKey(),
+		},
+		Tags: &[]string{
+			fmt.Sprintf("%s=%s", TagNameClusterNode, privateDNSName),
+		},
 	}
 
-	instances, err := c.describeInstances(filters)
+	instances, err := c.describeInstances(&filters)
 
 	if err != nil {
 		return nil, err
@@ -1972,16 +1968,21 @@ func (c *Cloud) findInstanceByNodeName(nodeName types.NodeName) (*ec2.Instance, 
 		return nil, fmt.Errorf("multiple instances found for name: %s", nodeName)
 	}
 
+	if *instances[0].State == "terminated" {
+		// We only want alive instances but oAPI does not have a filter for that
+		return nil, nil
+	}
+
 	return instances[0], nil
 }
 
 // Returns the instance with the specified node name
 // Like findInstanceByNodeName, but returns error if node not found
-func (c *Cloud) getInstanceByNodeName(nodeName types.NodeName) (*ec2.Instance, error) {
+func (c *Cloud) getInstanceByNodeName(nodeName types.NodeName) (*osc.Vm, error) {
 	debugPrintCallerFunctionName()
 	klog.V(10).Infof("getInstanceByNodeName(%v)", nodeName)
 
-	var instance *ec2.Instance
+	var instance *osc.Vm
 
 	// we leverage node cache to try to retrieve node's provider id first, as
 	// get instance by provider id is way more efficient than by filters in
@@ -1999,21 +2000,6 @@ func (c *Cloud) getInstanceByNodeName(nodeName types.NodeName) (*ec2.Instance, e
 		return nil, cloudprovider.InstanceNotFound
 	}
 	return instance, err
-}
-
-func (c *Cloud) getFullInstance(nodeName types.NodeName) (*VM, *ec2.Instance, error) {
-	debugPrintCallerFunctionName()
-	klog.V(10).Infof("getFullInstance(%v)", nodeName)
-	if nodeName == "" {
-		instance, err := c.getInstanceByID(c.selfAWSInstance.awsID)
-		return c.selfAWSInstance, instance, err
-	}
-	instance, err := c.getInstanceByNodeName(nodeName)
-	if err != nil {
-		return nil, nil, err
-	}
-	awsInstance := newAWSInstance(c.compute, instance)
-	return awsInstance, instance, err
 }
 
 func (c *Cloud) nodeNameToProviderID(nodeName types.NodeName) (InstanceID, error) {

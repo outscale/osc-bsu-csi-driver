@@ -27,8 +27,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/service/ec2"
+	"github.com/outscale/osc-sdk-go/v2"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/klog/v2"
 )
@@ -42,10 +41,6 @@ var awsInstanceRegMatch = regexp.MustCompile("^i-[^/]*$")
 // We should not assume anything about the length or format, though it seems
 // reasonable to assume that instances will continue to start with "i-".
 type InstanceID string
-
-func (i InstanceID) awsString() *string {
-	return aws.String(string(i))
-}
 
 // KubernetesInstanceID represents the id for an instance in the kubernetes API;
 // the following form
@@ -130,12 +125,14 @@ func mapToAWSInstanceIDsTolerant(nodes []*v1.Node) []InstanceID {
 }
 
 // Gets the full information about this instance from the EC2 API
-func describeInstance(ec2Client Compute, instanceID InstanceID) (*ec2.Instance, error) {
-	request := &ec2.DescribeInstancesInput{
-		InstanceIds: []*string{instanceID.awsString()},
+func describeInstance(client Compute, instanceID InstanceID) (*osc.Vm, error) {
+	request := &osc.ReadVmsRequest{
+		Filters: &osc.FiltersVm{
+			VmIds: &[]string{string(instanceID)},
+		},
 	}
 
-	instances, err := ec2Client.ReadVms(request)
+	instances, err := client.ReadVms(request)
 	if err != nil {
 		return nil, err
 	}
@@ -145,7 +142,7 @@ func describeInstance(ec2Client Compute, instanceID InstanceID) (*ec2.Instance, 
 	if len(instances) > 1 {
 		return nil, fmt.Errorf("multiple instances found for instance: %s", instanceID)
 	}
-	return instances[0], nil
+	return &(instances[0]), nil
 }
 
 // instanceCache manages the cache of DescribeInstances
@@ -163,15 +160,15 @@ func (c *instanceCache) describeAllInstancesUncached() (*allInstancesSnapshot, e
 
 	klog.V(4).Infof("EC2 DescribeInstances - fetching all instances")
 
-	var filters []*ec2.Filter
+	var filters *osc.FiltersVm
 	instances, err := c.cloud.describeInstances(filters)
 	if err != nil {
 		return nil, err
 	}
 
-	m := make(map[InstanceID]*ec2.Instance)
+	m := make(map[InstanceID]*osc.Vm)
 	for _, i := range instances {
-		id := InstanceID(aws.StringValue(i.InstanceId))
+		id := InstanceID(i.GetVmId())
 		m[id] = i
 	}
 
@@ -262,12 +259,12 @@ func (s *allInstancesSnapshot) MeetsCriteria(criteria cacheCriteria) bool {
 // along with the timestamp for cache-invalidation purposes
 type allInstancesSnapshot struct {
 	timestamp time.Time
-	instances map[InstanceID]*ec2.Instance
+	instances map[InstanceID]*osc.Vm
 }
 
 // FindInstances returns the instances corresponding to the specified ids.  If an id is not found, it is ignored.
-func (s *allInstancesSnapshot) FindInstances(ids []InstanceID) map[InstanceID]*ec2.Instance {
-	m := make(map[InstanceID]*ec2.Instance)
+func (s *allInstancesSnapshot) FindInstances(ids []InstanceID) map[InstanceID]*osc.Vm {
+	m := make(map[InstanceID]*osc.Vm)
 	for _, id := range ids {
 		instance := s.instances[id]
 		if instance != nil {

@@ -17,8 +17,7 @@ limitations under the License.
 package osc
 
 import (
-	"github.com/aws/aws-sdk-go/service/ec2"
-
+	"github.com/outscale/osc-sdk-go/v2"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/klog/v2"
 )
@@ -49,7 +48,7 @@ type VM struct {
 }
 
 // Gets the full information about this instance from the EC2 API
-func (i *VM) describeInstance() (*ec2.Instance, error) {
+func (i *VM) describeInstance() (*osc.Vm, error) {
 	debugPrintCallerFunctionName()
 	klog.V(10).Infof("describeInstance")
 	return describeInstance(i.compute, InstanceID(i.awsID))

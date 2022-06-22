@@ -88,7 +88,7 @@ func newCloud(cfg CloudConfig, awsServices Services) (*Cloud, error) {
 	klog.Infof("OSC CCM cfg: %v", cfg)
 
 	klog.Infof("Init Services/Compute")
-	ec2, err := awsServices.Compute(regionName)
+	computeService, err := awsServices.Compute(regionName)
 	if err != nil {
 		return nil, fmt.Errorf("error creating OSC EC2 client: %v", err)
 	}
@@ -99,7 +99,7 @@ func newCloud(cfg CloudConfig, awsServices Services) (*Cloud, error) {
 	}
 
 	awsCloud := &Cloud{
-		compute:      ec2,
+		compute:      computeService,
 		loadBalancer: elb,
 		metadata:     metadata,
 		cfg:          &cfg,

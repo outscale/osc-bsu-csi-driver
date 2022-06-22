@@ -20,13 +20,15 @@ import (
 	"github.com/aws/aws-sdk-go/aws/ec2metadata"
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/aws/aws-sdk-go/service/elb"
+
+	osc "github.com/outscale/osc-sdk-go/v2"
 )
 
 // ********************* CCM API interfaces *********************
 
 // Compute provice abstraction to IaaS calls
 type Compute interface {
-	ReadVms(request *ec2.DescribeInstancesInput) ([]*ec2.Instance, error)
+	ReadVms(request *osc.ReadVmsRequest) ([]osc.Vm, error)
 
 	ReadSecurityGroups(request *ec2.DescribeSecurityGroupsInput) ([]*ec2.SecurityGroup, error)
 

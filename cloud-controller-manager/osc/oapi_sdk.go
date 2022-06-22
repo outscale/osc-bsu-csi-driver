@@ -17,43 +17,44 @@ limitations under the License.
 package osc
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/ec2"
+	osc "github.com/outscale/osc-sdk-go/v2"
 )
 
 // ********************* CCM oscSdkCompute Def & functions *********************
 
-// oscSdkCompute is an implementation of the EC2 interface, backed by aws-sdk-go
+// oscSdkCompute is an implementation of the some EC2 interface and OSC Interface, backed by aws-sdk-go and osc-sdk-go
 type oscSdkCompute struct {
-	oapi *ec2.EC2
+	ec2    *ec2.EC2
+	client *osc.APIClient
+	ctx    context.Context
 }
 
-// Implementation of EC2.Instances
-func (s *oscSdkCompute) ReadVms(request *ec2.DescribeInstancesInput) ([]*ec2.Instance, error) {
+// Implementation of ReadVms
+func (s *oscSdkCompute) ReadVms(request *osc.ReadVmsRequest) ([]osc.Vm, error) {
 	// Instances are paged
-	results := []*ec2.Instance{}
-	var nextToken *string
+	var results []osc.Vm
 	requestTime := time.Now()
-	for {
-		response, err := s.oapi.DescribeInstances(request)
+	response, httpRes, err := s.client.VmApi.ReadVms(s.ctx).ReadVmsRequest(*request).Execute()
 		if err != nil {
 			recordAWSMetric("describe_instance", 0, err)
+		if httpRes != nil {
+			return nil, fmt.Errorf("error listing AWS instances: %q (Status:%v)", err, httpRes.Status)
+		}
 			return nil, fmt.Errorf("error listing AWS instances: %q", err)
 		}
 
-		for _, reservation := range response.Reservations {
-			results = append(results, reservation.Instances...)
+	if !response.HasVms() {
+		return nil, errors.New("error listing AWS instances: Vm has not been set")
 		}
 
-		nextToken = response.NextToken
-		if aws.StringValue(nextToken) == "" {
-			break
-		}
-		request.NextToken = nextToken
-	}
+	results = *response.Vms
 	timeTaken := time.Since(requestTime).Seconds()
 	recordAWSMetric("describe_instance", timeTaken, nil)
 	return results, nil

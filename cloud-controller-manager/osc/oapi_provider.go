@@ -18,6 +18,7 @@ package osc
 
 import (
 	"fmt"
+	"os"
 	"sync"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -30,6 +31,10 @@ import (
 	"github.com/aws/aws-sdk-go/service/elb"
 
 	"github.com/outscale-dev/cloud-provider-osc/cloud-controller-manager/utils"
+
+	"context"
+
+	osc "github.com/outscale/osc-sdk-go/v2"
 
 	"k8s.io/klog/v2"
 )
@@ -125,10 +130,24 @@ func (p *awsSDKProvider) Compute(regionName string) (Compute, error) {
 
 	p.addHandlers(regionName, &service.Handlers)
 
-	ec2 := &oscSdkCompute{
-		oapi: service,
+	// osc config
+	config := osc.NewConfiguration()
+	config.Debug = false
+	client := osc.NewAPIClient(config)
+	ctx := context.WithValue(context.Background(), osc.ContextAWSv4, osc.AWSv4{
+		AccessKey: os.Getenv("OSC_ACCESS_KEY"),
+		SecretKey: os.Getenv("OSC_SECRET_KEY"),
+	})
+	ctx = context.WithValue(ctx, osc.ContextServerIndex, 0)
+	ctx = context.WithValue(ctx, osc.ContextServerVariables, map[string]string{"region": regionName})
+
+	sdk := &oscSdkCompute{
+		ec2:    service,
+		client: client,
+		ctx:    ctx,
 	}
-	return ec2, nil
+
+	return sdk, nil
 }
 
 func (p *awsSDKProvider) LoadBalancing(regionName string) (LoadBalancer, error) {

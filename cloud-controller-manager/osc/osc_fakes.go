@@ -26,14 +26,15 @@ import (
 	"github.com/aws/aws-sdk-go/aws/ec2metadata"
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/aws/aws-sdk-go/service/elb"
+	"github.com/outscale/osc-sdk-go/v2"
 	"k8s.io/klog/v2"
 )
 
 // FakeOscServices is an fake AWS session used for testing
 type FakeOscServices struct {
 	region                      string
-	instances                   []*ec2.Instance
-	selfInstance                *ec2.Instance
+	instances                   []*osc.Vm
+	selfInstance                *osc.Vm
 	networkInterfacesMacs       []string
 	networkInterfacesPrivateIPs [][]string
 	networkInterfacesVpcIDs     []string
@@ -47,28 +48,29 @@ type FakeOscServices struct {
 func NewFakeAWSServices(clusterID string) *FakeOscServices {
 	s := &FakeOscServices{}
 	s.region = "us-east-1"
-	s.compute = &FakeComputeImpl{aws: s}
+	s.compute = &FakeComputeImpl{osc: s}
 	s.elb = &FakeELB{aws: s}
 	s.metadata = &FakeMetadata{aws: s}
 
 	s.networkInterfacesMacs = []string{"aa:bb:cc:dd:ee:00", "aa:bb:cc:dd:ee:01"}
 	s.networkInterfacesVpcIDs = []string{"vpc-mac0", "vpc-mac1"}
 
-	selfInstance := &ec2.Instance{}
-	selfInstance.InstanceId = aws.String("i-self")
-	selfInstance.Placement = &ec2.Placement{
-		AvailabilityZone: aws.String("us-east-1a"),
-	}
-	selfInstance.PrivateDnsName = aws.String("ip-172-20-0-100.ec2.internal")
-	selfInstance.PrivateIpAddress = aws.String("192.168.0.1")
-	selfInstance.PublicIpAddress = aws.String("1.2.3.4")
+	selfInstance := &osc.Vm{}
+	selfInstance.SetVmId("i-self")
+	subRegionName := "us-east-1a"
+	selfInstance.SetPlacement(osc.Placement{
+		SubregionName: &subRegionName,
+	})
+	selfInstance.SetPrivateDnsName("ip-172-20-0-100.ec2.internal")
+	selfInstance.SetPrivateIp("192.168.0.1")
+	selfInstance.SetPublicIp("1.2.3.4")
 	s.selfInstance = selfInstance
-	s.instances = []*ec2.Instance{selfInstance}
+	s.instances = []*osc.Vm{selfInstance}
 
-	var tag ec2.Tag
-	tag.Key = aws.String(TagNameKubernetesClusterLegacy)
-	tag.Value = aws.String(clusterID)
-	selfInstance.Tags = []*ec2.Tag{&tag}
+	var tag osc.ResourceTag
+	tag.SetKey(TagNameKubernetesClusterLegacy)
+	tag.SetValue(clusterID)
+	selfInstance.Tags = &[]osc.ResourceTag{tag}
 
 	return s
 }
@@ -76,9 +78,9 @@ func NewFakeAWSServices(clusterID string) *FakeOscServices {
 // WithAz sets the ec2 placement availability zone
 func (s *FakeOscServices) WithAz(az string) *FakeOscServices {
 	if s.selfInstance.Placement == nil {
-		s.selfInstance.Placement = &ec2.Placement{}
+		s.selfInstance.Placement = &osc.Placement{}
 	}
-	s.selfInstance.Placement.AvailabilityZone = aws.String(az)
+	s.selfInstance.Placement.SetSubregionName(az)
 	return s
 }
 
@@ -108,7 +110,7 @@ type FakeCompute interface {
 
 // FakeComputeImpl is an implementation of the FakeEC2 interface used for testing
 type FakeComputeImpl struct {
-	aws                      *FakeOscServices
+	osc                      *FakeOscServices
 	Subnets                  []*ec2.Subnet
 	DescribeSubnetsInput     *ec2.DescribeSubnetsInput
 	RouteTables              []*ec2.RouteTable
@@ -116,18 +118,18 @@ type FakeComputeImpl struct {
 }
 
 // ReadVms returns fake instance descriptions
-func (ec2i *FakeComputeImpl) ReadVms(request *ec2.DescribeInstancesInput) ([]*ec2.Instance, error) {
-	matches := []*ec2.Instance{}
-	for _, instance := range ec2i.aws.instances {
-		if request.InstanceIds != nil {
-			if instance.InstanceId == nil {
+func (ec2i *FakeComputeImpl) ReadVms(request *osc.ReadVmsRequest) ([]osc.Vm, error) {
+	matches := []osc.Vm{}
+	for _, instance := range ec2i.osc.instances {
+		if request.GetFilters().VmIds != nil {
+			if instance.VmId == nil {
 				klog.Warning("Instance with no instance id: ", instance)
 				continue
 			}
 
 			found := false
-			for _, instanceID := range request.InstanceIds {
-				if *instanceID == *instance.InstanceId {
+			for _, instanceID := range request.Filters.GetVmIds() {
+				if instanceID == instance.GetVmId() {
 					found = true
 					break
 				}
@@ -138,17 +140,55 @@ func (ec2i *FakeComputeImpl) ReadVms(request *ec2.DescribeInstancesInput) ([]*ec
 		}
 		if request.Filters != nil {
 			allMatch := true
-			for _, filter := range request.Filters {
-				if !instanceMatchesFilter(instance, filter) {
-					allMatch = false
-					break
+			// TagsKey
+			for _, tagKey := range request.Filters.GetTagKeys() {
+				found := false
+				for _, tag := range instance.GetTags() {
+					if tag.GetKey() == tagKey {
+						found = true
+					}
 				}
+				allMatch = allMatch && found
+			}
+
+			// TagsValues
+			for _, tagValue := range request.Filters.GetTagValues() {
+				found := false
+				for _, tag := range instance.GetTags() {
+					if tag.GetValue() == tagValue {
+						found = true
+					}
+				}
+				allMatch = allMatch && found
+			}
+
+			// Tags
+			for _, tag := range request.Filters.GetTags() {
+				tagSplit := strings.Split(tag, "=")
+				tagKey := tagSplit[0]
+				tagValue := tagSplit[1]
+				found := false
+				for _, tag := range instance.GetTags() {
+					if tag.GetValue() == tagValue && tag.GetKey() == tagKey {
+						found = true
+					}
+				}
+				allMatch = allMatch && found
+			}
+
+			// VmIds
+			for _, vmId := range request.Filters.GetVmIds() {
+				found := false
+				if vmId == instance.GetVmId() {
+					found = true
+				}
+				allMatch = allMatch && found
 			}
 			if !allMatch {
 				continue
 			}
 		}
-		matches = append(matches, instance)
+		matches = append(matches, *instance)
 	}
 
 	return matches, nil
@@ -292,19 +332,19 @@ func (m *FakeMetadata) GetMetadata(key string) (string, error) {
 	if key == "placement/availability-zone" {
 		az := ""
 		if i.Placement != nil {
-			az = aws.StringValue(i.Placement.AvailabilityZone)
+			az = i.Placement.GetSubregionName()
 		}
 		return az, nil
 	} else if key == "instance-id" {
-		return aws.StringValue(i.InstanceId), nil
+		return i.GetVmId(), nil
 	} else if key == "local-hostname" {
-		return aws.StringValue(i.PrivateDnsName), nil
+		return i.GetPrivateDnsName(), nil
 	} else if key == "public-hostname" {
-		return aws.StringValue(i.PublicDnsName), nil
+		return i.GetPublicDnsName(), nil
 	} else if key == "local-ipv4" {
-		return aws.StringValue(i.PrivateIpAddress), nil
+		return i.GetPrivateIp(), nil
 	} else if key == "public-ipv4" {
-		return aws.StringValue(i.PublicIpAddress), nil
+		return i.GetPublicIp(), nil
 	} else if strings.HasPrefix(key, networkInterfacesPrefix) {
 		if key == networkInterfacesPrefix {
 			return strings.Join(m.aws.networkInterfacesMacs, "/\n") + "/\n", nil

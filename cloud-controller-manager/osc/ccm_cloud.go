@@ -903,7 +903,7 @@ func (c *Cloud) findSubnets() ([]*ec2.Subnet, error) {
 
 		var matches []*ec2.Subnet
 		for _, subnet := range subnets {
-			if c.tagging.hasClusterTag(subnet.Tags) {
+			if c.tagging.hasClusterAWSTag(subnet.Tags) {
 				matches = append(matches, subnet)
 			}
 		}
@@ -1896,10 +1896,10 @@ func (c *Cloud) getInstancesByNodeNames(nodeNames []string, states ...string) ([
 	filters := osc.FiltersVm{}
 
 	instances, err := c.describeInstances(&filters)
-		if err != nil {
-			klog.V(2).Infof("Failed to describe instances %v", nodeNames)
-			return nil, err
-		}
+	if err != nil {
+		klog.V(2).Infof("Failed to describe instances %v", nodeNames)
+		return nil, err
+	}
 
 	for _, instance := range instances {
 		if Contains(names, instance.GetPrivateDnsName()) &&

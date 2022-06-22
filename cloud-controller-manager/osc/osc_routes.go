@@ -52,7 +52,7 @@ func (c *Cloud) findRouteTable(clusterName string) (*ec2.RouteTable, error) {
 		}
 
 		for _, table := range response {
-			if c.tagging.hasClusterTag(table.Tags) {
+			if c.tagging.hasClusterAWSTag(table.Tags) {
 				tables = append(tables, table)
 			}
 		}
@@ -77,7 +77,7 @@ func (c *Cloud) ListRoutes(ctx context.Context, clusterName string) ([]*cloudpro
 	}
 
 	var routes []*cloudprovider.Route
-	var instanceIDs []*string
+	var instanceIDs []string
 
 	for _, r := range table.Routes {
 		instanceID := aws.StringValue(r.InstanceId)
@@ -86,10 +86,10 @@ func (c *Cloud) ListRoutes(ctx context.Context, clusterName string) ([]*cloudpro
 			continue
 		}
 
-		instanceIDs = append(instanceIDs, &instanceID)
+		instanceIDs = append(instanceIDs, instanceID)
 	}
 
-	instances, err := c.getInstancesByIDs(instanceIDs)
+	instances, err := c.getInstancesByIDs(&instanceIDs)
 	if err != nil {
 		return nil, err
 	}
@@ -151,7 +151,7 @@ func (c *Cloud) CreateRoute(ctx context.Context, clusterName string, nameHint st
 
 	// In addition to configuring the route itself, we also need to configure the instance to accept that traffic
 	// On AWS, this requires turning source-dest checks off
-	err = c.configureInstanceSourceDestCheck(aws.StringValue(instance.InstanceId), false)
+	err = c.configureInstanceSourceDestCheck(instance.GetVmId(), false)
 	if err != nil {
 		return err
 	}
@@ -190,7 +190,7 @@ func (c *Cloud) CreateRoute(ctx context.Context, clusterName string, nameHint st
 	request := &ec2.CreateRouteInput{}
 	// TODO: use ClientToken for idempotency?
 	request.DestinationCidrBlock = aws.String(route.DestinationCIDR)
-	request.InstanceId = instance.InstanceId
+	request.InstanceId = instance.VmId
 	request.RouteTableId = table.RouteTableId
 
 	_, err = c.compute.CreateRoute(request)

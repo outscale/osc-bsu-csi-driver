@@ -26,6 +26,7 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/ec2"
+	"github.com/outscale/osc-sdk-go/v2"
 	"k8s.io/klog/v2"
 
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -78,14 +79,14 @@ func tagNameKubernetesCluster() string {
 
 // Extracts the legacy & new cluster ids from the given tags, if they are present
 // If duplicate tags are found, returns an error
-func findClusterIDs(tags []*ec2.Tag) (string, string, error) {
+func findClusterIDs(tags *[]osc.ResourceTag) (string, string, error) {
 	debugPrintCallerFunctionName()
 	klog.V(10).Infof("findClusterIDs(%v)", tags)
 	legacyClusterID := ""
 	newClusterID := ""
 
-	for _, tag := range tags {
-		tagKey := aws.StringValue(tag.Key)
+	for _, tag := range *tags {
+		tagKey := tag.GetKey()
 		if strings.HasPrefix(tagKey, TagNameKubernetesClusterPrefix) {
 			id := strings.TrimPrefix(tagKey, TagNameKubernetesClusterPrefix)
 			if newClusterID != "" {
@@ -95,7 +96,7 @@ func findClusterIDs(tags []*ec2.Tag) (string, string, error) {
 		}
 
 		if tagKey == tagNameKubernetesCluster() {
-			id := aws.StringValue(tag.Value)
+			id := tag.GetValue()
 			if legacyClusterID != "" {
 				return "", "", fmt.Errorf("Found multiple %s tags (%q and %q)", tagNameKubernetesCluster(), legacyClusterID, id)
 			}
@@ -131,7 +132,7 @@ func (t *awsTagging) init(legacyClusterID string, clusterID string) error {
 // Extracts a clusterID from the given tags, if one is present
 // If no clusterID is found, returns "", nil
 // If multiple (different) clusterIDs are found, returns an error
-func (t *awsTagging) initFromTags(tags []*ec2.Tag) error {
+func (t *awsTagging) initFromTags(tags *[]osc.ResourceTag) error {
 	debugPrintCallerFunctionName()
 	klog.V(10).Infof("initFromTags(%v)", tags)
 	legacyClusterID, newClusterID, err := findClusterIDs(tags)
@@ -152,9 +153,10 @@ func (t *awsTagging) clusterTagKey() string {
 	return TagNameKubernetesClusterPrefix + t.ClusterID
 }
 
-func (t *awsTagging) hasClusterTag(tags []*ec2.Tag) bool {
+// To delete after last call to this function
+func (t *awsTagging) hasClusterAWSTag(tags []*ec2.Tag) bool {
 	debugPrintCallerFunctionName()
-	klog.V(10).Infof("hasClusterTag(%v)", tags)
+	klog.V(10).Infof("hasClusterAWSTag(%v)", tags)
 	// if the clusterID is not configured -- we consider all instances.
 	if len(t.ClusterID) == 0 {
 		return true
@@ -162,6 +164,22 @@ func (t *awsTagging) hasClusterTag(tags []*ec2.Tag) bool {
 	clusterTagKey := t.clusterTagKey()
 	for _, tag := range tags {
 		if aws.StringValue(tag.Key) == clusterTagKey {
+			return true
+		}
+	}
+	return false
+}
+
+func (t *awsTagging) hasClusterTag(tags *[]osc.ResourceTag) bool {
+	debugPrintCallerFunctionName()
+	klog.V(10).Infof("hasClusterTag(%v)", tags)
+	// if the clusterID is not configured -- we consider all instances.
+	if len(t.ClusterID) == 0 {
+		return true
+	}
+	clusterTagKey := t.clusterTagKey()
+	for _, tag := range *tags {
+		if tag.GetKey() == clusterTagKey {
 			return true
 		}
 	}

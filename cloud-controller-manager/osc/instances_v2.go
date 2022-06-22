@@ -17,50 +17,47 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"os"
 	"strings"
 
 	"k8s.io/klog/v2"
 
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/service/ec2"
+	"github.com/outscale/osc-sdk-go/v2"
 
 	v1 "k8s.io/api/core/v1"
 	cloudprovider "k8s.io/cloud-provider"
 )
 
 // newInstances returns an implementation of cloudprovider.InstancesV2
-func newInstancesV2(az string, metadata EC2Metadata) (cloudprovider.InstancesV2, error) {
+func newInstancesV2(az string) (cloudprovider.InstancesV2, error) {
 
 	region, err := azToRegion(az)
 	if err != nil {
 		return nil, err
 	}
-
-	sess, err := NewSession(metadata)
-	if err != nil {
-		return nil, fmt.Errorf("unable to initialize newInstancesV2 session: %v", err)
-	}
-
-	addOscUserAgent(&sess.Handlers)
-
-	ec2Service := ec2.New(sess)
+	config := osc.NewConfiguration()
+	config.Debug = false
+	client := osc.NewAPIClient(config)
+	ctx := context.WithValue(context.Background(), osc.ContextAWSv4, osc.AWSv4{
+		AccessKey: os.Getenv("OSC_ACCESS_KEY"),
+		SecretKey: os.Getenv("OSC_SECRET_KEY"),
+	})
+	ctx = context.WithValue(ctx, osc.ContextServerIndex, 0)
+	ctx = context.WithValue(ctx, osc.ContextServerVariables, map[string]string{"region": region})
 
 	return &instancesV2{
 		availabilityZone: az,
 		region:           region,
-		ec2:              ec2Service,
+		client:           client,
+		ctx:              ctx,
 	}, nil
-}
-
-// EC2V2 is an interface defining only the methods we call from the AWS EC2 SDK.
-type EC2V2 interface {
-	DescribeInstances(request *ec2.DescribeInstancesInput) (*ec2.DescribeInstancesOutput, error)
 }
 
 // instances is an implementation of cloudprovider.InstancesV2
 type instancesV2 struct {
 	availabilityZone string
-	ec2              EC2V2
+	client           *osc.APIClient
+	ctx              context.Context
 	region           string
 }
 
@@ -88,9 +85,9 @@ func (i *instancesV2) InstanceShutdown(ctx context.Context, node *v1.Node) (bool
 	}
 
 	if ec2Instance.State != nil {
-		state := aws.StringValue(ec2Instance.State.Name)
+		state := ec2Instance.GetState()
 		// valid state for detaching volumes
-		if state == ec2.InstanceStateNameStopped {
+		if state == "stopped" {
 			return true, nil
 		}
 	}
@@ -101,27 +98,27 @@ func (i *instancesV2) InstanceShutdown(ctx context.Context, node *v1.Node) (bool
 // InstanceMetadata returns the instance's metadata.
 func (i *instancesV2) InstanceMetadata(ctx context.Context, node *v1.Node) (*cloudprovider.InstanceMetadata, error) {
 	var err error
-	var ec2Instance *ec2.Instance
+	var oscInstance *osc.Vm
 
 	//  TODO: support node name policy other than private DNS names
-	ec2Instance, err = i.getInstance(ctx, node)
+	oscInstance, err = i.getInstance(ctx, node)
 	if err != nil {
 		return nil, err
 	}
 
-	nodeAddresses, err := extractNodeAddresses(ec2Instance)
+	nodeAddresses, err := extractNodeAddresses(oscInstance)
 	if err != nil {
 		return nil, err
 	}
 
-	providerID, err := getInstanceProviderIDV2(ec2Instance)
+	providerID, err := getInstanceProviderIDV2(oscInstance)
 	if err != nil {
 		return nil, err
 	}
 
 	metadata := &cloudprovider.InstanceMetadata{
 		ProviderID:    providerID,
-		InstanceType:  aws.StringValue(ec2Instance.InstanceType),
+		InstanceType:  oscInstance.GetVmType(),
 		NodeAddresses: nodeAddresses,
 	}
 
@@ -130,15 +127,16 @@ func (i *instancesV2) InstanceMetadata(ctx context.Context, node *v1.Node) (*clo
 
 // getInstance returns the instance if the instance with the given node info still exists.
 // If false an error will be returned, the instance will be immediately deleted by the cloud controller manager.
-func (i *instancesV2) getInstance(ctx context.Context, node *v1.Node) (*ec2.Instance, error) {
-	var request *ec2.DescribeInstancesInput
+func (i *instancesV2) getInstance(ctx context.Context, node *v1.Node) (*osc.Vm, error) {
+	var request *osc.ReadVmsRequest
 	if node.Spec.ProviderID == "" {
 		// get Instance by private DNS name
-		request = &ec2.DescribeInstancesInput{
+		request = &osc.ReadVmsRequest{}
+		/*
 			Filters: []*ec2.Filter{
 				newEc2Filter("private-dns-name", node.Name),
 			},
-		}
+		}*/
 		klog.V(4).Infof("looking for node by private DNS name %v", node.Name)
 	} else {
 		// get Instance by provider ID
@@ -147,33 +145,38 @@ func (i *instancesV2) getInstance(ctx context.Context, node *v1.Node) (*ec2.Inst
 			return nil, err
 		}
 
-		request = &ec2.DescribeInstancesInput{
-			Filters: []*ec2.Filter{
-				newEc2Filter("instance-id", instanceID),
+		request = &osc.ReadVmsRequest{
+			Filters: &osc.FiltersVm{
+				VmIds: &[]string{instanceID},
 			},
 		}
 		klog.V(4).Infof("looking for node by provider ID %v", node.Spec.ProviderID)
 	}
 
-	instances := []*ec2.Instance{}
-	var nextToken *string
-	for {
-		response, err := i.ec2.DescribeInstances(request)
-		klog.V(4).Infof("Get Response from Describe Instances  %v", response)
+	response, httpRes, err := i.client.VmApi.ReadVms(ctx).ReadVmsRequest(*request).Execute()
+	klog.V(4).Infof("Get Response from Describe Instances  %v", response)
 
-		if err != nil {
-			return nil, fmt.Errorf("error describing ec2 instances: %v", err)
+	if err != nil {
+		if httpRes != nil {
+			return nil, fmt.Errorf("error describing ec2 instances: %v (Status:%v)", err, httpRes.Status)
 		}
+		return nil, fmt.Errorf("error describing ec2 instances: %v", err)
+	}
 
-		for _, reservation := range response.Reservations {
-			instances = append(instances, reservation.Instances...)
-		}
+	if !response.HasVms() {
+		return nil, fmt.Errorf("error describing ec2 instances: %v", err)
+	}
 
-		nextToken = response.NextToken
-		if aws.StringValue(nextToken) == "" {
-			break
+	instances := []osc.Vm{}
+
+	if node.Spec.ProviderID == "" {
+		for _, instance := range response.GetVms() {
+			if instance.GetPrivateDnsName() == node.Name {
+				instances = append(instances, instance)
+			}
 		}
-		request.NextToken = nextToken
+	} else {
+		instances = response.GetVms()
 	}
 
 	if len(instances) == 0 {
@@ -184,27 +187,28 @@ func (i *instancesV2) getInstance(ctx context.Context, node *v1.Node) (*ec2.Inst
 		return nil, errors.New("getInstance: multiple instances found")
 	}
 
-	state := instances[0].State.Name
-	if *state == ec2.InstanceStateNameTerminated {
+	state := instances[0].State
+	if *state == "terminated" {
 		return nil, cloudprovider.InstanceNotFound
 	}
 
-	return instances[0], nil
+	return &instances[0], nil
 }
 
 // getInstanceProviderID returns the provider ID of an instance which is ultimately set in the node.Spec.ProviderID field.
 // The well-known format for a node's providerID is:
 //    * aws:///<availability-zone>/<instance-id>
-func getInstanceProviderIDV2(instance *ec2.Instance) (string, error) {
-	if aws.StringValue(instance.Placement.AvailabilityZone) == "" {
+func getInstanceProviderIDV2(instance *osc.Vm) (string, error) {
+	if instance.Placement.GetSubregionName() == "" {
 		return "", errors.New("instance availability zone was not set")
 	}
 
-	if aws.StringValue(instance.InstanceId) == "" {
+	if instance.GetVmId() == "" {
 		return "", errors.New("instance ID was not set")
 	}
 
-	return "aws:///" + aws.StringValue(instance.Placement.AvailabilityZone) + "/" + aws.StringValue(instance.InstanceId), nil
+	// TODO: Check the impact of changing this ?
+	return "aws:///" + instance.Placement.GetSubregionName() + "/" + instance.GetVmId(), nil
 }
 
 // parseInstanceIDFromProviderID parses the node's instance ID based on the following formats:

@@ -71,7 +71,7 @@ func newCloud(cfg CloudConfig, awsServices Services) (*Cloud, error) {
 		return nil, err
 	}
 
-	instances, err := newInstancesV2(zone, metadata)
+	instances, err := newInstancesV2(zone)
 	if err != nil {
 		return nil, err
 	}

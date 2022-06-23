@@ -195,6 +195,18 @@ spec:
                   name: {{ .Values.oscSecretName | default "osc-secret" }}
                   key: aws_availability_zones
                   optional: false
+            - name: OSC_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.oscSecretName | default "osc-secret" }}
+                  key: access_key
+                  optional: false
+            - name: OSC_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.oscSecretName | default "osc-secret" }}
+                  key: key_id
+                  optional: false
       hostNetwork: true
       tolerations:
         # this taint is set by all kubelets running `--cloud-provider=external`

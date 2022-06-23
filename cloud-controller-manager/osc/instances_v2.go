@@ -36,7 +36,7 @@ func newInstancesV2(az string) (cloudprovider.InstancesV2, error) {
 		return nil, err
 	}
 	config := osc.NewConfiguration()
-	config.Debug = false
+	config.Debug = true
 	client := osc.NewAPIClient(config)
 	ctx := context.WithValue(context.Background(), osc.ContextAWSv4, osc.AWSv4{
 		AccessKey: os.Getenv("OSC_ACCESS_KEY"),
@@ -153,7 +153,7 @@ func (i *instancesV2) getInstance(ctx context.Context, node *v1.Node) (*osc.Vm, 
 		klog.V(4).Infof("looking for node by provider ID %v", node.Spec.ProviderID)
 	}
 
-	response, httpRes, err := i.client.VmApi.ReadVms(ctx).ReadVmsRequest(*request).Execute()
+	response, httpRes, err := i.client.VmApi.ReadVms(i.ctx).ReadVmsRequest(*request).Execute()
 	klog.V(4).Infof("Get Response from Describe Instances  %v", response)
 
 	if err != nil {

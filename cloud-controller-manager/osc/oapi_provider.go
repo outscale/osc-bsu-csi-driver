@@ -132,7 +132,7 @@ func (p *awsSDKProvider) Compute(regionName string) (Compute, error) {
 
 	// osc config
 	config := osc.NewConfiguration()
-	config.Debug = false
+	config.Debug = true
 	client := osc.NewAPIClient(config)
 	ctx := context.WithValue(context.Background(), osc.ContextAWSv4, osc.AWSv4{
 		AccessKey: os.Getenv("OSC_ACCESS_KEY"),

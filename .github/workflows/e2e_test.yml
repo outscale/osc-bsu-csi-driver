@@ -4,8 +4,21 @@ on:
   pull_request_target:
     branches:
       - OSC-MIGRATION
+    paths:
+      - "**.go"
+      - "Dockerfile"
+      - "Makefile"
+      - "go.*"
+      - "deploy/k8s-osc-ccm/**.yaml"
   push:
     branches: [ OSC-MIGRATION ]
+    paths:
+      - "**.go"
+      - "Dockerfile"
+      - "Makefile"
+      - "go.*"
+      - "deploy/k8s-osc-ccm/**.yaml"
+      - ".github/workflows/e2e_test.yml"
   workflow_dispatch:
     
 jobs:
@@ -24,6 +37,11 @@ jobs:
     - uses: azure/setup-kubectl@v2.0
     - uses: azure/setup-helm@v1
     - uses: actions/setup-python@v2
+    - uses: outscale-dev/frieza-github-actions/frieza-clean@master
+      with:
+        access_key: ${{ secrets.OSC_ACCESS_KEY }}
+        secret_key: ${{ secrets.OSC_SECRET_KEY }}
+        region: ${{ secrets.OSC_REGION }}
     - name: Install osc-cli
       run: pip install osc-sdk
     - name: Configure osc-cli
@@ -43,6 +61,22 @@ jobs:
         osc_secret_key: ${{ secrets.OSC_SECRET_KEY }}
         osc_region: ${{ secrets.OSC_REGION }}
         will_install_ccm: "true"
+        rke_version: "v1.3.12"
+        kubernetes_version: "v1.23.7-rancher1-1"
+        bastion_vm_type: "tinav5.c4r8p1"
+        bastion_volume_type: "io1"
+        bastion_volume_size: 30
+        bastion_iops: 1500
+        control_plane_vm_type: "tinav5.c4r8p1"
+        control_plane_count: 1
+        control_plane_volume_type: "io1"
+        control_plane_volume_size: 30
+        control_plane_iops: 1500
+        worker_vm_type: "tinav5.c4r8p1"
+        worker_count: 1
+        worker_volume_type: "io1"
+        worker_volume_size: 30
+        worker_iops: 1500
     - name: Wait to access the cluster
       uses: nick-invision/retry@v2
       with:
@@ -84,7 +118,7 @@ jobs:
       env:
         OSC_ACCESS_KEY: ${{ secrets.OSC_ACCESS_KEY }}
         OSC_SECRET_KEY: ${{ secrets.OSC_SECRET_KEY }}
-      run: bash -c "KC=$(base64 -w 0 set-up-rke-cluster/rke/kube_config_cluster.yml) make e2e-test"
+      run: bash -c "KC=$(base64 -w 0 set-up-rke-cluster/rke/kube_config_cluster.yml) make test-e2e"
     - name: Wait that all resources have been released (for ex SG ELB)
       uses: nick-invision/retry@v2
       with:

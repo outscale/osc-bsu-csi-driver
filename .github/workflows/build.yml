@@ -4,8 +4,22 @@ on:
   pull_request:
     branches:
       - OSC-MIGRATION
+    paths:
+      - "**.go"
+      - "Dockerfile"
+      - "Makefile"
+      - "go.*"
+      - ".github/workflows/build.yml"
+      - "!tests/**"
   push:
     branches: [ OSC-MIGRATION ]
+    paths:
+      - "**.go"
+      - "Dockerfile"
+      - "Makefile"
+      - "go.*"
+      - ".github/workflows/build.yml"
+      - "!tests/**"
 jobs:
   Build:
     if: github.repository == 'outscale-dev/cloud-provider-osc'

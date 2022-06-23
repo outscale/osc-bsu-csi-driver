@@ -1,7 +1,7 @@
 #!/bin/bash
 set -eu pipefail
 
-MANDATORY_DIR="/e2e-env/.kube/ /go/src/cloud-provider-osc"
+MANDATORY_DIR="/go/src/cloud-provider-osc"
 export KUBECONFIG=/e2e-env/.kube/config
 
 if [ ! -z "${KC}"  ];then

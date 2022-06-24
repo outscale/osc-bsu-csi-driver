@@ -578,13 +578,13 @@ func TestNodeAddresses(t *testing.T) {
 	instance0.SetPublicDnsName("instance-same.ec2.external")
 	instance0.SetPublicIp("1.2.3.4")
 	nicState := "in-use"
-	privateIp := "192.168.0.1"
+	privateIP := "192.168.0.1"
 	instance0.SetNics([]osc.NicLight{
 		{
 			State: &nicState,
 			PrivateIps: &[]osc.PrivateIpLightForVm{
 				{
-					PrivateIp: &privateIp,
+					PrivateIp: &privateIP,
 				},
 			},
 		},

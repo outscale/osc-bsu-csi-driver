@@ -177,9 +177,9 @@ func (ec2i *FakeComputeImpl) ReadVms(request *osc.ReadVmsRequest) ([]osc.Vm, err
 			}
 
 			// VmIds
-			for _, vmId := range request.Filters.GetVmIds() {
+			for _, vmID := range request.Filters.GetVmIds() {
 				found := false
-				if vmId == instance.GetVmId() {
+				if vmID == instance.GetVmId() {
 					found = true
 				}
 				allMatch = allMatch && found

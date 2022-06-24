@@ -659,6 +659,7 @@ func debugGetCallerFunctionName() string {
 	return debugGetFrame(2).Function
 }
 
+// Contains checks if the element is present in the list
 func Contains(list []string, element string) bool {
 	for _, el := range list {
 		if el == element {

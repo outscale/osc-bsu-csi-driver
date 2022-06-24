@@ -111,13 +111,13 @@ func (s *oscSdkCompute) DeleteSecurityGroupRule(request *ec2.RevokeSecurityGroup
 	return s.ec2.RevokeSecurityGroupIngress(request)
 }
 
-func (s *oscSdkCompute) CreateTags(request *ec2.CreateTagsInput) (*ec2.CreateTagsOutput, error) {
+func (s *oscSdkCompute) CreateTags(request *osc.CreateTagsRequest) (*osc.CreateTagsResponse, error) {
 	debugPrintCallerFunctionName()
 	requestTime := time.Now()
-	resp, err := s.ec2.CreateTags(request)
+	resp, _, err := s.client.TagApi.CreateTags(s.ctx).CreateTagsRequest(*request).Execute()
 	timeTaken := time.Since(requestTime).Seconds()
 	recordAWSMetric("create_tags", timeTaken, err)
-	return resp, err
+	return &resp, err
 }
 
 func (s *oscSdkCompute) ReadRouteTables(request *ec2.DescribeRouteTablesInput) ([]*ec2.RouteTable, error) {

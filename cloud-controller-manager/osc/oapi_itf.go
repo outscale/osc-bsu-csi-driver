@@ -40,7 +40,7 @@ type Compute interface {
 
 	DescribeSubnets(*ec2.DescribeSubnetsInput) ([]*ec2.Subnet, error)
 
-	CreateTags(*ec2.CreateTagsInput) (*ec2.CreateTagsOutput, error)
+	CreateTags(*osc.CreateTagsRequest) (*osc.CreateTagsResponse, error)
 
 	ReadRouteTables(request *ec2.DescribeRouteTablesInput) ([]*ec2.RouteTable, error)
 	CreateRoute(request *ec2.CreateRouteInput) (*ec2.CreateRouteOutput, error)

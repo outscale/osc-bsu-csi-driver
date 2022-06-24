@@ -245,7 +245,7 @@ func (ec2i *FakeComputeImpl) RemoveSubnets() {
 }
 
 // CreateTags is not implemented but is required for interface conformance
-func (ec2i *FakeComputeImpl) CreateTags(*ec2.CreateTagsInput) (*ec2.CreateTagsOutput, error) {
+func (ec2i *FakeComputeImpl) CreateTags(request *osc.CreateTagsRequest) (*osc.CreateTagsResponse, error) {
 	panic("Not implemented")
 }
 

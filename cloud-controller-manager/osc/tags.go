@@ -238,13 +238,13 @@ func (t *awsTagging) createTags(client Compute, resourceID string, lifecycle Res
 		return nil
 	}
 
-	var awsTags []*ec2.Tag
+	var oscTags []osc.ResourceTag
 	for k, v := range tags {
-		tag := &ec2.Tag{
-			Key:   aws.String(k),
-			Value: aws.String(v),
+		tag := osc.ResourceTag{
+			Key:   k,
+			Value: v,
 		}
-		awsTags = append(awsTags, tag)
+		oscTags = append(oscTags, tag)
 	}
 
 	backoff := wait.Backoff{
@@ -252,13 +252,15 @@ func (t *awsTagging) createTags(client Compute, resourceID string, lifecycle Res
 		Factor:   createTagFactor,
 		Steps:    createTagSteps,
 	}
-	request := &ec2.CreateTagsInput{}
-	request.Resources = []*string{&resourceID}
-	request.Tags = awsTags
-
+	request := osc.CreateTagsRequest{
+		ResourceIds: []string{
+			resourceID,
+		},
+		Tags: oscTags,
+	}
 	var lastErr error
 	err := wait.ExponentialBackoff(backoff, func() (bool, error) {
-		_, err := client.CreateTags(request)
+		_, err := client.CreateTags(&request)
 		if err == nil {
 			return true, nil
 		}

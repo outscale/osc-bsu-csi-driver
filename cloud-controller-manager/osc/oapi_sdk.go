@@ -156,7 +156,3 @@ func (s *oscSdkCompute) UpdateVM(request *osc.UpdateVmRequest) (*osc.UpdateVmRes
 	response, _, err := s.client.VmApi.UpdateVm(s.ctx).UpdateVmRequest(*request).Execute()
 	return &response, err
 }
-
-func (s *oscSdkCompute) ReadNets(request *ec2.DescribeVpcsInput) (*ec2.DescribeVpcsOutput, error) {
-	return s.ec2.DescribeVpcs(request)
-}

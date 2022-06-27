@@ -47,8 +47,6 @@ type Compute interface {
 	DeleteRoute(request *ec2.DeleteRouteInput) (*ec2.DeleteRouteOutput, error)
 
 	UpdateVM(request *osc.UpdateVmRequest) (*osc.UpdateVmResponse, error)
-
-	ReadNets(input *ec2.DescribeVpcsInput) (*ec2.DescribeVpcsOutput, error)
 }
 
 // LoadBalancer is a simple pass-through of Outscale' LoadBalancer client interface, which allows for testing

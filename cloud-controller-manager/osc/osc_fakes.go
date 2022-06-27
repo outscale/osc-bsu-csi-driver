@@ -285,11 +285,6 @@ func (ec2i *FakeComputeImpl) UpdateVM(request *osc.UpdateVmRequest) (*osc.Update
 	panic("Not implemented")
 }
 
-// ReadNets returns fake VPC descriptions
-func (ec2i *FakeComputeImpl) ReadNets(request *ec2.DescribeVpcsInput) (*ec2.DescribeVpcsOutput, error) {
-	return &ec2.DescribeVpcsOutput{Vpcs: []*ec2.Vpc{{CidrBlock: aws.String("172.20.0.0/16")}}}, nil
-}
-
 // FakeMetadata is a fake EC2 metadata service client used for testing
 type FakeMetadata struct {
 	aws *FakeOscServices

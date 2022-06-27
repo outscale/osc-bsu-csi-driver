@@ -152,8 +152,9 @@ func (s *oscSdkCompute) DeleteRoute(request *ec2.DeleteRouteInput) (*ec2.DeleteR
 	return s.ec2.DeleteRoute(request)
 }
 
-func (s *oscSdkCompute) UpdateVM(request *ec2.ModifyInstanceAttributeInput) (*ec2.ModifyInstanceAttributeOutput, error) {
-	return s.ec2.ModifyInstanceAttribute(request)
+func (s *oscSdkCompute) UpdateVM(request *osc.UpdateVmRequest) (*osc.UpdateVmResponse, error) {
+	response, _, err := s.client.VmApi.UpdateVm(s.ctx).UpdateVmRequest(*request).Execute()
+	return &response, err
 }
 
 func (s *oscSdkCompute) ReadNets(request *ec2.DescribeVpcsInput) (*ec2.DescribeVpcsOutput, error) {

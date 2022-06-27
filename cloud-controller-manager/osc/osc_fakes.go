@@ -281,7 +281,7 @@ func (ec2i *FakeComputeImpl) DeleteRoute(request *ec2.DeleteRouteInput) (*ec2.De
 
 // UpdateVM is not implemented but is required for interface
 // conformance
-func (ec2i *FakeComputeImpl) UpdateVM(request *ec2.ModifyInstanceAttributeInput) (*ec2.ModifyInstanceAttributeOutput, error) {
+func (ec2i *FakeComputeImpl) UpdateVM(request *osc.UpdateVmRequest) (*osc.UpdateVmResponse, error) {
 	panic("Not implemented")
 }
 

@@ -25,6 +25,7 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/ec2"
+	"github.com/outscale/osc-sdk-go/v2"
 	"k8s.io/klog/v2"
 
 	cloudprovider "k8s.io/cloud-provider"
@@ -130,11 +131,12 @@ func (c *Cloud) ListRoutes(ctx context.Context, clusterName string) ([]*cloudpro
 
 // Sets the instance attribute "source-dest-check" to the specified value
 func (c *Cloud) configureInstanceSourceDestCheck(instanceID string, sourceDestCheck bool) error {
-	request := &ec2.ModifyInstanceAttributeInput{}
-	request.InstanceId = aws.String(instanceID)
-	request.SourceDestCheck = &ec2.AttributeBooleanValue{Value: aws.Bool(sourceDestCheck)}
+	request := osc.UpdateVmRequest{
+		VmId:                instanceID,
+		IsSourceDestChecked: &sourceDestCheck,
+	}
 
-	_, err := c.compute.UpdateVM(request)
+	_, err := c.compute.UpdateVM(&request)
 	if err != nil {
 		return fmt.Errorf("error configuring source-dest-check on instance %s: %q", instanceID, err)
 	}

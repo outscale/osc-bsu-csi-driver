@@ -885,26 +885,27 @@ func (c *Cloud) ensureSecurityGroup(name string, description string, additionalT
 // Finds the subnets associated with the cluster, by matching tags.
 // For maximal backwards compatibility, if no subnets are tagged, it will fall-back to the current subnet.
 // However, in future this will likely be treated as an error.
-func (c *Cloud) findSubnets() ([]*ec2.Subnet, error) {
+func (c *Cloud) findSubnets() ([]*osc.Subnet, error) {
 	debugPrintCallerFunctionName()
 	klog.V(10).Infof("findSubnets()")
-	request := &ec2.DescribeSubnetsInput{}
-	var err error
-	var subnets []*ec2.Subnet
-	err = nil
-	subnets = []*ec2.Subnet{}
+	request := osc.ReadSubnetsRequest{}
 	if c.vpcID != "" {
-		request.Filters = []*ec2.Filter{newEc2Filter("vpc-id", c.vpcID)}
+		request.SetFilters(osc.FiltersSubnet{
+			NetIds: &[]string{
+				c.vpcID,
+			},
+		})
 
-		subnets, err := c.compute.DescribeSubnets(request)
+		subnets, err := c.compute.DescribeSubnets(&request)
 		if err != nil {
 			return nil, fmt.Errorf("error describing subnets: %q", err)
 		}
 
-		var matches []*ec2.Subnet
+		var matches []*osc.Subnet
 		for _, subnet := range subnets {
-			if c.tagging.hasClusterAWSTag(subnet.Tags) {
-				matches = append(matches, subnet)
+			if c.tagging.hasClusterTag(subnet.Tags) {
+				subnetRef := subnet
+				matches = append(matches, &subnetRef)
 			}
 		}
 
@@ -916,18 +917,27 @@ func (c *Cloud) findSubnets() ([]*ec2.Subnet, error) {
 	if c.selfAWSInstance.subnetID != "" {
 		// Fall back to the current instance subnets, if nothing is tagged
 		klog.Warningf("No tagged subnets found; will fall-back to the current subnet only.  This is likely to be an error in a future version of k8s.")
-		request = &ec2.DescribeSubnetsInput{}
-		request.Filters = []*ec2.Filter{newEc2Filter("subnet-id", c.selfAWSInstance.subnetID)}
-
-		subnets, err = c.compute.DescribeSubnets(request)
+		request = osc.ReadSubnetsRequest{}
+		request.SetFilters(osc.FiltersSubnet{
+			SubnetIds: &[]string{
+				c.selfAWSInstance.subnetID,
+			},
+		})
+		subnets, err := c.compute.DescribeSubnets(&request)
 		if err != nil {
 			return nil, fmt.Errorf("error describing subnets: %q", err)
 		}
-		return subnets, nil
+
+		var matches []*osc.Subnet
+		for _, subnet := range subnets {
+			subnetRef := subnet
+			matches = append(matches, &subnetRef)
+		}
+		return matches, nil
 
 	}
 
-	return subnets, nil
+	return []*osc.Subnet{}, nil
 
 }
 
@@ -961,10 +971,10 @@ func (c *Cloud) findELBSubnets(internalELB bool) ([]string, error) {
 		tagName = TagNameSubnetPublicELB
 	}
 
-	subnetsByAZ := make(map[string]*ec2.Subnet)
+	subnetsByAZ := make(map[string]*osc.Subnet)
 	for _, subnet := range subnets {
-		az := aws.StringValue(subnet.AvailabilityZone)
-		id := aws.StringValue(subnet.SubnetId)
+		az := subnet.GetSubregionName()
+		id := subnet.GetSubnetId()
 		if az == "" || id == "" {
 			klog.Warningf("Ignoring subnet with empty az/id: %v", subnet)
 			continue

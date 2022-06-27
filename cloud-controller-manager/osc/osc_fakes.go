@@ -111,8 +111,8 @@ type FakeCompute interface {
 // FakeComputeImpl is an implementation of the FakeEC2 interface used for testing
 type FakeComputeImpl struct {
 	osc                      *FakeOscServices
-	Subnets                  []*ec2.Subnet
-	DescribeSubnetsInput     *ec2.DescribeSubnetsInput
+	Subnets                  []osc.Subnet
+	DescribeSubnetsInput     *osc.ReadSubnetsRequest
 	RouteTables              []*ec2.RouteTable
 	DescribeRouteTablesInput *ec2.DescribeRouteTablesInput
 }
@@ -226,7 +226,35 @@ func (ec2i *FakeComputeImpl) DeleteSecurityGroupRule(*ec2.RevokeSecurityGroupIng
 
 // CreateSubnet creates fake subnets
 func (ec2i *FakeComputeImpl) CreateSubnet(request *ec2.Subnet) (*ec2.CreateSubnetOutput, error) {
-	ec2i.Subnets = append(ec2i.Subnets, request)
+
+	var availableIpsCount *int32
+	availableIpsCount = nil
+
+	if request.AvailableIpAddressCount != nil {
+		temp := int32(*request.AvailableIpAddressCount)
+		availableIpsCount = &temp
+	}
+
+	oscTags := []osc.ResourceTag{}
+	for _, tag := range request.Tags {
+		oscTag := osc.ResourceTag{
+			Key:   *tag.Key,
+			Value: *tag.Value,
+		}
+		oscTags = append(oscTags, oscTag)
+	}
+	conversionSubnet := osc.Subnet{
+		AvailableIpsCount:   availableIpsCount,
+		IpRange:             request.CidrBlock,
+		MapPublicIpOnLaunch: request.MapPublicIpOnLaunch,
+		NetId:               request.VpcId,
+		State:               request.State,
+		SubnetId:            request.SubnetId,
+		SubregionName:       request.AvailabilityZone,
+		Tags:                &oscTags,
+	}
+
+	ec2i.Subnets = append(ec2i.Subnets, conversionSubnet)
 	response := &ec2.CreateSubnetOutput{
 		Subnet: request,
 	}
@@ -234,7 +262,7 @@ func (ec2i *FakeComputeImpl) CreateSubnet(request *ec2.Subnet) (*ec2.CreateSubne
 }
 
 // DescribeSubnets returns fake subnet descriptions
-func (ec2i *FakeComputeImpl) DescribeSubnets(request *ec2.DescribeSubnetsInput) ([]*ec2.Subnet, error) {
+func (ec2i *FakeComputeImpl) DescribeSubnets(request *osc.ReadSubnetsRequest) ([]osc.Subnet, error) {
 	ec2i.DescribeSubnetsInput = request
 	return ec2i.Subnets, nil
 }

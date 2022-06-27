@@ -38,7 +38,7 @@ type Compute interface {
 	CreateSecurityGroupRule(*ec2.AuthorizeSecurityGroupIngressInput) (*ec2.AuthorizeSecurityGroupIngressOutput, error)
 	DeleteSecurityGroupRule(*ec2.RevokeSecurityGroupIngressInput) (*ec2.RevokeSecurityGroupIngressOutput, error)
 
-	DescribeSubnets(*ec2.DescribeSubnetsInput) ([]*ec2.Subnet, error)
+	DescribeSubnets(*osc.ReadSubnetsRequest) ([]osc.Subnet, error)
 
 	CreateTags(*osc.CreateTagsRequest) (*osc.CreateTagsResponse, error)
 

@@ -851,7 +851,7 @@ func TestSubnetIDsinVPC(t *testing.T) {
 	for _, rt := range constructedRouteTables {
 		awsServices.compute.CreateRouteTable(rt)
 	}
-	request1111 := &ec2.DescribeSubnetsInput{}
+	request1111 := &osc.ReadSubnetsRequest{}
 	res, _ := awsServices.compute.DescribeSubnets(request1111)
 	t.Logf("awsServices.ec2.DescribeSubnets----: %v", res)
 

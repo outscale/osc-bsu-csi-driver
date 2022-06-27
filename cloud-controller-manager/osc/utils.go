@@ -346,10 +346,14 @@ func toStatus(lb *elb.LoadBalancerDescription) *v1.LoadBalancerStatus {
 }
 
 // Finds the value for a given tag.
-func findTag(tags []*ec2.Tag, key string) (string, bool) {
-	for _, tag := range tags {
-		if aws.StringValue(tag.Key) == key {
-			return aws.StringValue(tag.Value), true
+func findTag(tags *[]osc.ResourceTag, key string) (string, bool) {
+	if tags == nil {
+		return "", false
+	}
+
+	for _, tag := range *tags {
+		if tag.GetKey() == key {
+			return tag.GetValue(), true
 		}
 	}
 	return "", false

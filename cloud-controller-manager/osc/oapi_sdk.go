@@ -86,13 +86,18 @@ func (s *oscSdkCompute) ReadSecurityGroups(request *ec2.DescribeSecurityGroupsIn
 	return results, nil
 }
 
-func (s *oscSdkCompute) DescribeSubnets(request *ec2.DescribeSubnetsInput) ([]*ec2.Subnet, error) {
+func (s *oscSdkCompute) DescribeSubnets(request *osc.ReadSubnetsRequest) ([]osc.Subnet, error) {
 	// Subnets are not paged
-	response, err := s.ec2.DescribeSubnets(request)
+	response, _, err := s.client.SubnetApi.ReadSubnets(s.ctx).ReadSubnetsRequest(*request).Execute()
 	if err != nil {
 		return nil, fmt.Errorf("error listing AWS subnets: %q", err)
 	}
-	return response.Subnets, nil
+
+	if !response.HasSubnets() {
+		return nil, errors.New("error listing AWS subnets: Got no subnets")
+	}
+
+	return response.GetSubnets(), nil
 }
 
 func (s *oscSdkCompute) CreateSecurityGroup(request *ec2.CreateSecurityGroupInput) (*ec2.CreateSecurityGroupOutput, error) {

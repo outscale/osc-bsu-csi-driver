@@ -125,28 +125,21 @@ func (s *oscSdkCompute) CreateTags(request *osc.CreateTagsRequest) (*osc.CreateT
 	return &resp, err
 }
 
-func (s *oscSdkCompute) ReadRouteTables(request *ec2.DescribeRouteTablesInput) ([]*ec2.RouteTable, error) {
-	results := []*ec2.RouteTable{}
-	var nextToken *string
+func (s *oscSdkCompute) ReadRouteTables(request *osc.ReadRouteTablesRequest) ([]osc.RouteTable, error) {
 	requestTime := time.Now()
-	for {
-		response, err := s.ec2.DescribeRouteTables(request)
-		if err != nil {
-			recordAWSMetric("describe_route_tables", 0, err)
-			return nil, fmt.Errorf("error listing AWS route tables: %q", err)
-		}
+	response, _, err := s.client.RouteTableApi.ReadRouteTables(s.ctx).ReadRouteTablesRequest(*request).Execute()
+	if err != nil {
+		recordAWSMetric("describe_route_tables", 0, err)
+		return nil, fmt.Errorf("error listing AWS route tables: %q", err)
+	}
 
-		results = append(results, response.RouteTables...)
-
-		nextToken = response.NextToken
-		if aws.StringValue(nextToken) == "" {
-			break
-		}
-		request.NextToken = nextToken
+	if !response.HasRouteTables() {
+		return nil, errors.New("error listing AWS route tables: RouteTable not set")
 	}
 	timeTaken := time.Since(requestTime).Seconds()
 	recordAWSMetric("describe_route_tables", timeTaken, nil)
-	return results, nil
+
+	return response.GetRouteTables(), nil
 }
 
 func (s *oscSdkCompute) CreateRoute(request *ec2.CreateRouteInput) (*ec2.CreateRouteOutput, error) {

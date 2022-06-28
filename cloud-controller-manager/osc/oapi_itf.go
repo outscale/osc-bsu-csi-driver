@@ -42,7 +42,7 @@ type Compute interface {
 
 	CreateTags(*osc.CreateTagsRequest) (*osc.CreateTagsResponse, error)
 
-	ReadRouteTables(request *ec2.DescribeRouteTablesInput) ([]*ec2.RouteTable, error)
+	ReadRouteTables(request *osc.ReadRouteTablesRequest) ([]osc.RouteTable, error)
 	CreateRoute(request *ec2.CreateRouteInput) (*ec2.CreateRouteOutput, error)
 	DeleteRoute(request *ec2.DeleteRouteInput) (*ec2.DeleteRouteOutput, error)
 

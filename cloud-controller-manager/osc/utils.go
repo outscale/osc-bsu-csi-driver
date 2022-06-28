@@ -261,12 +261,17 @@ func buildListener(port v1.ServicePort, annotations map[string]string, sslPorts 
 	return listener, nil
 }
 
-func isSubnetPublic(rt []*ec2.RouteTable, subnetID string) (bool, error) {
-	var subnetTable *ec2.RouteTable
-	for _, table := range rt {
-		for _, assoc := range table.Associations {
-			if aws.StringValue(assoc.SubnetId) == subnetID {
-				subnetTable = table
+func isSubnetPublic(rt *[]osc.RouteTable, subnetID string) (bool, error) {
+	if rt == nil {
+		return false, fmt.Errorf("RouteTable is nil")
+	}
+
+	var subnetTable *osc.RouteTable
+	for _, table := range *rt {
+		for _, assoc := range table.GetLinkRouteTables() {
+			if assoc.GetSubnetId() == subnetID {
+				tableRef := table
+				subnetTable = &tableRef
 				break
 			}
 		}
@@ -275,12 +280,14 @@ func isSubnetPublic(rt []*ec2.RouteTable, subnetID string) (bool, error) {
 	if subnetTable == nil {
 		// If there is no explicit association, the subnet will be implicitly
 		// associated with the VPC's main routing table.
-		for _, table := range rt {
-			for _, assoc := range table.Associations {
-				if aws.BoolValue(assoc.Main) == true {
+		for _, table := range *rt {
+			for _, assoc := range table.GetLinkRouteTables() {
+				if assoc.GetMain() {
 					klog.V(4).Infof("Assuming implicit use of main routing table %s for %s",
-						aws.StringValue(table.RouteTableId), subnetID)
-					subnetTable = table
+						table.GetRouteTableId(), subnetID)
+					tableRef := table
+					subnetTable = &tableRef
+
 					break
 				}
 			}
@@ -291,14 +298,14 @@ func isSubnetPublic(rt []*ec2.RouteTable, subnetID string) (bool, error) {
 		return false, fmt.Errorf("could not locate routing table for subnet %s", subnetID)
 	}
 
-	for _, route := range subnetTable.Routes {
+	for _, route := range subnetTable.GetRoutes() {
 		// There is no direct way in the AWS API to determine if a subnet is public or private.
 		// A public subnet is one which has an internet gateway route
 		// we look for the gatewayId and make sure it has the prefix of igw to differentiate
 		// from the default in-subnet route which is called "local"
 		// or other virtual gateway (starting with vgv)
 		// or vpc peering connections (starting with pcx).
-		if strings.HasPrefix(aws.StringValue(route.GatewayId), "igw") {
+		if strings.HasPrefix(route.GetGatewayId(), "igw") {
 			return true, nil
 		}
 	}

@@ -952,12 +952,14 @@ func (c *Cloud) findELBSubnets(internalELB bool) ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	var rt []*ec2.RouteTable
+	var rt []osc.RouteTable
 	if c.vpcID != "" {
-		vpcIDFilter := newEc2Filter("vpc-id", c.vpcID)
-		rRequest := &ec2.DescribeRouteTablesInput{}
-		rRequest.Filters = []*ec2.Filter{vpcIDFilter}
-		rt, err = c.compute.ReadRouteTables(rRequest)
+		readRequest := osc.ReadRouteTablesRequest{
+			Filters: &osc.FiltersRouteTable{
+				NetIds: &[]string{c.vpcID},
+			},
+		}
+		rt, err = c.compute.ReadRouteTables(&readRequest)
 		if err != nil {
 			return nil, fmt.Errorf("error describe route table: %q", err)
 		}
@@ -980,7 +982,7 @@ func (c *Cloud) findELBSubnets(internalELB bool) ([]string, error) {
 			continue
 		}
 
-		isPublic, err := isSubnetPublic(rt, id)
+		isPublic, err := isSubnetPublic(&rt, id)
 		if err != nil {
 			return nil, err
 		}
@@ -1011,7 +1013,7 @@ func (c *Cloud) findELBSubnets(internalELB bool) ([]string, error) {
 
 		// If we have two subnets for the same AZ we arbitrarily choose the one that is first lexicographically.
 		// TODO: Should this be an error.
-		if strings.Compare(*existing.SubnetId, *subnet.SubnetId) > 0 {
+		if strings.Compare(existing.GetSubnetId(), subnet.GetSubnetId()) > 0 {
 			klog.Warningf("Found multiple subnets in AZ %q; choosing %q between subnets %q and %q", az, *subnet.SubnetId, *existing.SubnetId, *subnet.SubnetId)
 			subnetsByAZ[az] = subnet
 			continue

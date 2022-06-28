@@ -31,29 +31,33 @@ import (
 	cloudprovider "k8s.io/cloud-provider"
 )
 
-func (c *Cloud) findRouteTable(clusterName string) (*ec2.RouteTable, error) {
+func (c *Cloud) findRouteTable(clusterName string) (*osc.RouteTable, error) {
 	// This should be unnecessary (we already filter on TagNameKubernetesCluster,
 	// and something is broken if cluster name doesn't match, but anyway...
 	// TODO: All clouds should be cluster-aware by default
-	var tables []*ec2.RouteTable
+	var tables []osc.RouteTable
 
 	if c.cfg.Global.RouteTableID != "" {
-		request := &ec2.DescribeRouteTablesInput{Filters: []*ec2.Filter{newEc2Filter("route-table-id", c.cfg.Global.RouteTableID)}}
-		response, err := c.compute.ReadRouteTables(request)
+		request := osc.ReadRouteTablesRequest{
+			Filters: &osc.FiltersRouteTable{
+				RouteTableIds: &[]string{c.cfg.Global.RouteTableID},
+			},
+		}
+		response, err := c.compute.ReadRouteTables(&request)
 		if err != nil {
 			return nil, err
 		}
 
 		tables = response
 	} else {
-		request := &ec2.DescribeRouteTablesInput{}
-		response, err := c.compute.ReadRouteTables(request)
+		request := osc.ReadRouteTablesRequest{}
+		response, err := c.compute.ReadRouteTables(&request)
 		if err != nil {
 			return nil, err
 		}
 
 		for _, table := range response {
-			if c.tagging.hasClusterAWSTag(table.Tags) {
+			if c.tagging.hasClusterTag(table.Tags) {
 				tables = append(tables, table)
 			}
 		}
@@ -66,7 +70,7 @@ func (c *Cloud) findRouteTable(clusterName string) (*ec2.RouteTable, error) {
 	if len(tables) != 1 {
 		return nil, fmt.Errorf("found multiple matching AWS route tables for AWS cluster: %s", clusterName)
 	}
-	return tables[0], nil
+	return &(tables[0]), nil
 }
 
 // ListRoutes implements Routes.ListRoutes
@@ -80,8 +84,8 @@ func (c *Cloud) ListRoutes(ctx context.Context, clusterName string) ([]*cloudpro
 	var routes []*cloudprovider.Route
 	var instanceIDs []string
 
-	for _, r := range table.Routes {
-		instanceID := aws.StringValue(r.InstanceId)
+	for _, r := range table.GetRoutes() {
+		instanceID := r.GetVmId()
 
 		if instanceID == "" {
 			continue
@@ -95,8 +99,8 @@ func (c *Cloud) ListRoutes(ctx context.Context, clusterName string) ([]*cloudpro
 		return nil, err
 	}
 
-	for _, r := range table.Routes {
-		destinationCIDR := aws.StringValue(r.DestinationCidrBlock)
+	for _, r := range table.GetRoutes() {
+		destinationCIDR := r.GetDestinationIpRange()
 		if destinationCIDR == "" {
 			continue
 		}
@@ -114,7 +118,7 @@ func (c *Cloud) ListRoutes(ctx context.Context, clusterName string) ([]*cloudpro
 		}
 
 		// Capture instance routes
-		instanceID := aws.StringValue(r.InstanceId)
+		instanceID := r.GetVmId()
 		if instanceID != "" {
 			instance, found := instances[instanceID]
 			if found {
@@ -163,29 +167,31 @@ func (c *Cloud) CreateRoute(ctx context.Context, clusterName string, nameHint st
 		return err
 	}
 
-	var deleteRoute *ec2.Route
-	for _, r := range table.Routes {
-		destinationCIDR := aws.StringValue(r.DestinationCidrBlock)
+	var deleteRoute *osc.Route
+	for _, r := range table.GetRoutes() {
+		destinationCIDR := r.GetDestinationIpRange()
 
 		if destinationCIDR != route.DestinationCIDR {
 			continue
 		}
 
-		if aws.StringValue(r.State) == ec2.RouteStateBlackhole {
-			deleteRoute = r
+		if r.GetState() == "blackhole" {
+			deleteRouteRef := r
+			deleteRoute = &deleteRouteRef
 		}
 	}
 
 	if deleteRoute != nil {
-		klog.Infof("deleting blackholed route: %s", aws.StringValue(deleteRoute.DestinationCidrBlock))
+		klog.Infof("deleting blackholed route: %s", deleteRoute.GetDestinationIpRange())
 
 		request := &ec2.DeleteRouteInput{}
-		request.DestinationCidrBlock = deleteRoute.DestinationCidrBlock
+		temp := deleteRoute.GetDestinationIpRange()
+		request.DestinationCidrBlock = &temp
 		request.RouteTableId = table.RouteTableId
 
 		_, err = c.compute.DeleteRoute(request)
 		if err != nil {
-			return fmt.Errorf("error deleting blackholed AWS route (%s): %q", aws.StringValue(deleteRoute.DestinationCidrBlock), err)
+			return fmt.Errorf("error deleting blackholed AWS route (%s): %q", deleteRoute.GetDestinationIpRange(), err)
 		}
 	}
 

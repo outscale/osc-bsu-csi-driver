@@ -113,8 +113,8 @@ type FakeComputeImpl struct {
 	osc                      *FakeOscServices
 	Subnets                  []osc.Subnet
 	DescribeSubnetsInput     *osc.ReadSubnetsRequest
-	RouteTables              []*ec2.RouteTable
-	DescribeRouteTablesInput *ec2.DescribeRouteTablesInput
+	RouteTables              []osc.RouteTable
+	DescribeRouteTablesInput *osc.ReadRouteTablesRequest
 }
 
 // ReadVms returns fake instance descriptions
@@ -278,14 +278,60 @@ func (ec2i *FakeComputeImpl) CreateTags(request *osc.CreateTagsRequest) (*osc.Cr
 }
 
 // ReadRouteTables returns fake route table descriptions
-func (ec2i *FakeComputeImpl) ReadRouteTables(request *ec2.DescribeRouteTablesInput) ([]*ec2.RouteTable, error) {
+func (ec2i *FakeComputeImpl) ReadRouteTables(request *osc.ReadRouteTablesRequest) ([]osc.RouteTable, error) {
 	ec2i.DescribeRouteTablesInput = request
 	return ec2i.RouteTables, nil
 }
 
 // CreateRouteTable creates fake route tables
 func (ec2i *FakeComputeImpl) CreateRouteTable(request *ec2.RouteTable) (*ec2.CreateRouteTableOutput, error) {
-	ec2i.RouteTables = append(ec2i.RouteTables, request)
+
+	conversionLinkRouteTables := []osc.LinkRouteTable{}
+	for _, assoc := range request.Associations {
+		link := osc.LinkRouteTable{
+			LinkRouteTableId: assoc.RouteTableAssociationId,
+			Main:             assoc.Main,
+			RouteTableId:     assoc.RouteTableId,
+			SubnetId:         assoc.SubnetId,
+		}
+
+		conversionLinkRouteTables = append(conversionLinkRouteTables, link)
+	}
+
+	oscTags := []osc.ResourceTag{}
+	for _, tag := range request.Tags {
+		oscTag := osc.ResourceTag{
+			Key:   *tag.Key,
+			Value: *tag.Value,
+		}
+		oscTags = append(oscTags, oscTag)
+	}
+
+	oscRoutes := []osc.Route{}
+	for _, route := range request.Routes {
+		oscRoute := osc.Route{
+			CreationMethod:     route.Origin,
+			DestinationIpRange: route.DestinationCidrBlock,
+			GatewayId:          route.GatewayId,
+			NatServiceId:       route.NatGatewayId,
+			NetPeeringId:       route.VpcPeeringConnectionId,
+			NicId:              route.NetworkInterfaceId,
+			State:              route.State,
+			VmAccountId:        route.InstanceOwnerId,
+			VmId:               route.InstanceId,
+		}
+
+		oscRoutes = append(oscRoutes, oscRoute)
+	}
+
+	conversionRouteTable := osc.RouteTable{
+		LinkRouteTables: &conversionLinkRouteTables,
+		NetId:           request.VpcId,
+		Tags:            &oscTags,
+		Routes:          &oscRoutes,
+	}
+
+	ec2i.RouteTables = append(ec2i.RouteTables, conversionRouteTable)
 	response := &ec2.CreateRouteTableOutput{
 		RouteTable: request,
 	}

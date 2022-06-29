@@ -710,11 +710,10 @@ func (c *Cloud) addSecurityGroupIngress(securityGroupID string, addPermissions [
 	if err != nil {
 		ignore := false
 		if isPublicCloud {
-			if awsError, ok := err.(awserr.Error); ok {
-				if awsError.Code() == "InvalidPermission.Duplicate" {
-					klog.V(2).Infof("Ignoring InvalidPermission.Duplicate for security group (%s), assuming is used by other public LB", securityGroupID)
-					ignore = true
-				}
+			if strings.Contains(err.Error(), "Conflict") {
+				klog.V(2).Infof("Ignoring Duplicate for security group (%s), assuming is used by other public LB", securityGroupID)
+				ignore = true
+
 			}
 		}
 		if !ignore {
@@ -1761,11 +1760,9 @@ func (c *Cloud) EnsureLoadBalancerDeleted(ctx context.Context, clusterName strin
 					delete(securityGroupIDs, securityGroupID)
 				} else {
 					ignore := false
-					if awsError, ok := err.(awserr.Error); ok {
-						if awsError.Code() == "DependencyViolation" || awsError.Code() == "InvalidGroup.InUse" {
-							klog.V(2).Infof("Ignoring DependencyViolation or  InvalidGroup.InUse while deleting load-balancer security group (%s), assuming because LB is in process of deleting", securityGroupID)
-							ignore = true
-						}
+					if strings.Contains(err.Error(), "Conflict") {
+						klog.V(2).Infof("Ignoring Conflict while deleting load-balancer security group (%s), assuming because LB is in process of deleting", securityGroupID)
+						ignore = true
 					}
 					if !ignore {
 						return fmt.Errorf("error while deleting load balancer security group (%s): %q", securityGroupID, err)

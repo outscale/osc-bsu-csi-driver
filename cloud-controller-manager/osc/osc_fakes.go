@@ -349,7 +349,7 @@ func (ec2i *FakeComputeImpl) CreateRoute(request *osc.CreateRouteRequest) (*osc.
 }
 
 // DeleteRoute is not implemented but is required for interface conformance
-func (ec2i *FakeComputeImpl) DeleteRoute(request *ec2.DeleteRouteInput) (*ec2.DeleteRouteOutput, error) {
+func (ec2i *FakeComputeImpl) DeleteRoute(request *osc.DeleteRouteRequest) (*osc.DeleteRouteResponse, error) {
 	panic("Not implemented")
 }
 

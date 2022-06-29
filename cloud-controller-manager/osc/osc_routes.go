@@ -184,12 +184,12 @@ func (c *Cloud) CreateRoute(ctx context.Context, clusterName string, nameHint st
 	if deleteRoute != nil {
 		klog.Infof("deleting blackholed route: %s", deleteRoute.GetDestinationIpRange())
 
-		request := &ec2.DeleteRouteInput{}
-		temp := deleteRoute.GetDestinationIpRange()
-		request.DestinationCidrBlock = &temp
-		request.RouteTableId = table.RouteTableId
+		request := osc.DeleteRouteRequest{
+			DestinationIpRange: deleteRoute.GetDestinationIpRange(),
+			RouteTableId:       table.GetRouteTableId(),
+		}
 
-		_, err = c.compute.DeleteRoute(request)
+		_, err = c.compute.DeleteRoute(&request)
 		if err != nil {
 			return fmt.Errorf("error deleting blackholed AWS route (%s): %q", deleteRoute.GetDestinationIpRange(), err)
 		}
@@ -217,11 +217,12 @@ func (c *Cloud) DeleteRoute(ctx context.Context, clusterName string, route *clou
 		return err
 	}
 
-	request := &ec2.DeleteRouteInput{}
-	request.DestinationCidrBlock = aws.String(route.DestinationCIDR)
-	request.RouteTableId = table.RouteTableId
+	request := osc.DeleteRouteRequest{
+		DestinationIpRange: route.DestinationCIDR,
+		RouteTableId:       table.GetRouteTableId(),
+	}
 
-	_, err = c.compute.DeleteRoute(request)
+	_, err = c.compute.DeleteRoute(&request)
 	if err != nil {
 		return fmt.Errorf("error deleting AWS route (%s): %q", route.DestinationCIDR, err)
 	}

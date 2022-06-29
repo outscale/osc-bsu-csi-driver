@@ -44,7 +44,7 @@ type Compute interface {
 
 	ReadRouteTables(request *osc.ReadRouteTablesRequest) ([]osc.RouteTable, error)
 	CreateRoute(request *osc.CreateRouteRequest) (*osc.CreateRouteResponse, error)
-	DeleteRoute(request *ec2.DeleteRouteInput) (*ec2.DeleteRouteOutput, error)
+	DeleteRoute(request *osc.DeleteRouteRequest) (*osc.DeleteRouteResponse, error)
 
 	UpdateVM(request *osc.UpdateVmRequest) (*osc.UpdateVmResponse, error)
 }

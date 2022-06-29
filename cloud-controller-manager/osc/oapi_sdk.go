@@ -147,8 +147,9 @@ func (s *oscSdkCompute) CreateRoute(request *osc.CreateRouteRequest) (*osc.Creat
 	return &response, err
 }
 
-func (s *oscSdkCompute) DeleteRoute(request *ec2.DeleteRouteInput) (*ec2.DeleteRouteOutput, error) {
-	return s.ec2.DeleteRoute(request)
+func (s *oscSdkCompute) DeleteRoute(request *osc.DeleteRouteRequest) (*osc.DeleteRouteResponse, error) {
+	response, _, err := s.client.RouteApi.DeleteRoute(s.ctx).DeleteRouteRequest(*request).Execute()
+	return &response, err
 }
 
 func (s *oscSdkCompute) UpdateVM(request *osc.UpdateVmRequest) (*osc.UpdateVmResponse, error) {

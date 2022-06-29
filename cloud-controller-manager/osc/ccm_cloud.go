@@ -1753,9 +1753,10 @@ func (c *Cloud) EnsureLoadBalancerDeleted(ctx context.Context, clusterName strin
 		timeoutAt := time.Now().Add(time.Second * 600)
 		for {
 			for securityGroupID := range securityGroupIDs {
-				request := &ec2.DeleteSecurityGroupInput{}
-				request.GroupId = &securityGroupID
-				_, err := c.compute.DeleteSecurityGroup(request)
+				request := osc.DeleteSecurityGroupRequest{
+					SecurityGroupId: &securityGroupID,
+				}
+				_, err := c.compute.DeleteSecurityGroup(&request)
 				if err == nil {
 					delete(securityGroupIDs, securityGroupID)
 				} else {

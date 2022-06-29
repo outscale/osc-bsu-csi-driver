@@ -105,8 +105,9 @@ func (s *oscSdkCompute) CreateSecurityGroup(request *osc.CreateSecurityGroupRequ
 	return &response, err
 }
 
-func (s *oscSdkCompute) DeleteSecurityGroup(request *ec2.DeleteSecurityGroupInput) (*ec2.DeleteSecurityGroupOutput, error) {
-	return s.ec2.DeleteSecurityGroup(request)
+func (s *oscSdkCompute) DeleteSecurityGroup(request *osc.DeleteSecurityGroupRequest) (*osc.DeleteSecurityGroupResponse, error) {
+	response, _, err := s.client.SecurityGroupApi.DeleteSecurityGroup(s.ctx).DeleteSecurityGroupRequest(*request).Execute()
+	return &response, err
 }
 
 func (s *oscSdkCompute) CreateSecurityGroupRule(request *ec2.AuthorizeSecurityGroupIngressInput) (*ec2.AuthorizeSecurityGroupIngressOutput, error) {

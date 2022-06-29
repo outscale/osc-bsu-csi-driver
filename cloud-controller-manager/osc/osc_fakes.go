@@ -208,7 +208,7 @@ func (ec2i *FakeComputeImpl) CreateSecurityGroup(request *osc.CreateSecurityGrou
 
 // DeleteSecurityGroup is not implemented but is required for interface
 // conformance
-func (ec2i *FakeComputeImpl) DeleteSecurityGroup(*ec2.DeleteSecurityGroupInput) (*ec2.DeleteSecurityGroupOutput, error) {
+func (ec2i *FakeComputeImpl) DeleteSecurityGroup(request *osc.DeleteSecurityGroupRequest) (*osc.DeleteSecurityGroupResponse, error) {
 	panic("Not implemented")
 }
 

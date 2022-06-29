@@ -344,7 +344,7 @@ func (ec2i *FakeComputeImpl) RemoveRouteTables() {
 }
 
 // CreateRoute is not implemented but is required for interface conformance
-func (ec2i *FakeComputeImpl) CreateRoute(request *ec2.CreateRouteInput) (*ec2.CreateRouteOutput, error) {
+func (ec2i *FakeComputeImpl) CreateRoute(request *osc.CreateRouteRequest) (*osc.CreateRouteResponse, error) {
 	panic("Not implemented")
 }
 

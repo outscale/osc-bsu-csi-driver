@@ -142,8 +142,9 @@ func (s *oscSdkCompute) ReadRouteTables(request *osc.ReadRouteTablesRequest) ([]
 	return response.GetRouteTables(), nil
 }
 
-func (s *oscSdkCompute) CreateRoute(request *ec2.CreateRouteInput) (*ec2.CreateRouteOutput, error) {
-	return s.ec2.CreateRoute(request)
+func (s *oscSdkCompute) CreateRoute(request *osc.CreateRouteRequest) (*osc.CreateRouteResponse, error) {
+	response, _, err := s.client.RouteApi.CreateRoute(s.ctx).CreateRouteRequest(*request).Execute()
+	return &response, err
 }
 
 func (s *oscSdkCompute) DeleteRoute(request *ec2.DeleteRouteInput) (*ec2.DeleteRouteOutput, error) {

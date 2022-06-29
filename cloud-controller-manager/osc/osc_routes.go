@@ -195,13 +195,13 @@ func (c *Cloud) CreateRoute(ctx context.Context, clusterName string, nameHint st
 		}
 	}
 
-	request := &ec2.CreateRouteInput{}
-	// TODO: use ClientToken for idempotency?
-	request.DestinationCidrBlock = aws.String(route.DestinationCIDR)
-	request.InstanceId = instance.VmId
-	request.RouteTableId = table.RouteTableId
+	request := osc.CreateRouteRequest{
+		DestinationIpRange: route.DestinationCIDR,
+		VmId:               instance.VmId,
+		RouteTableId:       table.GetRouteTableId(),
+	}
 
-	_, err = c.compute.CreateRoute(request)
+	_, err = c.compute.CreateRoute(&request)
 	if err != nil {
 		return fmt.Errorf("error creating AWS route (%s): %q", route.DestinationCIDR, err)
 	}

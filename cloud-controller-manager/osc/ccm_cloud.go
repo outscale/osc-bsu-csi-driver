@@ -840,18 +840,19 @@ func (c *Cloud) ensureSecurityGroup(name string, description string, additionalT
 			return aws.StringValue(securityGroups[0].GroupId), nil
 		}
 
-		createRequest := &ec2.CreateSecurityGroupInput{}
+		createRequest := osc.CreateSecurityGroupRequest{}
 		if c.vpcID != "" {
-			createRequest.VpcId = &c.vpcID
+			createRequest.SetNetId(c.vpcID)
 		}
-		createRequest.GroupName = &name
-		createRequest.Description = &description
+		createRequest.SetSecurityGroupName(name)
+		createRequest.SetDescription(description)
 
-		createResponse, err := c.compute.CreateSecurityGroup(createRequest)
+		createResponse, err := c.compute.CreateSecurityGroup(&createRequest)
 		if err != nil {
 			ignore := false
 			switch err := err.(type) {
 			case awserr.Error:
+				// TODO: Migrate with OSC
 				if err.Code() == "InvalidGroup.Duplicate" && attempt < MaxReadThenCreateRetries {
 					klog.V(2).Infof("Got InvalidGroup.Duplicate while creating security group (race?); will retry")
 					ignore = true
@@ -863,7 +864,7 @@ func (c *Cloud) ensureSecurityGroup(name string, description string, additionalT
 			}
 			time.Sleep(1 * time.Second)
 		} else {
-			groupID = aws.StringValue(createResponse.GroupId)
+			groupID = createResponse.SecurityGroup.GetSecurityGroupId()
 			break
 		}
 	}

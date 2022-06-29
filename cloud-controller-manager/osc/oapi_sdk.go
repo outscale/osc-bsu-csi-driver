@@ -100,8 +100,9 @@ func (s *oscSdkCompute) DescribeSubnets(request *osc.ReadSubnetsRequest) ([]osc.
 	return response.GetSubnets(), nil
 }
 
-func (s *oscSdkCompute) CreateSecurityGroup(request *ec2.CreateSecurityGroupInput) (*ec2.CreateSecurityGroupOutput, error) {
-	return s.ec2.CreateSecurityGroup(request)
+func (s *oscSdkCompute) CreateSecurityGroup(request *osc.CreateSecurityGroupRequest) (*osc.CreateSecurityGroupResponse, error) {
+	response, _, err := s.client.SecurityGroupApi.CreateSecurityGroup(s.ctx).CreateSecurityGroupRequest(*request).Execute()
+	return &response, err
 }
 
 func (s *oscSdkCompute) DeleteSecurityGroup(request *ec2.DeleteSecurityGroupInput) (*ec2.DeleteSecurityGroupOutput, error) {

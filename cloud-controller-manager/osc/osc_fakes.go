@@ -202,7 +202,7 @@ func (ec2i *FakeComputeImpl) ReadSecurityGroups(request *ec2.DescribeSecurityGro
 
 // CreateSecurityGroup is not implemented but is required for interface
 // conformance
-func (ec2i *FakeComputeImpl) CreateSecurityGroup(*ec2.CreateSecurityGroupInput) (*ec2.CreateSecurityGroupOutput, error) {
+func (ec2i *FakeComputeImpl) CreateSecurityGroup(request *osc.CreateSecurityGroupRequest) (*osc.CreateSecurityGroupResponse, error) {
 	panic("Not implemented")
 }
 

@@ -35,8 +35,8 @@ type Compute interface {
 	CreateSecurityGroup(request *osc.CreateSecurityGroupRequest) (*osc.CreateSecurityGroupResponse, error)
 	DeleteSecurityGroup(request *osc.DeleteSecurityGroupRequest) (*osc.DeleteSecurityGroupResponse, error)
 
-	CreateSecurityGroupRule(*ec2.AuthorizeSecurityGroupIngressInput) (*ec2.AuthorizeSecurityGroupIngressOutput, error)
-	DeleteSecurityGroupRule(*ec2.RevokeSecurityGroupIngressInput) (*ec2.RevokeSecurityGroupIngressOutput, error)
+	CreateSecurityGroupRule(request *osc.CreateSecurityGroupRuleRequest) (*osc.CreateSecurityGroupRuleResponse, error)
+	DeleteSecurityGroupRule(request *osc.DeleteSecurityGroupRuleRequest) (*osc.DeleteSecurityGroupRuleResponse, error)
 
 	DescribeSubnets(*osc.ReadSubnetsRequest) ([]osc.Subnet, error)
 

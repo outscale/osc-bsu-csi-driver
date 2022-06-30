@@ -214,13 +214,13 @@ func (ec2i *FakeComputeImpl) DeleteSecurityGroup(request *osc.DeleteSecurityGrou
 
 // CreateSecurityGroupRule is not implemented but is required for
 // interface conformance
-func (ec2i *FakeComputeImpl) CreateSecurityGroupRule(*ec2.AuthorizeSecurityGroupIngressInput) (*ec2.AuthorizeSecurityGroupIngressOutput, error) {
+func (ec2i *FakeComputeImpl) CreateSecurityGroupRule(request *osc.CreateSecurityGroupRuleRequest) (*osc.CreateSecurityGroupRuleResponse, error) {
 	panic("Not implemented")
 }
 
 // DeleteSecurityGroupRule is not implemented but is required for interface
 // conformance
-func (ec2i *FakeComputeImpl) DeleteSecurityGroupRule(*ec2.RevokeSecurityGroupIngressInput) (*ec2.RevokeSecurityGroupIngressOutput, error) {
+func (ec2i *FakeComputeImpl) DeleteSecurityGroupRule(request *osc.DeleteSecurityGroupRuleRequest) (*osc.DeleteSecurityGroupRuleResponse, error) {
 	panic("Not implemented")
 }
 

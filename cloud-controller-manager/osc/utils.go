@@ -366,7 +366,7 @@ func findTag(tags *[]osc.ResourceTag, key string) (string, bool) {
 	return "", false
 }
 
-func isEqualIntPointer(l, r *int64) bool {
+func isEqualInt64Pointer(l, r *int64) bool {
 	if l == nil {
 		return r == nil
 	}
@@ -374,6 +374,16 @@ func isEqualIntPointer(l, r *int64) bool {
 		return l == nil
 	}
 	return *l == *r
+}
+
+func isEqualInt3264Pointer(l *int32, r *int64) bool {
+	if l == nil {
+		return r == nil
+	}
+	if r == nil {
+		return l == nil
+	}
+	return *l == int32(*r)
 }
 
 func isEqualStringPointer(l, r *string) bool {
@@ -386,11 +396,11 @@ func isEqualStringPointer(l, r *string) bool {
 	return *l == *r
 }
 
-func ipPermissionExists(newPermission, existing *ec2.IpPermission, compareGroupUserIDs bool) bool {
-	if !isEqualIntPointer(newPermission.FromPort, existing.FromPort) {
+func ipPermissionAWSExists(newPermission, existing *ec2.IpPermission, compareGroupUserIDs bool) bool {
+	if !isEqualInt64Pointer(newPermission.FromPort, existing.FromPort) {
 		return false
 	}
-	if !isEqualIntPointer(newPermission.ToPort, existing.ToPort) {
+	if !isEqualInt64Pointer(newPermission.ToPort, existing.ToPort) {
 		return false
 	}
 	if !isEqualStringPointer(newPermission.IpProtocol, existing.IpProtocol) {
@@ -432,11 +442,73 @@ func ipPermissionExists(newPermission, existing *ec2.IpPermission, compareGroupU
 	return true
 }
 
+func ipPermissionExists(newPermission *osc.SecurityGroupRule, existing *ec2.IpPermission, compareGroupUserIDs bool) bool {
+	if !isEqualInt3264Pointer(newPermission.FromPortRange, existing.FromPort) {
+		return false
+	}
+	if !isEqualInt3264Pointer(newPermission.ToPortRange, existing.ToPort) {
+		return false
+	}
+	if !isEqualStringPointer(newPermission.IpProtocol, existing.IpProtocol) {
+		return false
+	}
+	// Check only if newPermission is a subset of existing. Usually it has zero or one elements.
+	// Not doing actual CIDR math yet; not clear it's needed, either.
+	klog.V(4).Infof("Comparing %v to %v", newPermission, existing)
+	if len(newPermission.GetIpRanges()) > len(existing.IpRanges) {
+		return false
+	}
+
+	for j := range newPermission.GetIpRanges() {
+		found := false
+		for k := range existing.IpRanges {
+			if isEqualStringPointer(&(newPermission.GetIpRanges()[j]), existing.IpRanges[k].CidrIp) {
+				found = true
+				break
+			}
+		}
+		if !found {
+			return false
+		}
+	}
+
+	for _, leftPair := range newPermission.GetSecurityGroupsMembers() {
+		found := false
+		for _, rightPair := range existing.UserIdGroupPairs {
+			if isEqualSecurityGroupMember(&leftPair, rightPair, compareGroupUserIDs) {
+				found = true
+				break
+			}
+		}
+		if !found {
+			return false
+		}
+	}
+
+	return true
+}
+
+// Remove after last use
 func isEqualUserGroupPair(l, r *ec2.UserIdGroupPair, compareGroupUserIDs bool) bool {
 	klog.V(2).Infof("Comparing %v to %v", *l.GroupId, *r.GroupId)
 	if isEqualStringPointer(l.GroupId, r.GroupId) {
 		if compareGroupUserIDs {
 			if isEqualStringPointer(l.UserId, r.UserId) {
+				return true
+			}
+		} else {
+			return true
+		}
+	}
+
+	return false
+}
+
+func isEqualSecurityGroupMember(l *osc.SecurityGroupsMember, r *ec2.UserIdGroupPair, compareGroupUserIDs bool) bool {
+	klog.V(2).Infof("Comparing %v to %v", l.GetSecurityGroupId(), *r.GroupId)
+	if isEqualStringPointer(l.SecurityGroupId, r.GroupId) {
+		if compareGroupUserIDs {
+			if isEqualStringPointer(l.AccountId, r.UserId) {
 				return true
 			}
 		} else {

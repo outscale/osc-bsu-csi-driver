@@ -573,7 +573,7 @@ func (c *Cloud) findSecurityGroup(securityGroupID string) (*ec2.SecurityGroup, e
 // Makes sure the security group ingress is exactly the specified permissions
 // Returns true if and only if changes were made
 // The security group must already exist
-func (c *Cloud) setSecurityGroupIngress(securityGroupID string, permissions IPPermissionSet) (bool, error) {
+func (c *Cloud) setSecurityGroupIngress(securityGroupID string, permissions IPRulesSet) (bool, error) {
 	debugPrintCallerFunctionName()
 	klog.V(10).Infof("setSecurityGroupIngress(%v,%v)", securityGroupID, permissions)
 	// We do not want to make changes to the Global defined SG
@@ -593,9 +593,9 @@ func (c *Cloud) setSecurityGroupIngress(securityGroupID string, permissions IPPe
 
 	klog.V(2).Infof("Existing security group ingress: %s %v", securityGroupID, group.IpPermissions)
 
-	actual := NewIPPermissionSet(group.IpPermissions...)
+	actual := NewIPRulesSetFromAWS(group.IpPermissions...)
 
-	// EC2 groups rules together, for example combining:
+	// OSC groups rules together, for example combining:
 	//
 	// { Port=80, Range=[A] } and { Port=80, Range=[B] }
 	//
@@ -603,7 +603,7 @@ func (c *Cloud) setSecurityGroupIngress(securityGroupID string, permissions IPPe
 	//
 	// We have to ungroup them, because otherwise the logic becomes really
 	// complicated, and also because if we have Range=[A,B] and we try to
-	// add Range=[A] then EC2 complains about a duplicate rule.
+	// add Range=[A] then OSC complains about a duplicate rule.
 	permissions = permissions.Ungroup()
 	actual = actual.Ungroup()
 
@@ -624,10 +624,14 @@ func (c *Cloud) setSecurityGroupIngress(securityGroupID string, permissions IPPe
 	if add.Len() != 0 {
 		klog.V(2).Infof("Adding security group ingress: %s %v", securityGroupID, add.List())
 
-		request := &ec2.AuthorizeSecurityGroupIngressInput{}
-		request.GroupId = &securityGroupID
-		request.IpPermissions = add.List()
-		_, err = c.compute.CreateSecurityGroupRule(request)
+		list := add.List()
+		request := osc.CreateSecurityGroupRuleRequest{
+			Flow:            "inbound",
+			SecurityGroupId: securityGroupID,
+			Rules:           &list,
+		}
+
+		_, err = c.compute.CreateSecurityGroupRule(&request)
 		if err != nil {
 			return false, fmt.Errorf("error authorizing security group ingress: %q", err)
 		}
@@ -635,10 +639,13 @@ func (c *Cloud) setSecurityGroupIngress(securityGroupID string, permissions IPPe
 	if remove.Len() != 0 {
 		klog.V(2).Infof("Remove security group ingress: %s %v", securityGroupID, remove.List())
 
-		request := &ec2.RevokeSecurityGroupIngressInput{}
-		request.GroupId = &securityGroupID
-		request.IpPermissions = remove.List()
-		_, err = c.compute.DeleteSecurityGroupRule(request)
+		list := remove.List()
+		request := osc.DeleteSecurityGroupRuleRequest{
+			SecurityGroupId: securityGroupID,
+			Rules:           &list,
+		}
+
+		_, err = c.compute.DeleteSecurityGroupRule(&request)
 		if err != nil {
 			return false, fmt.Errorf("error revoking security group ingress: %q", err)
 		}
@@ -650,7 +657,7 @@ func (c *Cloud) setSecurityGroupIngress(securityGroupID string, permissions IPPe
 // Makes sure the security group includes the specified permissions
 // Returns true if and only if changes were made
 // The security group must already exist
-func (c *Cloud) addSecurityGroupIngress(securityGroupID string, addPermissions []*ec2.IpPermission, isPublicCloud bool) (bool, error) {
+func (c *Cloud) addSecurityGroupIngress(securityGroupID string, addPermissions *[]osc.SecurityGroupRule, isPublicCloud bool) (bool, error) {
 	debugPrintCallerFunctionName()
 	klog.V(10).Infof("addSecurityGroupIngress(%v,%v,%v)", securityGroupID, addPermissions, isPublicCloud)
 	// We do not want to make changes to the Global defined SG
@@ -670,18 +677,18 @@ func (c *Cloud) addSecurityGroupIngress(securityGroupID string, addPermissions [
 
 	klog.Infof("Existing security group ingress: %s %v", securityGroupID, group.IpPermissions)
 
-	changes := []*ec2.IpPermission{}
-	for _, addPermission := range addPermissions {
+	changes := []osc.SecurityGroupRule{}
+	for _, addPermission := range *addPermissions {
 		hasUserID := false
-		for i := range addPermission.UserIdGroupPairs {
-			if addPermission.UserIdGroupPairs[i].UserId != nil {
+		for _, member := range addPermission.GetSecurityGroupsMembers() {
+			if member.HasAccountId() {
 				hasUserID = true
 			}
 		}
 
 		found := false
 		for _, groupPermission := range group.IpPermissions {
-			if ipPermissionExists(addPermission, groupPermission, hasUserID) {
+			if ipPermissionExists(&addPermission, groupPermission, hasUserID) {
 				found = true
 				break
 			}
@@ -698,15 +705,16 @@ func (c *Cloud) addSecurityGroupIngress(securityGroupID string, addPermissions [
 
 	klog.Infof("Adding security group ingress: %s %v isPublic %v)", securityGroupID, changes, isPublicCloud)
 
-	request := &ec2.AuthorizeSecurityGroupIngressInput{}
-	request.GroupId = &securityGroupID
-	if !isPublicCloud {
-		request.IpPermissions = changes
-	} else {
-		request.SourceSecurityGroupName = aws.String(DefaultSrcSgName)
-		request.SourceSecurityGroupOwnerId = aws.String(DefaultSgOwnerID)
+	request := osc.CreateSecurityGroupRuleRequest{
+		SecurityGroupId: securityGroupID,
 	}
-	_, err = c.compute.CreateSecurityGroupRule(request)
+	if !isPublicCloud {
+		request.SetRules(changes)
+	} else {
+		request.SetSecurityGroupNameToLink(DefaultSrcSgName)
+		request.SetSecurityGroupAccountIdToLink(DefaultSgOwnerID)
+	}
+	_, err = c.compute.CreateSecurityGroupRule(&request)
 	if err != nil {
 		ignore := false
 		if isPublicCloud {
@@ -728,7 +736,7 @@ func (c *Cloud) addSecurityGroupIngress(securityGroupID string, addPermissions [
 // Makes sure the security group no longer includes the specified permissions
 // Returns true if and only if changes were made
 // If the security group no longer exists, will return (false, nil)
-func (c *Cloud) removeSecurityGroupIngress(securityGroupID string, removePermissions []*ec2.IpPermission, isPublicCloud bool) (bool, error) {
+func (c *Cloud) removeSecurityGroupIngress(securityGroupID string, removePermissions *[]osc.SecurityGroupRule, isPublicCloud bool) (bool, error) {
 	debugPrintCallerFunctionName()
 	klog.V(10).Infof("removeSecurityGroupIngress(%v,%v)", securityGroupID, removePermissions)
 	// We do not want to make changes to the Global defined SG
@@ -747,26 +755,22 @@ func (c *Cloud) removeSecurityGroupIngress(securityGroupID string, removePermiss
 		return false, nil
 	}
 
-	changes := []*ec2.IpPermission{}
-	for _, removePermission := range removePermissions {
+	changes := []osc.SecurityGroupRule{}
+	for _, removePermission := range *removePermissions {
 		hasUserID := false
-		for i := range removePermission.UserIdGroupPairs {
-			if removePermission.UserIdGroupPairs[i].UserId != nil {
+		for _, member := range removePermission.GetSecurityGroupsMembers() {
+			if member.HasAccountId() {
 				hasUserID = true
 			}
 		}
 
-		var found *ec2.IpPermission
 		for _, groupPermission := range group.IpPermissions {
-			if ipPermissionExists(removePermission, groupPermission, hasUserID) {
-				found = removePermission
+			if ipPermissionExists(&removePermission, groupPermission, hasUserID) {
+				changes = append(changes, removePermission)
 				break
 			}
 		}
 
-		if found != nil {
-			changes = append(changes, found)
-		}
 	}
 
 	if len(changes) == 0 && !isPublicCloud {
@@ -775,16 +779,17 @@ func (c *Cloud) removeSecurityGroupIngress(securityGroupID string, removePermiss
 
 	klog.Infof("Removing security group ingress: %s %v", securityGroupID, changes)
 
-	request := &ec2.RevokeSecurityGroupIngressInput{}
-	request.GroupId = &securityGroupID
+	request := osc.DeleteSecurityGroupRuleRequest{
+		SecurityGroupId: securityGroupID,
+	}
 	if !isPublicCloud {
-		request.IpPermissions = changes
+		request.SetRules(changes)
 	} else {
-		request.SourceSecurityGroupName = aws.String(DefaultSrcSgName)
-		request.SourceSecurityGroupOwnerId = aws.String(DefaultSgOwnerID)
+		request.SetSecurityGroupNameToUnlink(DefaultSrcSgName)
+		request.SetSecurityGroupAccountIdToUnlink(DefaultSgOwnerID)
 	}
 
-	_, err = c.compute.DeleteSecurityGroupRule(request)
+	_, err = c.compute.DeleteSecurityGroupRule(&request)
 	if err != nil {
 		klog.Warningf("Error revoking security group ingress: %q", err)
 		return false, err
@@ -1288,33 +1293,34 @@ func (c *Cloud) EnsureLoadBalancer(ctx context.Context, clusterName string, apiS
 	}
 
 	if len(subnetIDs) > 0 && c.vpcID != "" {
-		ec2SourceRanges := []*ec2.IpRange{}
+		oscSGRanges := []string{}
 		for _, sourceRange := range sourceRanges.StringSlice() {
-			ec2SourceRanges = append(ec2SourceRanges, &ec2.IpRange{CidrIp: aws.String(sourceRange)})
+			oscSGRanges = append(oscSGRanges, sourceRange)
 		}
 
-		permissions := NewIPPermissionSet()
+		permissions := NewIPRulesSet()
 		for _, port := range apiService.Spec.Ports {
 
-			portInt64 := int64(port.Port)
 			protocol := strings.ToLower(string(port.Protocol))
 
-			permission := &ec2.IpPermission{}
-			permission.FromPort = &portInt64
-			permission.ToPort = &portInt64
-			permission.IpRanges = ec2SourceRanges
-			permission.IpProtocol = &protocol
+			permission := osc.SecurityGroupRule{}
+			permission.SetFromPortRange(port.Port)
+			permission.SetToPortRange(port.Port)
+			permission.SetIpRanges(oscSGRanges)
+			permission.SetIpProtocol(protocol)
 
 			permissions.Insert(permission)
 		}
 
 		// Allow ICMP fragmentation packets, important for MTU discovery
 		{
-			permission := &ec2.IpPermission{
-				IpProtocol: aws.String("icmp"),
-				FromPort:   aws.Int64(3),
-				ToPort:     aws.Int64(4),
-				IpRanges:   ec2SourceRanges,
+			fromPort := int32(3)
+			toPort := int32(4)
+			permission := osc.SecurityGroupRule{
+				IpProtocol:    aws.String("icmp"),
+				FromPortRange: &fromPort,
+				ToPortRange:   &toPort,
+				IpRanges:      &oscSGRanges,
 			}
 
 			permissions.Insert(permission)
@@ -1619,22 +1625,24 @@ func (c *Cloud) updateInstanceSecurityGroupsForLoadBalancer(lb *elb.LoadBalancer
 			klog.V(2).Infof("Removing rule for traffic from the load balancer (%s) to instance (%s)", loadBalancerSecurityGroupID, instanceSecurityGroupID)
 		}
 		isPublicCloud := (loadBalancerSecurityGroupID == DefaultSrcSgName)
-		permissions := []*ec2.IpPermission{}
+		permissions := []osc.SecurityGroupRule{}
 		if !isPublicCloud {
 			// This setting is applied when we are in a vpc
-			sourceGroupID := &ec2.UserIdGroupPair{}
-			sourceGroupID.GroupId = &loadBalancerSecurityGroupID
+			sourceGroupID := osc.SecurityGroupsMember{
+				SecurityGroupId: &loadBalancerSecurityGroupID,
+			}
 
 			allProtocols := "-1"
 
-			permission := &ec2.IpPermission{}
-			permission.IpProtocol = &allProtocols
-			permission.UserIdGroupPairs = []*ec2.UserIdGroupPair{sourceGroupID}
-			permissions = []*ec2.IpPermission{permission}
+			permission := osc.SecurityGroupRule{
+				IpProtocol:            &allProtocols,
+				SecurityGroupsMembers: &[]osc.SecurityGroupsMember{sourceGroupID},
+			}
+			permissions = []osc.SecurityGroupRule{permission}
 		}
 
 		if add {
-			changed, err := c.addSecurityGroupIngress(instanceSecurityGroupID, permissions, isPublicCloud)
+			changed, err := c.addSecurityGroupIngress(instanceSecurityGroupID, &permissions, isPublicCloud)
 			if err != nil {
 				return err
 			}
@@ -1642,7 +1650,7 @@ func (c *Cloud) updateInstanceSecurityGroupsForLoadBalancer(lb *elb.LoadBalancer
 				klog.Warning("Allowing ingress was not needed; concurrent change? groupId=", instanceSecurityGroupID)
 			}
 		} else {
-			changed, err := c.removeSecurityGroupIngress(instanceSecurityGroupID, permissions, isPublicCloud)
+			changed, err := c.removeSecurityGroupIngress(instanceSecurityGroupID, &permissions, isPublicCloud)
 			if err != nil {
 				return err
 			}

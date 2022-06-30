@@ -1026,12 +1026,12 @@ func TestIpPermissionExistsHandlesMultipleGroupIds(t *testing.T) {
 		},
 	}
 
-	equals := ipPermissionExists(&existingIPPermission, &oldIPPermission, false)
+	equals := ipPermissionAWSExists(&existingIPPermission, &oldIPPermission, false)
 	if !equals {
 		t.Errorf("Should have been considered equal since first is in the second array of groups")
 	}
 
-	equals = ipPermissionExists(&newIPPermission, &oldIPPermission, false)
+	equals = ipPermissionAWSExists(&newIPPermission, &oldIPPermission, false)
 	if equals {
 		t.Errorf("Should have not been considered equal since first is not in the second array of groups")
 	}
@@ -1043,7 +1043,7 @@ func TestIpPermissionExistsHandlesMultipleGroupIds(t *testing.T) {
 			{GroupId: aws.String("fourthGroupId")},
 		},
 	}
-	equals = ipPermissionExists(&newIPPermission2, &oldIPPermission, false)
+	equals = ipPermissionAWSExists(&newIPPermission2, &oldIPPermission, false)
 	if equals {
 		t.Errorf("Should have not been considered equal since first is not in the second array of groups")
 	}
@@ -1078,29 +1078,29 @@ func TestIpPermissionExistsHandlesRangeSubsets(t *testing.T) {
 		},
 	}
 
-	exists := ipPermissionExists(&emptyIPPermission, &emptyIPPermission, false)
+	exists := ipPermissionAWSExists(&emptyIPPermission, &emptyIPPermission, false)
 	if !exists {
 		t.Errorf("Should have been considered existing since we're comparing a range array against itself")
 	}
-	exists = ipPermissionExists(&oldIPPermission, &oldIPPermission, false)
+	exists = ipPermissionAWSExists(&oldIPPermission, &oldIPPermission, false)
 	if !exists {
 		t.Errorf("Should have been considered existing since we're comparing a range array against itself")
 	}
 
-	exists = ipPermissionExists(&existingIPPermission, &oldIPPermission, false)
+	exists = ipPermissionAWSExists(&existingIPPermission, &oldIPPermission, false)
 	if !exists {
 		t.Errorf("Should have been considered existing since 10.* is in oldIPPermission's array of ranges")
 	}
-	exists = ipPermissionExists(&existingIPPermission2, &oldIPPermission, false)
+	exists = ipPermissionAWSExists(&existingIPPermission2, &oldIPPermission, false)
 	if !exists {
 		t.Errorf("Should have been considered existing since 192.* is in oldIpPermission2's array of ranges")
 	}
 
-	exists = ipPermissionExists(&newIPPermission, &emptyIPPermission, false)
+	exists = ipPermissionAWSExists(&newIPPermission, &emptyIPPermission, false)
 	if exists {
 		t.Errorf("Should have not been considered existing since we compared against a missing array of ranges")
 	}
-	exists = ipPermissionExists(&newIPPermission, &oldIPPermission, false)
+	exists = ipPermissionAWSExists(&newIPPermission, &oldIPPermission, false)
 	if exists {
 		t.Errorf("Should have not been considered existing since 172.* is not in oldIPPermission's array of ranges")
 	}
@@ -1127,12 +1127,12 @@ func TestIpPermissionExistsHandlesMultipleGroupIdsWithUserIds(t *testing.T) {
 		},
 	}
 
-	equals := ipPermissionExists(&existingIPPermission, &oldIPPermission, true)
+	equals := ipPermissionAWSExists(&existingIPPermission, &oldIPPermission, true)
 	if !equals {
 		t.Errorf("Should have been considered equal since first is in the second array of groups")
 	}
 
-	equals = ipPermissionExists(&newIPPermission, &oldIPPermission, true)
+	equals = ipPermissionAWSExists(&newIPPermission, &oldIPPermission, true)
 	if equals {
 		t.Errorf("Should have not been considered equal since first is not in the second array of groups")
 	}

@@ -110,12 +110,14 @@ func (s *oscSdkCompute) DeleteSecurityGroup(request *osc.DeleteSecurityGroupRequ
 	return &response, err
 }
 
-func (s *oscSdkCompute) CreateSecurityGroupRule(request *ec2.AuthorizeSecurityGroupIngressInput) (*ec2.AuthorizeSecurityGroupIngressOutput, error) {
-	return s.ec2.AuthorizeSecurityGroupIngress(request)
+func (s *oscSdkCompute) CreateSecurityGroupRule(request *osc.CreateSecurityGroupRuleRequest) (*osc.CreateSecurityGroupRuleResponse, error) {
+	response, _, err := s.client.SecurityGroupRuleApi.CreateSecurityGroupRule(s.ctx).CreateSecurityGroupRuleRequest(*request).Execute()
+	return &response, err
 }
 
-func (s *oscSdkCompute) DeleteSecurityGroupRule(request *ec2.RevokeSecurityGroupIngressInput) (*ec2.RevokeSecurityGroupIngressOutput, error) {
-	return s.ec2.RevokeSecurityGroupIngress(request)
+func (s *oscSdkCompute) DeleteSecurityGroupRule(request *osc.DeleteSecurityGroupRuleRequest) (*osc.DeleteSecurityGroupRuleResponse, error) {
+	response, _, err := s.client.SecurityGroupRuleApi.DeleteSecurityGroupRule(s.ctx).DeleteSecurityGroupRuleRequest(*request).Execute()
+	return &response, err
 }
 
 func (s *oscSdkCompute) CreateTags(request *osc.CreateTagsRequest) (*osc.CreateTagsResponse, error) {

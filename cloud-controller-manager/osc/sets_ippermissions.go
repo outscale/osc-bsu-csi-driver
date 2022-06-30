@@ -23,22 +23,59 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/ec2"
+	"github.com/outscale/osc-sdk-go/v2"
 )
 
-// IPPermissionSet maps IP strings of strings to EC2 IpPermissions
-type IPPermissionSet map[string]*ec2.IpPermission
+// IPRulesSet maps IP strings of strings to OSC IpPermissions
+type IPRulesSet map[string]osc.SecurityGroupRule
 
-// IPPermissionPredicate is an predicate to test whether IPPermission matches some condition.
-type IPPermissionPredicate interface {
-	// Test checks whether specified IPPermission matches condition.
-	Test(perm *ec2.IpPermission) bool
+// NewIPRulesSetFromAWS creates a new IPRulesSet
+func NewIPRulesSetFromAWS(items ...*ec2.IpPermission) IPRulesSet {
+	s := make(IPRulesSet)
+
+	rules := []osc.SecurityGroupRule{}
+	for _, permission := range items {
+		securityGroupRule := osc.SecurityGroupRule{}
+		if permission.FromPort != nil {
+			fromPortValue := int32(*permission.FromPort)
+			securityGroupRule.SetFromPortRange(fromPortValue)
+		}
+
+		if permission.ToPort != nil {
+			toPortValue := int32(*permission.ToPort)
+			securityGroupRule.SetToPortRange(toPortValue)
+		}
+
+		ipRanges := []string{}
+		for _, ipRange := range permission.IpRanges {
+			ipRanges = append(ipRanges, *ipRange.CidrIp)
+		}
+		securityGroupRule.SetIpRanges(ipRanges)
+
+		securityGroupsMembers := []osc.SecurityGroupsMember{}
+		for _, group := range permission.UserIdGroupPairs {
+			securityGroupsMember := osc.SecurityGroupsMember{
+				AccountId:         group.UserId,
+				SecurityGroupId:   group.GroupId,
+				SecurityGroupName: group.GroupName,
+			}
+
+			securityGroupsMembers = append(securityGroupsMembers, securityGroupsMember)
+		}
+		securityGroupRule.SetSecurityGroupsMembers(securityGroupsMembers)
+
+		// TODO: ServicesIds ?
+		rules = append(rules, securityGroupRule)
+	}
+
+	s.Insert(rules...)
+	return s
 }
 
-// NewIPPermissionSet creates a new IPPermissionSet
-func NewIPPermissionSet(items ...*ec2.IpPermission) IPPermissionSet {
-	s := make(IPPermissionSet)
+// NewIPRulesSet creates a new IPRulesSet
+func NewIPRulesSet(items ...osc.SecurityGroupRule) IPRulesSet {
+	s := make(IPRulesSet)
 	s.Insert(items...)
 	return s
 }
@@ -46,102 +83,67 @@ func NewIPPermissionSet(items ...*ec2.IpPermission) IPPermissionSet {
 // Ungroup splits permissions out into individual permissions
 // EC2 will combine permissions with the same port but different SourceRanges together, for example
 // We ungroup them so we can process them
-func (s IPPermissionSet) Ungroup() IPPermissionSet {
-	l := []*ec2.IpPermission{}
+func (s IPRulesSet) Ungroup() IPRulesSet {
+	l := []osc.SecurityGroupRule{}
 	for _, p := range s.List() {
-		if len(p.IpRanges) <= 1 {
+		if len(p.GetIpRanges()) <= 1 {
 			l = append(l, p)
 			continue
 		}
-		for _, ipRange := range p.IpRanges {
-			c := &ec2.IpPermission{}
-			*c = *p
-			c.IpRanges = []*ec2.IpRange{ipRange}
+		for _, ipRange := range p.GetIpRanges() {
+			c := osc.SecurityGroupRule{}
+			c = p
+			c.IpRanges = &[]string{ipRange}
 			l = append(l, c)
 		}
 	}
 
-	l2 := []*ec2.IpPermission{}
+	l2 := []osc.SecurityGroupRule{}
 	for _, p := range l {
-		if len(p.UserIdGroupPairs) <= 1 {
+		if len(p.GetSecurityGroupsMembers()) <= 1 {
 			l2 = append(l2, p)
 			continue
 		}
-		for _, u := range p.UserIdGroupPairs {
-			c := &ec2.IpPermission{}
-			*c = *p
-			c.UserIdGroupPairs = []*ec2.UserIdGroupPair{u}
+		for _, u := range p.GetSecurityGroupsMembers() {
+			c := osc.SecurityGroupRule{}
+			c = p
+			c.SecurityGroupsMembers = &[]osc.SecurityGroupsMember{u}
 			l2 = append(l, c)
 		}
 	}
 
-	l3 := []*ec2.IpPermission{}
+	l3 := []osc.SecurityGroupRule{}
 	for _, p := range l2 {
-		if len(p.PrefixListIds) <= 1 {
+		if len(p.GetServiceIds()) <= 1 {
 			l3 = append(l3, p)
 			continue
 		}
-		for _, v := range p.PrefixListIds {
-			c := &ec2.IpPermission{}
-			*c = *p
-			c.PrefixListIds = []*ec2.PrefixListId{v}
+		for _, v := range p.GetServiceIds() {
+			c := osc.SecurityGroupRule{}
+			c = p
+			c.ServiceIds = &[]string{v}
 			l3 = append(l3, c)
 		}
 	}
 
-	return NewIPPermissionSet(l3...)
+	return NewIPRulesSet(l3...)
 }
 
 // Insert adds items to the set.
-func (s IPPermissionSet) Insert(items ...*ec2.IpPermission) {
+func (s IPRulesSet) Insert(items ...osc.SecurityGroupRule) {
 	for _, p := range items {
-		k := keyForIPPermission(p)
+		k := keyForIPRules(&p)
 		s[k] = p
 	}
 }
 
-// Delete delete permission from the set.
-func (s IPPermissionSet) Delete(items ...*ec2.IpPermission) {
-	for _, p := range items {
-		k := keyForIPPermission(p)
-		delete(s, k)
-	}
-}
-
-// DeleteIf delete permission from the set if permission matches predicate.
-func (s IPPermissionSet) DeleteIf(predicate IPPermissionPredicate) {
-	for k, p := range s {
-		if predicate.Test(p) {
-			delete(s, k)
-		}
-	}
-}
-
 // List returns the contents as a slice.  Order is not defined.
-func (s IPPermissionSet) List() []*ec2.IpPermission {
-	res := make([]*ec2.IpPermission, 0, len(s))
+func (s IPRulesSet) List() []osc.SecurityGroupRule {
+	res := make([]osc.SecurityGroupRule, 0, len(s))
 	for _, v := range s {
 		res = append(res, v)
 	}
 	return res
-}
-
-// IsSuperset returns true if and only if s is a superset of s2.
-func (s IPPermissionSet) IsSuperset(s2 IPPermissionSet) bool {
-	for k := range s2 {
-		_, found := s[k]
-		if !found {
-			return false
-		}
-	}
-	return true
-}
-
-// Equal returns true if and only if s is equal (as a set) to s2.
-// Two sets are equal if their membership is identical.
-// (In practice, this means same elements, order doesn't matter)
-func (s IPPermissionSet) Equal(s2 IPPermissionSet) bool {
-	return len(s) == len(s2) && s.IsSuperset(s2)
 }
 
 // Difference returns a set of objects that are not in s2
@@ -150,8 +152,8 @@ func (s IPPermissionSet) Equal(s2 IPPermissionSet) bool {
 // s2 = {a1, a2, a4, a5}
 // s1.Difference(s2) = {a3}
 // s2.Difference(s1) = {a4, a5}
-func (s IPPermissionSet) Difference(s2 IPPermissionSet) IPPermissionSet {
-	result := NewIPPermissionSet()
+func (s IPRulesSet) Difference(s2 IPRulesSet) IPRulesSet {
+	result := NewIPRulesSet()
 	for k, v := range s {
 		_, found := s2[k]
 		if !found {
@@ -162,58 +164,14 @@ func (s IPPermissionSet) Difference(s2 IPPermissionSet) IPPermissionSet {
 }
 
 // Len returns the size of the set.
-func (s IPPermissionSet) Len() int {
+func (s IPRulesSet) Len() int {
 	return len(s)
 }
 
-func keyForIPPermission(p *ec2.IpPermission) string {
+func keyForIPRules(p *osc.SecurityGroupRule) string {
 	v, err := json.Marshal(p)
 	if err != nil {
 		panic(fmt.Sprintf("error building JSON representation of ec2.IpPermission: %v", err))
 	}
 	return string(v)
-}
-
-var _ IPPermissionPredicate = IPPermissionMatchDesc{}
-
-// IPPermissionMatchDesc checks whether specific IPPermission contains description.
-type IPPermissionMatchDesc struct {
-	Description string
-}
-
-// Test whether specific IPPermission contains description.
-func (p IPPermissionMatchDesc) Test(perm *ec2.IpPermission) bool {
-	for _, v4Range := range perm.IpRanges {
-		if aws.StringValue(v4Range.Description) == p.Description {
-			return true
-		}
-	}
-	for _, v6Range := range perm.Ipv6Ranges {
-		if aws.StringValue(v6Range.Description) == p.Description {
-			return true
-		}
-	}
-	for _, prefixListID := range perm.PrefixListIds {
-		if aws.StringValue(prefixListID.Description) == p.Description {
-			return true
-		}
-	}
-	for _, group := range perm.UserIdGroupPairs {
-		if aws.StringValue(group.Description) == p.Description {
-			return true
-		}
-	}
-	return false
-}
-
-var _ IPPermissionPredicate = IPPermissionNotMatch{}
-
-// IPPermissionNotMatch is the *not* operator for Predicate
-type IPPermissionNotMatch struct {
-	Predicate IPPermissionPredicate
-}
-
-// Test whether specific IPPermission not match the embed predicate.
-func (p IPPermissionNotMatch) Test(perm *ec2.IpPermission) bool {
-	return !p.Predicate.Test(perm)
 }

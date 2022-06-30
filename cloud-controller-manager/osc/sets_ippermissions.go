@@ -47,11 +47,15 @@ func NewIPRulesSetFromAWS(items ...*ec2.IpPermission) IPRulesSet {
 			securityGroupRule.SetToPortRange(toPortValue)
 		}
 
+		securityGroupRule.IpProtocol = permission.IpProtocol
+
 		ipRanges := []string{}
 		for _, ipRange := range permission.IpRanges {
 			ipRanges = append(ipRanges, *ipRange.CidrIp)
 		}
-		securityGroupRule.SetIpRanges(ipRanges)
+		if len(ipRanges) > 0 {
+			securityGroupRule.SetIpRanges(ipRanges)
+		}
 
 		securityGroupsMembers := []osc.SecurityGroupsMember{}
 		for _, group := range permission.UserIdGroupPairs {
@@ -63,7 +67,10 @@ func NewIPRulesSetFromAWS(items ...*ec2.IpPermission) IPRulesSet {
 
 			securityGroupsMembers = append(securityGroupsMembers, securityGroupsMember)
 		}
-		securityGroupRule.SetSecurityGroupsMembers(securityGroupsMembers)
+
+		if len(securityGroupsMembers) > 0 {
+			securityGroupRule.SetSecurityGroupsMembers(securityGroupsMembers)
+		}
 
 		// TODO: ServicesIds ?
 		rules = append(rules, securityGroupRule)
@@ -108,7 +115,7 @@ func (s IPRulesSet) Ungroup() IPRulesSet {
 			c := osc.SecurityGroupRule{}
 			c = p
 			c.SecurityGroupsMembers = &[]osc.SecurityGroupsMember{u}
-			l2 = append(l, c)
+			l2 = append(l2, c)
 		}
 	}
 

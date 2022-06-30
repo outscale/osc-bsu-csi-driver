@@ -626,7 +626,7 @@ func (c *Cloud) setSecurityGroupIngress(securityGroupID string, permissions IPRu
 
 		list := add.List()
 		request := osc.CreateSecurityGroupRuleRequest{
-			Flow:            "inbound",
+			Flow:            "Inbound",
 			SecurityGroupId: securityGroupID,
 			Rules:           &list,
 		}
@@ -641,6 +641,7 @@ func (c *Cloud) setSecurityGroupIngress(securityGroupID string, permissions IPRu
 
 		list := remove.List()
 		request := osc.DeleteSecurityGroupRuleRequest{
+			Flow:            "Inbound",
 			SecurityGroupId: securityGroupID,
 			Rules:           &list,
 		}
@@ -657,9 +658,9 @@ func (c *Cloud) setSecurityGroupIngress(securityGroupID string, permissions IPRu
 // Makes sure the security group includes the specified permissions
 // Returns true if and only if changes were made
 // The security group must already exist
-func (c *Cloud) addSecurityGroupIngress(securityGroupID string, addPermissions *[]osc.SecurityGroupRule, isPublicCloud bool) (bool, error) {
+func (c *Cloud) addSecurityGroupRules(securityGroupID string, addPermissions *[]osc.SecurityGroupRule, isPublicCloud bool) (bool, error) {
 	debugPrintCallerFunctionName()
-	klog.V(10).Infof("addSecurityGroupIngress(%v,%v,%v)", securityGroupID, addPermissions, isPublicCloud)
+	klog.V(10).Infof("addSecurityGroupRules(%v,%v,%v)", securityGroupID, addPermissions, isPublicCloud)
 	// We do not want to make changes to the Global defined SG
 	if securityGroupID == c.cfg.Global.ElbSecurityGroup {
 		return false, nil
@@ -706,6 +707,7 @@ func (c *Cloud) addSecurityGroupIngress(securityGroupID string, addPermissions *
 	klog.Infof("Adding security group ingress: %s %v isPublic %v)", securityGroupID, changes, isPublicCloud)
 
 	request := osc.CreateSecurityGroupRuleRequest{
+		Flow:            "Inbound",
 		SecurityGroupId: securityGroupID,
 	}
 	if !isPublicCloud {
@@ -736,9 +738,9 @@ func (c *Cloud) addSecurityGroupIngress(securityGroupID string, addPermissions *
 // Makes sure the security group no longer includes the specified permissions
 // Returns true if and only if changes were made
 // If the security group no longer exists, will return (false, nil)
-func (c *Cloud) removeSecurityGroupIngress(securityGroupID string, removePermissions *[]osc.SecurityGroupRule, isPublicCloud bool) (bool, error) {
+func (c *Cloud) removeSecurityGroupRules(securityGroupID string, removePermissions *[]osc.SecurityGroupRule, isPublicCloud bool) (bool, error) {
 	debugPrintCallerFunctionName()
-	klog.V(10).Infof("removeSecurityGroupIngress(%v,%v)", securityGroupID, removePermissions)
+	klog.V(10).Infof("removeSecurityGroupRules(%v,%v)", securityGroupID, removePermissions)
 	// We do not want to make changes to the Global defined SG
 	if securityGroupID == c.cfg.Global.ElbSecurityGroup {
 		return false, nil
@@ -780,6 +782,7 @@ func (c *Cloud) removeSecurityGroupIngress(securityGroupID string, removePermiss
 	klog.Infof("Removing security group ingress: %s %v", securityGroupID, changes)
 
 	request := osc.DeleteSecurityGroupRuleRequest{
+		Flow:            "Inbound",
 		SecurityGroupId: securityGroupID,
 	}
 	if !isPublicCloud {
@@ -1642,7 +1645,7 @@ func (c *Cloud) updateInstanceSecurityGroupsForLoadBalancer(lb *elb.LoadBalancer
 		}
 
 		if add {
-			changed, err := c.addSecurityGroupIngress(instanceSecurityGroupID, &permissions, isPublicCloud)
+			changed, err := c.addSecurityGroupRules(instanceSecurityGroupID, &permissions, isPublicCloud)
 			if err != nil {
 				return err
 			}
@@ -1650,7 +1653,7 @@ func (c *Cloud) updateInstanceSecurityGroupsForLoadBalancer(lb *elb.LoadBalancer
 				klog.Warning("Allowing ingress was not needed; concurrent change? groupId=", instanceSecurityGroupID)
 			}
 		} else {
-			changed, err := c.removeSecurityGroupIngress(instanceSecurityGroupID, &permissions, isPublicCloud)
+			changed, err := c.removeSecurityGroupRules(instanceSecurityGroupID, &permissions, isPublicCloud)
 			if err != nil {
 				return err
 			}

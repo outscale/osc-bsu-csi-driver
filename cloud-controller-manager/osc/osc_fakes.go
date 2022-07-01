@@ -196,7 +196,7 @@ func (ec2i *FakeComputeImpl) ReadVms(request *osc.ReadVmsRequest) ([]osc.Vm, err
 
 // ReadSecurityGroups is not implemented but is required for interface
 // conformance
-func (ec2i *FakeComputeImpl) ReadSecurityGroups(request *ec2.DescribeSecurityGroupsInput) ([]*ec2.SecurityGroup, error) {
+func (ec2i *FakeComputeImpl) ReadSecurityGroups(request *osc.ReadSecurityGroupsRequest) ([]osc.SecurityGroup, error) {
 	panic("Not implemented")
 }
 

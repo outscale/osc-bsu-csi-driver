@@ -18,7 +18,6 @@ package osc
 
 import (
 	"github.com/aws/aws-sdk-go/aws/ec2metadata"
-	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/aws/aws-sdk-go/service/elb"
 
 	osc "github.com/outscale/osc-sdk-go/v2"
@@ -30,7 +29,7 @@ import (
 type Compute interface {
 	ReadVms(request *osc.ReadVmsRequest) ([]osc.Vm, error)
 
-	ReadSecurityGroups(request *ec2.DescribeSecurityGroupsInput) ([]*ec2.SecurityGroup, error)
+	ReadSecurityGroups(request *osc.ReadSecurityGroupsRequest) ([]osc.SecurityGroup, error)
 
 	CreateSecurityGroup(request *osc.CreateSecurityGroupRequest) (*osc.CreateSecurityGroupResponse, error)
 	DeleteSecurityGroup(request *osc.DeleteSecurityGroupRequest) (*osc.DeleteSecurityGroupResponse, error)

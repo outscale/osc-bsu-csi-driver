@@ -169,15 +169,15 @@ func mapInstanceToNodeName(i *osc.Vm) types.NodeName {
 // We only create instances with one security group, so we don't expect multiple security groups.
 // However, if there are multiple security groups, we will choose the one tagged with our cluster filter.
 // Otherwise we will return an error.
-func findSecurityGroupForInstance(instance *osc.Vm, taggedSecurityGroups map[string]*ec2.SecurityGroup) (*ec2.GroupIdentifier, error) {
+func findSecurityGroupForInstance(instance *osc.Vm, taggedSecurityGroups map[string]osc.SecurityGroup) (*osc.SecurityGroupLight, error) {
 	instanceID := instance.GetVmId()
 
 	klog.Infof("findSecurityGroupForInstance instance.InstanceId : %v", instance.GetVmId())
 	klog.Infof("findSecurityGroupForInstance instance.SecurityGroups : %v", instance.SecurityGroups)
 	klog.Infof("findSecurityGroupForInstance taggedSecurityGroups : %v", taggedSecurityGroups)
 
-	var tagged []*ec2.GroupIdentifier
-	var untagged []*ec2.GroupIdentifier
+	var tagged []osc.SecurityGroupLight
+	var untagged []osc.SecurityGroupLight
 	for _, group := range instance.GetSecurityGroups() {
 		groupID := group.GetSecurityGroupId()
 		if groupID == "" {
@@ -185,14 +185,14 @@ func findSecurityGroupForInstance(instance *osc.Vm, taggedSecurityGroups map[str
 			continue
 		}
 		_, isTagged := taggedSecurityGroups[groupID]
-		ec2Group := ec2.GroupIdentifier{
-			GroupId:   &groupID,
-			GroupName: group.SecurityGroupName,
+		securityGroup := osc.SecurityGroupLight{
+			SecurityGroupId:   &groupID,
+			SecurityGroupName: group.SecurityGroupName,
 		}
 		if isTagged {
-			tagged = append(tagged, &ec2Group)
+			tagged = append(tagged, securityGroup)
 		} else {
-			untagged = append(untagged, &ec2Group)
+			untagged = append(untagged, securityGroup)
 		}
 	}
 
@@ -205,11 +205,11 @@ func findSecurityGroupForInstance(instance *osc.Vm, taggedSecurityGroups map[str
 		if len(tagged) != 1 {
 			taggedGroups := ""
 			for _, v := range tagged {
-				taggedGroups += fmt.Sprintf("%s(%s) ", *v.GroupId, *v.GroupName)
+				taggedGroups += fmt.Sprintf("%s(%s) ", v.GetSecurityGroupId(), v.GetSecurityGroupName())
 			}
 			return nil, fmt.Errorf("Multiple tagged security groups found for instance %s; ensure only the k8s security group is tagged; the tagged groups were %v", instanceID, taggedGroups)
 		}
-		return tagged[0], nil
+		return &(tagged[0]), nil
 	}
 
 	if len(untagged) > 0 {
@@ -217,7 +217,7 @@ func findSecurityGroupForInstance(instance *osc.Vm, taggedSecurityGroups map[str
 		if len(untagged) != 1 {
 			return nil, fmt.Errorf("Multiple untagged security groups found for instance %s; ensure the k8s security group is tagged", instanceID)
 		}
-		return untagged[0], nil
+		return &(untagged[0]), nil
 	}
 
 	klog.Warningf("No security group found for instance %q", instanceID)
@@ -376,16 +376,6 @@ func isEqualInt64Pointer(l, r *int64) bool {
 	return *l == *r
 }
 
-func isEqualInt3264Pointer(l *int32, r *int64) bool {
-	if l == nil {
-		return r == nil
-	}
-	if r == nil {
-		return l == nil
-	}
-	return *l == int32(*r)
-}
-
 func isEqualStringPointer(l, r *string) bool {
 	if l == nil {
 		return r == nil
@@ -442,27 +432,31 @@ func ipPermissionAWSExists(newPermission, existing *ec2.IpPermission, compareGro
 	return true
 }
 
-func ipPermissionExists(newPermission *osc.SecurityGroupRule, existing *ec2.IpPermission, compareGroupUserIDs bool) bool {
-	if !isEqualInt3264Pointer(newPermission.FromPortRange, existing.FromPort) {
+func ruleExists(newPermission *osc.SecurityGroupRule, existing *osc.SecurityGroupRule, compareGroupUserIDs bool) bool {
+	klog.V(4).Infof("ipPermissionExists(%v,%v,%v)", newPermission, existing, compareGroupUserIDs)
+	if newPermission.GetFromPortRange() != existing.GetFromPortRange() {
+		klog.V(4).Infof("Not the same FromPortRange %v != %v", newPermission.GetFromPortRange(), existing.GetFromPortRange())
 		return false
 	}
-	if !isEqualInt3264Pointer(newPermission.ToPortRange, existing.ToPort) {
+	if newPermission.GetToPortRange() != existing.GetToPortRange() {
+		klog.V(4).Infof("Not the same ToPortRange %v != %v", newPermission.GetToPortRange(), existing.GetToPortRange())
 		return false
 	}
-	if !isEqualStringPointer(newPermission.IpProtocol, existing.IpProtocol) {
+	if newPermission.GetIpProtocol() != existing.GetIpProtocol() {
+		klog.V(4).Infof("Not the same IpProtocol %v != %v", newPermission.GetIpProtocol(), existing.GetIpProtocol())
 		return false
 	}
 	// Check only if newPermission is a subset of existing. Usually it has zero or one elements.
 	// Not doing actual CIDR math yet; not clear it's needed, either.
 	klog.V(4).Infof("Comparing %v to %v", newPermission, existing)
-	if len(newPermission.GetIpRanges()) > len(existing.IpRanges) {
+	if len(newPermission.GetIpRanges()) > len(existing.GetIpRanges()) {
 		return false
 	}
 
 	for j := range newPermission.GetIpRanges() {
 		found := false
-		for k := range existing.IpRanges {
-			if isEqualStringPointer(&(newPermission.GetIpRanges()[j]), existing.IpRanges[k].CidrIp) {
+		for k := range existing.GetIpRanges() {
+			if newPermission.GetIpRanges()[j] == existing.GetIpRanges()[k] {
 				found = true
 				break
 			}
@@ -474,8 +468,8 @@ func ipPermissionExists(newPermission *osc.SecurityGroupRule, existing *ec2.IpPe
 
 	for _, leftPair := range newPermission.GetSecurityGroupsMembers() {
 		found := false
-		for _, rightPair := range existing.UserIdGroupPairs {
-			if isEqualSecurityGroupMember(&leftPair, rightPair, compareGroupUserIDs) {
+		for _, rightPair := range existing.GetSecurityGroupsMembers() {
+			if isEqualSecurityGroupMember(&leftPair, &rightPair, compareGroupUserIDs) {
 				found = true
 				break
 			}
@@ -504,11 +498,11 @@ func isEqualUserGroupPair(l, r *ec2.UserIdGroupPair, compareGroupUserIDs bool) b
 	return false
 }
 
-func isEqualSecurityGroupMember(l *osc.SecurityGroupsMember, r *ec2.UserIdGroupPair, compareGroupUserIDs bool) bool {
-	klog.V(2).Infof("Comparing %v to %v", l.GetSecurityGroupId(), *r.GroupId)
-	if isEqualStringPointer(l.SecurityGroupId, r.GroupId) {
+func isEqualSecurityGroupMember(l *osc.SecurityGroupsMember, r *osc.SecurityGroupsMember, compareGroupUserIDs bool) bool {
+	klog.V(2).Infof("Comparing %v to %v", l.GetSecurityGroupId(), r.GetSecurityGroupId())
+	if l.GetSecurityGroupId() == r.GetSecurityGroupId() {
 		if compareGroupUserIDs {
-			if isEqualStringPointer(l.AccountId, r.UserId) {
+			if l.GetAccountId() == r.GetAccountId() {
 				return true
 			}
 		} else {

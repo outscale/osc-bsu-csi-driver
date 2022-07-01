@@ -52,26 +52,29 @@ type MockedFakeCompute struct {
 }
 
 func (m *MockedFakeCompute) expectReadSecurityGroups(clusterID, groupName string) {
-	tags := []*ec2.Tag{
+	tags := []osc.ResourceTag{
 		{
-			Key:   aws.String(fmt.Sprintf("%s%s", TagNameKubernetesClusterPrefix, clusterID)),
-			Value: aws.String(ResourceLifecycleOwned),
+			Key:   fmt.Sprintf("%s%s", TagNameKubernetesClusterPrefix, clusterID),
+			Value: ResourceLifecycleOwned,
 		},
 		{
-			Key:   aws.String(TagNameKubernetesClusterLegacy),
-			Value: aws.String(clusterID),
+			Key:   TagNameKubernetesClusterLegacy,
+			Value: clusterID,
 		},
 	}
 
-	m.On("ReadSecurityGroups", &ec2.DescribeSecurityGroupsInput{Filters: []*ec2.Filter{
-		newEc2Filter("group-name", groupName),
-		newEc2Filter("vpc-id", "vpc-123456"),
-	}}).Return([]*ec2.SecurityGroup{{Tags: tags, GroupId: aws.String("sg-12345")}})
+	sgId := "sg-12345"
+
+	m.On("ReadSecurityGroups", &osc.ReadSecurityGroupsRequest{
+		Filters: &osc.FiltersSecurityGroup{
+			SecurityGroupNames: &[]string{groupName},
+			NetIds:             &[]string{"vpc-123456"},
+		}}).Return([]osc.SecurityGroup{{Tags: &tags, SecurityGroupId: &sgId}})
 }
 
-func (m *MockedFakeCompute) ReadSecurityGroups(request *ec2.DescribeSecurityGroupsInput) ([]*ec2.SecurityGroup, error) {
+func (m *MockedFakeCompute) ReadSecurityGroups(request *osc.ReadSecurityGroupsRequest) ([]osc.SecurityGroup, error) {
 	args := m.Called(request)
-	return args.Get(0).([]*ec2.SecurityGroup), nil
+	return args.Get(0).([]osc.SecurityGroup), nil
 }
 
 type MockedFakeELB struct {
@@ -1695,7 +1698,7 @@ func TestEnsureLoadBalancerHealthCheck(t *testing.T) {
 }
 
 func TestFindSecurityGroupForInstance(t *testing.T) {
-	groups := map[string]*ec2.SecurityGroup{"sg123": {GroupId: aws.String("sg123")}}
+	groups := map[string]osc.SecurityGroup{"sg123": {SecurityGroupId: aws.String("sg123")}}
 	id, err := findSecurityGroupForInstance(&osc.Vm{
 		SecurityGroups: &[]osc.SecurityGroupLight{
 			{SecurityGroupId: aws.String("sg123"), SecurityGroupName: aws.String("my_group")},
@@ -1704,12 +1707,12 @@ func TestFindSecurityGroupForInstance(t *testing.T) {
 	if err != nil {
 		t.Error()
 	}
-	assert.Equal(t, *id.GroupId, "sg123")
-	assert.Equal(t, *id.GroupName, "my_group")
+	assert.Equal(t, id.GetSecurityGroupId(), "sg123")
+	assert.Equal(t, id.GetSecurityGroupName(), "my_group")
 }
 
 func TestFindSecurityGroupForInstanceMultipleTagged(t *testing.T) {
-	groups := map[string]*ec2.SecurityGroup{"sg123": {GroupId: aws.String("sg123")}}
+	groups := map[string]osc.SecurityGroup{"sg123": {SecurityGroupId: aws.String("sg123")}}
 	_, err := findSecurityGroupForInstance(&osc.Vm{
 		SecurityGroups: &[]osc.SecurityGroupLight{
 			{SecurityGroupId: aws.String("sg123"), SecurityGroupName: aws.String("my_group")},

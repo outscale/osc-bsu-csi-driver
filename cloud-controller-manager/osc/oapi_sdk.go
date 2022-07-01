@@ -22,7 +22,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/ec2"
 	osc "github.com/outscale/osc-sdk-go/v2"
 )
@@ -61,29 +60,24 @@ func (s *oscSdkCompute) ReadVms(request *osc.ReadVmsRequest) ([]osc.Vm, error) {
 }
 
 // Implements EC2.ReadSecurityGroups
-func (s *oscSdkCompute) ReadSecurityGroups(request *ec2.DescribeSecurityGroupsInput) ([]*ec2.SecurityGroup, error) {
-	// Security groups are paged
-	results := []*ec2.SecurityGroup{}
-	var nextToken *string
+func (s *oscSdkCompute) ReadSecurityGroups(request *osc.ReadSecurityGroupsRequest) ([]osc.SecurityGroup, error) {
 	requestTime := time.Now()
-	for {
-		response, err := s.ec2.DescribeSecurityGroups(request)
-		if err != nil {
-			recordAWSMetric("describe_security_groups", 0, err)
-			return nil, fmt.Errorf("error listing AWS security groups: %q", err)
+	response, httpRes, err := s.client.SecurityGroupApi.ReadSecurityGroups(s.ctx).ReadSecurityGroupsRequest(*request).Execute()
+	if err != nil {
+		recordAWSMetric("describe_security_groups", 0, err)
+		if httpRes != nil {
+			return nil, fmt.Errorf("error listing security groups: %q (Status:%v)", err, httpRes.Status)
 		}
-
-		results = append(results, response.SecurityGroups...)
-
-		nextToken = response.NextToken
-		if aws.StringValue(nextToken) == "" {
-			break
-		}
-		request.NextToken = nextToken
+		return nil, fmt.Errorf("error listing security groups: %q", err)
 	}
+
+	if !response.HasSecurityGroups() {
+		return nil, errors.New("error listing security groups: SecurityGroups not set")
+	}
+
 	timeTaken := time.Since(requestTime).Seconds()
 	recordAWSMetric("describe_security_groups", timeTaken, nil)
-	return results, nil
+	return response.GetSecurityGroups(), nil
 }
 
 func (s *oscSdkCompute) DescribeSubnets(request *osc.ReadSubnetsRequest) ([]osc.Subnet, error) {

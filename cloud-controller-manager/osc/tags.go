@@ -20,6 +20,7 @@ limitations under the License.
 package osc
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"strings"
@@ -189,13 +190,16 @@ func (t *awsTagging) hasClusterTag(tags *[]osc.ResourceTag) bool {
 // Ensure that a resource has the correct tags
 // If it has no tags, we assume that this was a problem caused by an error in between creation and tagging,
 // and we add the tags.  If it has a different cluster's tags, that is an error.
-func (t *awsTagging) readRepairClusterTags(client Compute, resourceID string, lifecycle ResourceLifecycle, additionalTags map[string]string, observedTags []*ec2.Tag) error {
+func (t *awsTagging) readRepairClusterTags(client Compute, resourceID string, lifecycle ResourceLifecycle, additionalTags map[string]string, observedTags *[]osc.ResourceTag) error {
 	debugPrintCallerFunctionName()
 	klog.V(10).Infof("readRepairClusterTags(%v, %v, %v, %v, %v)",
 		client, resourceID, lifecycle, additionalTags, observedTags)
 	actualTagMap := make(map[string]string)
-	for _, tag := range observedTags {
-		actualTagMap[aws.StringValue(tag.Key)] = aws.StringValue(tag.Value)
+	if observedTags == nil {
+		return errors.New("Got an nil Tags")
+	}
+	for _, tag := range *observedTags {
+		actualTagMap[tag.GetKey()] = tag.GetValue()
 	}
 
 	expectedTags := t.buildTags(lifecycle, additionalTags)

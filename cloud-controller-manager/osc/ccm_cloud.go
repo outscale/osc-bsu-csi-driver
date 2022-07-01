@@ -28,7 +28,6 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
-	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/aws/aws-sdk-go/service/elb"
 	"github.com/outscale/osc-sdk-go/v2"
 
@@ -545,15 +544,19 @@ func (c *Cloud) describeLoadBalancer(name string) (*elb.LoadBalancerDescription,
 }
 
 // Retrieves the specified security group from the AWS API, or returns nil if not found
-func (c *Cloud) findSecurityGroup(securityGroupID string) (*ec2.SecurityGroup, error) {
+func (c *Cloud) findSecurityGroup(securityGroupID string) (*osc.SecurityGroup, error) {
 	debugPrintCallerFunctionName()
 	klog.V(10).Infof("findSecurityGroup(%v)", securityGroupID)
-	describeSecurityGroupsRequest := &ec2.DescribeSecurityGroupsInput{
-		GroupIds: []*string{&securityGroupID},
+	readSecurityGroupsRequest := osc.ReadSecurityGroupsRequest{
+		Filters: &osc.FiltersSecurityGroup{
+			SecurityGroupIds: &[]string{
+				securityGroupID,
+			},
+		},
 	}
 	// We don't apply our tag filters because we are retrieving by ID
 
-	groups, err := c.compute.ReadSecurityGroups(describeSecurityGroupsRequest)
+	groups, err := c.compute.ReadSecurityGroups(&readSecurityGroupsRequest)
 	if err != nil {
 		klog.Warningf("Error retrieving security group: %q", err)
 		return nil, err
@@ -567,7 +570,7 @@ func (c *Cloud) findSecurityGroup(securityGroupID string) (*ec2.SecurityGroup, e
 		return nil, fmt.Errorf("multiple security groups found with same id %q", securityGroupID)
 	}
 	group := groups[0]
-	return group, nil
+	return &group, nil
 }
 
 // Makes sure the security group ingress is exactly the specified permissions
@@ -591,9 +594,9 @@ func (c *Cloud) setSecurityGroupIngress(securityGroupID string, permissions IPRu
 		return false, fmt.Errorf("security group not found: %s", securityGroupID)
 	}
 
-	klog.V(2).Infof("Existing security group ingress: %s %v", securityGroupID, group.IpPermissions)
+	klog.V(2).Infof("Existing security group ingress: %s %v", securityGroupID, group.GetInboundRules())
 
-	actual := NewIPRulesSetFromAWS(group.IpPermissions...)
+	actual := NewIPRulesSet(group.GetInboundRules()...)
 
 	// OSC groups rules together, for example combining:
 	//
@@ -676,7 +679,7 @@ func (c *Cloud) addSecurityGroupRules(securityGroupID string, addPermissions *[]
 		return false, fmt.Errorf("security group not found: %s", securityGroupID)
 	}
 
-	klog.Infof("Existing security group ingress: %s %v", securityGroupID, group.IpPermissions)
+	klog.Infof("Existing security group ingress: %s %v", securityGroupID, group.GetInboundRules())
 
 	changes := []osc.SecurityGroupRule{}
 	for _, addPermission := range *addPermissions {
@@ -688,8 +691,8 @@ func (c *Cloud) addSecurityGroupRules(securityGroupID string, addPermissions *[]
 		}
 
 		found := false
-		for _, groupPermission := range group.IpPermissions {
-			if ipPermissionExists(&addPermission, groupPermission, hasUserID) {
+		for _, groupPermission := range group.GetInboundRules() {
+			if ruleExists(&addPermission, &groupPermission, hasUserID) {
 				found = true
 				break
 			}
@@ -766,8 +769,8 @@ func (c *Cloud) removeSecurityGroupRules(securityGroupID string, removePermissio
 			}
 		}
 
-		for _, groupPermission := range group.IpPermissions {
-			if ipPermissionExists(&removePermission, groupPermission, hasUserID) {
+		for _, groupPermission := range group.GetInboundRules() {
+			if ruleExists(&removePermission, &groupPermission, hasUserID) {
 				changes = append(changes, removePermission)
 				break
 			}
@@ -819,16 +822,17 @@ func (c *Cloud) ensureSecurityGroup(name string, description string, additionalT
 		// If it doesn't have any tags, we tag it; this is how we recover if we failed to tag before.
 		// If it has a different cluster's tags, that is an error.
 		// This shouldn't happen because name is expected to be globally unique (UUID derived)
-		request := &ec2.DescribeSecurityGroupsInput{}
-		request.Filters = []*ec2.Filter{
-			newEc2Filter("group-name", name),
+		request := osc.ReadSecurityGroupsRequest{
+			Filters: &osc.FiltersSecurityGroup{
+				SecurityGroupNames: &[]string{name},
+			},
 		}
 
 		if c.vpcID != "" {
-			request.Filters = append(request.Filters, newEc2Filter("vpc-id", c.vpcID))
+			request.Filters.NetIds = &[]string{c.vpcID}
 		}
 
-		securityGroups, err := c.compute.ReadSecurityGroups(request)
+		securityGroups, err := c.compute.ReadSecurityGroups(&request)
 		if err != nil {
 			return "", err
 		}
@@ -838,13 +842,13 @@ func (c *Cloud) ensureSecurityGroup(name string, description string, additionalT
 				klog.Warningf("Found multiple security groups with name: %q", name)
 			}
 			err := c.tagging.readRepairClusterTags(
-				c.compute, aws.StringValue(securityGroups[0].GroupId),
+				c.compute, securityGroups[0].GetSecurityGroupId(),
 				ResourceLifecycleOwned, nil, securityGroups[0].Tags)
 			if err != nil {
 				return "", err
 			}
 
-			return aws.StringValue(securityGroups[0].GroupId), nil
+			return securityGroups[0].GetSecurityGroupId(), nil
 		}
 
 		createRequest := osc.CreateSecurityGroupRequest{}
@@ -1464,28 +1468,28 @@ func (c *Cloud) GetLoadBalancerName(ctx context.Context, clusterName string, ser
 }
 
 // Return all the security groups that are tagged as being part of our cluster
-func (c *Cloud) getTaggedSecurityGroups() (map[string]*ec2.SecurityGroup, error) {
+func (c *Cloud) getTaggedSecurityGroups() (map[string]osc.SecurityGroup, error) {
 	debugPrintCallerFunctionName()
 	klog.V(10).Infof("getTaggedSecurityGroups()")
-	request := &ec2.DescribeSecurityGroupsInput{}
-	request.Filters = []*ec2.Filter{
-		newEc2Filter("tag:"+c.tagging.clusterTagKey(),
-			[]string{ResourceLifecycleOwned, ResourceLifecycleShared}...),
-		newEc2Filter("tag:"+TagNameMainSG+c.tagging.clusterID(), "True"),
+	request := osc.ReadSecurityGroupsRequest{
+		Filters: &osc.FiltersSecurityGroup{
+			TagKeys: &[]string{c.tagging.clusterTagKey()},
+			Tags:    &[]string{fmt.Sprintf("%s%s=%s", TagNameMainSG, c.tagging.clusterID(), "True")},
+		},
 	}
 
-	groups, err := c.compute.ReadSecurityGroups(request)
+	groups, err := c.compute.ReadSecurityGroups(&request)
 	if err != nil {
 		return nil, fmt.Errorf("error querying security groups: %q", err)
 	}
 
-	m := make(map[string]*ec2.SecurityGroup)
+	m := make(map[string]osc.SecurityGroup)
 	for _, group := range groups {
-		if !c.tagging.hasClusterAWSTag(group.Tags) {
+		if !c.tagging.hasClusterTag(group.Tags) {
 			continue
 		}
 
-		id := aws.StringValue(group.GroupId)
+		id := group.GetSecurityGroupId()
 		if id == "" {
 			klog.Warningf("Ignoring group without id: %v", group)
 			continue
@@ -1536,24 +1540,23 @@ func (c *Cloud) updateInstanceSecurityGroupsForLoadBalancer(lb *elb.LoadBalancer
 	klog.V(10).Infof("loadBalancerSecurityGroupID(%v)", loadBalancerSecurityGroupID)
 
 	// Get the actual list of groups that allow ingress from the load-balancer
-	var actualGroups []*ec2.SecurityGroup
+	var actualGroups []osc.SecurityGroup
 	{
-		describeRequest := &ec2.DescribeSecurityGroupsInput{}
-		if loadBalancerSecurityGroupID != DefaultSrcSgName {
-			describeRequest.Filters = []*ec2.Filter{
-				newEc2Filter("ip-permission.group-id", loadBalancerSecurityGroupID),
-			}
-		} else {
-			describeRequest.Filters = []*ec2.Filter{
-				newEc2Filter("ip-permission.group-name", loadBalancerSecurityGroupID),
-			}
+		describeRequest := osc.ReadSecurityGroupsRequest{
+			Filters: &osc.FiltersSecurityGroup{},
 		}
-		response, err := c.compute.ReadSecurityGroups(describeRequest)
+		if loadBalancerSecurityGroupID != DefaultSrcSgName {
+			describeRequest.Filters.InboundRuleSecurityGroupIds = &[]string{loadBalancerSecurityGroupID}
+		} else {
+			describeRequest.Filters.InboundRuleSecurityGroupNames = &[]string{loadBalancerSecurityGroupID}
+		}
+
+		response, err := c.compute.ReadSecurityGroups(&describeRequest)
 		if err != nil {
 			return fmt.Errorf("error querying security groups for ELB: %q", err)
 		}
 		for _, sg := range response {
-			if !c.tagging.hasClusterAWSTag(sg.Tags) {
+			if !c.tagging.hasClusterTag(sg.Tags) {
 				continue
 			}
 			actualGroups = append(actualGroups, sg)
@@ -1587,7 +1590,7 @@ func (c *Cloud) updateInstanceSecurityGroupsForLoadBalancer(lb *elb.LoadBalancer
 			klog.Warning("Ignoring instance without security group: ", instance.GetVmId())
 			continue
 		}
-		id := aws.StringValue(securityGroup.GroupId)
+		id := securityGroup.GetSecurityGroupId()
 		if id == "" {
 			klog.Warningf("found security group without id: %v", securityGroup)
 			continue
@@ -1600,7 +1603,7 @@ func (c *Cloud) updateInstanceSecurityGroupsForLoadBalancer(lb *elb.LoadBalancer
 
 	// Compare to actual groups
 	for _, actualGroup := range actualGroups {
-		actualGroupID := aws.StringValue(actualGroup.GroupId)
+		actualGroupID := actualGroup.GetSecurityGroupId()
 		if actualGroupID == "" {
 			klog.Warning("Ignoring group without ID: ", actualGroup)
 			continue
@@ -1637,7 +1640,7 @@ func (c *Cloud) updateInstanceSecurityGroupsForLoadBalancer(lb *elb.LoadBalancer
 				IpProtocol:            &allProtocols,
 				SecurityGroupsMembers: &[]osc.SecurityGroupsMember{sourceGroupID},
 			}
-			permissions = []osc.SecurityGroupRule{permission}
+			permissions = append(permissions, permission)
 		}
 
 		if add {
@@ -1723,11 +1726,12 @@ func (c *Cloud) EnsureLoadBalancerDeleted(ctx context.Context, clusterName strin
 		// Note that this is annoying: the load balancer disappears from the API immediately, but it is still
 		// deleting in the background.  We get a DependencyViolation until the load balancer has deleted itself
 
-		describeRequest := &ec2.DescribeSecurityGroupsInput{}
-		describeRequest.Filters = []*ec2.Filter{
-			newEc2Filter("group-id", loadBalancerSGs...),
+		describeRequest := osc.ReadSecurityGroupsRequest{
+			Filters: &osc.FiltersSecurityGroup{
+				SecurityGroupIds: &loadBalancerSGs,
+			},
 		}
-		response, err := c.compute.ReadSecurityGroups(describeRequest)
+		response, err := c.compute.ReadSecurityGroups(&describeRequest)
 		if err != nil {
 			return fmt.Errorf("error querying security groups for ELB: %q", err)
 		}
@@ -1736,7 +1740,7 @@ func (c *Cloud) EnsureLoadBalancerDeleted(ctx context.Context, clusterName strin
 		securityGroupIDs := map[string]struct{}{}
 
 		for _, sg := range response {
-			sgID := aws.StringValue(sg.GroupId)
+			sgID := sg.GetSecurityGroupId()
 
 			if sgID == c.cfg.Global.ElbSecurityGroup {
 				//We don't want to delete a security group that was defined in the Cloud Configuration.
@@ -1747,7 +1751,7 @@ func (c *Cloud) EnsureLoadBalancerDeleted(ctx context.Context, clusterName strin
 				continue
 			}
 
-			if !c.tagging.hasClusterAWSTag(sg.Tags) {
+			if !c.tagging.hasClusterTag(sg.Tags) {
 				klog.Warningf("Ignoring security group with no cluster tag in %s", service.Name)
 				continue
 			}

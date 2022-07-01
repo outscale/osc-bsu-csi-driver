@@ -857,13 +857,9 @@ func (c *Cloud) ensureSecurityGroup(name string, description string, additionalT
 		createResponse, err := c.compute.CreateSecurityGroup(&createRequest)
 		if err != nil {
 			ignore := false
-			switch err := err.(type) {
-			case awserr.Error:
-				// TODO: Migrate with OSC
-				if err.Code() == "InvalidGroup.Duplicate" && attempt < MaxReadThenCreateRetries {
-					klog.V(2).Infof("Got InvalidGroup.Duplicate while creating security group (race?); will retry")
-					ignore = true
-				}
+			if strings.Contains(err.Error(), "Conflict") && attempt < MaxReadThenCreateRetries {
+				klog.V(2).Infof("Got InvalidGroup.Duplicate while creating security group (race?); will retry")
+				ignore = true
 			}
 			if !ignore {
 				klog.Errorf("Error creating security group: %q", err)

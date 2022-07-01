@@ -1635,10 +1635,14 @@ func (c *Cloud) updateInstanceSecurityGroupsForLoadBalancer(lb *elb.LoadBalancer
 			}
 
 			allProtocols := "-1"
+			toPort := int32(-1)
+			fromPort := int32(-1)
 
 			permission := osc.SecurityGroupRule{
 				IpProtocol:            &allProtocols,
 				SecurityGroupsMembers: &[]osc.SecurityGroupsMember{sourceGroupID},
+				FromPortRange:         &fromPort,
+				ToPortRange:           &toPort,
 			}
 			permissions = append(permissions, permission)
 		}

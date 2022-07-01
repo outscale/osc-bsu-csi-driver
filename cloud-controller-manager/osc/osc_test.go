@@ -63,13 +63,13 @@ func (m *MockedFakeCompute) expectReadSecurityGroups(clusterID, groupName string
 		},
 	}
 
-	sgId := "sg-12345"
+	sgID := "sg-12345"
 
 	m.On("ReadSecurityGroups", &osc.ReadSecurityGroupsRequest{
 		Filters: &osc.FiltersSecurityGroup{
 			SecurityGroupNames: &[]string{groupName},
 			NetIds:             &[]string{"vpc-123456"},
-		}}).Return([]osc.SecurityGroup{{Tags: &tags, SecurityGroupId: &sgId}})
+		}}).Return([]osc.SecurityGroup{{Tags: &tags, SecurityGroupId: &sgID}})
 }
 
 func (m *MockedFakeCompute) ReadSecurityGroups(request *osc.ReadSecurityGroupsRequest) ([]osc.SecurityGroup, error) {

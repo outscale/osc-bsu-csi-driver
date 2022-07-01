@@ -22,7 +22,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/aws/aws-sdk-go/service/ec2"
 	osc "github.com/outscale/osc-sdk-go/v2"
 )
 
@@ -30,7 +29,6 @@ import (
 
 // oscSdkCompute is an implementation of the some EC2 interface and OSC Interface, backed by aws-sdk-go and osc-sdk-go
 type oscSdkCompute struct {
-	ec2    *ec2.EC2
 	client *osc.APIClient
 	ctx    context.Context
 }

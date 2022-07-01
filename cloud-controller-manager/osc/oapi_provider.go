@@ -27,7 +27,6 @@ import (
 	"github.com/aws/aws-sdk-go/aws/endpoints"
 	"github.com/aws/aws-sdk-go/aws/request"
 	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/aws/aws-sdk-go/service/elb"
 
 	"github.com/outscale-dev/cloud-provider-osc/cloud-controller-manager/utils"
@@ -122,17 +121,10 @@ func (p *awsSDKProvider) getCrossRequestRetryDelay(regionName string) *CrossRequ
 func (p *awsSDKProvider) Compute(regionName string) (Compute, error) {
 	debugPrintCallerFunctionName()
 	klog.V(10).Infof("Compute(%v)", regionName)
-	sess, err := NewSession(nil)
-	if err != nil {
-		return nil, fmt.Errorf("unable to initialize Compute session: %v", err)
-	}
-	service := ec2.New(sess)
-
-	p.addHandlers(regionName, &service.Handlers)
-
 	// osc config
 	config := osc.NewConfiguration()
 	config.Debug = true
+	config.UserAgent = fmt.Sprintf("osc-cloud-controller-manager/%v", utils.GetVersion())
 	client := osc.NewAPIClient(config)
 	ctx := context.WithValue(context.Background(), osc.ContextAWSv4, osc.AWSv4{
 		AccessKey: os.Getenv("OSC_ACCESS_KEY"),
@@ -142,7 +134,6 @@ func (p *awsSDKProvider) Compute(regionName string) (Compute, error) {
 	ctx = context.WithValue(ctx, osc.ContextServerVariables, map[string]string{"region": regionName})
 
 	sdk := &oscSdkCompute{
-		ec2:    service,
 		client: client,
 		ctx:    ctx,
 	}

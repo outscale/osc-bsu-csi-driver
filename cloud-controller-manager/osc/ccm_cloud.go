@@ -59,7 +59,7 @@ type Cloud struct {
 
 	instances cloudprovider.InstancesV2
 
-	tagging awsTagging
+	tagging resourceTagging
 
 	// The AWS instance that we are running on
 	// Note that we cache some state in awsInstance (mountpoints), so we must preserve the instance

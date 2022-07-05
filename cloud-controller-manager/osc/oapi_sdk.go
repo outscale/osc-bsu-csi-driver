@@ -42,13 +42,13 @@ func (s *oscSdkCompute) ReadVms(request *osc.ReadVmsRequest) ([]osc.Vm, error) {
 	if err != nil {
 		recordAWSMetric("describe_instance", 0, err)
 		if httpRes != nil {
-			return nil, fmt.Errorf("error listing AWS instances: %q (Status:%v)", err, httpRes.Status)
+			return nil, fmt.Errorf("error listing instances: %q (Status:%v)", err, httpRes.Status)
 		}
-		return nil, fmt.Errorf("error listing AWS instances: %q", err)
+		return nil, fmt.Errorf("error listing instances: %q", err)
 	}
 
 	if !response.HasVms() {
-		return nil, errors.New("error listing AWS instances: Vm has not been set")
+		return nil, errors.New("error listing instances: Vm has not been set")
 	}
 
 	results = *response.Vms
@@ -82,11 +82,11 @@ func (s *oscSdkCompute) DescribeSubnets(request *osc.ReadSubnetsRequest) ([]osc.
 	// Subnets are not paged
 	response, _, err := s.client.SubnetApi.ReadSubnets(s.ctx).ReadSubnetsRequest(*request).Execute()
 	if err != nil {
-		return nil, fmt.Errorf("error listing AWS subnets: %q", err)
+		return nil, fmt.Errorf("error listing subnets: %q", err)
 	}
 
 	if !response.HasSubnets() {
-		return nil, errors.New("error listing AWS subnets: Got no subnets")
+		return nil, errors.New("error listing subnets: Got no subnets")
 	}
 
 	return response.GetSubnets(), nil
@@ -126,11 +126,11 @@ func (s *oscSdkCompute) ReadRouteTables(request *osc.ReadRouteTablesRequest) ([]
 	response, _, err := s.client.RouteTableApi.ReadRouteTables(s.ctx).ReadRouteTablesRequest(*request).Execute()
 	if err != nil {
 		recordAWSMetric("describe_route_tables", 0, err)
-		return nil, fmt.Errorf("error listing AWS route tables: %q", err)
+		return nil, fmt.Errorf("error listing route tables: %q", err)
 	}
 
 	if !response.HasRouteTables() {
-		return nil, errors.New("error listing AWS route tables: RouteTable not set")
+		return nil, errors.New("error listing route tables: RouteTable not set")
 	}
 	timeTaken := time.Since(requestTime).Seconds()
 	recordAWSMetric("describe_route_tables", timeTaken, nil)

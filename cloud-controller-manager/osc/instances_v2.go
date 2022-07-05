@@ -132,11 +132,6 @@ func (i *instancesV2) getInstance(ctx context.Context, node *v1.Node) (*osc.Vm, 
 	if node.Spec.ProviderID == "" {
 		// get Instance by private DNS name
 		request = &osc.ReadVmsRequest{}
-		/*
-			Filters: []*ec2.Filter{
-				newEc2Filter("private-dns-name", node.Name),
-			},
-		}*/
 		klog.V(4).Infof("looking for node by private DNS name %v", node.Name)
 	} else {
 		// get Instance by provider ID

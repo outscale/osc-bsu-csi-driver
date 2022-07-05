@@ -29,7 +29,7 @@ type VM struct {
 	compute Compute
 
 	// id in AWS
-	awsID string
+	vmID string
 
 	// node name in k8s
 	nodeName types.NodeName
@@ -51,5 +51,5 @@ type VM struct {
 func (i *VM) describeInstance() (*osc.Vm, error) {
 	debugPrintCallerFunctionName()
 	klog.V(10).Infof("describeInstance")
-	return describeInstance(i.compute, InstanceID(i.awsID))
+	return describeInstance(i.compute, InstanceID(i.vmID))
 }

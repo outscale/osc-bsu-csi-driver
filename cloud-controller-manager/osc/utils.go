@@ -565,12 +565,12 @@ func newAWSInstance(ec2Service Compute, instance *osc.Vm) *VM {
 	}
 	self := &VM{
 		compute:          ec2Service,
-		awsID:            aws.StringValue(instance.VmId),
+		vmID:             instance.GetVmId(),
 		nodeName:         mapInstanceToNodeName(instance),
 		availabilityZone: az,
-		instanceType:     aws.StringValue(instance.VmType),
-		vpcID:            aws.StringValue(instance.NetId),
-		subnetID:         aws.StringValue(instance.SubnetId),
+		instanceType:     instance.GetVmType(),
+		vpcID:            instance.GetNetId(),
+		subnetID:         instance.GetSubnetId(),
 	}
 
 	return self

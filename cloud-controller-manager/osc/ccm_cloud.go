@@ -370,7 +370,7 @@ func (c *Cloud) InstanceID(ctx context.Context, nodeName types.NodeName) (string
 	// In the future it is possible to also return an endpoint as:
 	// <endpoint>/<zone>/<instanceid>
 	if c.selfAWSInstance.nodeName == nodeName {
-		return "/" + c.selfAWSInstance.availabilityZone + "/" + c.selfAWSInstance.awsID, nil
+		return "/" + c.selfAWSInstance.availabilityZone + "/" + c.selfAWSInstance.vmID, nil
 	}
 	inst, err := c.getInstanceByNodeName(nodeName)
 	if err != nil {
@@ -2013,14 +2013,14 @@ func (c *Cloud) getInstanceByNodeName(nodeName types.NodeName) (*osc.Vm, error) 
 	// we leverage node cache to try to retrieve node's provider id first, as
 	// get instance by provider id is way more efficient than by filters in
 	// aws context
-	awsID, err := c.nodeNameToProviderID(nodeName)
+	vmID, err := c.nodeNameToProviderID(nodeName)
 	if err != nil {
 		klog.V(3).Infof("Unable to convert node name %q to aws instanceID, fall back to findInstanceByNodeName: %v", nodeName, err)
 		instance, err = c.findInstanceByNodeName(nodeName)
 		// we need to set provider id for next calls
 
 	} else {
-		instance, err = c.getInstanceByID(string(awsID))
+		instance, err = c.getInstanceByID(string(vmID))
 	}
 	if err == nil && instance == nil {
 		return nil, cloudprovider.InstanceNotFound

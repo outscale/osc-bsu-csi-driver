@@ -109,8 +109,10 @@ trivy-scan:
 	docker pull $(TRIVY_IMAGE)
 	docker run --rm \
 			-v /var/run/docker.sock:/var/run/docker.sock \
+			-v ${PWD}/.trivyignore:/root/.trivyignore \
 			$(TRIVY_IMAGE) \
 			image \
 			--exit-code 1 \
 			--severity="HIGH,CRITICAL" \
+			--ignorefile /root/.trivyignore \
 			$(IMAGE):$(IMAGE_VERSION)

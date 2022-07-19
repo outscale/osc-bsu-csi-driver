@@ -9,7 +9,7 @@ Then create a Service that exposes our new application to the internal vpc over 
 - Create ns
 
 ```
-$ /usr/local/bin/kubectl create namespace simple-internal
+$ kubectl create namespace simple-internal
 namespace/simple-internal created
 ```
 
@@ -24,11 +24,11 @@ make_bucket: ccm-examples
 - Deploy the application, which a simple server that responds with the http headers it received, along with the Loadbalancer
 
 ```
-$ /usr/local/bin/kubectl apply  -f examples/simple-internal/specs/
+$ kubectl apply  -f examples/simple-internal/specs/
 	deployment.apps/echoheaders created
 	service/echoheaders-lb-internal created
 	
-$kubectl get all -n simple-internal
+$ kubectl get all -n simple-internal
 NAME                               READY   STATUS    RESTARTS   AGE
 pod/echoheaders-5465f4df9d-wxht2   1/1     Running   0          5m20s
 
@@ -88,7 +88,7 @@ Request Body:
 - Cleanup resources:
 
 ```
-/usr/local/bin/kubectl delete  -f examples/simple-internal/specs/
+$ kubectl delete  -f examples/simple-internal/specs/
 ```
 
 

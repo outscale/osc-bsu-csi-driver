@@ -1,12 +1,17 @@
 # 2048 game
  
-This example creates a deployment for 2048 game
+This example creates a deployment for 2048 game exposed through a Service.
 
-- Deploy the application 
+# Deploy
+
+```bash
+kubectl apply -f examples/2048/specs/
+```
+
+# Check
 
 ```
-$ /usr/local/bin/kubectl apply  -f examples/2048/specs/
-$ /usr/local/bin/kubectl get all -n 2048-game
+kubectl get all -n 2048-game
 NAME                                   READY   STATUS    RESTARTS   AGE
 pod/2048-deployment-595c9ff5f8-fw9wd   1/1     Running   0          84s
 pod/2048-deployment-595c9ff5f8-w8hb9   1/1     Running   0          84s
@@ -19,16 +24,12 @@ deployment.apps/2048-deployment   2/2     2            2           84s
 
 NAME                                         DESIRED   CURRENT   READY   AGE
 replicaset.apps/2048-deployment-595c9ff5f8   2         2         2       84s
-
-# Now Use your favorite browser to play by connecting to  service/service-2048 url http://ad4337ccf92644bc3ba83ee2d28dd9cf-588858383.eu-west-2.lbu.outscale.com:8383
-
 ```
 
-- Cleanup resources:
+The url can be retrieved with `kubectl get svc -n 2048-game`.
+
+# Cleanup
 
 ```
-/usr/local/bin/kubectl delete -f examples/2048/specs/
+kubectl delete -f examples/2048/specs/
 ```
-
-
-

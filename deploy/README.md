@@ -1,58 +1,89 @@
-# Deploy the OSC CCM
-##
-- The ccm needs AK/SK to interact with Outscale lbu and fcu API, so you can create an AK/SK using an eim user, for example, with a proper permission by attaching [a policy like](./example-eim-policy.json) 
+This documentation explains how to deploy Outscale Cloud Controller Manager.
 
-## Generate and apply the osc-secret 
+# Prerequisites
+
+You will need a Kubernetes cluster on 3DS Outscale cloud. The next sections details prerequisites on some cloud resources.
+
+| Plugin Version | Minimal Kubernetes Version | Recommended Kubernetes Version |
+| -------------- | -------------------------- | ------------------------------ |
+| <= v0.0.10beta | 1.20                       | 1.23                           |
+
+# Configuration
+
+## Cluster Resource Tagging
+
+You must tag some cloud resources with a cluster identifier in order to allow Cloud Controller Manager to identify which resources are part of the cluster.
+This includes:
+- [VPC](https://docs.outscale.com/en/userguide/About-VPCs.html)
+- [Instances](https://docs.outscale.com/en/userguide/About-Instances.html)
+- [Security Groups](https://docs.outscale.com/en/userguide/About-Security-Groups-(Concepts).html)
+- [Route Tables](https://docs.outscale.com/en/userguide/About-Route-Tables.html)
+
+The tag key must be `OscK8sClusterID/my-cluster-id` (adapt `my-cluster-id`) and tag value can be one of the following values:
+- `shared`: resource is shared between multiple clusters, and should not be destroyed
+- `owned`: the resource is considered owned and managed by the cluster
+
+## Instances Tagging
+
+Additionally, instances must be tagged with their node name.
+
+Tag key is `OscK8sNodeName` and tag value `my-kybernetes-host-name` (`my-kybernetes-host-name` should be the same as `kubernetes.io/hostname` computed).
+
+## Security Groups Tagging
+
+By default, the service controller will automatically create a Security Group for each Load Balancer Unit (LBU) and will attach it to nodes in a VPC setup.
+
+If you want to use a pre-created Security Group to be applied to be attached/associated to the LBU, you must tag it with key `OscK8sMainSG/my-cluster-id` and value `True`.
+Note that using LBU has some limitation (see issue [#68](https://github.com/outscale-dev/cloud-provider-osc/issues/68)).
+
+## Networking
+
+Node controller is deployed as a daemon set and will need to access [metadata server](https://docs.outscale.com/en/userguide/Accessing-the-Metadata-and-User-Data-of-an-Instance.html) in order to get information about its node (cpu, memory, addresses, hostname).
+To do this, node controller need to be able to access `169.254.169.254/32` through TCP port 80 (http).
+
+If you want more details about network configuration with OpenShift, check [openshift documentation](https://docs.openshift.com/container-platform/4.10/networking/understanding-networking.html).
+
+## Kubelet
+
+Kubelet must be run with `--cloud-provider=external`, (more details in [Cloud Controller Manager Administration](https://kubernetes.io/docs/tasks/administer-cluster/running-cloud-controller/#running-cloud-controller-manager) documentation).
+
+## Configuring Cloud Credentials
+
+Outscale Cloud Controller Manager needs API access in order to create resources (like Load Balancer Units) or fetch some data.
+
+It is recommended to use a specific [Access Key](https://docs.outscale.com/en/userguide/About-Access-Keys.html) and create an [EIM user](https://docs.outscale.com/en/userguide/About-EIM-Users.html) with limited access. Check [EIM policy example](eim-policy.example.json) to apply to such EIM user.
+
+To Avoid commiting any secret, just copy [secrets.example.yml](secrets.example.yml) resource and edit it:
+```bash
+cp deploy/secrets.example.yml deploy/secrets.yml
 ```
-	OSC_ACCOUNT_ID=XXXXX		: the osc user id
-	OSC_ACCOUNT_IAM=xxxx		: the eim user name  
-	OSC_USER_ID=XXXX			: the eim user id
-	OSC_ARN="XXXXX"				: the eim user orn
-	AWS_ACCESS_KEY_ID=XXXX 		: the AK
-	AWS_SECRET_ACCESS_KEY=XXXX 	: the SK
-	AWS_DEFAULT_REGION=XXX		: the Region to be used
-	
-	cat ./deploy/secret_osc.yaml | \
-	sed "s@AWS_ACCESS_KEY_ID@\"${AWS_ACCESS_KEY_ID}\"@g" | \
-	sed "s@AWS_SECRET_ACCESS_KEY@\"${AWS_SECRET_ACCESS_KEY}\"@g" | \
-	sed "s@AWS_DEFAULT_REGION@\"${AWS_DEFAULT_REGION}\"@g" | \
-	sed "s@AWS_AVAILABILITY_ZONES@\"${AWS_AVAILABILITY_ZONES}\"@g" | \
-	sed "s@OSC_ACCOUNT_ID@\"${OSC_ACCOUNT_ID}\"@g" | \
-	sed "s@OSC_ACCOUNT_IAM@\"${OSC_ACCOUNT_IAM}\"@g" | \
-	sed "s@OSC_USER_ID@\"${OSC_USER_ID}\"@g" | \
-	sed "s@OSC_ARN@\"${OSC_ARN}\"@g" > apply_secret.yaml
-	
-	cat apply_secret.yaml
-	
-	/usr/local/bin/kubectl delete -f apply_secret.yaml --namespace=kube-system
-	/usr/local/bin/kubectl apply -f apply_secret.yaml --namespace=kube-system
+# Deploy
+
+## Add Secret
+
+Make sure to have kubectl configured and deploy the Secret Resource containing your cloud crendentials:
+```
+kubectl apply -f deploy/secrets.yaml
 ```
 
-## Deploy the CCM deamonset
+## Add Cloud Controller Manager
 
-### Helm Configuration
-See [Helm Chart Configuration](../docs/helm.md)
-### Setps
-
+You can then deploy Outscale Cloud Controller Manager using a simple manifest:
 ```
-	#Using the manifest
-	kubectl delete -f deploy/osc-ccm-manifest.yml
-	kubectl apply -f deploy/osc-ccm-manifest.yml
-	kubectl get pods -o wide -A -n kube-system | grep osc-cloud-controller-manager
-
-	#Using helm3
-	cd deploy
-	# set the IMAGE_SECRET, IMAGE_NAME, IMAGE_TAG, SECRET_NAME to the right values on your case
-	IMAGE_NAME=outscale/cloud-provider-osc && \
-	IMAGE_TAG=v0.0.10beta && \
-	SECRET_NAME=osc-secret && \
-	helm uninstall k8s-osc-ccm 
-	helm install k8s-osc-ccm deploy/k8s-osc-ccm \
-		--set oscSecretName=$SECRET_NAME \
-		--set image.repository=$IMAGE_NAME \
-		--set image.tag=$IMAGE_TAG
-		
-	kubectl get pods -o wide -A -n kube-system | grep osc-cloud-controller-manager
-
+kubectl apply -f deploy/osc-ccm-manifest.yml
 ```
 
+Alternatively, you can deploy using Helm:
+```
+helm upgrade --install --wait --wait-for-jobs k8s-osc-ccm deploy/k8s-osc-ccm --set oscSecretName=osc-secret
+```
+More [helm options are available](../deploy/k8s-osc-ccm/README.md)
+
+# Check Deployment
+
+To check if Outscale Cloud Manager has been deployed, check for `osc-cloud-controller-manager`:
+```
+kubectl get pods -o wide -A -n kube-system | grep osc-cloud-controller-manager
+```
+
+You can also deploy a simple application exposed by a Service like [2048 web application](../examples/2048/README.md).

@@ -1,14 +1,12 @@
 # advanced lb creation
  
-This example creates a deployment named echoheaders on your cluster, which will run a single replica 
-of the echoserver container, listening on port 8080(http) and 8443(hhtps).
-Then create a Service that exposes our new application to the Internet over an Outscale Load Balancer unit (LBU)
-on http and https using certificates.
+This example creates a deployment named echoheaders on your cluster, which will run a single replica of the echoserver container, listening on port 8080 (http) and 8443 (https).
+Then create a Service that exposes our new application to the Internet over an Outscale Load Balancer Unit on http and https using certificates.
 
 - Create ns
 
 ```
-$ /usr/local/bin/kubectl create namespace advanced-lb
+$ kubectl create namespace advanced-lb
 namespace/advanced-lb created
 ```
 
@@ -20,7 +18,7 @@ make_bucket: ccm-examples
 
 - Deploy the pods to get the certificate
 ```
-$ /usr/local/bin/kubectl apply  -f examples/advanced-lb/specs/deploy.yaml
+$ kubectl apply  -f examples/advanced-lb/specs/deploy.yaml
 deployment.apps/echoheaders created
 ```
 
@@ -41,7 +39,7 @@ mkdir -p certs ;  kubectl cp advanced-lb/echoheaders-5465f4df9d-sw487:/certs ./c
 ```
 - Upload 'UploadServerCertificate' the certs copied previously under ./certs and retrieve it ORN id
     
-- update service yaml by setting the certificate ssl  ORN ID and the loadBalancerSourceRanges  and then apply it
+- Update service yaml by setting the certificate ssl  ORN ID and the loadBalancerSourceRanges  and then apply it
 
 ```
 $ OSC_ORN_ID="The ID" ; \
@@ -50,13 +48,12 @@ $ OSC_ORN_ID="The ID" ; \
 $ MY_CIDR=`curl ifconfig.io`"/32" ; \
   sed -i "s@MY_CIDR@\"${MY_CIDR}\"@g" ./examples/simple-lb/specs/svc.yaml
 
-$ /usr/local/bin/kubectl apply  -f examples/advanced-lb/specs/svc.yaml
+$ kubectl apply  -f examples/advanced-lb/specs/svc.yaml
 service/echoheaders-lb-advanced-public created
 	
-$kubectl get svc -n advanced-lb
+$ kubectl get svc -n advanced-lb
 NAME                             TYPE           CLUSTER-IP     EXTERNAL-IP                                                             PORT(S)                      AGE
 echoheaders-lb-advanced-public   LoadBalancer   10.32.29.197   ad51051c7a133489591adc0e1fbec049-832076221.eu-west-2.lbu.outscale.com   80:31174/TCP,443:31249/TCP   84m
-
 ```
 
 
@@ -80,7 +77,7 @@ notice: !!! You need to fix certificate name to match the outscale.com domain
 - Cleanup resources:
 
 ```
-/usr/local/bin/kubectl delete  -f examples/advanced-lb/specs/
+$ kubectl delete  -f examples/advanced-lb/specs/
 ```
 
 

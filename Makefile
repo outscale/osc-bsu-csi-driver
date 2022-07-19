@@ -41,7 +41,7 @@ E2E_ENV := "build-e2e-cloud-provider"
 E2E_AZ := "eu-west-2a"
 E2E_REGION := "eu-west-2"
 
-TRIVY_IMAGE := aquasec/trivy:0.19.2
+TRIVY_IMAGE := aquasec/trivy:0.30.0
 
 .PHONY: help
 help:
@@ -110,9 +110,12 @@ trivy-scan:
 	docker run --rm \
 			-v /var/run/docker.sock:/var/run/docker.sock \
 			-v ${PWD}/.trivyignore:/root/.trivyignore \
+			-v ${PWD}/.trivyscan/:/root/.trivyscan \
 			$(TRIVY_IMAGE) \
 			image \
 			--exit-code 1 \
 			--severity="HIGH,CRITICAL" \
 			--ignorefile /root/.trivyignore \
+			--security-checks vuln \
+			--format sarif -o /root/.trivyscan/report.sarif \
 			$(IMAGE):$(IMAGE_VERSION)

@@ -1,6 +1,4 @@
 
-**WARNING**: This driver is currently in Beta release and should not be used in performance critical applications.
-
 # Outscale Block Storage Unit (BSU) CSI driver
 
 ## Overview

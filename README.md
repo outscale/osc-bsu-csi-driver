@@ -1,5 +1,3 @@
-**WARNING**: This driver is currently in Beta release and should not be used in performance critical applications.
-
 # Cloud Provider 3DS Outscale CCM (cloud-provider-osc)
 The OSC cloud provider provides the interface between a Kubernetes cluster and 3DS Outscale service APIs. 
 This project allows a Kubernetes cluster to provision, monitor and remove Outscale resources necessary for operation of the cluster.

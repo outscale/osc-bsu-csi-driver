@@ -32,7 +32,7 @@ LDFLAGS ?= "-X ${PKG}/pkg/util.driverVersion=${VERSION} -X ${PKG}/pkg/util.gitCo
 GO111MODULE := on
 GOPROXY := direct
 
-TRIVY_IMAGE := aquasec/trivy:0.19.2
+TRIVY_IMAGE := aquasec/trivy:0.30.0
 
 .EXPORT_ALL_VARIABLES:
 
@@ -96,11 +96,14 @@ trivy-scan:
 	docker run --rm \
 			-v /var/run/docker.sock:/var/run/docker.sock \
 			-v ${PWD}/.trivyignore:/root/.trivyignore \
+			-v ${PWD}/.trivyscan/:/root/.trivyscan \
 			$(TRIVY_IMAGE) \
 			image \
 			--exit-code 1 \
 			--severity="HIGH,CRITICAL" \
 			--ignorefile /root/.trivyignore \
+			--security-checks vuln \
+			--format sarif -o /root/.trivyscan/report.sarif \
 			$(IMAGE):$(IMAGE_TAG)
 
 .PHONY: trivy-ignore-check

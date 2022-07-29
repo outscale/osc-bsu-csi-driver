@@ -83,7 +83,7 @@ More [helm options are available](../deploy/k8s-osc-ccm/README.md)
 
 To check if Outscale Cloud Manager has been deployed, check for `osc-cloud-controller-manager`:
 ```
-kubectl get pods -o wide -A -n kube-system | grep osc-cloud-controller-manager
+kubectl get pod -n kube-system -l "app=osc-cloud-controller-manager"
 ```
 
 You can also deploy a simple application exposed by a Service like [2048 web application](../examples/2048/README.md).

@@ -28,7 +28,7 @@ There are several optional parameters that could be passed into `CreateVolumeReq
 
 | Parameters                  | Values                | Default | Description                                                                   |
 | --------------------------- | --------------------- | ------- | ----------------------------------------------------------------------------- |
-| "csi.storage.k8s.io/fsType" | xfs, ext2, ext3, ext4 | ext4    | File system type that will be formatted during volume creation                |
+| "csi.storage.k8s.io/fstype" | xfs, ext2, ext3, ext4 | ext4    | File system type that will be formatted during volume creation                |
 | "type"                      | io1, gp2, standard    | gp2     | BSU volume type                                                               |
 | "iopsPerGB"                 |                       |         | I/O operations per second per GiB. Required when io1 volume type is specified |
 | "encrypted"                 |                       |         | Not supported                                                                 |

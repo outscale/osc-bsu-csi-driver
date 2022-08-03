@@ -26,8 +26,7 @@ RUN apk add --no-cache \
             xfsprogs=5.10.0-r0 \
             blkid=2.37.4-r0 \
             findmnt=2.37.4-r0 \
-            e2fsprogs-extra=1.45.7-r0 \
-            xfsprogs-extra=5.10.0-r0
+            e2fsprogs-extra=1.45.7-r0
 COPY  --from=builder /build/bin/aws-ebs-csi-driver /bin/aws-ebs-csi-driver
 
 ENTRYPOINT ["/bin/aws-ebs-csi-driver"]

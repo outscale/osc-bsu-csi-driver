@@ -109,3 +109,28 @@ trivy-scan:
 .PHONY: trivy-ignore-check
 trivy-ignore-check:
 	@./hack/verify-trivyignore
+
+
+REGISTRY_IMAGE ?= $(IMAGE)
+REGISTRY_TAG ?= $(IMAGE_TAG)
+image-tag:
+	docker tag $(IMAGE):$(IMAGE_TAG) $(REGISTRY_IMAGE):$(REGISTRY_TAG)
+
+image-push:
+	docker push $(REGISTRY_IMAGE):$(REGISTRY_TAG)
+
+TARGET_IMAGE ?= $(IMAGE)
+TARGET_TAG ?= $(IMAGE_TAG)
+helm_deploy:
+	helm upgrade \
+			--install \
+			--wait \
+			--wait-for-jobs  \
+			osc-bsu-csi-driver ./osc-bsu-csi-driver \
+			--namespace kube-system \
+			--set enableVolumeScheduling=true \
+			--set enableVolumeResizing=true \
+			--set enableVolumeSnapshot=true \
+			--set region=${OSC_REGION} \
+			--set image.repository=$(TARGET_IMAGE) \
+			--set image.tag=$(TARGET_TAG)

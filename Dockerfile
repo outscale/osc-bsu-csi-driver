@@ -1,5 +1,5 @@
 ARG GOLANG_IMAGE_TAG=1.17.6-buster
-ARG RUNTIME_IMAGE_TAG=bullseye-20220711
+ARG RUNTIME_IMAGE_TAG=3.13
 
 # Build image
 FROM golang:${GOLANG_IMAGE_TAG} AS builder
@@ -19,20 +19,8 @@ ENV GOPROXY=${GOPROXY:-https://proxy.golang.org}
 RUN make build
 
 # Final IMAGE
-FROM debian:${RUNTIME_IMAGE_TAG}
-RUN apt-get -y update && \
-    apt-get -y install libc-bin=2.31-13+deb11u3 \
-                       ca-certificates=20210119 \
-                       e2fsprogs=1.46.2-2 \
-                       mount=2.36.1-8+deb11u1 \
-                       util-linux=2.36.1-8+deb11u1 \
-                       udev=247.3-7 \
-                       xfsprogs=5.10.0-4 \
-                       gzip=1.10-4+deb11u1 \
-                       liblzma5=5.2.5-2.1~deb11u1 \
-                       --no-install-recommends && \
-    apt-get clean && rm -rf /var/lib/apt/lists/*
-
+FROM alpine:${RUNTIME_IMAGE_TAG}
+RUN apk add --no-cache ca-certificates e2fsprogs xfsprogs blkid findmnt e2fsprogs-extra xfsprogs-extra
 COPY  --from=builder /build/bin/aws-ebs-csi-driver /bin/aws-ebs-csi-driver
 
 ENTRYPOINT ["/bin/aws-ebs-csi-driver"]

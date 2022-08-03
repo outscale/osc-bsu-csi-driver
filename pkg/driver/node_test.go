@@ -163,7 +163,7 @@ func TestNodeStageVolume(t *testing.T) {
 				mockMounter.EXPECT().MakeDir(targetPath).Return(nil)
 				mockMounter.EXPECT().GetDeviceName(targetPath).Return("", 1, nil)
 				mockMounter.EXPECT().GetDiskFormat(gomock.Eq(devicePath)).Return("", nil)
-				mockMounter.EXPECT().Command(gomock.Eq("mkfs"), gomock.Eq("-t"), gomock.Eq(defaultFsType), gomock.Eq("-m"), gomock.Eq("reflink=0"), gomock.Eq(devicePath)).Return(exec.New().Command("mkfs"))
+				mockMounter.EXPECT().Command(gomock.Eq("mkfs.xfs"), gomock.Eq("-m"), gomock.Eq("reflink=0"), gomock.Eq(devicePath)).Return(exec.New().Command("mkfs"))
 				mockMounter.EXPECT().FormatAndMount(gomock.Eq(devicePath), gomock.Eq(targetPath), gomock.Eq(FSTypeXfs), gomock.Eq([]string{"dirsync", "noexec"}))
 				_, err := awsDriver.NodeStageVolume(context.TODO(), req)
 				if err != nil {
@@ -257,7 +257,7 @@ func TestNodeStageVolume(t *testing.T) {
 				mockMounter.EXPECT().MakeDir(targetPath).Return(nil)
 				mockMounter.EXPECT().GetDeviceName(targetPath).Return("", 1, nil)
 				mockMounter.EXPECT().GetDiskFormat(gomock.Eq(devicePath)).Return("", nil)
-				mockMounter.EXPECT().Command(gomock.Eq("mkfs"), gomock.Eq("-t"), gomock.Eq(defaultFsType), gomock.Eq("-m"), gomock.Eq("reflink=0"), gomock.Eq(devicePath)).Return(exec.New().Command("mkfs"))
+				mockMounter.EXPECT().Command(gomock.Eq("mkfs.xfs"), gomock.Eq("-m"), gomock.Eq("reflink=0"), gomock.Eq(devicePath)).Return(exec.New().Command("mkfs"))
 				mockMounter.EXPECT().FormatAndMount(gomock.Eq(devicePath), gomock.Eq(targetPath), gomock.Eq(FSTypeXfs), gomock.Any())
 				_, err := awsDriver.NodeStageVolume(context.TODO(), req)
 				if err != nil {

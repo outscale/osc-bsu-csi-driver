@@ -25,3 +25,7 @@ vendor/
 
 # IntelliJ
 .idea/
+
+# environment
+.trivyscan
+.env

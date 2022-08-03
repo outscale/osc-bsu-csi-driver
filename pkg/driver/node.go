@@ -208,9 +208,9 @@ func (d *nodeService) NodeStageVolume(ctx context.Context, req *csi.NodeStageVol
 		// Special case for xfs default format and mout fails due to fromat
 		// mkfs -t xfs -m reflink=0 /dev/xvdh
 		if existingFormat == "" {
-			argsXfs := []string{"-t", fsType, "-m", "reflink=0", source}
+			argsXfs := []string{"-m", "reflink=0", source}
 			klog.V(5).Infof("NodeStageVolume: xfs case mkfs %v ", argsXfs)
-			cmdOut, cmdErr := d.mounter.Command("mkfs", argsXfs...).CombinedOutput()
+			cmdOut, cmdErr := d.mounter.Command("mkfs.xfs", argsXfs...).CombinedOutput()
 			if cmdErr != nil {
 				klog.V(5).Infof("NodeStageVolume: continue with failed to run mkfs %v, error: %v, output: %v", argsXfs, cmdErr, cmdOut)
 				// but continue with FormatAndMount

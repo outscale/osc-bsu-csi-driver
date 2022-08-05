@@ -96,7 +96,7 @@ func TestCreateDisk(t *testing.T) {
 				CapacityGiB:      1,
 				AvailabilityZone: expZone,
 			},
-			expErr: fmt.Errorf("Encryption is not supported yet by OSC API"),
+			expErr: fmt.Errorf("Encryption is not supported yet by Outscale API"),
 		},
 		{
 			name:       "fail: CreateVolume returned CreateVolume error",
@@ -106,7 +106,7 @@ func TestCreateDisk(t *testing.T) {
 				Tags:             map[string]string{VolumeNameTagKey: "vol-test"},
 				AvailabilityZone: expZone,
 			},
-			expErr:             fmt.Errorf("could not create volume in OSC: CreateVolume generic error"),
+			expErr:             fmt.Errorf("could not create volume in Outscale: CreateVolume generic error"),
 			expCreateVolumeErr: fmt.Errorf("CreateVolume generic error"),
 		},
 		{
@@ -118,7 +118,7 @@ func TestCreateDisk(t *testing.T) {
 				Tags:             map[string]string{VolumeNameTagKey: "vol-test"},
 				AvailabilityZone: expZone,
 			},
-			expErr:             fmt.Errorf("could not create volume in OSC: DescribeVolumes generic error"),
+			expErr:             fmt.Errorf("could not create volume in Outscale: DescribeVolumes generic error"),
 			expCreateVolumeErr: fmt.Errorf("DescribeVolumes generic error"),
 		},
 		{
@@ -130,7 +130,7 @@ func TestCreateDisk(t *testing.T) {
 				Tags:             map[string]string{VolumeNameTagKey: "vol-test"},
 				AvailabilityZone: expZone,
 			},
-			expErr: fmt.Errorf("failed to get an available volume in OSC: timed out waiting for the condition"),
+			expErr: fmt.Errorf("failed to get an available volume in Outscale: timed out waiting for the condition"),
 		},
 		{
 			name:       "success: normal from snapshot",

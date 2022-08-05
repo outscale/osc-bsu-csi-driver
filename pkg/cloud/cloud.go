@@ -166,7 +166,6 @@ type oscListSnapshotsResponse struct {
 }
 
 type Cloud interface {
-	GetMetadata() MetadataService
 	CreateDisk(ctx context.Context, volumeName string, diskOptions *DiskOptions) (disk Disk, err error)
 	DeleteDisk(ctx context.Context, volumeID string) (success bool, err error)
 	AttachDisk(ctx context.Context, volumeID string, nodeID string) (devicePath string, err error)
@@ -254,10 +253,9 @@ func (client *OscClient) UpdateVolume(ctx context.Context, localVarOptionals *os
 var _ OscInterface = &OscClient{}
 
 type cloud struct {
-	region   string
-	metadata MetadataService
-	dm       dm.DeviceManager
-	client   OscInterface
+	region string
+	dm     dm.DeviceManager
+	client OscInterface
 }
 
 var _ Cloud = &cloud{}
@@ -269,17 +267,6 @@ func NewCloud(region string) (Cloud, error) {
 }
 
 func newOscCloud(region string) (Cloud, error) {
-	svc := newEC2MetadataSvc()
-
-	metadata, err := NewMetadataService(svc)
-	if err != nil {
-		return nil, fmt.Errorf("could not get metadata from OSC: %v", err)
-	}
-	useRegion := region
-	if len(useRegion) == 0 {
-		useRegion = metadata.GetRegion()
-	}
-
 	client := &OscClient{}
 	client.config = osc.NewConfiguration()
 	client.config.Debug = true
@@ -288,7 +275,7 @@ func newOscCloud(region string) (Cloud, error) {
 	version := util.GetVersion()
 	client.config.UserAgent = fmt.Sprintf("osc-bsu-csi-driver/%s", version.DriverVersion)
 
-	client.config.BasePath, _ = client.config.ServerUrl(0, map[string]string{"region": useRegion})
+	client.config.BasePath, _ = client.config.ServerUrl(0, map[string]string{"region": region})
 	client.api = osc.NewAPIClient(client.config)
 	client.auth = context.WithValue(context.Background(), osc.ContextAWSv4, osc.AWSv4{
 		AccessKey: os.Getenv("OSC_ACCESS_KEY"),
@@ -296,10 +283,9 @@ func newOscCloud(region string) (Cloud, error) {
 	})
 
 	return &cloud{
-		region:   useRegion,
-		metadata: metadata,
-		dm:       dm.NewDeviceManager(),
-		client:   client,
+		region: region,
+		dm:     dm.NewDeviceManager(),
+		client: client,
 	}, nil
 }
 
@@ -309,11 +295,6 @@ func newEC2MetadataSvc() *ec2metadata.EC2Metadata {
 		EndpointResolver: endpoints.ResolverFunc(util.OscSetupMetadataResolver()),
 	}))
 	return ec2metadata.New(sess)
-}
-
-func (c *cloud) GetMetadata() MetadataService {
-	klog.Infof("Debug GetMetadata")
-	return c.metadata
 }
 
 func IsNilDisk(disk Disk) bool {
@@ -1319,17 +1300,13 @@ func (c *cloud) checkDesiredSize(ctx context.Context, volumeID string, newSizeGi
 // the randomness relies on the response of DescribeAvailabilityZones
 func (c *cloud) randomAvailabilityZone(ctx context.Context, region string) (string, error) {
 	klog.Infof("Debug randomAvailabilityZone: %+v\n", region)
-	zone := c.metadata.GetAvailabilityZone()
-	if zone != "" {
-		return zone, nil
-	}
 
 	var response osc.ReadSubregionsResponse
 	readSubregionsCallback := func() (bool, error) {
 		var httpRes *_nethttp.Response
 		var err error
 		response, httpRes, err = c.client.ReadSubregions(ctx, nil)
-		klog.Infof("Debug response DescribeAvailabilityZones: response(%+v), err(%v) httpRes(%v)\n", response, err, httpRes)
+		klog.Infof("Debug response ReadSubregions: response(%+v), err(%v) httpRes(%v)\n", response, err, httpRes)
 		if err != nil {
 			if httpRes != nil {
 				fmt.Fprintln(os.Stderr, httpRes.Status)
@@ -1377,9 +1354,8 @@ func NewCloudWithoutMetadata(region string) (Cloud, error) {
 	})
 
 	return &cloud{
-		region:   region,
-		metadata: nil,
-		dm:       dm.NewDeviceManager(),
-		client:   client,
+		region: region,
+		dm:     dm.NewDeviceManager(),
+		client: client,
 	}, nil
 }

@@ -864,11 +864,6 @@ func newCloud(mockOscInterface OscInterface) *cloud {
 		region: "test-region",
 		dm:     dm.NewDeviceManager(),
 		client: mockOscInterface,
-		metadata: &Metadata{
-			InstanceID:       "test-instance",
-			Region:           "test-region",
-			AvailabilityZone: defaultZone,
-		},
 	}
 }
 

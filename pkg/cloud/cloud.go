@@ -28,11 +28,7 @@ import (
 	"github.com/antihax/optional"
 	"github.com/outscale/osc-sdk-go/osc"
 
-	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
-	"github.com/aws/aws-sdk-go/aws/ec2metadata"
-	"github.com/aws/aws-sdk-go/aws/endpoints"
-	"github.com/aws/aws-sdk-go/aws/session"
 	dm "github.com/outscale-dev/osc-bsu-csi-driver/pkg/cloud/devicemanager"
 	"github.com/outscale-dev/osc-bsu-csi-driver/pkg/util"
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -287,14 +283,6 @@ func newOscCloud(region string) (Cloud, error) {
 		dm:     dm.NewDeviceManager(),
 		client: client,
 	}, nil
-}
-
-func newEC2MetadataSvc() *ec2metadata.EC2Metadata {
-
-	sess := session.Must(session.NewSession(&aws.Config{
-		EndpointResolver: endpoints.ResolverFunc(util.OscSetupMetadataResolver()),
-	}))
-	return ec2metadata.New(sess)
 }
 
 func IsNilDisk(disk Disk) bool {

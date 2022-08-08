@@ -205,10 +205,8 @@ func (d *nodeService) NodeStageVolume(ctx context.Context, req *csi.NodeStageVol
 
 	klog.V(5).Infof("NodeStageVolume: formatting %s and mounting at %s with fstype %s", source, target, fsType)
 	if FSTypeXfs == fsType {
-		// Special case for xfs default format and mout fails due to fromat
-		// mkfs -t xfs -m reflink=0 /dev/xvdh
 		if existingFormat == "" {
-			argsXfs := []string{"-m", "reflink=0", source}
+			argsXfs := []string{source}
 			klog.V(5).Infof("NodeStageVolume: xfs case mkfs %v ", argsXfs)
 			cmdOut, cmdErr := d.mounter.Command("mkfs.xfs", argsXfs...).CombinedOutput()
 			if cmdErr != nil {

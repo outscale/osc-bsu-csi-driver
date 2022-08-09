@@ -25,7 +25,7 @@ import (
 	. "github.com/onsi/ginkgo"
 
 	"github.com/outscale-dev/osc-bsu-csi-driver/tests/e2e/driver"
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	clientset "k8s.io/client-go/kubernetes"
 	"k8s.io/kubernetes/test/e2e/framework"
 	e2edeployment "k8s.io/kubernetes/test/e2e/framework/deployment"
@@ -140,58 +140,49 @@ func (t *DynamicallyProvisionedStatsPodTest) Run(client clientset.Interface, nam
 	pvc_name := tDeployment.deployment.Spec.Template.Spec.Volumes[0].VolumeSource.PersistentVolumeClaim.ClaimName
 
 	By("checking volume stats using /metrics ")
-	err = nil
-	stdout := ""
-	stderr := ""
 	metrics_kubelet_volume_stats := ""
+	df_stats := ""
 	for i := 0; i < 20; i++ {
-		fmt.Printf("Retries no %d", i)
-		time.Sleep(10 * time.Second)
+
+		// Retrieve stats using /metrics
 		cmd := []string{
 			"curl",
 			"-s",
 			fmt.Sprintf("http://%s:10255/metrics", pod_host_ip),
 		}
-		stdout, stderr, err = f.ExecCommandInContainerWithFullOutput(tDeployment.podName, pods.Items[0].Spec.Containers[0].Name, cmd...)
-		fmt.Printf("stdout %v, stderr %v, err %v\n", stdout, stderr, err)
-		metrics_kubelet_volume_stats = getMetrics(stdout, pvc_ns, pvc_name)
-		if metrics_kubelet_volume_stats != "" {
-			break
-		}
-	}
-	if err != nil {
-		panic(err.Error())
-	} else if metrics_kubelet_volume_stats == "" {
-		panic("kubelet_volume_stats are empty")
-	}
+		metricsStdout, metricsStderr, metricsErr := f.ExecCommandInContainerWithFullOutput(tDeployment.podName, pods.Items[0].Spec.Containers[0].Name, cmd...)
+		fmt.Printf("Metrics: stdout %v, stderr %v, err %v\n", metricsStdout, metricsStderr, metricsErr)
 
-	By("checking volume stats using df ")
-	//df --output=avail,size,itotal,iavail,iused,used --block-size=1 /mnt/test-1 | tail -1 | tr -s ' ' > /metrics.df
-	df_stats := ""
-	for i := 0; i < 10; i++ {
-		fmt.Printf("Retries no %d", i)
-		time.Sleep(10 * time.Second)
-		cmd := []string{
+		// Retrieve stats using df
+		dfCmd := []string{
 			"df",
 			"--output=avail,size,itotal,iavail,iused,used",
 			"--block-size=1",
 			"/mnt/test-1",
 		}
-		stdout, stderr, err = f.ExecCommandInContainerWithFullOutput(tDeployment.podName, pods.Items[0].Spec.Containers[0].Name, cmd...)
-		fmt.Printf("stdout %v, stderr %v, err %v\n", stdout, stderr, err)
-		df_stats = getDf(stdout)
-		if df_stats != "" {
-			break
+		dfStdout, dfStderr, dfErr := f.ExecCommandInContainerWithFullOutput(tDeployment.podName, pods.Items[0].Spec.Containers[0].Name, dfCmd...)
+		fmt.Printf("DfStats stdout %v, stderr %v, err %v\n", dfStdout, dfStderr, dfErr)
+
+		if dfErr != nil || metricsErr != nil {
+			panic("Unable to retrieve the metrics")
 		}
-	}
-	if err != nil {
-		panic(err.Error())
-	} else if df_stats == "" {
-		panic("df_stats are empty")
+
+		// Process the output
+		df_stats = getDf(dfStdout)
+		metrics_kubelet_volume_stats = getMetrics(metricsStdout, pvc_ns, pvc_name)
+
+		fmt.Printf("df_stats %v\n", df_stats)
+		fmt.Printf("metrics_kubelet_volume_stats  %v\n", metrics_kubelet_volume_stats)
+
+		// Check equality
+		if df_stats == metrics_kubelet_volume_stats {
+			return
+		}
+
+		time.Sleep(10 * time.Second)
+
 	}
 
-	fmt.Printf("df_stats %v\n", df_stats)
-	fmt.Printf("metrics_kubelet_volume_stats  %v\n", metrics_kubelet_volume_stats)
-	framework.ExpectEqual(df_stats, metrics_kubelet_volume_stats)
+	panic("Timeout, did not got the same stats")
 
 }

@@ -35,8 +35,9 @@ import (
 )
 
 const (
-	defaultZone = "test-az"
-	expZone     = "us-west-2b"
+	defaultRegion = "test-region"
+	defaultZone   = "test-regiona"
+	expZone       = "us-west-2b"
 )
 
 func TestCreateDisk(t *testing.T) {
@@ -51,11 +52,12 @@ func TestCreateDisk(t *testing.T) {
 		expDescVolumeErr   error
 	}{
 		{
-			name:       "success: normal",
+			name:       "fail: no provided zone",
 			volumeName: "vol-test-name",
 			diskOptions: &DiskOptions{
-				CapacityBytes: util.GiBToBytes(1),
-				Tags:          map[string]string{VolumeNameTagKey: "vol-test"},
+				CapacityBytes:    util.GiBToBytes(1),
+				Tags:             map[string]string{VolumeNameTagKey: "vol-test"},
+				AvailabilityZone: "",
 			},
 			expDisk: &Disk{
 				VolumeID:         "vol-test",
@@ -114,7 +116,7 @@ func TestCreateDisk(t *testing.T) {
 			diskOptions: &DiskOptions{
 				CapacityBytes:    util.GiBToBytes(1),
 				Tags:             map[string]string{VolumeNameTagKey: "vol-test"},
-				AvailabilityZone: "",
+				AvailabilityZone: expZone,
 			},
 			expErr:             fmt.Errorf("could not create volume in OSC: DescribeVolumes generic error"),
 			expCreateVolumeErr: fmt.Errorf("DescribeVolumes generic error"),
@@ -126,7 +128,7 @@ func TestCreateDisk(t *testing.T) {
 			diskOptions: &DiskOptions{
 				CapacityBytes:    util.GiBToBytes(1),
 				Tags:             map[string]string{VolumeNameTagKey: "vol-test"},
-				AvailabilityZone: "",
+				AvailabilityZone: expZone,
 			},
 			expErr: fmt.Errorf("failed to get an available volume in OSC: timed out waiting for the condition"),
 		},
@@ -175,21 +177,13 @@ func TestCreateDisk(t *testing.T) {
 
 			tag := osc.CreateTagsResponse{}
 			ctx := context.Background()
-			if tc.diskOptions.Encrypted == false {
+			if !tc.diskOptions.Encrypted {
 				mockOscInterface.EXPECT().CreateVolume(gomock.Eq(ctx), gomock.Any()).Return(vol, nil, tc.expCreateVolumeErr)
 				mockOscInterface.EXPECT().CreateTags(gomock.Eq(ctx), gomock.Any()).Return(tag, nil, nil).AnyTimes()
 				mockOscInterface.EXPECT().ReadVolumes(gomock.Eq(ctx), gomock.Any()).Return(osc.ReadVolumesResponse{Volumes: []osc.Volume{vol.Volume}}, nil, tc.expDescVolumeErr).AnyTimes()
 				if len(tc.diskOptions.SnapshotID) > 0 {
 					mockOscInterface.EXPECT().ReadSnapshots(gomock.Eq(ctx), gomock.Any()).Return(osc.ReadSnapshotsResponse{Snapshots: []osc.Snapshot{readSnapshot}}, nil, nil).AnyTimes()
 				}
-			}
-
-			if tc.diskOptions.AvailabilityZone == "" {
-				mockOscInterface.EXPECT().ReadSubregions(gomock.Eq(ctx), gomock.Any()).Return(osc.ReadSubregionsResponse{Subregions: []osc.Subregion{
-					{
-						SubregionName: defaultZone,
-					},
-				}}, nil, nil)
 			}
 
 			disk, err := c.CreateDisk(ctx, tc.volumeName, tc.diskOptions)
@@ -869,7 +863,7 @@ func TestListSnapshots(t *testing.T) {
 
 func newCloud(mockOscInterface OscInterface) *cloud {
 	return &cloud{
-		region: "test-region",
+		region: defaultRegion,
 		dm:     dm.NewDeviceManager(),
 		client: mockOscInterface,
 	}

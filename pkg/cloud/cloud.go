@@ -328,12 +328,8 @@ func (c *cloud) CreateDisk(ctx context.Context, volumeName string, diskOptions *
 
 	zone := diskOptions.AvailabilityZone
 	if zone == "" {
-		klog.V(5).Infof("AZ is not provided. Using node AZ [%s]", zone)
-		var err error
-		zone, err = c.randomAvailabilityZone(ctx, c.region)
-		if err != nil {
-			return Disk{}, fmt.Errorf("failed to get availability zone %s", err)
-		}
+		// Create the volume in AZ A by default (See https://docs.outscale.com/en/userguide/Creating-a-Volume.html)
+		zone = fmt.Sprintf("%va", c.region)
 	}
 
 	// NOT SUPPORTED YET BY OSC API
@@ -1282,47 +1278,6 @@ func (c *cloud) checkDesiredSize(ctx context.Context, volumeID string, newSizeGi
 		return int64(oldSizeGiB), nil
 	}
 	return int64(oldSizeGiB), fmt.Errorf("volume %q is still being expanded to %d size", volumeID, newSizeGiB)
-}
-
-// randomAvailabilityZone returns a random zone from the given region
-// the randomness relies on the response of DescribeAvailabilityZones
-func (c *cloud) randomAvailabilityZone(ctx context.Context, region string) (string, error) {
-	klog.Infof("Debug randomAvailabilityZone: %+v\n", region)
-
-	var response osc.ReadSubregionsResponse
-	readSubregionsCallback := func() (bool, error) {
-		var httpRes *_nethttp.Response
-		var err error
-		response, httpRes, err = c.client.ReadSubregions(ctx, nil)
-		klog.Infof("Debug response ReadSubregions: response(%+v), err(%v) httpRes(%v)\n", response, err, httpRes)
-		if err != nil {
-			if httpRes != nil {
-				fmt.Fprintln(os.Stderr, httpRes.Status)
-			}
-			requestStr := fmt.Sprintf("%v", nil)
-			if keepRetryWithError(
-				requestStr,
-				err,
-				[]string{"RequestLimitExceeded"}) {
-				return false, nil
-			}
-			return false, err
-		}
-		return true, nil
-	}
-
-	backoff := util.EnvBackoff()
-	waitErr := wait.ExponentialBackoff(backoff, readSubregionsCallback)
-	if waitErr != nil {
-		return "", waitErr
-	}
-
-	zones := []string{}
-	for _, zone := range response.Subregions {
-		zones = append(zones, zone.SubregionName)
-	}
-
-	return zones[0], nil
 }
 
 // NewCloudWithoutMetadata to instantiate a cloud object outside osc instances

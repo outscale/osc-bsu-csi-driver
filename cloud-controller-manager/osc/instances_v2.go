@@ -120,8 +120,11 @@ func (i *instancesV2) InstanceMetadata(ctx context.Context, node *v1.Node) (*clo
 		ProviderID:    providerID,
 		InstanceType:  oscInstance.GetVmType(),
 		NodeAddresses: nodeAddresses,
+		Zone:          i.availabilityZone,
+		Region:        i.region,
 	}
 
+	klog.Warningf("InstanceMetadata is %+v", metadata)
 	return metadata, nil
 }
 
@@ -192,7 +195,7 @@ func (i *instancesV2) getInstance(ctx context.Context, node *v1.Node) (*osc.Vm, 
 
 // getInstanceProviderID returns the provider ID of an instance which is ultimately set in the node.Spec.ProviderID field.
 // The well-known format for a node's providerID is:
-//    * aws:///<availability-zone>/<instance-id>
+//   - aws:///<availability-zone>/<instance-id>
 func getInstanceProviderIDV2(instance *osc.Vm) (string, error) {
 	if instance.Placement.GetSubregionName() == "" {
 		return "", errors.New("instance availability zone was not set")
@@ -207,9 +210,10 @@ func getInstanceProviderIDV2(instance *osc.Vm) (string, error) {
 }
 
 // parseInstanceIDFromProviderID parses the node's instance ID based on the following formats:
-//   * aws://<availability-zone>/<instance-id>
-//   * aws:///<instance-id>
-//   * <instance-id>
+//   - aws://<availability-zone>/<instance-id>
+//   - aws:///<instance-id>
+//   - <instance-id>
+//
 // This function always assumes a valid providerID format was provided.
 func parseInstanceIDFromProviderIDV2(providerID string) (string, error) {
 	// trim the provider name prefix 'aws://', renaming providerID should contain metadata in one of the following formats:

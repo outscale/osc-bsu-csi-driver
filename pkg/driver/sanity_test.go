@@ -294,8 +294,8 @@ func (c *fakeCloudProvider) ListSnapshots(ctx context.Context, volumeID string, 
 func (c *fakeCloudProvider) ResizeDisk(ctx context.Context, volumeID string, newSize int64) (int64, error) {
 	for volName, f := range c.disks {
 		if f.Disk.VolumeID == volumeID {
-			c.disks[volName].CapacityGiB = newSize
-			return newSize, nil
+			c.disks[volName].CapacityGiB = util.RoundUpGiB(newSize)
+			return util.RoundUpGiB(newSize), nil
 		}
 	}
 	return 0, cloud.ErrNotFound

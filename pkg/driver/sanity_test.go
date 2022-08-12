@@ -76,7 +76,7 @@ func TestSanity(t *testing.T) {
 }
 
 func createDir(targetPath string) (string, error) {
-	if err := os.MkdirAll(targetPath, 0300); err != nil {
+	if err := os.MkdirAll(targetPath, 0700); err != nil {
 		if os.IsNotExist(err) {
 			return "", err
 		}

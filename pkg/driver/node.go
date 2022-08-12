@@ -374,6 +374,14 @@ func (d *nodeService) NodeUnpublishVolume(ctx context.Context, req *csi.NodeUnpu
 		if err != nil {
 			return nil, status.Errorf(codes.Internal, "Could not unmount %q: %v", target, err)
 		}
+
+	}
+
+	// Remove the path
+	if _, err1 := os.Stat(target); !os.IsNotExist(err1) {
+		if err := os.Remove(target); err != nil {
+			return nil, status.Errorf(codes.Internal, "Could not remove folder %q: %v", target, err)
+		}
 	}
 
 	return &csi.NodeUnpublishVolumeResponse{}, nil

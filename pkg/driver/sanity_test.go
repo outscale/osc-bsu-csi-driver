@@ -164,9 +164,6 @@ func (c *fakeCloudProvider) DeleteDisk(ctx context.Context, volumeID string) (bo
 }
 
 func (c *fakeCloudProvider) AttachDisk(ctx context.Context, volumeID, nodeID string) (string, error) {
-	if _, ok := c.pub[volumeID]; ok {
-		return "", cloud.ErrAlreadyExists
-	}
 	c.pub[volumeID] = nodeID
 	return "/tmp", nil
 }

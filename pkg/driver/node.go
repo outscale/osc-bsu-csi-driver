@@ -292,7 +292,7 @@ func (d *nodeService) NodeExpandVolume(ctx context.Context, req *csi.NodeExpandV
 	}
 
 	// TODO: refactor Mounter to expose a mount.SafeFormatAndMount object
-	r := mountutils.NewResizeFs(d.mounter.(*NodeMounter).Exec)
+	r := mountutils.NewResizeFs(d.mounter)
 
 	// TODO: lock per volume ID to have some idempotency
 	if _, err := r.Resize(devicePath, req.GetVolumePath()); err != nil {

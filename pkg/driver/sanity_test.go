@@ -311,32 +311,16 @@ func (c *fakeCloudProvider) GetMetadata() cloud.MetadataService {
 
 type fakeMounter struct {
 	exec.Interface
+	mount.SafeFormatAndMount
 }
 
 func newFakeMounter() *fakeMounter {
+	localMounter := &mount.FakeMounter{MountPoints: []mount.MountPoint{}}
+	localExec := &exectesting.FakeExec{DisableScripts: true}
 	return &fakeMounter{
-		exec.New(),
+		&exectesting.FakeExec{DisableScripts: true},
+		mount.SafeFormatAndMount{Interface: localMounter, Exec: localExec},
 	}
-}
-
-func (f *fakeMounter) Mount(source string, target string, fstype string, options []string) error {
-	return nil
-}
-
-func (f *fakeMounter) Unmount(target string) error {
-	return nil
-}
-
-func (f *fakeMounter) List() ([]mount.MountPoint, error) {
-	return []mount.MountPoint{}, nil
-}
-
-func (f *fakeMounter) IsLikelyNotMountPoint(file string) (bool, error) {
-	return false, nil
-}
-
-func (f *fakeMounter) GetMountRefs(pathname string) ([]string, error) {
-	return []string{}, nil
 }
 
 func (f *fakeMounter) FormatAndMount(source string, target string, fstype string, options []string) error {

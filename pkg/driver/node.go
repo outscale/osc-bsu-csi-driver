@@ -275,6 +275,10 @@ func (d *nodeService) NodeExpandVolume(ctx context.Context, req *csi.NodeExpandV
 		return nil, status.Error(codes.InvalidArgument, "Volume ID not provided")
 	}
 
+	volumePath := req.GetVolumePath()
+	if len(volumePath) == 0 {
+		return nil, status.Errorf(codes.InvalidArgument, "Volume Path not provided")
+	}
 	args := []string{"-o", "source", "--noheadings", "--target", req.GetVolumePath()}
 	output, err := d.mounter.Command("findmnt", args...).Output()
 	if err != nil {

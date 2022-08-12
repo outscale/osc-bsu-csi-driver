@@ -10,11 +10,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kubernetes-csi/csi-test/pkg/sanity"
+	sanity "github.com/kubernetes-csi/csi-test/v4/pkg/sanity"
 	"github.com/outscale-dev/osc-bsu-csi-driver/pkg/cloud"
 	"github.com/outscale-dev/osc-bsu-csi-driver/pkg/driver/internal"
 	"github.com/outscale-dev/osc-bsu-csi-driver/pkg/util"
 	"k8s.io/utils/exec"
+	exectesting "k8s.io/utils/exec/testing"
 	"k8s.io/utils/mount"
 )
 
@@ -30,13 +31,13 @@ func TestSanity(t *testing.T) {
 	stagingPath := filepath.Join(dir, "staging")
 	endpoint := "unix://" + filepath.Join(dir, "csi.sock")
 
-	config := &sanity.Config{
-		TargetPath:       targetPath,
-		StagingPath:      stagingPath,
-		Address:          endpoint,
-		CreateTargetDir:  createDir,
-		CreateStagingDir: createDir,
-	}
+	config := sanity.NewTestConfig()
+	config.Address = endpoint
+	config.TargetPath = targetPath
+	config.StagingPath = stagingPath
+	config.CreateTargetDir = createDir
+	config.CreateStagingDir = createDir
+	config.CheckPath = checkPath
 
 	driverOptions := &DriverOptions{
 		endpoint: endpoint,
@@ -81,6 +82,23 @@ func createDir(targetPath string) (string, error) {
 		}
 	}
 	return targetPath, nil
+}
+
+func checkPath(targetPath string) (sanity.PathKind, error) {
+	stat, err := os.Stat(targetPath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return sanity.PathIsNotFound, nil
+		}
+		return sanity.PathIsNotFound, err
+	}
+
+	if stat.IsDir() {
+		return sanity.PathIsDir, nil
+	}
+
+	return sanity.PathIsFile, nil
+
 }
 
 type fakeCloudProvider struct {

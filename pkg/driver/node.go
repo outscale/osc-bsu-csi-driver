@@ -279,23 +279,26 @@ func (d *nodeService) NodeExpandVolume(ctx context.Context, req *csi.NodeExpandV
 	if len(volumePath) == 0 {
 		return nil, status.Errorf(codes.InvalidArgument, "Volume Path not provided")
 	}
-	args := []string{"-o", "source", "--noheadings", "--target", req.GetVolumePath()}
-	output, err := d.mounter.Command("findmnt", args...).Output()
+
+	deviceName, _, err := d.mounter.GetDeviceName(volumePath)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "Could not determine device path: %v", err)
-
 	}
 
-	devicePath := strings.TrimSpace(string(output))
-	if len(devicePath) == 0 {
-		return nil, status.Errorf(codes.Internal, "Could not get valid device for mount path: %q", req.GetVolumePath())
+	if len(deviceName) == 0 {
+		return nil, status.Errorf(codes.Internal, "Could not get valid device name for mount path: %q", volumePath)
+	}
+
+	devicePath, err := d.findDevicePath(deviceName, volumeID)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "Could not get valid device path for mount path: %q", req.GetVolumePath())
 	}
 
 	// TODO: refactor Mounter to expose a mount.SafeFormatAndMount object
 	r := mountutils.NewResizeFs(d.mounter)
 
 	// TODO: lock per volume ID to have some idempotency
-	if _, err := r.Resize(devicePath, req.GetVolumePath()); err != nil {
+	if _, err := r.Resize(devicePath, volumePath); err != nil {
 		return nil, status.Errorf(codes.Internal, "Could not resize volume %q (%q):  %v", volumeID, devicePath, err)
 	}
 

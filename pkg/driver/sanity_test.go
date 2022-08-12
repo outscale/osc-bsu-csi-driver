@@ -328,7 +328,7 @@ func (f *fakeMounter) FormatAndMount(source string, target string, fstype string
 }
 
 func (f *fakeMounter) GetDeviceName(mountPath string) (string, int, error) {
-	return "", 0, nil
+	return mount.GetDeviceNameFromMount(f.SafeFormatAndMount.Interface, mountPath)
 }
 
 func (f *fakeMounter) MakeFile(pathname string) error {

@@ -286,7 +286,7 @@ func (d *nodeService) NodeExpandVolume(ctx context.Context, req *csi.NodeExpandV
 	}
 
 	if len(deviceName) == 0 {
-		return nil, status.Errorf(codes.Internal, "Could not get valid device name for mount path: %q", volumePath)
+		return nil, status.Errorf(codes.NotFound, "Could not get valid device name for mount path: %q", volumePath)
 	}
 
 	devicePath, err := d.findDevicePath(deviceName, volumeID)

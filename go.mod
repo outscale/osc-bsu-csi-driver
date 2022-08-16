@@ -45,7 +45,7 @@ require (
 	github.com/outscale/osc-sdk-go/v2 v2.9.0
 	golang.org/x/sys v0.0.0-20220318055525-2edf467146b5
 	google.golang.org/grpc v1.47.0
-	google.golang.org/protobuf v1.28.0
+	google.golang.org/protobuf v1.28.1
 	k8s.io/api v0.23.4
 	k8s.io/apimachinery v0.23.4
 	k8s.io/client-go v0.23.4

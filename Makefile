@@ -28,7 +28,7 @@ VERSION ?= $(shell git describe --exact-match 2> /dev/null || \
 LDFLAGS   := "-w -s -X 'github.com/outscale-dev/cloud-provider-osc/cloud-controller-manager/utils.version=$(VERSION)'"
 
 # Full log with  -v -x
-GO_ADD_OPTIONS := -v -x 
+#GO_ADD_OPTIONS := -v -x
 
 IMAGE = "osc/cloud-provider-osc"
 IMAGE_VERSION = "${VERSION}"

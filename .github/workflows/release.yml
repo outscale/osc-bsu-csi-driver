@@ -1,0 +1,21 @@
+name: Release 
+
+on:
+  release:
+    types: [published]
+jobs:
+  push-docker-image:
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Check the repo
+        uses: actions/checkout@v2
+      - name: Docker login
+        run: docker login -u $DOCKER_USER -p $DOCKER_PASSWORD
+        env:
+          DOCKER_USER: ${{secrets.DOCKER_USER}}
+          DOCKER_PASSWORD: ${{secrets.DOCKER_PASSWORD}}
+      - name : push to Docker Hub
+        run: make build-image image-tag image-push
+        env: 
+          TARGET_IMAGE: outscale/osc-ebs-csi-driver
+          REGISTRY_IMAGE: outscale/osc-ebs-csi-driver

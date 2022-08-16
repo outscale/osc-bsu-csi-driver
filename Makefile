@@ -31,15 +31,15 @@ LDFLAGS   := "-w -s -X 'github.com/outscale-dev/cloud-provider-osc/cloud-control
 #GO_ADD_OPTIONS := -v -x
 
 IMAGE = "osc/cloud-provider-osc"
-IMAGE_VERSION = "${VERSION}"
+IMAGE_TAG = "${VERSION}"
 
 export GO111MODULE=on
 #GOPATH=$(PWD)
 
 E2E_ENV_RUN := "e2e-cloud-provider"
 E2E_ENV := "build-e2e-cloud-provider"
-E2E_AZ := "eu-west-2a"
-E2E_REGION := "eu-west-2"
+E2E_AZ ?= "eu-west-2a"
+E2E_REGION ?= "eu-west-2"
 
 TRIVY_IMAGE := aquasec/trivy:0.30.0
 
@@ -84,7 +84,7 @@ test:
 
 .PHONY: build-image
 build-image:
-	docker build --build-arg VERSION=$(VERSION) -t $(IMAGE):$(IMAGE_VERSION) .
+	docker build --build-arg VERSION=$(VERSION) -t $(IMAGE):$(IMAGE_TAG) .
 
 .PHONY: dockerlint
 dockerlint:
@@ -118,4 +118,28 @@ trivy-scan:
 			--ignorefile /root/.trivyignore \
 			--security-checks vuln \
 			--format sarif -o /root/.trivyscan/report.sarif \
-			$(IMAGE):$(IMAGE_VERSION)
+			$(IMAGE):$(IMAGE_TAG)
+
+REGISTRY_IMAGE ?= $(IMAGE)
+REGISTRY_TAG ?= $(IMAGE_TAG)
+image-tag:
+	docker tag $(IMAGE):$(IMAGE_TAG) $(REGISTRY_IMAGE):$(REGISTRY_TAG)
+
+image-push:
+	docker push $(REGISTRY_IMAGE):$(REGISTRY_TAG)
+
+TARGET_IMAGE ?= $(IMAGE)
+TARGET_TAG ?= $(IMAGE_TAG)
+helm_deploy:
+	helm upgrade \
+		--install \
+		--wait \
+		--wait-for-jobs k8s-osc-ccm \
+		--set oscSecretName=osc-secret \
+		--set image.repository=$(TARGET_IMAGE) \
+		--set image.tag=$(TARGET_TAG) \
+		--set image.pullPolicy=Always \
+		deploy/k8s-osc-ccm
+	kubectl rollout restart ds/osc-cloud-controller-manager -n kube-system
+	kubectl rollout status ds/osc-cloud-controller-manager -n kube-system --timeout=30s
+	kubectl taint nodes --all node.cloudprovider.kubernetes.io/uninitialized:NoSchedule

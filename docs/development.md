@@ -51,14 +51,25 @@ kubectl apply -f deploy/secrets.yaml
 
 Install/upgrade your CCM with your "dev" image:
 ```
-helm upgrade --install --wait --wait-for-jobs k8s-osc-ccm deploy/k8s-osc-ccm --set oscSecretName=osc-secret --set image.repository=10.0.1.10:32500/osc/cloud-provider-osc --set image.tag=dev
+helm upgrade --install --wait --wait-for-jobs k8s-osc-ccm deploy/k8s-osc-ccm --set image.pullPolicy="Always" --set oscSecretName=osc-secret --set image.repository=10.0.1.10:32500/osc/cloud-provider-osc --set image.tag=dev
 ```
 
-Note that `10.0.1.10:32500` is provided by `start_port_forwarding.sh` script.
+Note: `10.0.1.10:32500` is provided by `start_port_forwarding.sh` script.
 
 Check that CCM is deployed with:
 ```
 kubectl get pod -n kube-system -l "app=osc-cloud-controller-manager"
+```
+If not re-created, you may want to rollout restart pods:
+```kubectl rollout restart daemonset osc-cloud-controller-manager -n kube-system```
+
+# Force node re-initialization
+
+Once a node is initialized, node controller will not call cloud-controller-manager again to set its labels.
+If you are working on a feature which require to update node labels, you may want to taint your node again:
+
+````bash
+kubectl taint nodes --all node.cloudprovider.kubernetes.io/uninitialized:NoSchedule
 ```
 
 # Testing
@@ -72,6 +83,23 @@ export E2E_REGION="us-east-2" # default is "eu-west-2"
 export E2E_AZ="us-east-2a" # default "eu-west-2a"
 export KC=$(base64 -w 0 path/to/kube_config.yaml)
 make test-e2e
+```
+
+# Quick build-push-deploy-test
+
+Once your [secrets.yml](../deploy/secrets.example.yml) deployed and you registry available (e.g. `./start_port_forwarding.sh`),
+you can speed up all the previous steps by running this all-in-one command:
+
+```bash
+OSC_ACCESS_KEY=YourSecretAccessKeyId \
+OSC_SECRET_KEY=YourSecretAccessKey \
+KC=$(base64 -w 0 path/to/kube_config.yaml) \
+E2E_REGION="us-east-2" \
+E2E_AZ="us-east-2a" \
+VERSION=dev \
+REGISTRY_IMAGE=localhost:4242/osc/cloud-provider-osc \
+TARGET_IMAGE=10.0.1.10:32500/osc/cloud-provider-osc \
+make build-image image-tag image-push helm_deploy test-e2e
 ```
 
 # Release

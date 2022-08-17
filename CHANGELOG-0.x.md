@@ -1,3 +1,11 @@
+# v0.1.0
+> **_NOTE:_** In case no topology is provided by the CO (not the case for Kubernetes > v1.17), the volume will be created in the AZ A.
+## Notable changes
+* Image is now based on Alpine 
+* Add http-endpoint on side-cars ([#190](https://github.com/outscale-dev/osc-bsu-csi-driver/pull/190))
+* Migration to Outscale SDK v2
+* Upgrade sanity test framework to check v1.5.0 CSI spec compliance ([#290](https://github.com/outscale-dev/osc-bsu-csi-driver/issues/284)) 
+* We can disable meta-data server access on controller pod by providing cluster's region during deployment
 # v0.0.15
 > **_NOTE:_** In the future major version, the default FsType will change from EXT4 to XFS. You can start using it by changing the `defaultFsType` in the helm chart
 ## Notable changes

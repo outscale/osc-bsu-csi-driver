@@ -142,4 +142,4 @@ helm_deploy:
 		deploy/k8s-osc-ccm
 	kubectl rollout restart ds/osc-cloud-controller-manager -n kube-system
 	kubectl rollout status ds/osc-cloud-controller-manager -n kube-system --timeout=30s
-	kubectl taint nodes --all node.cloudprovider.kubernetes.io/uninitialized:NoSchedule
+	kubectl taint nodes --all node.cloudprovider.kubernetes.io/uninitialized=true:NoSchedule

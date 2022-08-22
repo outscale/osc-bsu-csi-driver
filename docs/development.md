@@ -61,15 +61,17 @@ Check that CCM is deployed with:
 kubectl get pod -n kube-system -l "app=osc-cloud-controller-manager"
 ```
 If not re-created, you may want to rollout restart pods:
-```kubectl rollout restart daemonset osc-cloud-controller-manager -n kube-system```
+```
+kubectl rollout restart daemonset osc-cloud-controller-manager -n kube-system
+```
 
 # Force node re-initialization
 
 Once a node is initialized, node controller will not call cloud-controller-manager again to set its labels.
 If you are working on a feature which require to update node labels, you may want to taint your node again:
 
-````bash
-kubectl taint nodes --all node.cloudprovider.kubernetes.io/uninitialized:NoSchedule
+```bash
+kubectl taint nodes --all node.cloudprovider.kubernetes.io/uninitialized=true:NoSchedule
 ```
 
 # Testing

@@ -64,19 +64,19 @@ jobs:
         rke_version: "v1.3.12"
         kubernetes_version: "v1.23.7-rancher1-1"
         bastion_vm_type: "tinav5.c4r8p1"
-        bastion_volume_type: "io1"
+        bastion_volume_type: "gp2"
         bastion_volume_size: 30
-        bastion_iops: 1500
+        #bastion_iops: 1500
         control_plane_vm_type: "tinav5.c4r8p1"
         control_plane_count: 1
-        control_plane_volume_type: "io1"
+        control_plane_volume_type: "gp2"
         control_plane_volume_size: 30
-        control_plane_iops: 1500
+        #control_plane_iops: 1500
         worker_vm_type: "tinav5.c4r8p1"
         worker_count: 1
-        worker_volume_type: "io1"
+        worker_volume_type: "gp2"
         worker_volume_size: 30
-        worker_iops: 1500
+        #worker_iops: 1500
     - name: Wait to access the cluster
       uses: nick-invision/retry@v2
       with:

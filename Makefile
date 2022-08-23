@@ -23,8 +23,7 @@ E2E_REGION := "eu-west-2"
 
 PKG := github.com/outscale-dev/osc-bsu-csi-driver
 IMAGE := osc/osc-ebs-csi-driver
-IMAGE_TAG ?= $(shell git describe --exact-match 2> /dev/null || \
-                 git describe --match=$(git rev-parse --short=8 HEAD) --always --dirty --abbrev=8)
+IMAGE_TAG ?= $(shell git describe --tags --always --dirty)
 VERSION ?= ${IMAGE_TAG}
 GIT_COMMIT ?= $(shell git rev-parse HEAD)
 BUILD_DATE ?= $(shell date -u +"%Y-%m-%dT%H:%M:%SZ")

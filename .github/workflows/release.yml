@@ -9,6 +9,8 @@ jobs:
     steps:
       - name: Check the repo
         uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
       - name: Docker login
         run: docker login -u $DOCKER_USER -p $DOCKER_PASSWORD
         env:

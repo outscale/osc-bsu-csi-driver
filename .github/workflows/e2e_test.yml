@@ -4,6 +4,7 @@ on:
   pull_request_target:
     branches:
       - OSC-MIGRATION
+      - master
     paths:
       - "**.go"
       - "Dockerfile"
@@ -13,7 +14,7 @@ on:
       - "osc-bsu-csi-driver/**.yaml"
       - ".github/workflows/e2e_test.yml"
   push:
-    branches: [ OSC-MIGRATION ]
+    branches: [ OSC-MIGRATION, master ]
     paths:
       - "**.go"
       - "Dockerfile"

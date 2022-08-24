@@ -4,7 +4,7 @@ on:
   pull_request:
     branches:
     - OSC-MIGRATION
-    - labels-migration
+    - master
 
 jobs:
   cred-scan:

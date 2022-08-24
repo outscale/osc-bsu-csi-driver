@@ -72,12 +72,12 @@ jobs:
       working-directory: set-up-rke-cluster
     - name: Push the Docker image
       run: |
-        make build-image
-        docker tag osc/osc-ebs-csi-driver:$IMAGE_TAG localhost:4242/osc/osc-ebs-csi-driver:$IMAGE_TAG
-        docker push localhost:4242/osc/osc-ebs-csi-driver:$IMAGE_TAG
+        make build-image image-tag image-push
         docker image prune -a -f
       env:
+        REGISTRY_IMAGE: localhost:4242/csi
         IMAGE_TAG: ${{ github.sha }}
+        REGISTRY_TAG: ${{ github.sha }}
     - name: Retrieve NodePort Ip and NodePort
       run: |
         echo nodeport_port=$(kubectl get --namespace default -o jsonpath="{.spec.ports[0].nodePort}" services docker-registry) >> $GITHUB_ENV
@@ -92,7 +92,7 @@ jobs:
         kubectl apply -f https://raw.githubusercontent.com/kubernetes-csi/external-snapshotter/release-5.0/client/config/crd/snapshot.storage.k8s.io_volumesnapshots.yaml
         kubectl apply -f https://raw.githubusercontent.com/kubernetes-csi/external-snapshotter/release-5.0/deploy/kubernetes/snapshot-controller/rbac-snapshot-controller.yaml
         kubectl apply -f https://raw.githubusercontent.com/kubernetes-csi/external-snapshotter/release-5.0/deploy/kubernetes/snapshot-controller/setup-snapshot-controller.yaml
-        helm install --wait --wait-for-jobs osc-bsu-csi-driver ./osc-bsu-csi-driver --namespace kube-system --set enableVolumeScheduling=true --set enableVolumeResizing=true --set enableVolumeSnapshot=true --set region=$OSC_REGION --set image.repository=${nodeport_ip}:${nodeport_port}/osc/osc-ebs-csi-driver --set image.tag=$IMAGE_TAG
+        TARGET_IMAGE=${nodeport_ip}:${nodeport_port}/csi TARGET_TAG=$IMAGE_TAG make helm_deploy 
       env:
         KUBECONFIG: set-up-rke-cluster/rke/kube_config_cluster.yml
         OSC_REGION: ${{ secrets.OSC_REGION}}

@@ -4,6 +4,7 @@ on:
   pull_request:
     branches:
       - OSC-MIGRATION
+      - master
     paths:
       - "**.go"
       - "Dockerfile"
@@ -13,7 +14,7 @@ on:
       - ".github/workflows/build.yml"
       - "!tests/**"
   push:
-    branches: [ OSC-MIGRATION ]
+    branches: [ OSC-MIGRATION, master ]
     paths:
       - "**.go"
       - "Dockerfile"

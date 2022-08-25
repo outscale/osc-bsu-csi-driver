@@ -1,6 +1,8 @@
 
 # Outscale Block Storage Unit (BSU) CSI driver
 
+> **_NOTE:_** We are currently maintaining two versions of the plugin: v1.X (`master` branch) and v0.X (`OSC-MIGRATION` branch). If you are using the v0.X, we provide a guide to migrate to the new version [here](#migration-from-v0x-to-v100). The version v0.X will still receive bug and CVE fixes for as long it is used but no more features should be added.
+
 ## Overview
 
 The Outscale Block Storage Unit Container Storage Interface (CSI) Driver provides a [CSI](https://github.com/container-storage-interface/spec/blob/master/spec.md) interface used by Container Orchestrators to manage the lifecycle of 3DS outscale BSU volumes.
@@ -12,6 +14,7 @@ The Outscale Block Storage Unit Container Storage Interface (CSI) Driver provide
 | <= v0.0.14beta | [v1.3.0](https://github.com/container-storage-interface/spec/releases/tag/v1.3.0) | 1.16            | 1.22                    |
 | v0.0.15        | [v1.5.0](https://github.com/container-storage-interface/spec/releases/tag/v1.5.0) | 1.20            | 1.23                    |
 | v0.1.0         | [v1.5.0](https://github.com/container-storage-interface/spec/releases/tag/v1.5.0) | 1.20            | 1.23                    |
+| v1.0.0         | [v1.6.0](https://github.com/container-storage-interface/spec/releases/tag/v1.6.0) | TBD             | TBD                     |
 
 ## Features
 The following CSI gRPC calls are implemented:

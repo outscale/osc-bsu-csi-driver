@@ -1705,10 +1705,15 @@ func (c *Cloud) EnsureLoadBalancerDeleted(ctx context.Context, clusterName strin
 		}
 
 		// De-authorize the load balancer security group from the instances security group
-		err = c.updateInstanceSecurityGroupsForLoadBalancer(lb, nil, loadBalancerSGs)
-		if err != nil {
-			klog.Errorf("Error deregistering load balancer from instance security groups: %q", err)
-			return err
+		// Due to limit	tion of public cloud, we skip the deletion in the public cloud
+		if c.vpcID != "" {
+			err = c.updateInstanceSecurityGroupsForLoadBalancer(lb, nil, loadBalancerSGs)
+			if err != nil {
+				klog.Errorf("Error deregistering load balancer from instance security groups: %q", err)
+				return err
+			}
+		} else {
+			klog.V(2).Info("Ignore deletion of LoadBalancer SG rule in the Node SG in Public cloud")
 		}
 	}
 

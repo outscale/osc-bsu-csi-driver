@@ -22,7 +22,7 @@ E2E_AZ := "eu-west-2a"
 E2E_REGION := "eu-west-2"
 
 PKG := github.com/outscale-dev/osc-bsu-csi-driver
-IMAGE := osc/osc-bsu-csi-driver
+IMAGE := outscale/osc-bsu-csi-driver
 IMAGE_TAG ?= $(shell git describe --tags --always --dirty)
 VERSION ?= ${IMAGE_TAG}
 GIT_COMMIT ?= $(shell git rev-parse HEAD)

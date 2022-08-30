@@ -20,7 +20,7 @@ E2E_ENV ?= "e2e/osc-bsu-csi-driver:0.0"
 E2E_ENV_RUN ?= "e2e-osc-bsu-csi-driver"
 
 PKG := github.com/outscale-dev/osc-bsu-csi-driver
-IMAGE := osc/osc-ebs-csi-driver
+IMAGE := outscale/osc-ebs-csi-driver
 IMAGE_TAG ?= $(shell git describe --tags --always --dirty)
 VERSION ?= ${IMAGE_TAG}
 GIT_COMMIT ?= $(shell git rev-parse HEAD)

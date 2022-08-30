@@ -144,7 +144,7 @@ spec:
             - /bin/osc-cloud-controller-manager
             - --configure-cloud-routes=false
             - --cloud-provider=osc
-            - -v=10
+            - -v={{ .Values.verbose }}
             - --logtostderr
           env:
             - name: OSC_ACCOUNT_ID

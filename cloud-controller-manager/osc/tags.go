@@ -70,7 +70,7 @@ type resourceTagging struct {
 
 func tagNameKubernetesCluster() string {
 	debugPrintCallerFunctionName()
-	klog.V(10).Infof("tagNameKubernetesCluster()")
+	klog.V(5).Infof("tagNameKubernetesCluster()")
 	val, ok := os.LookupEnv("TAG_NAME_KUBERNETES_CLUSTER")
 	if !ok {
 		return TagNameKubernetesClusterLegacy
@@ -82,7 +82,7 @@ func tagNameKubernetesCluster() string {
 // If duplicate tags are found, returns an error
 func findClusterIDs(tags *[]osc.ResourceTag) (string, string, error) {
 	debugPrintCallerFunctionName()
-	klog.V(10).Infof("findClusterIDs(%v)", tags)
+	klog.V(5).Infof("findClusterIDs(%v)", tags)
 	legacyClusterID := ""
 	newClusterID := ""
 
@@ -110,7 +110,7 @@ func findClusterIDs(tags *[]osc.ResourceTag) (string, string, error) {
 
 func (t *resourceTagging) init(legacyClusterID string, clusterID string) error {
 	debugPrintCallerFunctionName()
-	klog.V(10).Infof("init(%v,%v)", legacyClusterID, clusterID)
+	klog.V(5).Infof("init(%v,%v)", legacyClusterID, clusterID)
 	if legacyClusterID != "" {
 		if clusterID != "" && legacyClusterID != clusterID {
 			return fmt.Errorf("clusterID tags did not match: %q vs %q", clusterID, legacyClusterID)
@@ -135,7 +135,7 @@ func (t *resourceTagging) init(legacyClusterID string, clusterID string) error {
 // If multiple (different) clusterIDs are found, returns an error
 func (t *resourceTagging) initFromTags(tags *[]osc.ResourceTag) error {
 	debugPrintCallerFunctionName()
-	klog.V(10).Infof("initFromTags(%v)", tags)
+	klog.V(5).Infof("initFromTags(%v)", tags)
 	legacyClusterID, newClusterID, err := findClusterIDs(tags)
 	if err != nil {
 		return err
@@ -150,14 +150,14 @@ func (t *resourceTagging) initFromTags(tags *[]osc.ResourceTag) error {
 
 func (t *resourceTagging) clusterTagKey() string {
 	debugPrintCallerFunctionName()
-	klog.V(10).Infof("clusterTagKey()")
+	klog.V(5).Infof("clusterTagKey()")
 	return TagNameKubernetesClusterPrefix + t.ClusterID
 }
 
 // To delete after last call to this function
 func (t *resourceTagging) hasClusterAWSTag(tags []*ec2.Tag) bool {
 	debugPrintCallerFunctionName()
-	klog.V(10).Infof("hasClusterAWSTag(%v)", tags)
+	klog.V(5).Infof("hasClusterAWSTag(%v)", tags)
 	// if the clusterID is not configured -- we consider all instances.
 	if len(t.ClusterID) == 0 {
 		return true
@@ -173,7 +173,7 @@ func (t *resourceTagging) hasClusterAWSTag(tags []*ec2.Tag) bool {
 
 func (t *resourceTagging) hasClusterTag(tags *[]osc.ResourceTag) bool {
 	debugPrintCallerFunctionName()
-	klog.V(10).Infof("hasClusterTag(%v)", tags)
+	klog.V(5).Infof("hasClusterTag(%v)", tags)
 	// if the clusterID is not configured -- we consider all instances.
 	if len(t.ClusterID) == 0 {
 		return true
@@ -192,7 +192,7 @@ func (t *resourceTagging) hasClusterTag(tags *[]osc.ResourceTag) bool {
 // and we add the tags.  If it has a different cluster's tags, that is an error.
 func (t *resourceTagging) readRepairClusterTags(client Compute, resourceID string, lifecycle ResourceLifecycle, additionalTags map[string]string, observedTags *[]osc.ResourceTag) error {
 	debugPrintCallerFunctionName()
-	klog.V(10).Infof("readRepairClusterTags(%v, %v, %v, %v, %v)",
+	klog.V(5).Infof("readRepairClusterTags(%v, %v, %v, %v, %v)",
 		client, resourceID, lifecycle, additionalTags, observedTags)
 	actualTagMap := make(map[string]string)
 	if observedTags == nil {
@@ -234,7 +234,7 @@ func (t *resourceTagging) readRepairClusterTags(client Compute, resourceID strin
 // The error code varies though (depending on what we are tagging), so we simply retry on all errors
 func (t *resourceTagging) createTags(client Compute, resourceID string, lifecycle ResourceLifecycle, additionalTags map[string]string) error {
 	debugPrintCallerFunctionName()
-	klog.V(10).Infof("createTags(%v,%v,%v,%v)", client, resourceID, lifecycle, additionalTags)
+	klog.V(5).Infof("createTags(%v,%v,%v,%v)", client, resourceID, lifecycle, additionalTags)
 
 	tags := t.buildTags(lifecycle, additionalTags)
 
@@ -286,7 +286,7 @@ func (t *resourceTagging) createTags(client Compute, resourceID string, lifecycl
 // This lets us run multiple k8s clusters in a single EC2 AZ
 func (t *resourceTagging) addFilters(filters []*ec2.Filter) []*ec2.Filter {
 	debugPrintCallerFunctionName()
-	klog.V(10).Infof("addFilters(%v)", filters)
+	klog.V(5).Infof("addFilters(%v)", filters)
 	// if there are no clusterID configured - no filtering by special tag names
 	// should be applied to revert to legacy behaviour.
 	if len(t.ClusterID) == 0 {
@@ -309,7 +309,7 @@ func (t *resourceTagging) addFilters(filters []*ec2.Filter) []*ec2.Filter {
 // This lets us run multiple k8s clusters in a single EC2 AZ
 func (t *resourceTagging) addLegacyFilters(filters []*ec2.Filter) []*ec2.Filter {
 	debugPrintCallerFunctionName()
-	klog.V(10).Infof("addLegacyFilters(%v)", filters)
+	klog.V(5).Infof("addLegacyFilters(%v)", filters)
 	// if there are no clusterID configured - no filtering by special tag names
 	// should be applied to revert to legacy behaviour.
 	if len(t.ClusterID) == 0 {
@@ -331,7 +331,7 @@ func (t *resourceTagging) addLegacyFilters(filters []*ec2.Filter) []*ec2.Filter 
 
 func (t *resourceTagging) buildTags(lifecycle ResourceLifecycle, additionalTags map[string]string) map[string]string {
 	debugPrintCallerFunctionName()
-	klog.V(10).Infof("buildTags(%v,%v)", lifecycle, additionalTags)
+	klog.V(5).Infof("buildTags(%v,%v)", lifecycle, additionalTags)
 	tags := make(map[string]string)
 	for k, v := range additionalTags {
 		tags[k] = v
@@ -354,6 +354,6 @@ func (t *resourceTagging) buildTags(lifecycle ResourceLifecycle, additionalTags 
 
 func (t *resourceTagging) clusterID() string {
 	debugPrintCallerFunctionName()
-	klog.V(10).Infof("clusterID()")
+	klog.V(5).Infof("clusterID()")
 	return t.ClusterID
 }

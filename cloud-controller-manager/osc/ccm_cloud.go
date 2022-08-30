@@ -84,7 +84,7 @@ type Cloud struct {
 // This is called when the AWSCloud is initialized, and should not be called otherwise (because the awsInstance for the local instance is a singleton with drive mapping state)
 func (c *Cloud) buildSelfAWSInstance() (*VM, error) {
 	debugPrintCallerFunctionName()
-	klog.V(10).Infof("buildSelfAWSInstance()")
+	klog.V(5).Infof("buildSelfAWSInstance()")
 	if c.selfAWSInstance != nil {
 		panic("do not call buildSelfAWSInstance directly")
 	}
@@ -112,7 +112,7 @@ func (c *Cloud) buildSelfAWSInstance() (*VM, error) {
 // leverage Kubernetes API for caching
 func (c *Cloud) SetInformers(informerFactory informers.SharedInformerFactory) {
 	debugPrintCallerFunctionName()
-	klog.V(10).Infof("SetInformers(%v)", informerFactory)
+	klog.V(5).Infof("SetInformers(%v)", informerFactory)
 	klog.Infof("Setting up informers for Cloud")
 	c.nodeInformer = informerFactory.Core().V1().Nodes()
 	c.nodeInformerHasSynced = c.nodeInformer.Informer().HasSynced
@@ -121,14 +121,14 @@ func (c *Cloud) SetInformers(informerFactory informers.SharedInformerFactory) {
 // AddSSHKeyToAllInstances is currently not implemented.
 func (c *Cloud) AddSSHKeyToAllInstances(ctx context.Context, user string, keyData []byte) error {
 	debugPrintCallerFunctionName()
-	klog.V(10).Infof("AddSSHKeyToAllInstances(%v,%v)", user, keyData)
+	klog.V(5).Infof("AddSSHKeyToAllInstances(%v,%v)", user, keyData)
 	return cloudprovider.NotImplemented
 }
 
 // CurrentNodeName returns the name of the current node
 func (c *Cloud) CurrentNodeName(ctx context.Context, hostname string) (types.NodeName, error) {
 	debugPrintCallerFunctionName()
-	klog.V(10).Infof("CurrentNodeName(%v)", hostname)
+	klog.V(5).Infof("CurrentNodeName(%v)", hostname)
 	return c.selfAWSInstance.nodeName, nil
 }
 
@@ -136,7 +136,7 @@ func (c *Cloud) CurrentNodeName(ctx context.Context, hostname string) (types.Nod
 func (c *Cloud) Initialize(clientBuilder cloudprovider.ControllerClientBuilder,
 	stop <-chan struct{}) {
 	debugPrintCallerFunctionName()
-	klog.V(10).Infof("Initialize(%v,%v)", clientBuilder, stop)
+	klog.V(5).Infof("Initialize(%v,%v)", clientBuilder, stop)
 	c.clientBuilder = clientBuilder
 	c.kubeClient = clientBuilder.ClientOrDie("aws-cloud-provider")
 	c.eventBroadcaster = record.NewBroadcaster()
@@ -148,28 +148,28 @@ func (c *Cloud) Initialize(clientBuilder cloudprovider.ControllerClientBuilder,
 // Clusters returns the list of clusters.
 func (c *Cloud) Clusters() (cloudprovider.Clusters, bool) {
 	debugPrintCallerFunctionName()
-	klog.V(10).Infof("Clusters()")
+	klog.V(5).Infof("Clusters()")
 	return nil, false
 }
 
 // ProviderName returns the cloud provider ID.
 func (c *Cloud) ProviderName() string {
 	debugPrintCallerFunctionName()
-	klog.V(10).Infof("ProviderName")
+	klog.V(5).Infof("ProviderName")
 	return ProviderName
 }
 
 // LoadBalancer returns an implementation of LoadBalancer for Amazon Web Services.
 func (c *Cloud) LoadBalancer() (cloudprovider.LoadBalancer, bool) {
 	debugPrintCallerFunctionName()
-	klog.V(10).Infof("LoadBalancer()")
+	klog.V(5).Infof("LoadBalancer()")
 	return c, true
 }
 
 // Instances returns an implementation of Instances for Amazon Web Services.
 func (c *Cloud) Instances() (cloudprovider.Instances, bool) {
 	debugPrintCallerFunctionName()
-	klog.V(10).Infof("Instances()")
+	klog.V(5).Infof("Instances()")
 	return c, true
 }
 
@@ -202,7 +202,7 @@ func (c *Cloud) HasClusterID() bool {
 // NodeAddresses is an implementation of Instances.NodeAddresses.
 func (c *Cloud) NodeAddresses(ctx context.Context, name types.NodeName) ([]v1.NodeAddress, error) {
 	debugPrintCallerFunctionName()
-	klog.V(10).Infof("NodeAddresses(%v)", name)
+	klog.V(5).Infof("NodeAddresses(%v)", name)
 	if c.selfAWSInstance.nodeName == name || len(name) == 0 {
 		addresses := []v1.NodeAddress{}
 
@@ -274,7 +274,7 @@ func (c *Cloud) NodeAddresses(ctx context.Context, name types.NodeName) ([]v1.No
 // and other local methods cannot be used here
 func (c *Cloud) NodeAddressesByProviderID(ctx context.Context, providerID string) ([]v1.NodeAddress, error) {
 	debugPrintCallerFunctionName()
-	klog.V(10).Infof("NodeAddressesByProviderID(%v)", providerID)
+	klog.V(5).Infof("NodeAddressesByProviderID(%v)", providerID)
 	instanceID, err := KubernetesInstanceID(providerID).MapToAWSInstanceID()
 	if err != nil {
 		return nil, err
@@ -292,7 +292,7 @@ func (c *Cloud) NodeAddressesByProviderID(ctx context.Context, providerID string
 // If false is returned with no error, the instance will be immediately deleted by the cloud controller manager.
 func (c *Cloud) InstanceExistsByProviderID(ctx context.Context, providerID string) (bool, error) {
 	debugPrintCallerFunctionName()
-	klog.V(10).Infof("InstanceExistsByProviderID(%v)", providerID)
+	klog.V(5).Infof("InstanceExistsByProviderID(%v)", providerID)
 	instanceID, err := KubernetesInstanceID(providerID).MapToAWSInstanceID()
 	if err != nil {
 		return false, err
@@ -327,7 +327,7 @@ func (c *Cloud) InstanceExistsByProviderID(ctx context.Context, providerID strin
 // InstanceShutdownByProviderID returns true if the instance is in safe state to detach volumes
 func (c *Cloud) InstanceShutdownByProviderID(ctx context.Context, providerID string) (bool, error) {
 	debugPrintCallerFunctionName()
-	klog.V(10).Infof("InstanceShutdownByProviderID(%v)", providerID)
+	klog.V(5).Infof("InstanceShutdownByProviderID(%v)", providerID)
 	instanceID, err := KubernetesInstanceID(providerID).MapToAWSInstanceID()
 	if err != nil {
 		return false, err
@@ -366,7 +366,7 @@ func (c *Cloud) InstanceShutdownByProviderID(ctx context.Context, providerID str
 // InstanceID returns the cloud provider ID of the node with the specified nodeName.
 func (c *Cloud) InstanceID(ctx context.Context, nodeName types.NodeName) (string, error) {
 	debugPrintCallerFunctionName()
-	klog.V(10).Infof("InstanceID(%v)", nodeName)
+	klog.V(5).Infof("InstanceID(%v)", nodeName)
 	// In the future it is possible to also return an endpoint as:
 	// <endpoint>/<zone>/<instanceid>
 	if c.selfAWSInstance.nodeName == nodeName {
@@ -388,7 +388,7 @@ func (c *Cloud) InstanceID(ctx context.Context, nodeName types.NodeName) (string
 // and other local methods cannot be used here
 func (c *Cloud) InstanceTypeByProviderID(ctx context.Context, providerID string) (string, error) {
 	debugPrintCallerFunctionName()
-	klog.V(10).Infof("InstanceTypeByProviderID(%v)", providerID)
+	klog.V(5).Infof("InstanceTypeByProviderID(%v)", providerID)
 	instanceID, err := KubernetesInstanceID(providerID).MapToAWSInstanceID()
 	if err != nil {
 		return "", err
@@ -405,7 +405,7 @@ func (c *Cloud) InstanceTypeByProviderID(ctx context.Context, providerID string)
 // InstanceType returns the type of the node with the specified nodeName.
 func (c *Cloud) InstanceType(ctx context.Context, nodeName types.NodeName) (string, error) {
 	debugPrintCallerFunctionName()
-	klog.V(10).Infof("InstanceType(%v)", nodeName)
+	klog.V(5).Infof("InstanceType(%v)", nodeName)
 	if c.selfAWSInstance.nodeName == nodeName {
 		return c.selfAWSInstance.instanceType, nil
 	}
@@ -430,7 +430,7 @@ func (c *Cloud) GetZone(ctx context.Context) (cloudprovider.Zone, error) {
 // does not initialize node data.
 func (c *Cloud) GetZoneByProviderID(ctx context.Context, providerID string) (cloudprovider.Zone, error) {
 	debugPrintCallerFunctionName()
-	klog.V(10).Infof("GetZoneByProviderID(%v)", providerID)
+	klog.V(5).Infof("GetZoneByProviderID(%v)", providerID)
 	instanceID, err := KubernetesInstanceID(providerID).MapToAWSInstanceID()
 	if err != nil {
 		return cloudprovider.Zone{}, err
@@ -453,7 +453,7 @@ func (c *Cloud) GetZoneByProviderID(ctx context.Context, providerID string) (clo
 // does not initialize node data.
 func (c *Cloud) GetZoneByNodeName(ctx context.Context, nodeName types.NodeName) (cloudprovider.Zone, error) {
 	debugPrintCallerFunctionName()
-	klog.V(10).Infof("GetZoneByNodeName(%v)", nodeName)
+	klog.V(5).Infof("GetZoneByNodeName(%v)", nodeName)
 	instance, err := c.getInstanceByNodeName(nodeName)
 	if err != nil {
 		return cloudprovider.Zone{}, err
@@ -470,7 +470,7 @@ func (c *Cloud) GetZoneByNodeName(ctx context.Context, nodeName types.NodeName) 
 // Retrieves instance's vpc id from metadata
 func (c *Cloud) findVPCID() (string, error) {
 	debugPrintCallerFunctionName()
-	klog.V(10).Infof("findVPCID()")
+	klog.V(5).Infof("findVPCID()")
 	macs, err := c.metadata.GetMetadata("network/interfaces/macs/")
 	if err != nil {
 		return "", fmt.Errorf("could not list interfaces of the instance: %q", err)
@@ -495,7 +495,7 @@ func (c *Cloud) findVPCID() (string, error) {
 
 func (c *Cloud) addLoadBalancerTags(loadBalancerName string, requested map[string]string) error {
 	debugPrintCallerFunctionName()
-	klog.V(10).Infof("addLoadBalancerTags(%v,%v)", loadBalancerName, requested)
+	klog.V(5).Infof("addLoadBalancerTags(%v,%v)", loadBalancerName, requested)
 	var tags []*elb.Tag
 	for k, v := range requested {
 		tag := &elb.Tag{
@@ -519,7 +519,7 @@ func (c *Cloud) addLoadBalancerTags(loadBalancerName string, requested map[strin
 // Gets the current load balancer state
 func (c *Cloud) describeLoadBalancer(name string) (*elb.LoadBalancerDescription, error) {
 	debugPrintCallerFunctionName()
-	klog.V(10).Infof("describeLoadBalancer(%v)", name)
+	klog.V(5).Infof("describeLoadBalancer(%v)", name)
 	request := &elb.DescribeLoadBalancersInput{}
 	request.LoadBalancerNames = []*string{&name}
 
@@ -546,7 +546,7 @@ func (c *Cloud) describeLoadBalancer(name string) (*elb.LoadBalancerDescription,
 // Retrieves the specified security group from the AWS API, or returns nil if not found
 func (c *Cloud) findSecurityGroup(securityGroupID string) (*osc.SecurityGroup, error) {
 	debugPrintCallerFunctionName()
-	klog.V(10).Infof("findSecurityGroup(%v)", securityGroupID)
+	klog.V(5).Infof("findSecurityGroup(%v)", securityGroupID)
 	readSecurityGroupsRequest := osc.ReadSecurityGroupsRequest{
 		Filters: &osc.FiltersSecurityGroup{
 			SecurityGroupIds: &[]string{
@@ -578,7 +578,7 @@ func (c *Cloud) findSecurityGroup(securityGroupID string) (*osc.SecurityGroup, e
 // The security group must already exist
 func (c *Cloud) setSecurityGroupIngress(securityGroupID string, permissions IPRulesSet) (bool, error) {
 	debugPrintCallerFunctionName()
-	klog.V(10).Infof("setSecurityGroupIngress(%v,%v)", securityGroupID, permissions)
+	klog.V(5).Infof("setSecurityGroupIngress(%v,%v)", securityGroupID, permissions)
 	// We do not want to make changes to the Global defined SG
 	if securityGroupID == c.cfg.Global.ElbSecurityGroup {
 		return false, nil
@@ -663,7 +663,7 @@ func (c *Cloud) setSecurityGroupIngress(securityGroupID string, permissions IPRu
 // The security group must already exist
 func (c *Cloud) addSecurityGroupRules(securityGroupID string, addPermissions *[]osc.SecurityGroupRule, isPublicCloud bool) (bool, error) {
 	debugPrintCallerFunctionName()
-	klog.V(10).Infof("addSecurityGroupRules(%v,%v,%v)", securityGroupID, addPermissions, isPublicCloud)
+	klog.V(5).Infof("addSecurityGroupRules(%v,%v,%v)", securityGroupID, addPermissions, isPublicCloud)
 	// We do not want to make changes to the Global defined SG
 	if securityGroupID == c.cfg.Global.ElbSecurityGroup {
 		return false, nil
@@ -743,7 +743,7 @@ func (c *Cloud) addSecurityGroupRules(securityGroupID string, addPermissions *[]
 // If the security group no longer exists, will return (false, nil)
 func (c *Cloud) removeSecurityGroupRules(securityGroupID string, removePermissions *[]osc.SecurityGroupRule, isPublicCloud bool) (bool, error) {
 	debugPrintCallerFunctionName()
-	klog.V(10).Infof("removeSecurityGroupRules(%v,%v)", securityGroupID, removePermissions)
+	klog.V(5).Infof("removeSecurityGroupRules(%v,%v)", securityGroupID, removePermissions)
 	// We do not want to make changes to the Global defined SG
 	if securityGroupID == c.cfg.Global.ElbSecurityGroup {
 		return false, nil
@@ -810,7 +810,7 @@ func (c *Cloud) removeSecurityGroupRules(securityGroupID string, removePermissio
 // Returns the security group id or error
 func (c *Cloud) ensureSecurityGroup(name string, description string, additionalTags map[string]string) (string, error) {
 	debugPrintCallerFunctionName()
-	klog.V(10).Infof("ensureSecurityGroup (%v,%v,%v)", name, description, additionalTags)
+	klog.V(5).Infof("ensureSecurityGroup (%v,%v,%v)", name, description, additionalTags)
 
 	groupID := ""
 	attempt := 0
@@ -895,7 +895,7 @@ func (c *Cloud) ensureSecurityGroup(name string, description string, additionalT
 // However, in future this will likely be treated as an error.
 func (c *Cloud) findSubnets() ([]*osc.Subnet, error) {
 	debugPrintCallerFunctionName()
-	klog.V(10).Infof("findSubnets()")
+	klog.V(5).Infof("findSubnets()")
 	request := osc.ReadSubnetsRequest{}
 	if c.vpcID != "" {
 		request.SetFilters(osc.FiltersSubnet{
@@ -954,7 +954,7 @@ func (c *Cloud) findSubnets() ([]*osc.Subnet, error) {
 // Internal ELBs can use public or private subnets, but if we have a private subnet we should prefer that.
 func (c *Cloud) findELBSubnets(internalELB bool) ([]string, error) {
 	debugPrintCallerFunctionName()
-	klog.V(10).Infof("findELBSubnets(%v)", internalELB)
+	klog.V(5).Infof("findELBSubnets(%v)", internalELB)
 
 	subnets, err := c.findSubnets()
 	if err != nil {
@@ -1054,7 +1054,7 @@ func (c *Cloud) findELBSubnets(internalELB bool) ([]string, error) {
 // setting the security groups specified.
 func (c *Cloud) buildELBSecurityGroupList(serviceName types.NamespacedName, loadBalancerName string, annotations map[string]string) ([]string, error) {
 	debugPrintCallerFunctionName()
-	klog.V(10).Infof("buildELBSecurityGroupList(%v,%v,%v)", serviceName, loadBalancerName, annotations)
+	klog.V(5).Infof("buildELBSecurityGroupList(%v,%v,%v)", serviceName, loadBalancerName, annotations)
 	var err error
 	var securityGroupID string
 
@@ -1099,8 +1099,8 @@ func (c *Cloud) buildELBSecurityGroupList(serviceName types.NamespacedName, load
 func (c *Cloud) EnsureLoadBalancer(ctx context.Context, clusterName string, apiService *v1.Service,
 	nodes []*v1.Node) (*v1.LoadBalancerStatus, error) {
 	debugPrintCallerFunctionName()
-	klog.V(10).Infof("EnsureLoadBalancer(%v, %v, %v)", clusterName, apiService, nodes)
-	klog.V(10).Infof("EnsureLoadBalancer.annotations(%v)", apiService.Annotations)
+	klog.V(5).Infof("EnsureLoadBalancer(%v, %v, %v)", clusterName, apiService, nodes)
+	klog.V(5).Infof("EnsureLoadBalancer.annotations(%v)", apiService.Annotations)
 	annotations := apiService.Annotations
 	if apiService.Spec.SessionAffinity != v1.ServiceAffinityNone {
 		// ELB supports sticky sessions, but only when configured for HTTP/HTTPS
@@ -1137,13 +1137,13 @@ func (c *Cloud) EnsureLoadBalancer(ctx context.Context, clusterName string, apiS
 	}
 
 	instances, err := c.findInstancesForELB(nodes)
-	klog.V(10).Infof("Debug OSC: c.findInstancesForELB(nodes) : %v", instances)
+	klog.V(5).Infof("Debug OSC: c.findInstancesForELB(nodes) : %v", instances)
 	if err != nil {
 		return nil, err
 	}
 
 	sourceRanges, err := servicehelpers.GetLoadBalancerSourceRanges(apiService)
-	klog.V(10).Infof("Debug OSC:  servicehelpers.GetLoadBalancerSourceRanges : %v", sourceRanges)
+	klog.V(5).Infof("Debug OSC:  servicehelpers.GetLoadBalancerSourceRanges : %v", sourceRanges)
 	if err != nil {
 		return nil, err
 	}
@@ -1156,7 +1156,7 @@ func (c *Cloud) EnsureLoadBalancer(ctx context.Context, clusterName string, apiS
 	} else if internalAnnotation != "" {
 		internalELB = true
 	}
-	klog.V(10).Infof("Debug OSC:  internalELB : %v", internalELB)
+	klog.V(5).Infof("Debug OSC:  internalELB : %v", internalELB)
 
 	// Determine if we need to set the Proxy protocol policy
 	proxyProtocol := false
@@ -1215,7 +1215,7 @@ func (c *Cloud) EnsureLoadBalancer(ctx context.Context, clusterName string, apiS
 		if accessLogS3BucketPrefixAnnotation != "" {
 			loadBalancerAttributes.AccessLog.S3BucketPrefix = &accessLogS3BucketPrefixAnnotation
 		}
-		klog.V(10).Infof("Debug OSC:  loadBalancerAttributes.AccessLog : %v", loadBalancerAttributes.AccessLog)
+		klog.V(5).Infof("Debug OSC:  loadBalancerAttributes.AccessLog : %v", loadBalancerAttributes.AccessLog)
 	}
 
 	// Determine if connection draining enabled/disabled has been specified
@@ -1274,9 +1274,9 @@ func (c *Cloud) EnsureLoadBalancer(ctx context.Context, clusterName string, apiS
 	loadBalancerName := c.GetLoadBalancerName(ctx, clusterName, apiService)
 	serviceName := types.NamespacedName{Namespace: apiService.Namespace, Name: apiService.Name}
 
-	klog.V(10).Infof("Debug OSC:  loadBalancerName : %v", loadBalancerName)
-	klog.V(10).Infof("Debug OSC:  serviceName : %v", serviceName)
-	klog.V(10).Infof("Debug OSC:  serviceName : %v", annotations)
+	klog.V(5).Infof("Debug OSC:  loadBalancerName : %v", loadBalancerName)
+	klog.V(5).Infof("Debug OSC:  serviceName : %v", serviceName)
+	klog.V(5).Infof("Debug OSC:  serviceName : %v", annotations)
 
 	var securityGroupIDs []string
 
@@ -1286,7 +1286,7 @@ func (c *Cloud) EnsureLoadBalancer(ctx context.Context, clusterName string, apiS
 		securityGroupIDs, err = c.buildELBSecurityGroupList(serviceName, loadBalancerName, annotations)
 	}
 
-	klog.V(10).Infof("Debug OSC:  ensured securityGroupIDs : %v", securityGroupIDs)
+	klog.V(5).Infof("Debug OSC:  ensured securityGroupIDs : %v", securityGroupIDs)
 
 	if err != nil {
 		return nil, err
@@ -1418,7 +1418,7 @@ func (c *Cloud) EnsureLoadBalancer(ctx context.Context, clusterName string, apiS
 // GetLoadBalancer is an implementation of LoadBalancer.GetLoadBalancer
 func (c *Cloud) GetLoadBalancer(ctx context.Context, clusterName string, service *v1.Service) (*v1.LoadBalancerStatus, bool, error) {
 	debugPrintCallerFunctionName()
-	klog.V(10).Infof("GetLoadBalancer(%v,%v)", clusterName, service)
+	klog.V(5).Infof("GetLoadBalancer(%v,%v)", clusterName, service)
 	loadBalancerName := c.GetLoadBalancerName(ctx, clusterName, service)
 
 	lb, err := c.describeLoadBalancer(loadBalancerName)
@@ -1437,7 +1437,7 @@ func (c *Cloud) GetLoadBalancer(ctx context.Context, clusterName string, service
 // GetLoadBalancerName is an implementation of LoadBalancer.GetLoadBalancerName
 func (c *Cloud) GetLoadBalancerName(ctx context.Context, clusterName string, service *v1.Service) string {
 	debugPrintCallerFunctionName()
-	klog.V(10).Infof("GetLoadBalancerName(%v,%v)", clusterName, service)
+	klog.V(5).Infof("GetLoadBalancerName(%v,%v)", clusterName, service)
 
 	//The unique name of the load balancer (32 alphanumeric or hyphen characters maximum, but cannot start or end with a hyphen).
 	ret := strings.Replace(string(service.UID), "-", "", -1)
@@ -1470,7 +1470,7 @@ func (c *Cloud) GetLoadBalancerName(ctx context.Context, clusterName string, ser
 // Return all the security groups that are tagged as being part of our cluster
 func (c *Cloud) getTaggedSecurityGroups() (map[string]osc.SecurityGroup, error) {
 	debugPrintCallerFunctionName()
-	klog.V(10).Infof("getTaggedSecurityGroups()")
+	klog.V(5).Infof("getTaggedSecurityGroups()")
 	request := osc.ReadSecurityGroupsRequest{
 		Filters: &osc.FiltersSecurityGroup{
 			TagKeys: &[]string{c.tagging.clusterTagKey()},
@@ -1505,7 +1505,7 @@ func (c *Cloud) updateInstanceSecurityGroupsForLoadBalancer(lb *elb.LoadBalancer
 	instances map[InstanceID]*osc.Vm,
 	securityGroupIDs []string) error {
 	debugPrintCallerFunctionName()
-	klog.V(10).Infof("updateInstanceSecurityGroupsForLoadBalancer(%v, %v, %v)", lb, instances, securityGroupIDs)
+	klog.V(5).Infof("updateInstanceSecurityGroupsForLoadBalancer(%v, %v, %v)", lb, instances, securityGroupIDs)
 
 	if c.cfg.Global.DisableSecurityGroupIngress {
 		return nil
@@ -1537,7 +1537,7 @@ func (c *Cloud) updateInstanceSecurityGroupsForLoadBalancer(lb *elb.LoadBalancer
 		return fmt.Errorf("could not determine security group for load balancer: %s", aws.StringValue(lb.LoadBalancerName))
 	}
 
-	klog.V(10).Infof("loadBalancerSecurityGroupID(%v)", loadBalancerSecurityGroupID)
+	klog.V(5).Infof("loadBalancerSecurityGroupID(%v)", loadBalancerSecurityGroupID)
 
 	// Get the actual list of groups that allow ingress from the load-balancer
 	var actualGroups []osc.SecurityGroup
@@ -1563,13 +1563,13 @@ func (c *Cloud) updateInstanceSecurityGroupsForLoadBalancer(lb *elb.LoadBalancer
 		}
 	}
 
-	klog.V(10).Infof("actualGroups(%v)", actualGroups)
+	klog.V(5).Infof("actualGroups(%v)", actualGroups)
 
 	taggedSecurityGroups, err := c.getTaggedSecurityGroups()
 	if err != nil {
 		return fmt.Errorf("error querying for tagged security groups: %q", err)
 	}
-	klog.V(10).Infof("taggedSecurityGroups(%v)", taggedSecurityGroups)
+	klog.V(5).Infof("taggedSecurityGroups(%v)", taggedSecurityGroups)
 
 	// Open the firewall from the load balancer to the instance
 	// We don't actually have a trivial way to know in advance which security group the instance is in
@@ -1599,7 +1599,7 @@ func (c *Cloud) updateInstanceSecurityGroupsForLoadBalancer(lb *elb.LoadBalancer
 		instanceSecurityGroupIds[id] = true
 	}
 
-	klog.V(10).Infof("instanceSecurityGroupIds(%v)", instanceSecurityGroupIds)
+	klog.V(5).Infof("instanceSecurityGroupIds(%v)", instanceSecurityGroupIds)
 
 	// Compare to actual groups
 	for _, actualGroup := range actualGroups {
@@ -1619,7 +1619,7 @@ func (c *Cloud) updateInstanceSecurityGroupsForLoadBalancer(lb *elb.LoadBalancer
 		}
 	}
 
-	klog.V(10).Infof("instanceSecurityGroupIds(%v)", instanceSecurityGroupIds)
+	klog.V(5).Infof("instanceSecurityGroupIds(%v)", instanceSecurityGroupIds)
 	for instanceSecurityGroupID, add := range instanceSecurityGroupIds {
 		if add {
 			klog.V(2).Infof("Adding rule for traffic from the load balancer (%s) to instances (%s)", loadBalancerSecurityGroupID, instanceSecurityGroupID)
@@ -1672,7 +1672,7 @@ func (c *Cloud) updateInstanceSecurityGroupsForLoadBalancer(lb *elb.LoadBalancer
 // EnsureLoadBalancerDeleted implements LoadBalancer.EnsureLoadBalancerDeleted.
 func (c *Cloud) EnsureLoadBalancerDeleted(ctx context.Context, clusterName string, service *v1.Service) error {
 	debugPrintCallerFunctionName()
-	klog.V(10).Infof("EnsureLoadBalancerDeleted(%v, %v)", clusterName, service)
+	klog.V(5).Infof("EnsureLoadBalancerDeleted(%v, %v)", clusterName, service)
 	loadBalancerName := c.GetLoadBalancerName(ctx, clusterName, service)
 
 	lb, err := c.describeLoadBalancer(loadBalancerName)
@@ -1811,7 +1811,7 @@ func (c *Cloud) EnsureLoadBalancerDeleted(ctx context.Context, clusterName strin
 // UpdateLoadBalancer implements LoadBalancer.UpdateLoadBalancer
 func (c *Cloud) UpdateLoadBalancer(ctx context.Context, clusterName string, service *v1.Service, nodes []*v1.Node) error {
 	debugPrintCallerFunctionName()
-	klog.V(10).Infof("UpdateLoadBalancer(%v, %v, %s)", clusterName, service, nodes)
+	klog.V(5).Infof("UpdateLoadBalancer(%v, %v, %s)", clusterName, service, nodes)
 	instances, err := c.findInstancesForELB(nodes)
 	if err != nil {
 		return err
@@ -1863,7 +1863,7 @@ func (c *Cloud) UpdateLoadBalancer(ctx context.Context, clusterName string, serv
 // Returns the instance with the specified ID
 func (c *Cloud) getInstanceByID(instanceID string) (*osc.Vm, error) {
 	debugPrintCallerFunctionName()
-	klog.V(10).Infof("getInstanceByID(%v)", instanceID)
+	klog.V(5).Infof("getInstanceByID(%v)", instanceID)
 	instances, err := c.getInstancesByIDs(&[]string{instanceID})
 	if err != nil {
 		return nil, err
@@ -1881,7 +1881,7 @@ func (c *Cloud) getInstanceByID(instanceID string) (*osc.Vm, error) {
 
 func (c *Cloud) getInstancesByIDs(instanceIDs *[]string) (map[string]*osc.Vm, error) {
 	debugPrintCallerFunctionName()
-	klog.V(10).Infof("getInstancesByIDs(%v)", instanceIDs)
+	klog.V(5).Infof("getInstancesByIDs(%v)", instanceIDs)
 
 	instancesByID := make(map[string]*osc.Vm)
 	if instanceIDs == nil || len(*instanceIDs) == 0 {
@@ -1914,7 +1914,7 @@ func (c *Cloud) getInstancesByIDs(instanceIDs *[]string) (map[string]*osc.Vm, er
 
 func (c *Cloud) getInstancesByNodeNames(nodeNames []string, states ...string) ([]*osc.Vm, error) {
 	debugPrintCallerFunctionName()
-	klog.V(10).Infof("getInstancesByNodeNames(%v, %v)", nodeNames, states)
+	klog.V(5).Infof("getInstancesByNodeNames(%v, %v)", nodeNames, states)
 
 	names := nodeNames
 	oscInstances := []*osc.Vm{}
@@ -1944,7 +1944,7 @@ func (c *Cloud) getInstancesByNodeNames(nodeNames []string, states ...string) ([
 // TODO: Move to instanceCache
 func (c *Cloud) describeInstances(filters *osc.FiltersVm) ([]*osc.Vm, error) {
 	debugPrintCallerFunctionName()
-	klog.V(10).Infof("describeInstances(%v)", filters)
+	klog.V(5).Infof("describeInstances(%v)", filters)
 
 	request := &osc.ReadVmsRequest{
 		Filters: filters,
@@ -1969,7 +1969,7 @@ func (c *Cloud) describeInstances(filters *osc.FiltersVm) ([]*osc.Vm, error) {
 // Returns nil if it does not exist
 func (c *Cloud) findInstanceByNodeName(nodeName types.NodeName) (*osc.Vm, error) {
 	debugPrintCallerFunctionName()
-	klog.V(10).Infof("findInstanceByNodeName(%v)", nodeName)
+	klog.V(5).Infof("findInstanceByNodeName(%v)", nodeName)
 
 	privateDNSName := mapNodeNameToPrivateDNSName(nodeName)
 	filters := osc.FiltersVm{
@@ -2006,7 +2006,7 @@ func (c *Cloud) findInstanceByNodeName(nodeName types.NodeName) (*osc.Vm, error)
 // Like findInstanceByNodeName, but returns error if node not found
 func (c *Cloud) getInstanceByNodeName(nodeName types.NodeName) (*osc.Vm, error) {
 	debugPrintCallerFunctionName()
-	klog.V(10).Infof("getInstanceByNodeName(%v)", nodeName)
+	klog.V(5).Infof("getInstanceByNodeName(%v)", nodeName)
 
 	var instance *osc.Vm
 
@@ -2030,7 +2030,7 @@ func (c *Cloud) getInstanceByNodeName(nodeName types.NodeName) (*osc.Vm, error) 
 
 func (c *Cloud) nodeNameToProviderID(nodeName types.NodeName) (InstanceID, error) {
 	debugPrintCallerFunctionName()
-	klog.V(10).Infof("nodeNameToProviderID(%v)", nodeName)
+	klog.V(5).Infof("nodeNameToProviderID(%v)", nodeName)
 	if len(nodeName) == 0 {
 		return "", fmt.Errorf("no nodeName provided")
 	}

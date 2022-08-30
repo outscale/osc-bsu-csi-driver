@@ -64,7 +64,7 @@ var (
 // it as a map.
 func getLoadBalancerAdditionalTags(annotations map[string]string) map[string]string {
 	debugPrintCallerFunctionName()
-	klog.V(10).Infof("getLoadBalancerAdditionalTags(%v)", annotations)
+	klog.V(5).Infof("getLoadBalancerAdditionalTags(%v)", annotations)
 	additionalTags := make(map[string]string)
 	if additionalTagsList, ok := annotations[ServiceAnnotationLoadBalancerAdditionalTags]; ok {
 		additionalTagsList = strings.TrimSpace(additionalTagsList)
@@ -95,7 +95,7 @@ func (c *Cloud) ensureLoadBalancer(namespacedName types.NamespacedName, loadBala
 	annotations map[string]string) (*elb.LoadBalancerDescription, error) {
 
 	debugPrintCallerFunctionName()
-	klog.V(10).Infof("ensureLoadBalancer(%v,%v,%v,%v,%v,%v,%v,%v,%v,)",
+	klog.V(5).Infof("ensureLoadBalancer(%v,%v,%v,%v,%v,%v,%v,%v,%v,)",
 		namespacedName, loadBalancerName, listeners, subnetIDs, securityGroupIDs,
 		internalELB, proxyProtocol, loadBalancerAttributes, annotations)
 
@@ -350,7 +350,7 @@ func (c *Cloud) ensureLoadBalancer(namespacedName types.NamespacedName, loadBala
 //       listeners per elb is 100, this implementation is reduced from O(m*n) => O(n).
 func syncElbListeners(loadBalancerName string, listeners []*elb.Listener, listenerDescriptions []*elb.ListenerDescription) ([]*elb.Listener, []*int64, []*int64) {
 	debugPrintCallerFunctionName()
-	klog.V(10).Infof("syncElbListeners(%v,%v,%v)", loadBalancerName, listeners, listenerDescriptions)
+	klog.V(5).Infof("syncElbListeners(%v,%v,%v)", loadBalancerName, listeners, listenerDescriptions)
 	foundSet := make(map[int]bool)
 	removals := []*int64{}
 	removalsInstancePorts := []*int64{}
@@ -394,7 +394,7 @@ func syncElbListeners(loadBalancerName string, listeners []*elb.Listener, listen
 
 func elbListenersAreEqual(actual, expected *elb.Listener) bool {
 	debugPrintCallerFunctionName()
-	klog.V(10).Infof("elbListenersAreEqual(%v,%v)", actual, expected)
+	klog.V(5).Infof("elbListenersAreEqual(%v,%v)", actual, expected)
 	if !elbProtocolsAreEqual(actual.Protocol, expected.Protocol) {
 		return false
 	}
@@ -417,7 +417,7 @@ func elbListenersAreEqual(actual, expected *elb.Listener) bool {
 // Comparison is case insensitive
 func elbProtocolsAreEqual(l, r *string) bool {
 	debugPrintCallerFunctionName()
-	klog.V(10).Infof("elbProtocolsAreEqual(%v,%v)", l, r)
+	klog.V(5).Infof("elbProtocolsAreEqual(%v,%v)", l, r)
 	if l == nil || r == nil {
 		return l == r
 	}
@@ -428,7 +428,7 @@ func elbProtocolsAreEqual(l, r *string) bool {
 // Comparison is case insensitive
 func awsArnEquals(l, r *string) bool {
 	debugPrintCallerFunctionName()
-	klog.V(10).Infof("awsArnEquals(%v,%v)", l, r)
+	klog.V(5).Infof("awsArnEquals(%v,%v)", l, r)
 	if l == nil || r == nil {
 		return l == r
 	}
@@ -439,7 +439,7 @@ func awsArnEquals(l, r *string) bool {
 // and using either sensible defaults or overrides via Service annotations
 func (c *Cloud) getExpectedHealthCheck(target string, annotations map[string]string) (*elb.HealthCheck, error) {
 	debugPrintCallerFunctionName()
-	klog.V(10).Infof("getExpectedHealthCheck(%v,%v)", target, annotations)
+	klog.V(5).Infof("getExpectedHealthCheck(%v,%v)", target, annotations)
 	healthcheck := &elb.HealthCheck{Target: &target}
 	getOrDefault := func(annotation string, defaultValue int64) (*int64, error) {
 		i64 := defaultValue
@@ -479,7 +479,7 @@ func (c *Cloud) getExpectedHealthCheck(target string, annotations map[string]str
 func (c *Cloud) ensureLoadBalancerHealthCheck(loadBalancer *elb.LoadBalancerDescription,
 	protocol string, port int32, path string, annotations map[string]string) error {
 	debugPrintCallerFunctionName()
-	klog.V(10).Infof("ensureLoadBalancerHealthCheck(%v,%v, %v, %v, %v)",
+	klog.V(5).Infof("ensureLoadBalancerHealthCheck(%v,%v, %v, %v, %v)",
 		loadBalancer, protocol, port, path, annotations)
 	name := aws.StringValue(loadBalancer.LoadBalancerName)
 
@@ -517,7 +517,7 @@ func (c *Cloud) ensureLoadBalancerInstances(loadBalancerName string,
 	lbInstances []*elb.Instance,
 	instanceIDs map[InstanceID]*osc.Vm) error {
 	debugPrintCallerFunctionName()
-	klog.V(10).Infof("ensureLoadBalancerInstances(%v,%v, %v)", loadBalancerName, lbInstances, instanceIDs)
+	klog.V(5).Infof("ensureLoadBalancerInstances(%v,%v, %v)", loadBalancerName, lbInstances, instanceIDs)
 	expected := sets.NewString()
 	for id := range instanceIDs {
 		expected.Insert(string(id))
@@ -544,7 +544,7 @@ func (c *Cloud) ensureLoadBalancerInstances(loadBalancerName string,
 		removeInstance.InstanceId = aws.String(instanceID)
 		removeInstances = append(removeInstances, removeInstance)
 	}
-	klog.V(10).Infof("ensureLoadBalancerInstances register/Deregister addInstances(%v) , removeInstances(%v)", addInstances, removeInstances)
+	klog.V(5).Infof("ensureLoadBalancerInstances register/Deregister addInstances(%v) , removeInstances(%v)", addInstances, removeInstances)
 
 	if len(addInstances) > 0 {
 		registerRequest := &elb.RegisterInstancesWithLoadBalancerInput{}
@@ -573,7 +573,7 @@ func (c *Cloud) ensureLoadBalancerInstances(loadBalancerName string,
 
 func (c *Cloud) getLoadBalancerTLSPorts(loadBalancer *elb.LoadBalancerDescription) []int64 {
 	debugPrintCallerFunctionName()
-	klog.V(10).Infof("getLoadBalancerTLSPorts(%v)", loadBalancer)
+	klog.V(5).Infof("getLoadBalancerTLSPorts(%v)", loadBalancer)
 	ports := []int64{}
 
 	for _, listenerDescription := range loadBalancer.ListenerDescriptions {
@@ -587,7 +587,7 @@ func (c *Cloud) getLoadBalancerTLSPorts(loadBalancer *elb.LoadBalancerDescriptio
 
 func (c *Cloud) ensureSSLNegotiationPolicy(loadBalancer *elb.LoadBalancerDescription, policyName string) error {
 	debugPrintCallerFunctionName()
-	klog.V(10).Infof("ensureSSLNegotiationPolicy(%v,%v)", loadBalancer, policyName)
+	klog.V(5).Infof("ensureSSLNegotiationPolicy(%v,%v)", loadBalancer, policyName)
 	klog.V(2).Info("Describing load balancer policies on load balancer")
 	result, err := c.loadBalancer.DescribeLoadBalancerPolicies(&elb.DescribeLoadBalancerPoliciesInput{
 		LoadBalancerName: loadBalancer.LoadBalancerName,
@@ -631,7 +631,7 @@ func (c *Cloud) ensureSSLNegotiationPolicy(loadBalancer *elb.LoadBalancerDescrip
 
 func (c *Cloud) setSSLNegotiationPolicy(loadBalancerName, sslPolicyName string, port int64) error {
 	debugPrintCallerFunctionName()
-	klog.V(10).Infof("setSSLNegotiationPolicy(%v,%v,%v)", loadBalancerName, sslPolicyName, port)
+	klog.V(5).Infof("setSSLNegotiationPolicy(%v,%v,%v)", loadBalancerName, sslPolicyName, port)
 	policyName := fmt.Sprintf(SSLNegotiationPolicyNameFormat, sslPolicyName)
 	request := &elb.SetLoadBalancerPoliciesOfListenerInput{
 		LoadBalancerName: aws.String(loadBalancerName),
@@ -650,7 +650,7 @@ func (c *Cloud) setSSLNegotiationPolicy(loadBalancerName, sslPolicyName string, 
 
 func (c *Cloud) createProxyProtocolPolicy(loadBalancerName string, update bool) error {
 	debugPrintCallerFunctionName()
-	klog.V(10).Infof("createProxyProtocolPolicy(%v) updating(%v)",
+	klog.V(5).Infof("createProxyProtocolPolicy(%v) updating(%v)",
 		loadBalancerName, update)
 	request := &elb.CreateLoadBalancerPolicyInput{
 		LoadBalancerName: aws.String(loadBalancerName),
@@ -682,7 +682,7 @@ func (c *Cloud) createProxyProtocolPolicy(loadBalancerName string, update bool) 
 
 func (c *Cloud) setBackendPolicies(loadBalancerName string, instancePort int64, policies []*string) error {
 	debugPrintCallerFunctionName()
-	klog.V(10).Infof("setBackendPolicies(%v,%v,%v)", loadBalancerName, instancePort, policies)
+	klog.V(5).Infof("setBackendPolicies(%v,%v,%v)", loadBalancerName, instancePort, policies)
 	request := &elb.SetLoadBalancerPoliciesForBackendServerInput{
 		InstancePort:     aws.Int64(instancePort),
 		LoadBalancerName: aws.String(loadBalancerName),
@@ -703,7 +703,7 @@ func (c *Cloud) setBackendPolicies(loadBalancerName string, instancePort int64, 
 
 func proxyProtocolEnabled(backend *elb.BackendServerDescription) bool {
 	debugPrintCallerFunctionName()
-	klog.V(10).Infof("proxyProtocolEnabled(%v)", backend)
+	klog.V(5).Infof("proxyProtocolEnabled(%v)", backend)
 	for _, policy := range backend.PolicyNames {
 		if aws.StringValue(policy) == ProxyProtocolPolicyName {
 			return true
@@ -718,7 +718,7 @@ func proxyProtocolEnabled(backend *elb.BackendServerDescription) bool {
 // and we ignore instances which are not found
 func (c *Cloud) findInstancesForELB(nodes []*v1.Node) (map[InstanceID]*osc.Vm, error) {
 	debugPrintCallerFunctionName()
-	klog.V(10).Infof("findInstancesForELB(%v)", nodes)
+	klog.V(5).Infof("findInstancesForELB(%v)", nodes)
 
 	for _, node := range nodes {
 		if node.Spec.ProviderID == "" {

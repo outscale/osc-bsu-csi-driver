@@ -99,7 +99,7 @@ func newEC2MetadataSvc() *ec2metadata.EC2Metadata {
 
 // NewMetadata create a new metadata service
 func NewMetadata() (MetadataService, error) {
-	klog.V(10).Infof("NewMetadata")
+	klog.V(5).Infof("NewMetadata")
 	svc := newEC2MetadataSvc()
 
 	metadata, err := NewMetadataService(svc)
@@ -398,7 +398,7 @@ func ipPermissionAWSExists(newPermission, existing *ec2.IpPermission, compareGro
 	}
 	// Check only if newPermission is a subset of existing. Usually it has zero or one elements.
 	// Not doing actual CIDR math yet; not clear it's needed, either.
-	klog.V(4).Infof("Comparing %v to %v", newPermission, existing)
+	klog.V(5).Infof("Comparing %v to %v", newPermission, existing)
 	if len(newPermission.IpRanges) > len(existing.IpRanges) {
 		return false
 	}
@@ -433,22 +433,22 @@ func ipPermissionAWSExists(newPermission, existing *ec2.IpPermission, compareGro
 }
 
 func ruleExists(newPermission *osc.SecurityGroupRule, existing *osc.SecurityGroupRule, compareGroupUserIDs bool) bool {
-	klog.V(4).Infof("ipPermissionExists(%v,%v,%v)", newPermission, existing, compareGroupUserIDs)
+	klog.V(5).Infof("ipPermissionExists(%v,%v,%v)", newPermission, existing, compareGroupUserIDs)
 	if newPermission.GetFromPortRange() != existing.GetFromPortRange() {
-		klog.V(4).Infof("Not the same FromPortRange %v != %v", newPermission.GetFromPortRange(), existing.GetFromPortRange())
+		klog.V(5).Infof("Not the same FromPortRange %v != %v", newPermission.GetFromPortRange(), existing.GetFromPortRange())
 		return false
 	}
 	if newPermission.GetToPortRange() != existing.GetToPortRange() {
-		klog.V(4).Infof("Not the same ToPortRange %v != %v", newPermission.GetToPortRange(), existing.GetToPortRange())
+		klog.V(5).Infof("Not the same ToPortRange %v != %v", newPermission.GetToPortRange(), existing.GetToPortRange())
 		return false
 	}
 	if newPermission.GetIpProtocol() != existing.GetIpProtocol() {
-		klog.V(4).Infof("Not the same IpProtocol %v != %v", newPermission.GetIpProtocol(), existing.GetIpProtocol())
+		klog.V(5).Infof("Not the same IpProtocol %v != %v", newPermission.GetIpProtocol(), existing.GetIpProtocol())
 		return false
 	}
 	// Check only if newPermission is a subset of existing. Usually it has zero or one elements.
 	// Not doing actual CIDR math yet; not clear it's needed, either.
-	klog.V(4).Infof("Comparing %v to %v", newPermission, existing)
+	klog.V(5).Infof("Comparing %v to %v", newPermission, existing)
 	if len(newPermission.GetIpRanges()) > len(existing.GetIpRanges()) {
 		return false
 	}
@@ -680,7 +680,7 @@ func updateConfigZone(cfg *CloudConfig, metadata EC2Metadata) error {
 
 func newAWSSDKProvider(creds *credentials.Credentials, cfg *CloudConfig) *awsSDKProvider {
 	debugPrintCallerFunctionName()
-	klog.V(10).Infof("newAWSSDKProvider(%v,%v)", creds, cfg)
+	klog.V(5).Infof("newAWSSDKProvider(%v,%v)", creds, cfg)
 	return &awsSDKProvider{
 		creds:          creds,
 		cfg:            cfg,
@@ -716,7 +716,7 @@ func debugGetFrame(skipFrames int) runtime.Frame {
 func debugPrintCallerFunctionName() {
 	called := debugGetFrame(1)
 	caller := debugGetFrame(2)
-	klog.V(10).Infof(
+	klog.V(5).Infof(
 		"DebugStack %s{"+
 			"\n\t call	 {\n\t\tFunc:%s, \n\t\tFile:(%s:%d)\n\t}"+
 			"\n\t called {\n\t\tFunc:%s, \n\t\tFile:(%s:%d)\n\t}"+

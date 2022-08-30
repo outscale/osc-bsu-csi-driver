@@ -50,6 +50,6 @@ type VM struct {
 // Gets the full information about this instance from the EC2 API
 func (i *VM) describeInstance() (*osc.Vm, error) {
 	debugPrintCallerFunctionName()
-	klog.V(10).Infof("describeInstance")
+	klog.V(5).Infof("describeInstance")
 	return describeInstance(i.compute, InstanceID(i.vmID))
 }

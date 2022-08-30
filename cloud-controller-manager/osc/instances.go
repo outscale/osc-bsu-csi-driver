@@ -52,7 +52,7 @@ type KubernetesInstanceID string
 // MapToAWSInstanceID extracts the InstanceID from the KubernetesInstanceID
 func (name KubernetesInstanceID) MapToAWSInstanceID() (InstanceID, error) {
 	debugPrintCallerFunctionName()
-	klog.V(10).Infof("MapToAWSInstanceID(%v)", name)
+	klog.V(5).Infof("MapToAWSInstanceID(%v)", name)
 
 	s := string(name)
 

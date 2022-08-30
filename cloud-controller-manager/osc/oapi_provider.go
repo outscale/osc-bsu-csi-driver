@@ -106,7 +106,7 @@ func (p *awsSDKProvider) addAPILoggingHandlers(h *request.Handlers) {
 // controller retry loop)
 func (p *awsSDKProvider) getCrossRequestRetryDelay(regionName string) *CrossRequestRetryDelay {
 	debugPrintCallerFunctionName()
-	klog.V(10).Infof("getCrossRequestRetryDelay(%v)", regionName)
+	klog.V(5).Infof("getCrossRequestRetryDelay(%v)", regionName)
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
 
@@ -120,7 +120,7 @@ func (p *awsSDKProvider) getCrossRequestRetryDelay(regionName string) *CrossRequ
 
 func (p *awsSDKProvider) Compute(regionName string) (Compute, error) {
 	debugPrintCallerFunctionName()
-	klog.V(10).Infof("Compute(%v)", regionName)
+	klog.V(5).Infof("Compute(%v)", regionName)
 	// osc config
 	config := osc.NewConfiguration()
 	config.Debug = true
@@ -143,7 +143,7 @@ func (p *awsSDKProvider) Compute(regionName string) (Compute, error) {
 
 func (p *awsSDKProvider) LoadBalancing(regionName string) (LoadBalancer, error) {
 	debugPrintCallerFunctionName()
-	klog.V(10).Infof("LoadBalancing(%v)", regionName)
+	klog.V(5).Infof("LoadBalancing(%v)", regionName)
 	sess, err := NewSession(nil)
 	if err != nil {
 		return nil, fmt.Errorf("unable to initialize AWS session: %v", err)
@@ -156,7 +156,7 @@ func (p *awsSDKProvider) LoadBalancing(regionName string) (LoadBalancer, error) 
 
 func (p *awsSDKProvider) Metadata() (EC2Metadata, error) {
 	debugPrintCallerFunctionName()
-	klog.V(10).Infof("Metadata()")
+	klog.V(5).Infof("Metadata()")
 	awsConfig := &aws.Config{
 		EndpointResolver: endpoints.ResolverFunc(SetupMetadataResolver()),
 	}

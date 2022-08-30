@@ -32,7 +32,7 @@ import (
 
 func readCloudConfig(config io.Reader) (*CloudConfig, error) {
 	debugPrintCallerFunctionName()
-	klog.V(10).Infof("readAWSCloudConfig(%v)", config)
+	klog.V(5).Infof("readAWSCloudConfig(%v)", config)
 	var cfg CloudConfig
 	var err error
 
@@ -48,7 +48,7 @@ func readCloudConfig(config io.Reader) (*CloudConfig, error) {
 
 func newCloud(cfg CloudConfig, awsServices Services) (*Cloud, error) {
 	debugPrintCallerFunctionName()
-	klog.V(10).Infof("newAWSCloud(%v, %v)", cfg, awsServices)
+	klog.V(5).Infof("newAWSCloud(%v, %v)", cfg, awsServices)
 	// We have some state in the Cloud object - in particular the attaching map
 	// Log so that if we are building multiple Cloud objects, it is obvious!
 	klog.Infof("Starting OSC cloud provider")
@@ -152,7 +152,7 @@ func newCloud(cfg CloudConfig, awsServices Services) (*Cloud, error) {
 
 func init() {
 	debugPrintCallerFunctionName()
-	klog.V(10).Infof("init()")
+	klog.V(5).Infof("init()")
 	registerMetrics()
 	cloudprovider.RegisterCloudProvider(ProviderName, func(config io.Reader) (cloudprovider.Interface, error) {
 		cfg, err := readCloudConfig(config)

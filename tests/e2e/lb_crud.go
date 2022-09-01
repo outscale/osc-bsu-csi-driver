@@ -19,7 +19,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/outscale-dev/cloud-provider-osc/tests/e2e/utils"
+	e2eutils "github.com/outscale-dev/cloud-provider-osc/tests/e2e/utils"
 
 	elbApi "github.com/aws/aws-sdk-go/service/elb"
 	"github.com/onsi/ginkgo"
@@ -178,4 +178,108 @@ var _ = ginkgo.Describe("[ccm-e2e] SVC-LB", func() {
 		})
 
 	}
+})
+
+// Test to check that the issue 68 is solved
+var _ = ginkgo.Describe("[ccm-e2e] SVC-LB", func() {
+	f := framework.NewDefaultFramework("ccm")
+
+	var (
+		cs clientset.Interface
+	)
+
+	ginkgo.BeforeEach(func() {
+		cs = f.ClientSet
+	})
+
+	title := "Issue #68"
+	cmd := ""
+	annotations := map[string]string{}
+	ginkgo.It(title, func() {
+		nsSvc1, err := f.CreateNamespace("svc1", map[string]string{})
+		framework.ExpectNoError(err)
+		nsSvc2, err := f.CreateNamespace("svc2", map[string]string{})
+		framework.ExpectNoError(err)
+
+		fmt.Printf("Params :  %v / %v / %v\n", title, cmd, annotations)
+
+		ginkgo.By("Create Deployment 1")
+		deployementSvc1 := e2eutils.CreateDeployment(cs, nsSvc1, cmd)
+		defer e2eutils.DeleteDeployment(cs, nsSvc1, deployementSvc1)
+		defer e2eutils.ListDeployment(cs, nsSvc1)
+
+		ginkgo.By("Create Deployment 2")
+		deployementSvc2 := e2eutils.CreateDeployment(cs, nsSvc2, cmd)
+		defer e2eutils.DeleteDeployment(cs, nsSvc1, deployementSvc2)
+		defer e2eutils.ListDeployment(cs, nsSvc1)
+
+		ginkgo.By("checking that pods are running")
+		e2eutils.WaitForDeployementReady(cs, nsSvc1, deployementSvc1)
+		e2eutils.WaitForDeployementReady(cs, nsSvc2, deployementSvc2)
+
+		ginkgo.By("listDeployment")
+		e2eutils.ListDeployment(cs, nsSvc1)
+		e2eutils.ListDeployment(cs, nsSvc2)
+
+		ginkgo.By("Create Svc 1")
+		svc1 := e2eutils.CreateSvc(cs, nsSvc1, annotations)
+		fmt.Printf("Created Service %q.\n", svc1)
+		defer e2eutils.ListSvc(cs, nsSvc1)
+
+		ginkgo.By("Create Svc 2")
+		svc2 := e2eutils.CreateSvc(cs, nsSvc2, annotations)
+		fmt.Printf("Created Service %q.\n", svc2)
+		defer e2eutils.ListSvc(cs, nsSvc2)
+		defer e2eutils.DeleteSvc(cs, nsSvc2, svc2)
+
+		ginkgo.By("checking that svc are ready")
+		e2eutils.WaitForSvc(cs, nsSvc1, svc1)
+		e2eutils.WaitForSvc(cs, nsSvc2, svc2)
+
+		ginkgo.By("Listing svc")
+		e2eutils.ListSvc(cs, nsSvc1)
+		e2eutils.ListSvc(cs, nsSvc2)
+
+		fmt.Printf("Wait to have stable sg")
+		time.Sleep(120 * time.Second)
+
+		ginkgo.By("Get Updated svc")
+		addresses := [2]string{}
+		lbNames := [2]string{}
+		nss := []*v1.Namespace{nsSvc1, nsSvc2}
+		svcs := []*v1.Service{svc1, svc2}
+		for i := 0; i < 2; i++ {
+			count := 0
+			var updatedSvc *v1.Service
+			for count < 3 {
+				updatedSvc = e2eutils.GetSvc(cs, nss[i], svcs[i].GetObjectMeta().GetName())
+				fmt.Printf("Ingress:  %v\n", updatedSvc.Status.LoadBalancer.Ingress)
+				if len(updatedSvc.Status.LoadBalancer.Ingress) > 0 {
+					break
+				}
+				count++
+				time.Sleep(30 * time.Second)
+			}
+
+			addresses[i] = updatedSvc.Status.LoadBalancer.Ingress[0].Hostname
+			lbNames[i] = strings.Split(addresses[i], "-")[0]
+			fmt.Printf("address:  %v\n", addresses[i])
+		}
+
+		ginkgo.By("Test Connection (wait to have endpoint ready)")
+		for i := 0; i < 2; i++ {
+			e2esvc.TestReachableHTTP(addresses[i], 80, 240*time.Second)
+		}
+
+		ginkgo.By("Remove SVC 1")
+		e2eutils.DeleteSvc(cs, nsSvc1, svc1)
+
+		fmt.Printf("Wait to have stable sg")
+		time.Sleep(120 * time.Second)
+
+		ginkgo.By("Test SVC 2")
+		e2esvc.TestReachableHTTP(addresses[1], 80, 240*time.Second)
+
+	})
+
 })

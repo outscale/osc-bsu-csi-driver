@@ -18,6 +18,7 @@ package driver
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"strconv"
 	"strings"
@@ -124,10 +125,14 @@ func (d *controllerService) CreateVolume(ctx context.Context, req *csi.CreateVol
 	}
 
 	var (
-		volumeType  string
-		iopsPerGB   int
-		isEncrypted bool
-		kmsKeyID    string
+		volumeType         string
+		iopsPerGB          int
+		isEncrypted        bool
+		kmsKeyID           string
+		luksCipher         string
+		luksHash           string
+		luksKeySize        string
+		volumeContextExtra map[string]string
 	)
 
 	for key, value := range req.GetParameters() {
@@ -149,9 +154,27 @@ func (d *controllerService) CreateVolume(ctx context.Context, req *csi.CreateVol
 			}
 		case KmsKeyIDKey:
 			kmsKeyID = value
+		case LuksCipherKey:
+			luksCipher = value
+		case LuksKeySizeKey:
+			luksKeySize = value
+		case LuksHashKey:
+			luksHash = value
 		default:
 			return nil, status.Errorf(codes.InvalidArgument, "Invalid parameter key %s for CreateVolume", key)
 		}
+	}
+
+	// Check for encryption parameters
+	if isEncrypted {
+		volumeContextExtra = map[string]string{
+			EncryptedKey:   fmt.Sprintf("%v", isEncrypted),
+			LuksHashKey:    luksHash,
+			LuksCipherKey:  luksCipher,
+			LuksKeySizeKey: luksKeySize,
+		}
+	} else {
+		volumeContextExtra = map[string]string{}
 	}
 
 	snapshotID := ""
@@ -172,7 +195,7 @@ func (d *controllerService) CreateVolume(ctx context.Context, req *csi.CreateVol
 		if disk.SnapshotID != snapshotID {
 			return nil, status.Errorf(codes.AlreadyExists, "Volume already exists, but was restored from a different snapshot than %s", snapshotID)
 		}
-		return newCreateVolumeResponse(disk), nil
+		return newCreateVolumeResponse(disk, volumeContextExtra), nil
 	}
 
 	// create a new volume
@@ -204,7 +227,7 @@ func (d *controllerService) CreateVolume(ctx context.Context, req *csi.CreateVol
 		}
 		return nil, status.Errorf(errCode, "Could not create volume %q: %v", volName, err)
 	}
-	return newCreateVolumeResponse(disk), nil
+	return newCreateVolumeResponse(disk, volumeContextExtra), nil
 }
 
 func (d *controllerService) DeleteVolume(ctx context.Context, req *csi.DeleteVolumeRequest) (*csi.DeleteVolumeResponse, error) {
@@ -267,8 +290,12 @@ func (d *controllerService) ControllerPublishVolume(ctx context.Context, req *cs
 	}
 	klog.V(5).Infof("ControllerPublishVolume: volume %s attached to node %s through device %s", volumeID, nodeID, devicePath)
 
-	pvInfo := map[string]string{DevicePathKey: devicePath}
-	return &csi.ControllerPublishVolumeResponse{PublishContext: pvInfo}, nil
+	volumeContext := req.GetVolumeContext()
+	if volumeContext == nil {
+		volumeContext = map[string]string{}
+	}
+	volumeContext[DevicePathKey] = devicePath
+	return &csi.ControllerPublishVolumeResponse{PublishContext: volumeContext}, nil
 }
 
 func (d *controllerService) ControllerUnpublishVolume(ctx context.Context, req *csi.ControllerUnpublishVolumeRequest) (*csi.ControllerUnpublishVolumeResponse, error) {
@@ -517,7 +544,7 @@ func pickAvailabilityZone(requirement *csi.TopologyRequirement) string {
 	return ""
 }
 
-func newCreateVolumeResponse(disk cloud.Disk) *csi.CreateVolumeResponse {
+func newCreateVolumeResponse(disk cloud.Disk, volumeContextExtra map[string]string) *csi.CreateVolumeResponse {
 	var src *csi.VolumeContentSource
 	if disk.SnapshotID != "" {
 		src = &csi.VolumeContentSource{
@@ -528,11 +555,12 @@ func newCreateVolumeResponse(disk cloud.Disk) *csi.CreateVolumeResponse {
 			},
 		}
 	}
+
 	return &csi.CreateVolumeResponse{
 		Volume: &csi.Volume{
 			VolumeId:      disk.VolumeID,
 			CapacityBytes: util.GiBToBytes(disk.CapacityGiB),
-			VolumeContext: map[string]string{},
+			VolumeContext: volumeContextExtra,
 			AccessibleTopology: []*csi.Topology{
 				{
 					Segments: map[string]string{TopologyKey: disk.AvailabilityZone},

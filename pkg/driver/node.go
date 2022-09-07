@@ -29,6 +29,7 @@ import (
 	csi "github.com/container-storage-interface/spec/lib/go/csi"
 	"github.com/outscale-dev/osc-bsu-csi-driver/pkg/cloud"
 	"github.com/outscale-dev/osc-bsu-csi-driver/pkg/driver/internal"
+	"github.com/outscale-dev/osc-bsu-csi-driver/pkg/driver/luks"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"k8s.io/klog/v2"
@@ -91,6 +92,7 @@ func newNodeService() nodeService {
 
 func (d *nodeService) NodeStageVolume(ctx context.Context, req *csi.NodeStageVolumeRequest) (*csi.NodeStageVolumeResponse, error) {
 	klog.V(4).Infof("NodeStageVolume: called with args %+v", *req)
+	klog.V(4).Infof("%#v", req.GetPublishContext())
 
 	volumeID := req.GetVolumeId()
 	if len(volumeID) == 0 {
@@ -180,17 +182,77 @@ func (d *nodeService) NodeStageVolume(ctx context.Context, req *csi.NodeStageVol
 		return nil, status.Error(codes.Internal, msg)
 	}
 
-	// This operation (NodeStageVolume) MUST be idempotent.
-	// If the volume corresponding to the volume_id is already staged to the staging_target_path,
-	// and is identical to the specified volume_capability the Plugin MUST reply 0 OK.
-	if device == source {
-		klog.V(4).Infof("NodeStageVolume: volume=%q already staged", volumeID)
-		return &csi.NodeStageVolumeResponse{}, nil
+	isEncrypted := false
+	if encrypted, ok := req.PublishContext[EncryptedKey]; ok {
+		isEncrypted = encrypted == "true"
+	}
+
+	var encryptedDeviceName string
+	var encryptedDevicePath string
+
+	if isEncrypted {
+		klog.V(4).Info("NodeStageVolume: The device must be encrypted")
+		// Check that the device is already mounted
+		encryptedDeviceName = fmt.Sprintf("%v_crypt", filepath.Base(source))
+		encryptedDevicePath = fmt.Sprintf("/dev/mapper/%v", encryptedDeviceName)
+
+		if device == encryptedDevicePath {
+			klog.V(4).Infof("NodeStageVolume: volume=%q already staged (encryption)", volumeID)
+			return &csi.NodeStageVolumeResponse{}, nil
+		}
+
+		passphrase, ok := req.Secrets[LuksPassphraseKey]
+		if !ok {
+			return nil, status.Error(codes.InvalidArgument, "no passphrase key has been provided")
+		}
+
+		// Check if the disk needs encryption
+		if !d.mounter.IsLuks(source) {
+			klog.V(4).Info("NodeStageVolume: The device  does not have a luks format")
+			// It is not a luks device => format
+			luksCipher := req.PublishContext[LuksCipherKey]
+			luksHash := req.PublishContext[LuksHashKey]
+			luksKeySize := req.PublishContext[LuksKeySizeKey]
+
+			if d.mounter.LuksFormat(source, passphrase, luks.LuksContext{Cipher: luksCipher, KeySize: luksKeySize, Hash: luksHash}) != nil {
+				msg := fmt.Sprintf("error while formating luks partition to %v, err: %v", volumeID, err)
+				return nil, status.Error(codes.Internal, msg)
+			}
+		}
+
+		// Check passphrase
+		if ok := d.mounter.CheckLuksPassphrase(source, passphrase); !ok {
+			msg := fmt.Sprintf("error while checking passphrase to %v, err: %v", volumeID, err)
+			return nil, status.Error(codes.Internal, msg)
+		}
+
+		// Open disk
+		if _, err := d.mounter.LuksOpen(source, encryptedDeviceName, passphrase); err != nil {
+			msg := fmt.Sprintf("error while opening luks device to %v, err: %v", volumeID, err)
+			return nil, status.Error(codes.Internal, msg)
+		}
+
+		source = encryptedDevicePath
+
+	} else {
+		// This operation (NodeStageVolume) MUST be idempotent.
+		// If the volume corresponding to the volume_id is already staged to the staging_target_path,
+		// and is identical to the specified volume_capability the Plugin MUST reply 0 OK.
+		if device == source {
+			klog.V(4).Infof("NodeStageVolume: volume=%q already staged", volumeID)
+			return &csi.NodeStageVolumeResponse{}, nil
+		}
 	}
 
 	existingFormat, err := d.mounter.GetDiskFormat(source)
 	if err != nil {
-		return nil, status.Error(codes.Internal, fmt.Sprintf("failed to get disk format of disk %q: %v", source, err))
+		msg := ""
+		if isEncrypted {
+			if closeError := d.mounter.LuksClose(encryptedDeviceName); closeError != nil {
+				msg = fmt.Sprintf("error when closing the disk but ignoring (%v) and ", closeError)
+			}
+		}
+		return nil, status.Error(codes.Internal, fmt.Sprintf("%vfailed to get disk format of disk %q: %v", msg, source, err))
 	}
 
 	if existingFormat != "" && existingFormat != fsType {
@@ -199,7 +261,13 @@ func (d *nodeService) NodeStageVolume(ctx context.Context, req *csi.NodeStageVol
 			klog.Warningf("NodeStageVolume: The default fstype %q does not match the fstype of the disk %q. Please update your StorageClass.", defaultFsType, existingFormat)
 			fsType = existingFormat
 		} else {
-			return nil, status.Error(codes.Internal, fmt.Sprintf("NodeStageVolume: the requested fstype %q does not match the fstype of the disk %q", fsType, existingFormat))
+			msg := ""
+			if isEncrypted {
+				if closeError := d.mounter.LuksClose(encryptedDeviceName); closeError != nil {
+					msg = fmt.Sprintf("error when closing the disk but ignoring (%v) and ", closeError)
+				}
+			}
+			return nil, status.Error(codes.Internal, fmt.Sprintf("NodeStageVolume: %vThe requested fstype %q does not match the fstype of the disk %q", msg, fsType, existingFormat))
 		}
 	}
 
@@ -219,7 +287,13 @@ func (d *nodeService) NodeStageVolume(ctx context.Context, req *csi.NodeStageVol
 	// FormatAndMount will format only if needed
 	err = d.mounter.FormatAndMount(source, target, fsType, mountOptions)
 	if err != nil {
-		msg := fmt.Sprintf("could not format %q and mount it at %q", source, target)
+		msg := ""
+		if isEncrypted {
+			if closeError := d.mounter.LuksClose(encryptedDeviceName); closeError != nil {
+				msg = fmt.Sprintf("error when closing the disk but ignoring (%v) and ", closeError)
+			}
+		}
+		msg = fmt.Sprintf("%vcould not format %q and mount it at %q", msg, source, target)
 		return nil, status.Error(codes.Internal, msg)
 	}
 
@@ -265,6 +339,19 @@ func (d *nodeService) NodeUnstageVolume(ctx context.Context, req *csi.NodeUnstag
 		return nil, status.Errorf(codes.Internal, "Could not unmount target %q: %v", target, err)
 	}
 
+	// Check Encryption
+	isLuksMapping, mappingName, err := d.mounter.IsLuksMapping(dev)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "Could not determine if it is a luks mapping for target %q: %v", target, err)
+	}
+
+	if isLuksMapping {
+		if err = d.mounter.LuksClose(mappingName); err != nil {
+			msg := fmt.Sprintf("failed to close device: %v,", err)
+			return nil, status.Error(codes.Internal, msg)
+		}
+	}
+
 	return &csi.NodeUnstageVolumeResponse{}, nil
 }
 
@@ -292,6 +379,17 @@ func (d *nodeService) NodeExpandVolume(ctx context.Context, req *csi.NodeExpandV
 	devicePath, err := d.findDevicePath(deviceName, volumeID)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "Could not get valid device path for mount path: %q", req.GetVolumePath())
+	}
+
+	isLuksMapping, mappingName, err := d.mounter.IsLuksMapping(devicePath)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "Could not determine if it is a luks mapping for target %q: %v", volumeID, err)
+	}
+
+	if isLuksMapping {
+		if err := d.mounter.LuksResize(mappingName); err != nil {
+			return nil, status.Errorf(codes.Internal, "Could not resize Luks volume %q: %v", volumeID, err)
+		}
 	}
 
 	// TODO: refactor Mounter to expose a mount.SafeFormatAndMount object

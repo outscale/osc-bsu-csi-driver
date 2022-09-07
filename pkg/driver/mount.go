@@ -19,6 +19,7 @@ package driver
 import (
 	"os"
 
+	"github.com/outscale-dev/osc-bsu-csi-driver/pkg/driver/luks"
 	"k8s.io/utils/exec"
 	"k8s.io/utils/mount"
 )
@@ -27,6 +28,7 @@ import (
 type Mounter interface {
 	mount.Interface
 	exec.Interface
+	luks.LuksService
 	FormatAndMount(source string, target string, fstype string, options []string) error
 	GetDiskFormat(disk string) (string, error)
 	GetDeviceName(mountPath string) (string, int, error)
@@ -87,4 +89,32 @@ func (m *NodeMounter) ExistsPath(filename string) (bool, error) {
 		return false, err
 	}
 	return true, nil
+}
+
+func (m *NodeMounter) IsLuks(devicePath string) bool {
+	return IsLuks(m, devicePath)
+}
+
+func (m *NodeMounter) LuksFormat(devicePath string, passphrase string, context luks.LuksContext) error {
+	return LuksFormat(m, devicePath, passphrase, context)
+}
+
+func (m *NodeMounter) CheckLuksPassphrase(devicePath string, passphrase string) bool {
+	return CheckLuksPassphrase(m, devicePath, passphrase)
+}
+
+func (m *NodeMounter) LuksOpen(devicePath string, encryptedDeviceName string, passphrase string) (bool, error) {
+	return LuksOpen(m, devicePath, encryptedDeviceName, passphrase)
+}
+
+func (m *NodeMounter) IsLuksMapping(devicePath string) (bool, string, error) {
+	return IsLuksMapping(m, devicePath)
+}
+
+func (m *NodeMounter) LuksResize(deviceName string) error {
+	return LuksResize(m, deviceName)
+}
+
+func (m *NodeMounter) LuksClose(deviceName string) error {
+	return LuksClose(m, deviceName)
 }

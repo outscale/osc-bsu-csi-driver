@@ -36,6 +36,18 @@ const (
 
 	// KmsKeyId represents key for KMS encryption key
 	KmsKeyIDKey = "kmskeyid"
+
+	// LuksCipherKey represents the cipher used in LUKS
+	LuksCipherKey = "luks-cipher"
+
+	// LuksHashKey represents the hash algorithm used for password derivation in LUKS
+	LuksHashKey = "luks-hash"
+
+	// LuksKeySizeKey represents the size of the key used in LUKS
+	LuksKeySizeKey = "luks-key-size"
+
+	// LuksPassphraseKey represents the passphrase LUKS
+	LuksPassphraseKey = "key"
 )
 
 // constants for default command line flag values

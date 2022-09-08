@@ -25,7 +25,8 @@ RUN apk add --no-cache \
             e2fsprogs=1.45.7-r0 \
             xfsprogs=5.10.0-r0 \
             blkid=2.37.4-r0 \
-            e2fsprogs-extra=1.45.7-r0
+            e2fsprogs-extra=1.45.7-r0 \
+            cryptsetup=2.3.7-r0
 COPY  --from=builder /build/bin/osc-bsu-csi-driver /bin/osc-bsu-csi-driver
 
 ENTRYPOINT ["/bin/osc-bsu-csi-driver"]

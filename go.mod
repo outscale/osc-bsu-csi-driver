@@ -43,6 +43,7 @@ require (
 	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/gomega v1.18.1
 	github.com/outscale/osc-sdk-go/v2 v2.9.0
+	github.com/stretchr/testify v1.7.0
 	golang.org/x/sys v0.0.0-20220318055525-2edf467146b5
 	google.golang.org/grpc v1.47.0
 	google.golang.org/protobuf v1.28.0
@@ -89,6 +90,7 @@ require (
 	github.com/opencontainers/runc v1.0.2 // indirect
 	github.com/opencontainers/selinux v1.8.2 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
+	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/prometheus/client_golang v1.11.0 // indirect
 	github.com/prometheus/client_model v0.2.0 // indirect
 	github.com/prometheus/common v0.28.0 // indirect

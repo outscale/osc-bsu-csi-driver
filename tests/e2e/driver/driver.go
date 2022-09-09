@@ -36,6 +36,9 @@ type PVTestDriver interface {
 type DynamicPVTestDriver interface {
 	// GetDynamicProvisionStorageClass returns a StorageClass dynamic provision Persistent Volume
 	GetDynamicProvisionStorageClass(parameters map[string]string, mountOptions []string, reclaimPolicy *v1.PersistentVolumeReclaimPolicy, volumeExpansion *bool, bindingMode *storagev1.VolumeBindingMode, allowedTopologyValues []string, namespace string) *storagev1.StorageClass
+
+	// GetPassphraseSecret returns the secret
+	GetPassphraseSecret(name string, passphrase string) *v1.Secret
 }
 
 // PreProvisionedVolumeTestDriver represents an interface for a CSI driver that supports pre-provisioned volume

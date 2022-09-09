@@ -644,3 +644,32 @@ func cleanupPodOrFail(client clientset.Interface, name, namespace string) {
 func podLogs(client clientset.Interface, name, namespace string) ([]byte, error) {
 	return client.CoreV1().Pods(namespace).GetLogs(name, &v1.PodLogOptions{}).Do(context.TODO()).Raw()
 }
+
+type TestSecret struct {
+	client    clientset.Interface
+	secret    *v1.Secret
+	namespace *v1.Namespace
+}
+
+func NewTestSecret(c clientset.Interface, ns *v1.Namespace, sc *v1.Secret) *TestSecret {
+	return &TestSecret{
+		client:    c,
+		secret:    sc,
+		namespace: ns,
+	}
+}
+
+func (t *TestSecret) Create() v1.Secret {
+	var err error
+
+	By("creating a Secret " + t.secret.Name)
+	t.secret, err = t.client.CoreV1().Secrets(t.namespace.Name).Create(context.TODO(), t.secret, metav1.CreateOptions{})
+	framework.ExpectNoError(err)
+	return *t.secret
+}
+
+func (t *TestSecret) Cleanup() {
+	e2elog.Logf("deleting Secret %s", t.secret.Name)
+	err := t.client.CoreV1().Secrets(t.namespace.Name).Delete(context.TODO(), t.secret.Name, metav1.DeleteOptions{})
+	framework.ExpectNoError(err)
+}

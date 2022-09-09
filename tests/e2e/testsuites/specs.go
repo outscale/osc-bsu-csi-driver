@@ -19,7 +19,7 @@ import (
 
 	"github.com/outscale-dev/osc-bsu-csi-driver/tests/e2e/driver"
 
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	storagev1 "k8s.io/api/storage/v1"
 	clientset "k8s.io/client-go/kubernetes"
 	restclientset "k8s.io/client-go/rest"
@@ -37,6 +37,9 @@ type VolumeDetails struct {
 	VolumeType            string
 	FSType                string
 	Encrypted             bool
+	SecretName            string
+	SecretNamespace       string
+	Passphrase            string
 	MountOptions          []string
 	ClaimSize             string
 	ReclaimPolicy         *v1.PersistentVolumeReclaimPolicy
@@ -121,7 +124,7 @@ func (pod *PodDetails) SetupDeployment(client clientset.Interface, namespace *v1
 	cleanupFuncs := make([]func(), 0)
 	volume := pod.Volumes[0]
 	By("setting up the StorageClass")
-	storageClass := csiDriver.GetDynamicProvisionStorageClass(driver.GetParameters(volume.VolumeType, volume.FSType, volume.Encrypted), volume.MountOptions, volume.ReclaimPolicy, volume.AllowVolumeExpansion, volume.VolumeBindingMode, volume.AllowedTopologyValues, namespace.Name)
+	storageClass := csiDriver.GetDynamicProvisionStorageClass(driver.GetParameters(volume.VolumeType, volume.FSType, volume.Encrypted, volume.SecretName, volume.SecretNamespace), volume.MountOptions, volume.ReclaimPolicy, volume.AllowVolumeExpansion, volume.VolumeBindingMode, volume.AllowedTopologyValues, namespace.Name)
 	tsc := NewTestStorageClass(client, namespace, storageClass)
 	createdStorageClass := tsc.Create()
 	cleanupFuncs = append(cleanupFuncs, tsc.Cleanup)
@@ -140,10 +143,19 @@ func (pod *PodDetails) SetupDeployment(client clientset.Interface, namespace *v1
 func (volume *VolumeDetails) SetupDynamicPersistentVolumeClaim(client clientset.Interface, namespace *v1.Namespace, csiDriver driver.DynamicPVTestDriver) (*TestPersistentVolumeClaim, []func()) {
 	cleanupFuncs := make([]func(), 0)
 	By("setting up the StorageClass")
-	storageClass := csiDriver.GetDynamicProvisionStorageClass(driver.GetParameters(volume.VolumeType, volume.FSType, volume.Encrypted), volume.MountOptions, volume.ReclaimPolicy, volume.AllowVolumeExpansion, volume.VolumeBindingMode, volume.AllowedTopologyValues, namespace.Name)
+	storageClass := csiDriver.GetDynamicProvisionStorageClass(driver.GetParameters(volume.VolumeType, volume.FSType, volume.Encrypted, volume.SecretName, volume.SecretNamespace), volume.MountOptions, volume.ReclaimPolicy, volume.AllowVolumeExpansion, volume.VolumeBindingMode, volume.AllowedTopologyValues, namespace.Name)
 	tsc := NewTestStorageClass(client, namespace, storageClass)
 	createdStorageClass := tsc.Create()
 	cleanupFuncs = append(cleanupFuncs, tsc.Cleanup)
+
+	if volume.Encrypted {
+		By("Setting Secret")
+		secret := csiDriver.GetPassphraseSecret(volume.SecretName, volume.Passphrase)
+		tsec := NewTestSecret(client, namespace, secret)
+		tsec.Create()
+		cleanupFuncs = append(cleanupFuncs, tsec.Cleanup)
+	}
+
 	By("setting up the PVC and PV")
 	var tpvc *TestPersistentVolumeClaim
 	if volume.DataSource != nil {

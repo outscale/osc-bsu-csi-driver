@@ -1240,6 +1240,9 @@ func NewCloudWithoutMetadata(region string) (Cloud, error) {
 		SecretKey: os.Getenv("OSC_SECRET_KEY"),
 	})
 
+	client.auth = context.WithValue(client.auth, osc.ContextServerIndex, 0)
+	client.auth = context.WithValue(client.auth, osc.ContextServerVariables, map[string]string{"region": region})
+
 	return &cloud{
 		region: region,
 		dm:     dm.NewDeviceManager(),

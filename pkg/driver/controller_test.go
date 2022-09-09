@@ -31,6 +31,7 @@ import (
 	"github.com/outscale-dev/osc-bsu-csi-driver/pkg/cloud"
 	"github.com/outscale-dev/osc-bsu-csi-driver/pkg/driver/mocks"
 	"github.com/outscale-dev/osc-bsu-csi-driver/pkg/util"
+	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -813,17 +814,20 @@ func TestCreateVolume(t *testing.T) {
 					driverOptions: &DriverOptions{},
 				}
 
-				if _, err := oscDriver.CreateVolume(ctx, req); err != nil {
+				volumeResponse, err := oscDriver.CreateVolume(ctx, req)
+				if err != nil {
 					srvErr, ok := status.FromError(err)
 					if !ok {
 						t.Fatalf("Could not get error status code from error: %v", srvErr)
 					}
 					t.Fatalf("Unexpected error: %v", srvErr.Code())
 				}
+
+				assert.Equal(t, "true", volumeResponse.GetVolume().VolumeContext[EncryptedKey])
 			},
 		},
 		{
-			name: "success with volume encryption with KMS key",
+			name: "success with volume encryption",
 			testFunc: func(t *testing.T) {
 				req := &csi.CreateVolumeRequest{
 					Name:               "vol-test",
@@ -831,7 +835,6 @@ func TestCreateVolume(t *testing.T) {
 					VolumeCapabilities: stdVolCap,
 					Parameters: map[string]string{
 						EncryptedKey: "true",
-						KmsKeyIDKey:  "arn:aws:kms:us-east-1:012345678910:key/abcd1234-a123-456a-a12b-a123b4cd56ef",
 					},
 				}
 
@@ -855,13 +858,69 @@ func TestCreateVolume(t *testing.T) {
 					driverOptions: &DriverOptions{},
 				}
 
-				if _, err := oscDriver.CreateVolume(ctx, req); err != nil {
+				volumeResponse, err := oscDriver.CreateVolume(ctx, req)
+				if err != nil {
 					srvErr, ok := status.FromError(err)
 					if !ok {
 						t.Fatalf("Could not get error status code from error: %v", srvErr)
 					}
 					t.Fatalf("Unexpected error: %v", srvErr.Code())
 				}
+
+				assert.Equal(t, "true", volumeResponse.GetVolume().VolumeContext[EncryptedKey])
+				assert.Equal(t, "", volumeResponse.GetVolume().VolumeContext[LuksCipherKey])
+				assert.Equal(t, "", volumeResponse.GetVolume().VolumeContext[LuksHashKey])
+				assert.Equal(t, "", volumeResponse.GetVolume().VolumeContext[LuksKeySizeKey])
+			},
+		},
+		{
+			name: "success with volume encryption with parameters",
+			testFunc: func(t *testing.T) {
+				req := &csi.CreateVolumeRequest{
+					Name:               "vol-test",
+					CapacityRange:      stdCapRange,
+					VolumeCapabilities: stdVolCap,
+					Parameters: map[string]string{
+						EncryptedKey:   "true",
+						LuksCipherKey:  "cipher",
+						LuksHashKey:    "hash",
+						LuksKeySizeKey: "keysize",
+					},
+				}
+
+				ctx := context.Background()
+
+				mockDisk := cloud.Disk{
+					VolumeID:         req.Name,
+					AvailabilityZone: expZone,
+					CapacityGiB:      util.BytesToGiB(stdVolSize),
+				}
+
+				mockCtl := gomock.NewController(t)
+				defer mockCtl.Finish()
+
+				mockCloud := mocks.NewMockCloud(mockCtl)
+				mockCloud.EXPECT().GetDiskByName(gomock.Eq(ctx), gomock.Eq(req.Name), gomock.Eq(stdVolSize)).Return(cloud.Disk{}, cloud.ErrNotFound)
+				mockCloud.EXPECT().CreateDisk(gomock.Eq(ctx), gomock.Eq(req.Name), gomock.Any()).Return(mockDisk, nil)
+
+				oscDriver := controllerService{
+					cloud:         mockCloud,
+					driverOptions: &DriverOptions{},
+				}
+
+				volumeResponse, err := oscDriver.CreateVolume(ctx, req)
+				if err != nil {
+					srvErr, ok := status.FromError(err)
+					if !ok {
+						t.Fatalf("Could not get error status code from error: %v", srvErr)
+					}
+					t.Fatalf("Unexpected error: %v", srvErr.Code())
+				}
+
+				assert.Equal(t, "true", volumeResponse.GetVolume().VolumeContext[EncryptedKey])
+				assert.Equal(t, "cipher", volumeResponse.GetVolume().VolumeContext[LuksCipherKey])
+				assert.Equal(t, "hash", volumeResponse.GetVolume().VolumeContext[LuksHashKey])
+				assert.Equal(t, "keysize", volumeResponse.GetVolume().VolumeContext[LuksKeySizeKey])
 			},
 		},
 		{
@@ -2018,6 +2077,55 @@ func TestControllerPublishVolume(t *testing.T) {
 					}
 				} else {
 					t.Fatalf("Expected error %v, got no error", codes.AlreadyExists)
+				}
+			},
+		},
+		{
+			name: "pass encryption variables to NodePublish",
+			testFunc: func(t *testing.T) {
+				req := &csi.ControllerPublishVolumeRequest{
+					NodeId:           expInstanceID,
+					VolumeCapability: stdVolCap,
+					VolumeId:         "vol-test",
+					VolumeContext: map[string]string{
+						EncryptedKey:   "true",
+						LuksCipherKey:  "cipher",
+						LuksHashKey:    "hash",
+						LuksKeySizeKey: "keySize",
+					},
+				}
+				expResp := &csi.ControllerPublishVolumeResponse{
+					PublishContext: map[string]string{
+						DevicePathKey:  expDevicePath,
+						EncryptedKey:   "true",
+						LuksCipherKey:  "cipher",
+						LuksHashKey:    "hash",
+						LuksKeySizeKey: "keySize",
+					},
+				}
+
+				ctx := context.Background()
+
+				mockCtl := gomock.NewController(t)
+				defer mockCtl.Finish()
+
+				mockCloud := mocks.NewMockCloud(mockCtl)
+				mockCloud.EXPECT().IsExistInstance(gomock.Eq(ctx), gomock.Eq(req.NodeId)).Return(true)
+				mockCloud.EXPECT().GetDiskByID(gomock.Eq(ctx), gomock.Any()).Return(cloud.Disk{}, nil)
+				mockCloud.EXPECT().AttachDisk(gomock.Eq(ctx), gomock.Any(), gomock.Eq(req.NodeId)).Return(expDevicePath, nil)
+
+				oscDriver := controllerService{
+					cloud:         mockCloud,
+					driverOptions: &DriverOptions{},
+				}
+
+				resp, err := oscDriver.ControllerPublishVolume(ctx, req)
+				if err != nil {
+					t.Fatalf("Unexpected error: %v", err)
+				}
+
+				if !reflect.DeepEqual(resp, expResp) {
+					t.Fatalf("Expected resp to be %+v, got: %+v", expResp, resp)
 				}
 			},
 		},

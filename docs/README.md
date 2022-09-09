@@ -30,13 +30,18 @@ The following CSI gRPC calls are **not yet** implemented:
 ### CreateVolume Parameters
 There are several optional parameters that could be passed into `CreateVolumeRequest.parameters` map:
 
-| Parameters                  | Values                | Default | Description                                                                   |
-| --------------------------- | --------------------- | ------- | ----------------------------------------------------------------------------- |
-| "csi.storage.k8s.io/fstype" | xfs, ext2, ext3, ext4 | ext4    | File system type that will be formatted during volume creation                |
-| "type"                      | io1, gp2, standard    | gp2     | BSU volume type                                                               |
-| "iopsPerGB"                 |                       |         | I/O operations per second per GiB. Required when io1 volume type is specified |
-| "encrypted"                 |                       |         | Not supported                                                                 |
-| "kmsKeyId"                  |                       |         | Not supported                                                                 |
+| Parameters                                       | Values                | Default | Description                                                                                                                                      |
+| ------------------------------------------------ | --------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| "csi.storage.k8s.io/fstype"                      | xfs, ext2, ext3, ext4 | ext4    | File system type that will be formatted during volume creation                                                                                   |
+| "type"                                           | io1, gp2, standard    | gp2     | BSU volume type                                                                                                                                  |
+| "iopsPerGB"                                      |                       |         | I/O operations per second per GiB. Required when io1 volume type is specified                                                                    |
+| "encrypted"                                      | "true", "false"       | "false" | Specify if we want to encrypt te disk or not                                                                                                     |
+| "csi.storage.k8s.io/node-stage-secret-name"      | string                |         | The name of the secret  (See [template](https://kubernetes-csi.github.io/docs/secrets-and-credentials-storage-class.html#node-stage-secret))     |
+| "csi.storage.k8s.io/node-stage-secret-namespace" | string                |         | The namespace of the secret (See [template](https://kubernetes-csi.github.io/docs/secrets-and-credentials-storage-class.html#node-stage-secret)) |
+| "kmsKeyId"                                       | string                |         | Not yet supported                                                                                                                                |
+| "luks-cipher"                                    | string                |         | LUKS encryption cipher to use  (See [doc](https://gitlab.com/cryptsetup/cryptsetup/blob/master/docs/on-disk-format-luks2.pdf) or `cryptsetup --help`). Default value depends on the cryptsetup version.                    |
+| "luks-hash"                                      | string                |         | Derivation Password hash algorithm (See [doc](https://gitlab.com/cryptsetup/cryptsetup/blob/master/docs/on-disk-format-luks2.pdf) or `cryptsetup --help`). Default value depends on the cryptsetup version.    |
+| "luks-key-size"                                  | string                |         | Size of the encryption key  (See [doc](https://gitlab.com/cryptsetup/cryptsetup/blob/master/docs/on-disk-format-luks2.pdf) or `cryptsetup --help`). Default value depends on the cryptsetup version.            |
 
 **Notes**:
 * The parameters are case sensitive.
@@ -68,6 +73,7 @@ Make sure you follow the [Prerequisites](README.md#Prerequisites) before the exa
 * [Volume Snapshot](../examples/kubernetes/snapshot)
 * [Configure StorageClass](../examples/kubernetes/storageclass)
 * [Volume Resizing](../examples/kubernetes/resizing)
+* [Encryption](../examples/kubernetes/encryption/)
 
 ## Development
 See [Development Process](development.md)

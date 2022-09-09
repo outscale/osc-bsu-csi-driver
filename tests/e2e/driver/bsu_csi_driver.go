@@ -101,7 +101,7 @@ func (d *bsuCSIDriver) GetPersistentVolume(volumeID string, fsType string, size 
 }
 
 // GetParameters returns the parameters specific for this driver
-func GetParameters(volumeType string, fsType string, encrypted bool) map[string]string {
+func GetParameters(volumeType string, fsType string, encrypted bool, secretName string, secretNamespace string) map[string]string {
 	parameters := map[string]string{
 		"type":                      volumeType,
 		"csi.storage.k8s.io/fstype": fsType,
@@ -111,6 +111,12 @@ func GetParameters(volumeType string, fsType string, encrypted bool) map[string]
 	}
 	if encrypted {
 		parameters["encrypted"] = True
+	}
+	if len(secretName) != 0 {
+		parameters["csi.storage.k8s.io/node-stage-secret-name"] = secretName
+	}
+	if len(secretNamespace) != 0 {
+		parameters["csi.storage.k8s.io/node-stage-secret-namespace"] = secretNamespace
 	}
 	return parameters
 }
@@ -141,4 +147,15 @@ func IOPSPerGBForVolumeType(volumeType string) string {
 		return "25"
 	}
 	return ""
+}
+
+func (d *bsuCSIDriver) GetPassphraseSecret(name string, passphrase string) *v1.Secret {
+	return &v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: name,
+		},
+		StringData: map[string]string{
+			bsucsidriver.LuksPassphraseKey: passphrase,
+		},
+	}
 }

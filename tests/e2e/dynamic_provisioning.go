@@ -94,7 +94,6 @@ var _ = Describe("[bsu-csi-e2e] [single-az] Dynamic Provisioning", func() {
 						{
 							VolumeType: volumeType,
 							FSType:     bsucsidriver.FSTypeExt4,
-							Encrypted:  true,
 							ClaimSize:  driver.MinimumSizeForVolumeType(volumeType),
 							VolumeMount: testsuites.VolumeMountDetails{
 								NameGenerate:      "test-volume-",
@@ -636,3 +635,50 @@ func restClient(group string, version string) (restclientset.Interface, error) {
 	config.NegotiatedSerializer = serializer.WithoutConversionCodecFactory{CodecFactory: serializer.NewCodecFactory(runtime.NewScheme())}
 	return restclientset.RESTClientFor(config)
 }
+
+var _ = Describe("[bsu-csi-e2e] [single-az] [encryption] Dynamic Provisioning", func() {
+	f := framework.NewDefaultFramework("bsu")
+
+	var (
+		cs        clientset.Interface
+		ns        *v1.Namespace
+		bsuDriver driver.PVTestDriver
+	)
+
+	BeforeEach(func() {
+		cs = f.ClientSet
+		ns = f.Namespace
+		bsuDriver = driver.InitBsuCSIDriver()
+	})
+
+	It("should create A PV that will be encrypted", func() {
+
+		pods := []testsuites.PodDetails{
+			{
+				Cmd: "mount | grep ' /mnt/test-1 ' | awk '{ print $1}' | grep  '^/dev/mapper/.*_crypt$'",
+				Volumes: []testsuites.VolumeDetails{
+					{
+						VolumeType: osccloud.VolumeTypeGP2,
+						FSType:     bsucsidriver.FSTypeExt4,
+						ClaimSize:  driver.MinimumSizeForVolumeType(osccloud.VolumeTypeGP2),
+						VolumeMount: testsuites.VolumeMountDetails{
+							NameGenerate:      "test-volume-",
+							MountPathGenerate: "/mnt/test-",
+						},
+						Encrypted:       true,
+						SecretName:      "secret-1",
+						SecretNamespace: ns.Name,
+						Passphrase:      "ThisIsSecret",
+					},
+				},
+			},
+		}
+		test := testsuites.DynamicallyProvisionedCmdVolumeTest{
+			CSIDriver: bsuDriver,
+			Pods:      pods,
+		}
+
+		test.Run(cs, ns)
+	})
+
+})

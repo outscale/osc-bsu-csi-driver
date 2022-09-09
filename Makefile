@@ -18,8 +18,6 @@ LINTER_VERSION := v1.17.5
 
 E2E_ENV ?= "e2e/osc-bsu-csi-driver:0.0"
 E2E_ENV_RUN ?= "e2e-osc-bsu-csi-driver"
-E2E_AZ := "eu-west-2a"
-E2E_REGION := "eu-west-2"
 
 PKG := github.com/outscale-dev/osc-bsu-csi-driver
 IMAGE := outscale/osc-bsu-csi-driver
@@ -78,8 +76,8 @@ test-e2e-single-az:
 		-v ${PWD}:/root/osc-bsu-csi-driver \
 		-e OSC_ACCESS_KEY=${OSC_ACCESS_KEY} \
 		-e OSC_SECRET_KEY=${OSC_SECRET_KEY} \
-		-e AWS_AVAILABILITY_ZONES=${E2E_AZ} \
-		-e OSC_REGION=${E2E_REGION} \
+		-e AWS_AVAILABILITY_ZONES="${OSC_REGION}a" \
+		-e OSC_REGION=${OSC_REGION} \
 		-e KC="$${KC}" \
 		--name $(E2E_ENV_RUN) $(E2E_ENV) tests/e2e/docker/run_e2e_single_az.sh
 

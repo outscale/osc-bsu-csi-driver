@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: bsu-claim-encrypted
+  namespace: encryption
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: bsu-sc-encrypted
+  resources:
+    requests:
+      storage: 4Gi

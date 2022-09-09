@@ -13,6 +13,7 @@ import (
 	sanity "github.com/kubernetes-csi/csi-test/v4/pkg/sanity"
 	"github.com/outscale-dev/osc-bsu-csi-driver/pkg/cloud"
 	"github.com/outscale-dev/osc-bsu-csi-driver/pkg/driver/internal"
+	"github.com/outscale-dev/osc-bsu-csi-driver/pkg/driver/luks"
 	"github.com/outscale-dev/osc-bsu-csi-driver/pkg/util"
 	"k8s.io/utils/exec"
 	exectesting "k8s.io/utils/exec/testing"
@@ -370,4 +371,32 @@ func (f *fakeMounter) MountSensitive(source string, target string, fstype string
 
 func (f *fakeMounter) IsCorruptedMnt(err error) bool {
 	return false
+}
+
+func (m *fakeMounter) IsLuks(devicePath string) bool {
+	return false
+}
+
+func (m *fakeMounter) LuksFormat(devicePath string, passphrase string, context luks.LuksContext) error {
+	return nil
+}
+
+func (m *fakeMounter) CheckLuksPassphrase(devicePath string, passphrase string) bool {
+	return true
+}
+
+func (m *fakeMounter) LuksOpen(devicePath string, encryptedDeviceName string, passphrase string) (bool, error) {
+	return true, nil
+}
+
+func (m *fakeMounter) IsLuksMapping(devicePath string) (bool, string, error) {
+	return false, "", nil
+}
+
+func (m *fakeMounter) LuksResize(deviceName string) error {
+	return nil
+}
+
+func (m *fakeMounter) LuksClose(deviceName string) error {
+	return nil
 }

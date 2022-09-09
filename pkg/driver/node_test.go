@@ -26,6 +26,7 @@ import (
 	"github.com/container-storage-interface/spec/lib/go/csi"
 	"github.com/golang/mock/gomock"
 	"github.com/outscale-dev/osc-bsu-csi-driver/pkg/driver/internal"
+	"github.com/outscale-dev/osc-bsu-csi-driver/pkg/driver/luks"
 	"github.com/outscale-dev/osc-bsu-csi-driver/pkg/driver/mocks"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -35,9 +36,12 @@ import (
 func TestNodeStageVolume(t *testing.T) {
 
 	var (
-		targetPath = "/test/path"
-		devicePath = "/dev/fake"
-		stdVolCap  = &csi.VolumeCapability{
+		targetPath          = "/test/path"
+		devicePath          = "/dev/fake"
+		encryptedDeviceName = "fake_crypt"
+		encryptedDevicePath = "/dev/mapper/fake_crypt"
+		passphrase          = "ThisIsASecretKey"
+		stdVolCap           = &csi.VolumeCapability{
 			AccessType: &csi.VolumeCapability_Mount{
 				Mount: &csi.VolumeCapability_MountVolume{
 					FsType: FSTypeExt4,
@@ -523,6 +527,234 @@ func TestNodeStageVolume(t *testing.T) {
 				mockMounter.EXPECT().GetDeviceName(targetPath).Return("", 1, nil)
 				mockMounter.EXPECT().GetDiskFormat(gomock.Eq(devicePath)).Return("ext4", nil)
 				mockMounter.EXPECT().FormatAndMount(gomock.Eq(devicePath), gomock.Eq(targetPath), gomock.Eq(FSTypeExt4), gomock.Any())
+				_, err := oscDriver.NodeStageVolume(context.TODO(), req)
+				if err != nil {
+					t.Fatalf("Expect no error but got: %v", err)
+				}
+			},
+		},
+		{
+			name: "success encryption with no parameters",
+			testFunc: func(t *testing.T) {
+				mockCtl := gomock.NewController(t)
+				defer mockCtl.Finish()
+
+				mockMetadata := mocks.NewMockMetadataService(mockCtl)
+				mockMounter := mocks.NewMockMounter(mockCtl)
+
+				oscDriver := nodeService{
+					metadata: mockMetadata,
+					mounter:  mockMounter,
+					inFlight: internal.NewInFlight(),
+				}
+
+				req := &csi.NodeStageVolumeRequest{
+					PublishContext: map[string]string{
+						DevicePathKey: devicePath,
+						EncryptedKey:  "true",
+					},
+					StagingTargetPath: targetPath,
+					VolumeCapability: &csi.VolumeCapability{
+						AccessType: &csi.VolumeCapability_Mount{
+							Mount: &csi.VolumeCapability_MountVolume{
+								FsType: "",
+							},
+						},
+						AccessMode: &csi.VolumeCapability_AccessMode{
+							Mode: csi.VolumeCapability_AccessMode_SINGLE_NODE_WRITER,
+						},
+					},
+					VolumeId: "vol-test",
+					Secrets: map[string]string{
+						LuksPassphraseKey: passphrase,
+					},
+				}
+
+				gomock.InOrder(
+					mockMounter.EXPECT().ExistsPath(gomock.Eq(devicePath)).Return(true, nil),
+					mockMounter.EXPECT().ExistsPath(gomock.Eq(targetPath)).Return(false, nil),
+				)
+
+				mockMounter.EXPECT().MakeDir(targetPath).Return(nil)
+				mockMounter.EXPECT().GetDeviceName(targetPath).Return("", 1, nil)
+				// Check Luks
+				mockMounter.EXPECT().IsLuks(gomock.Eq(devicePath)).Return(false)
+				mockMounter.EXPECT().LuksFormat(gomock.Eq(devicePath), gomock.Eq(passphrase), gomock.Eq(luks.LuksContext{Cipher: "", Hash: "", KeySize: ""})).Return(nil)
+				mockMounter.EXPECT().CheckLuksPassphrase(gomock.Eq(devicePath), gomock.Eq(passphrase)).Return(true)
+				mockMounter.EXPECT().LuksOpen(gomock.Eq(devicePath), gomock.Eq(encryptedDeviceName), gomock.Eq(passphrase))
+
+				// Format opened luks device
+				mockMounter.EXPECT().GetDiskFormat(gomock.Eq(encryptedDevicePath)).Return(defaultFsType, nil)
+				mockMounter.EXPECT().FormatAndMount(gomock.Eq(encryptedDevicePath), gomock.Eq(targetPath), gomock.Eq(defaultFsType), gomock.Any())
+				_, err := oscDriver.NodeStageVolume(context.TODO(), req)
+				if err != nil {
+					t.Fatalf("Expect no error but got: %v", err)
+				}
+			},
+		},
+		{
+			name: "success encryption with parameters",
+			testFunc: func(t *testing.T) {
+				mockCtl := gomock.NewController(t)
+				defer mockCtl.Finish()
+
+				mockMetadata := mocks.NewMockMetadataService(mockCtl)
+				mockMounter := mocks.NewMockMounter(mockCtl)
+
+				oscDriver := nodeService{
+					metadata: mockMetadata,
+					mounter:  mockMounter,
+					inFlight: internal.NewInFlight(),
+				}
+
+				req := &csi.NodeStageVolumeRequest{
+					PublishContext: map[string]string{
+						DevicePathKey:  devicePath,
+						EncryptedKey:   "true",
+						LuksCipherKey:  "anCipher",
+						LuksHashKey:    "AnHashAlgo",
+						LuksKeySizeKey: "AnKeySize",
+					},
+					StagingTargetPath: targetPath,
+					VolumeCapability: &csi.VolumeCapability{
+						AccessType: &csi.VolumeCapability_Mount{
+							Mount: &csi.VolumeCapability_MountVolume{
+								FsType: "",
+							},
+						},
+						AccessMode: &csi.VolumeCapability_AccessMode{
+							Mode: csi.VolumeCapability_AccessMode_SINGLE_NODE_WRITER,
+						},
+					},
+					VolumeId: "vol-test",
+					Secrets: map[string]string{
+						LuksPassphraseKey: passphrase,
+					},
+				}
+
+				gomock.InOrder(
+					mockMounter.EXPECT().ExistsPath(gomock.Eq(devicePath)).Return(true, nil),
+					mockMounter.EXPECT().ExistsPath(gomock.Eq(targetPath)).Return(false, nil),
+				)
+
+				mockMounter.EXPECT().MakeDir(targetPath).Return(nil)
+				mockMounter.EXPECT().GetDeviceName(targetPath).Return("", 1, nil)
+				// Check Luks
+				mockMounter.EXPECT().IsLuks(gomock.Eq(devicePath)).Return(false)
+				mockMounter.EXPECT().LuksFormat(gomock.Eq(devicePath), gomock.Eq(passphrase), gomock.Eq(luks.LuksContext{Cipher: req.PublishContext[LuksCipherKey], Hash: req.PublishContext[LuksHashKey], KeySize: req.PublishContext[LuksKeySizeKey]})).Return(nil)
+				mockMounter.EXPECT().CheckLuksPassphrase(gomock.Eq(devicePath), gomock.Eq(passphrase)).Return(true)
+				mockMounter.EXPECT().LuksOpen(gomock.Eq(devicePath), gomock.Eq(encryptedDeviceName), gomock.Eq(passphrase))
+
+				// Format opened luks device
+				mockMounter.EXPECT().GetDiskFormat(gomock.Eq(encryptedDevicePath)).Return(defaultFsType, nil)
+				mockMounter.EXPECT().FormatAndMount(gomock.Eq(encryptedDevicePath), gomock.Eq(targetPath), gomock.Eq(defaultFsType), gomock.Any())
+				_, err := oscDriver.NodeStageVolume(context.TODO(), req)
+				if err != nil {
+					t.Fatalf("Expect no error but got: %v", err)
+				}
+			},
+		},
+		{
+			name: "failure encryption with no passphrase",
+			testFunc: func(t *testing.T) {
+				mockCtl := gomock.NewController(t)
+				defer mockCtl.Finish()
+
+				mockMetadata := mocks.NewMockMetadataService(mockCtl)
+				mockMounter := mocks.NewMockMounter(mockCtl)
+
+				oscDriver := nodeService{
+					metadata: mockMetadata,
+					mounter:  mockMounter,
+					inFlight: internal.NewInFlight(),
+				}
+
+				req := &csi.NodeStageVolumeRequest{
+					PublishContext: map[string]string{
+						DevicePathKey: devicePath,
+						EncryptedKey:  "true",
+					},
+					StagingTargetPath: targetPath,
+					VolumeCapability: &csi.VolumeCapability{
+						AccessType: &csi.VolumeCapability_Mount{
+							Mount: &csi.VolumeCapability_MountVolume{
+								FsType: "",
+							},
+						},
+						AccessMode: &csi.VolumeCapability_AccessMode{
+							Mode: csi.VolumeCapability_AccessMode_SINGLE_NODE_WRITER,
+						},
+					},
+					VolumeId: "vol-test",
+					Secrets:  map[string]string{},
+				}
+
+				gomock.InOrder(
+					mockMounter.EXPECT().ExistsPath(gomock.Eq(devicePath)).Return(true, nil),
+					mockMounter.EXPECT().ExistsPath(gomock.Eq(targetPath)).Return(false, nil),
+				)
+
+				mockMounter.EXPECT().MakeDir(targetPath).Return(nil)
+				mockMounter.EXPECT().GetDeviceName(targetPath).Return("", 1, nil)
+				// Check Luks
+				_, err := oscDriver.NodeStageVolume(context.TODO(), req)
+				if err == nil {
+					t.Fatalf("Expect an error but got nothing")
+				}
+			},
+		},
+		{
+			name: "success encryption already format",
+			testFunc: func(t *testing.T) {
+				mockCtl := gomock.NewController(t)
+				defer mockCtl.Finish()
+
+				mockMetadata := mocks.NewMockMetadataService(mockCtl)
+				mockMounter := mocks.NewMockMounter(mockCtl)
+
+				oscDriver := nodeService{
+					metadata: mockMetadata,
+					mounter:  mockMounter,
+					inFlight: internal.NewInFlight(),
+				}
+
+				req := &csi.NodeStageVolumeRequest{
+					PublishContext: map[string]string{
+						DevicePathKey: devicePath,
+						EncryptedKey:  "true",
+					},
+					StagingTargetPath: targetPath,
+					VolumeCapability: &csi.VolumeCapability{
+						AccessType: &csi.VolumeCapability_Mount{
+							Mount: &csi.VolumeCapability_MountVolume{
+								FsType: "",
+							},
+						},
+						AccessMode: &csi.VolumeCapability_AccessMode{
+							Mode: csi.VolumeCapability_AccessMode_SINGLE_NODE_WRITER,
+						},
+					},
+					VolumeId: "vol-test",
+					Secrets: map[string]string{
+						LuksPassphraseKey: passphrase,
+					},
+				}
+
+				gomock.InOrder(
+					mockMounter.EXPECT().ExistsPath(gomock.Eq(devicePath)).Return(true, nil),
+					mockMounter.EXPECT().ExistsPath(gomock.Eq(targetPath)).Return(false, nil),
+				)
+
+				mockMounter.EXPECT().MakeDir(targetPath).Return(nil)
+				mockMounter.EXPECT().GetDeviceName(targetPath).Return("", 1, nil)
+				// Check Luks (it is already format)
+				mockMounter.EXPECT().IsLuks(gomock.Eq(devicePath)).Return(true)
+				mockMounter.EXPECT().CheckLuksPassphrase(gomock.Eq(devicePath), gomock.Eq(passphrase)).Return(true)
+				mockMounter.EXPECT().LuksOpen(gomock.Eq(devicePath), gomock.Eq(encryptedDeviceName), gomock.Eq(passphrase))
+
+				// Format opened luks device
+				mockMounter.EXPECT().GetDiskFormat(gomock.Eq(encryptedDevicePath)).Return(defaultFsType, nil)
+				mockMounter.EXPECT().FormatAndMount(gomock.Eq(encryptedDevicePath), gomock.Eq(targetPath), gomock.Eq(defaultFsType), gomock.Any())
 				_, err := oscDriver.NodeStageVolume(context.TODO(), req)
 				if err != nil {
 					t.Fatalf("Expect no error but got: %v", err)

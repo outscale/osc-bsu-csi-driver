@@ -91,8 +91,7 @@ func newNodeService() nodeService {
 }
 
 func (d *nodeService) NodeStageVolume(ctx context.Context, req *csi.NodeStageVolumeRequest) (*csi.NodeStageVolumeResponse, error) {
-	klog.V(4).Infof("NodeStageVolume: called with args %+v", *req)
-	klog.V(4).Infof("%#v", req.GetPublishContext())
+	klog.V(4).Infof("NodeStageVolume: called with args  {VolumeId:%+v, PublishContext:%+v, StagingTargetPath:%+v, VolumeCapability:%+v, VolumeContext:%+v}", req.VolumeId, req.PublishContext, req.StagingTargetPath, req.VolumeCapability, req.VolumeContext)
 
 	volumeID := req.GetVolumeId()
 	if len(volumeID) == 0 {

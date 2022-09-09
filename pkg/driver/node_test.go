@@ -771,6 +771,7 @@ func TestNodeStageVolume(t *testing.T) {
 func TestNodeUnstageVolume(t *testing.T) {
 	targetPath := "/test/path"
 	devicePath := "/dev/fake"
+	encryptedDeviceName := "fake_crypt"
 
 	testCases := []struct {
 		name     string
@@ -793,6 +794,7 @@ func TestNodeUnstageVolume(t *testing.T) {
 
 				mockMounter.EXPECT().GetDeviceName(gomock.Eq(targetPath)).Return(devicePath, 1, nil)
 				mockMounter.EXPECT().Unmount(gomock.Eq(targetPath)).Return(nil)
+				mockMounter.EXPECT().IsLuksMapping(gomock.Eq(devicePath)).Return(false, "", nil)
 
 				req := &csi.NodeUnstageVolumeRequest{
 					StagingTargetPath: targetPath,
@@ -849,6 +851,7 @@ func TestNodeUnstageVolume(t *testing.T) {
 
 				mockMounter.EXPECT().GetDeviceName(gomock.Eq(targetPath)).Return(devicePath, 2, nil)
 				mockMounter.EXPECT().Unmount(gomock.Eq(targetPath)).Return(nil)
+				mockMounter.EXPECT().IsLuksMapping(gomock.Eq(devicePath)).Return(false, "", nil)
 
 				req := &csi.NodeUnstageVolumeRequest{
 					StagingTargetPath: targetPath,
@@ -930,6 +933,36 @@ func TestNodeUnstageVolume(t *testing.T) {
 
 				_, err := oscDriver.NodeUnstageVolume(context.TODO(), req)
 				expectErr(t, err, codes.Internal)
+			},
+		},
+		{
+			name: "success encryption",
+			testFunc: func(t *testing.T) {
+				mockCtl := gomock.NewController(t)
+				defer mockCtl.Finish()
+
+				mockMetadata := mocks.NewMockMetadataService(mockCtl)
+				mockMounter := mocks.NewMockMounter(mockCtl)
+
+				oscDriver := &nodeService{
+					metadata: mockMetadata,
+					mounter:  mockMounter,
+					inFlight: internal.NewInFlight(),
+				}
+
+				mockMounter.EXPECT().GetDeviceName(gomock.Eq(targetPath)).Return(devicePath, 1, nil)
+				mockMounter.EXPECT().Unmount(gomock.Eq(targetPath)).Return(nil)
+				mockMounter.EXPECT().IsLuksMapping(gomock.Eq(devicePath)).Return(true, encryptedDeviceName, nil)
+				mockMounter.EXPECT().LuksClose(gomock.Eq(encryptedDeviceName)).Return(nil)
+				req := &csi.NodeUnstageVolumeRequest{
+					StagingTargetPath: targetPath,
+					VolumeId:          "vol-test",
+				}
+
+				_, err := oscDriver.NodeUnstageVolume(context.TODO(), req)
+				if err != nil {
+					t.Fatalf("Expect no error but got: %v", err)
+				}
 			},
 		},
 	}

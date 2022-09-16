@@ -55,6 +55,7 @@ jobs:
         osc_access_key: ${{ secrets.OSC_ACCESS_KEY }}
         osc_secret_key: ${{ secrets.OSC_SECRET_KEY }}
         osc_region: ${{ secrets.OSC_REGION }}
+        image_id: ${{ secrets.OMI_ID }}
     - name: Wait to access the cluster
       uses: nick-invision/retry@v2
       with:

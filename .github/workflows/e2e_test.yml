@@ -63,6 +63,7 @@ jobs:
         osc_secret_key: ${{ secrets.OSC_SECRET_KEY }}
         osc_region: ${{ secrets.OSC_REGION }}
         public_cloud: "false"
+        image_id: ${{ secrets.OMI_ID }}
         version: ${{ format('{0}.{1}', github.sha, github.run_attempt) }}
     ## Create Public Cloud Cluster
     - name: Test on Public cluster
@@ -72,6 +73,7 @@ jobs:
         osc_secret_key: ${{ secrets.OSC_SECRET_KEY }}
         osc_region: ${{ secrets.OSC_REGION }}
         public_cloud: "true"
+        image_id: ${{ secrets.OMI_ID }}
         version: ${{ format('{0}.{1}', github.sha, github.run_attempt) }}
     - name: Clean images
       run: |

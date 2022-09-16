@@ -14,6 +14,9 @@ inputs:
     description: 'Create cluster in public cloud'
     required: true
     default: "false"
+  image_id:
+    description: 'OMI ID'
+    required: true
   version:
     description: 'version of the image'
     required: true
@@ -49,6 +52,7 @@ runs:
         worker_volume_size: 30
         #worker_iops: 1500
         public_cloud: ${{ inputs.public_cloud }}
+        image_id: ${{ inputs.image_id }}
     - name: Wait to access the cluster
       uses: nick-invision/retry@v2
       with:

@@ -38,8 +38,8 @@ export GO111MODULE=on
 
 E2E_ENV_RUN := "e2e-cloud-provider"
 E2E_ENV := "build-e2e-cloud-provider"
-E2E_AZ ?= "eu-west-2a"
-E2E_REGION ?= "eu-west-2"
+
+OSC_REGION ?= eu-west-2
 
 TRIVY_IMAGE := aquasec/trivy:0.30.0
 
@@ -99,8 +99,8 @@ test-e2e:
 		-v ${PWD}:/go/src/cloud-provider-osc \
 		-e AWS_ACCESS_KEY_ID=${OSC_ACCESS_KEY} \
 		-e AWS_SECRET_ACCESS_KEY=${OSC_SECRET_KEY} \
-		-e AWS_DEFAULT_REGION=$(E2E_REGION) \
-		-e AWS_AVAILABILITY_ZONES=$(E2E_AZ) \
+		-e AWS_DEFAULT_REGION=${OSC_REGION} \
+		-e AWS_AVAILABILITY_ZONES="${OSC_REGION}a" \
 		-e KC="$${KC}" \
 		--name $(E2E_ENV_RUN) $(E2E_ENV) tests/e2e/docker/run_e2e_single_az.sh
 

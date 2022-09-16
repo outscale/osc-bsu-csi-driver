@@ -105,6 +105,7 @@ runs:
       env:
         OSC_ACCESS_KEY: ${{ inputs.osc_access_key }}
         OSC_SECRET_KEY: ${{ inputs.osc_secret_key }}
+        OSC_REGION: ${{ inputs.osc_region }}
       run: bash -c "KC=$(base64 -w 0 set-up-rke-cluster/rke/kube_config_cluster.yml) make test-e2e"
     - name: Wait that all resources have been released (for ex SG ELB)
       uses: nick-invision/retry@v2

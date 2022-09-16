@@ -28,8 +28,9 @@ BUILD_DATE ?= $(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
 LDFLAGS ?= "-X ${PKG}/pkg/util.driverVersion=${VERSION} -X ${PKG}/pkg/util.gitCommit=${GIT_COMMIT} -X ${PKG}/pkg/util.buildDate=${BUILD_DATE}"
 GO111MODULE := on
 GOPROXY := direct
-
 TRIVY_IMAGE := aquasec/trivy:0.30.0
+
+OSC_REGION ?= eu-west-2
 
 .EXPORT_ALL_VARIABLES:
 

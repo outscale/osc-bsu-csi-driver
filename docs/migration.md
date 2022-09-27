@@ -40,3 +40,25 @@ The next step is to migrate all volume from using the old csi driver to the new 
    ```shell
    helm uninstall osc-bsu-csi-driver --namespace kube-system
    ```
+
+## Migrating PVC using Korb
+
+[korb](https://github.com/BeryJu/korb) can be used to ease your PVC migration.
+This method is easier to run but may take time as it performs data copy.
+
+Steps:
+1. Have CSI v0 and v1 installed 
+2. Stop pod from using your pvc
+3. Run korb to migrate your data to a pvc with the same name but with the new storage class
+4. Start pod
+
+As an example (tested with `examples/kubernetes/dynamic-provisioning`), we are migrating `ebs-claim` PVC using old storage class `ebs-sc` to the new storage class `bsu-sc`:
+```bash
+korb ebs-claim \
+    --kube-config ~/your/kube_config_cluster.yml \
+    --new-pvc-storage-class bsu-sc \
+    --source-namespace dynamic-p \
+    --strategy copy-twice-name
+```
+
+Note: The `copy-twice-name` strategy will copy the PVC to the new Storage class and with new size and a new name, delete the old PVC, and copy it back to the old name.

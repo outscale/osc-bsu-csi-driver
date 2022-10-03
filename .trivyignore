@@ -1,2 +1,4 @@
 # github.com/emicklei/go-restful 
 CVE-2022-1996
+# https://github.com/advisories/GHSA-69cg-p879-7622
+CVE-2022-27664

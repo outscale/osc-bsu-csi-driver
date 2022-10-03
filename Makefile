@@ -46,6 +46,7 @@ help:
 	@echo "  - verify             : check code"
 	@echo "  - test               : run all tests"
 	@echo "  - test-e2e-single-az : run e2e tests"
+	@echo "  - helm-docs          : generate helm doc"
 
 .PHONY: aws-ebs-csi-driver
 build:
@@ -132,3 +133,9 @@ helm_deploy:
 			--set region=${OSC_REGION} \
 			--set image.repository=$(TARGET_IMAGE) \
 			--set image.tag=$(TARGET_TAG)
+
+helm-docs:
+	docker run --rm --volume "$$(pwd):/helm-docs" -u "$$(id -u)" jnorwood/helm-docs:v1.11.0 --output-file ../docs/helm.md
+
+check-helm-docs:
+	./hack/verify-helm-docs

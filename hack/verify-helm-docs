@@ -1,0 +1,7 @@
+#!/bin/bash
+
+set -e
+
+make helm-docs
+
+git diff --exit-code docs/helm.md

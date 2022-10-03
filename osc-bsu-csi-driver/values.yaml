@@ -2,46 +2,61 @@
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 
+# -- Number of replicas to deploy
 replicaCount: 2
 
 image:
+  # -- Container image to use   
   repository: outscale/osc-ebs-csi-driver
+  # -- Container image tag to deploy
   tag: v0.1.0
+  # -- Container pull policy
   pullPolicy: IfNotPresent
 
-# set the verbosity level of plugins (default Max)
+# -- Verbosity level of the plugin
 verbosity: 10
 
-# Timeout for sidecars
+# -- Timeout for sidecars
 timeout: 60s
 
 backoff:
-# integer in second defining initial duration
+  # integer in second defining initial duration
+  # -- Initial duraction of backoff   
   duration: "1"
-# float define the factor multiplied by Duration each iteration
+  # float define the factor multiplied by Duration each iteration
+  # -- Factor multiplied by Duration for each iteration
   factor: "1.9"
-# integer defining the remaining number of iterations in which the duration parameter may change
+  # integer defining the remaining number of iterations in which the duration parameter may change
+  # -- Remaining number of iterations in which the duration parameter may change
   steps: "20"
-
 
 sidecars:
   provisionerImage:
     repository: k8s.gcr.io/sig-storage/csi-provisioner
     tag: "v3.0.0"
+    # -- Enable http endpoint to get metrics of the container
     enableHttpEndpoint: false
+    # -- Port of the http endpoint
     httpEndpointPort: "8089"
+    # -- Enable liveness probe for the container
     enableLivenessProbe: false
   attacherImage:
     repository: k8s.gcr.io/sig-storage/csi-attacher
     tag: "v3.3.0"
+    # -- Enable http endpoint to get metrics of the container
     enableHttpEndpoint: false
+    # -- Port of the http endpoint
     httpEndpointPort: "8090"
+    # -- Enable liveness probe for the container
     enableLivenessProbe: false
   snapshotterImage:
     repository: k8s.gcr.io/sig-storage/csi-snapshotter
     tag: "v4.2.1"
+    # -- Enable http endpoint to get metrics of the container
     enableHttpEndpoint: false
+    # -- Port of the http endpoint
     httpEndpointPort: "8091"
+    # -- Enable liveness probe for the container
     enableLivenessProbe: false
   livenessProbeImage:
     repository: k8s.gcr.io/sig-storage/livenessprobe
@@ -49,32 +64,49 @@ sidecars:
   resizerImage:
     repository: k8s.gcr.io/sig-storage/csi-resizer
     tag: "v1.3.0"
+    # -- Enable http endpoint to get metrics of the container
     enableHttpEndpoint: false
+    # -- Port of the http endpoint
     httpEndpointPort: "8092"
+    # -- Enable liveness probe for the container
     enableLivenessProbe: false
   nodeDriverRegistrarImage:
     repository: k8s.gcr.io/sig-storage/csi-node-driver-registrar
     tag: "v2.3.0"
+    # -- Enable http endpoint to get metrics of the container
     enableHttpEndpoint: false
+    # -- Port of the http endpoint
     httpEndpointPort: "8093"
+    # -- Enable liveness probe for the container
     enableLivenessProbe: false
 
+# -- Specify image pull secrets 
 imagePullSecrets: []
+# -- Override name of the app (instead of `osc-bsu-csi-driver`)
 nameOverride: ""
+
+# TODO: REMOVE
+# @ignored
 fullnameOverride: ""
 
+# -- Annotations for controller pod
 podAnnotations: {}
+# -- Labels for controller pod
 podLabels: {}
 
+# -- Enable schedule volume for dynamic volume provisioning
 # True if enable volume scheduling for dynamic volume provisioning
 enableVolumeScheduling: false
 
+# -- Enable volume resizing 
 # True if enable volume resizing
 enableVolumeResizing: false
 
+# -- Enable volume snapshot 
 # True if enable volume snapshot
 enableVolumeSnapshot: false
 
+# -- Specify limits of resources used by the pod
 resources:
   {}
   # We usually recommend not to specify default resources and to leave this as a conscious
@@ -90,55 +122,66 @@ resources:
 
 nodeSelector: {}
 
+#@ignored
 tolerateAllTaints: true
+# -- Pod tolerations
 tolerations: []
 
+# -- Affinity settings  
 affinity: {}
 
 # Extra volume tags to attach to each dynamically provisioned volume.
-# ---
 # extraVolumeTags:
 #   key1: value1
 #   key2: value2
+# -- Add extra tags on volume
 extraVolumeTags: {}
 
-# If set, add pv/pvc metadata to plugin create requests as parameters.
+# -- Add pv/pvc metadata to plugin create requests as parameters
 extraCreateMetadata: false
 
-# AWS region to use. If not specified then the region will be looked up via the AWS EC2 metadata
-# service.
-# ---
-# region: us-east-1
+# -- Region to use, otherwise it will be looked up via metadata. By providing this parameter, the controller will not require to access the metadata.
 region: ""
 
-# Max bsu limits
+# -- Maximum volume to attach to a node (see [Docs](https://docs.outscale.com/en/userguide/About-Volumes.html))
 maxBsuVolumes: "25"
 
-# Default FsType if no FsType is set in StorageClass
+# -- Default filesystem for the volume if no `FsType` is set in `StorageClass`
 defaultFsType: "ext4"
 
 node:
+  # -- Annotations for controller pod
   podAnnotations: {}
+  # -- Labels for controller pod
   podLabels: {}
+  # @ignored
   tolerateAllTaints: true
+  # -- Pod tolerations
   tolerations: []
 
 serviceAccount:
   controller:
+    # -- Annotations to add to the Controller ServiceAccount
     annotations: {}
   snapshot:
+    # -- Annotations to add to the Snapshot ServiceAccount
     annotations: {}
 
 credentials:
   # The name of the secret storing the below fields
   # (Default is osc-csi-bsu to avoid breaking existing configs)
+  # -- Use AK/SK from this secret
   secretName: osc-csi-bsu
 
   # We can actually create this secret with the following
   # ak/sk, if create is true.
+  # -- Actually create a secret in the deployment for AK/SK (else, only reference it)
   create: false
+  # -- If creating a secret, put this AK inside.
   accessKey: null
+  # -- If creating a secret, put this SK inside.
   secretKey: null
 
 csiDriver:
+  # -- Policy of the FileSystem (see [Docs](https://kubernetes-csi.github.io/docs/support-fsgroup.html#supported-modes))
   fsGroupPolicy: File

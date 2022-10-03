@@ -5,10 +5,11 @@
  - Update the version of the plugin
  - Update the CSI spec version
  - Update the kubernetes mininmal and recommended version
-4. Tag the release
+4. Generate helm doc `make helm-docs`
+5. Tag the release
 ```shell
 git tag -a vX.X.X -m "Release vX.X.X"
 ```
-5. Generate the docker image with `make build-image`
-6. Push the ocker image to the registry
-7. Make the release on Github 
+6. Generate the docker image with `make build-image`
+7. Push the docker image to the registry
+8. Make the release on Github 

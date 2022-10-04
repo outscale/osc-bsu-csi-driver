@@ -30,7 +30,7 @@ LDFLAGS   := "-w -s -X 'github.com/outscale-dev/cloud-provider-osc/cloud-control
 # Full log with  -v -x
 #GO_ADD_OPTIONS := -v -x
 
-IMAGE = "osc/cloud-provider-osc"
+IMAGE = "outscale/cloud-provider-osc"
 IMAGE_TAG = "${VERSION}"
 
 export GO111MODULE=on

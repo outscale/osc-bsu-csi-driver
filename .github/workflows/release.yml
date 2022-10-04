@@ -9,12 +9,10 @@ jobs:
     steps:
       - name: Check the repo
         uses: actions/checkout@v2
-      - name: Build Docker image
-        run: make build-image IMAGE=outscale/cloud-provider-osc
       - name: Docker login
         run: docker login -u $DOCKER_USER -p $DOCKER_PASSWORD
         env:
           DOCKER_USER: ${{secrets.DOCKER_USER}}
           DOCKER_PASSWORD: ${{secrets.DOCKER_PASSWORD}}
       - name : push to Docker Hub
-        run: make push-release IMAGE=outscale/cloud-provider-osc
+        run: make build-image image-push

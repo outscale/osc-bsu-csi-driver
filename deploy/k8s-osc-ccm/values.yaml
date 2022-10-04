@@ -2,16 +2,22 @@
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 
+# -- Number of replicas to deploy
 replicaCount: 1
 
 image:
+  # -- Container image to use
   repository: outscale/cloud-provider-osc
+  # -- Container image tag to deploy
   tag: v0.0.10beta
+  # -- Container pull policy
   pullPolicy: IfNotPresent
 
+# -- Verbosity level of the plugin
 verbose: 5
-oscSecretName: ""
+# -- Secret name containing cloud credentials
+oscSecretName: osc-secret
+# -- Specify image pull secrets
 imagePullSecrets: []
-nameOverride: ""
-fullnameOverride: ""
+# -- Labels for pod
 podLabels: {}

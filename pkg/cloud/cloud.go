@@ -59,7 +59,7 @@ const (
 	// MinTotalIOPS represents the minimum Input Output per second.
 	MinTotalIOPS = 100
 	// MaxTotalIOPS represents the maximum Input Output per second.
-	MaxTotalIOPS = 20000
+	MaxTotalIOPS = 13000
 	// MaxNumTagsPerResource represents the maximum number of tags per Outscale resource.
 	MaxNumTagsPerResource = 50
 	// MaxTagKeyLength represents the maximum key length for a tag.

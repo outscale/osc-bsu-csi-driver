@@ -40,6 +40,8 @@ jobs:
       run: bash -c "make test"
     - name: Image
       run: bash -c "make build-image"
+    - name: Check docs
+      run: bash -c "make check-helm-docs"
     - name: Trivy-Scan
       id: trivyscan
       run: bash -c "make trivy-scan"

@@ -53,7 +53,7 @@ help:
 	@echo "  - test               : run all tests"
 	@echo "  - test-e2e           : run e2e tests"
 	@echo "  - trivy-scan         : run CVE check on Docker images"
-
+	@echo "  - helm-docs          : generate helm doc"
 .PHONY: build
 build: $(SOURCES)
 	CGO_ENABLED=0 GOOS=$(GOOS) go build $(GO_ADD_OPTIONS) \
@@ -143,3 +143,9 @@ helm_deploy:
 	kubectl rollout restart ds/osc-cloud-controller-manager -n kube-system
 	kubectl rollout status ds/osc-cloud-controller-manager -n kube-system --timeout=30s
 	kubectl taint nodes --all node.cloudprovider.kubernetes.io/uninitialized=true:NoSchedule
+
+helm-docs:
+	docker run --rm --volume "$$(pwd):/helm-docs" -u "$$(id -u)" jnorwood/helm-docs:v1.11.0 --output-file ../../deploy/k8s-osc-ccm/README.md
+
+check-helm-docs:
+	./hack/verify-helm-docs

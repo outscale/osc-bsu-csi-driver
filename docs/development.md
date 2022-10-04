@@ -110,9 +110,10 @@ make build-image image-tag image-push helm_deploy test-e2e
 2.  Update chart version (if needed) in [Chart.yaml](../deploy/k8s-osc-ccm/Chart.yaml)
 3.  Update cloud-provider-osc version in [values.yaml](../deploy/k8s-osc-ccm/values.yaml)
 4.  Update prerequisites section in [deploy/README.md](../deploy/README.md)
-5.  Commit version with `git commit -am "cloud-controller-manager vX.Y.Z"`
-6.  Make docker image with `make build-image`
-7.  Tag commit with `git tag vX.Y.Z`
-8.  Push commit and tag on Github
-9.  Push the docker image to the registry
-10. Make the release on Github
+5.  Generate helm doc `make helm-docs`
+6.  Commit version with `git commit -am "cloud-controller-manager vX.Y.Z"`
+7.  Make docker image with `make build-image`
+8.  Tag commit with `git tag vX.Y.Z`
+9.  Push commit and tag on Github
+10. Push the docker image to the registry
+11. Make the release on Github

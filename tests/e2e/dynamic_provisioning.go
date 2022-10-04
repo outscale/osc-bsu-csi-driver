@@ -333,6 +333,58 @@ var _ = Describe("[ebs-csi-e2e] [single-az] Dynamic Provisioning", func() {
 		test.Run(cs, ns)
 	})
 
+	It("should create a volume with too many iops", func() {
+		pods := []testsuites.PodDetails{
+			{
+				Cmd: "touch /mnt/test-1/data",
+				Volumes: []testsuites.VolumeDetails{
+					{
+						VolumeType: osccloud.VolumeTypeIO1,
+						FSType:     bsucsidriver.FSTypeExt4,
+						IopsPerGB:  fmt.Sprintf("%v", osccloud.MaxIopsPerGb),
+						ClaimSize:  "44Gi",
+						VolumeMount: testsuites.VolumeMountDetails{
+							NameGenerate:      "test-volume-",
+							MountPathGenerate: "/mnt/test-",
+							ReadOnly:          true,
+						},
+					},
+				},
+			},
+		}
+		test := testsuites.DynamicallyProvisionedReadOnlyVolumeTest{
+			CSIDriver: ebsDriver,
+			Pods:      pods,
+		}
+		test.Run(cs, ns)
+	})
+
+	It("should create a volume with a ratio iops/size too high", func() {
+		pods := []testsuites.PodDetails{
+			{
+				Cmd: "touch /mnt/test-1/data",
+				Volumes: []testsuites.VolumeDetails{
+					{
+						VolumeType: osccloud.VolumeTypeIO1,
+						FSType:     bsucsidriver.FSTypeExt4,
+						IopsPerGB:  fmt.Sprintf("%v", osccloud.MaxIopsPerGb+1),
+						ClaimSize:  "4Gi",
+						VolumeMount: testsuites.VolumeMountDetails{
+							NameGenerate:      "test-volume-",
+							MountPathGenerate: "/mnt/test-",
+							ReadOnly:          true,
+						},
+					},
+				},
+			},
+		}
+		test := testsuites.DynamicallyProvisionedReadOnlyVolumeTest{
+			CSIDriver: ebsDriver,
+			Pods:      pods,
+		}
+		test.Run(cs, ns)
+	})
+
 	It(fmt.Sprintf("should delete PV with reclaimPolicy %q", v1.PersistentVolumeReclaimDelete), func() {
 		reclaimPolicy := v1.PersistentVolumeReclaimDelete
 		volumes := []testsuites.VolumeDetails{

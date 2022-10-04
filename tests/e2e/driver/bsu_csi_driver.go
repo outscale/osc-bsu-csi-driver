@@ -19,7 +19,7 @@ import (
 
 	volumesnapshotv1 "github.com/kubernetes-csi/external-snapshotter/client/v4/apis/volumesnapshot/v1"
 	bsucsidriver "github.com/outscale-dev/osc-bsu-csi-driver/pkg/driver"
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	storagev1 "k8s.io/api/storage/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -101,14 +101,19 @@ func (d *bsuCSIDriver) GetPersistentVolume(volumeID string, fsType string, size 
 }
 
 // GetParameters returns the parameters specific for this driver
-func GetParameters(volumeType string, fsType string, encrypted bool) map[string]string {
+func GetParameters(volumeType string, fsType string, iops string, encrypted bool) map[string]string {
 	parameters := map[string]string{
 		"type":                      volumeType,
 		"csi.storage.k8s.io/fstype": fsType,
 	}
-	if iops := IOPSPerGBForVolumeType(volumeType); iops != "" {
+
+	if iops == "" {
+		iops = IOPSPerGBForVolumeType(volumeType)
+	}
+	if iops != "" {
 		parameters["iopsPerGB"] = iops
 	}
+
 	if encrypted {
 		parameters["encrypted"] = True
 	}

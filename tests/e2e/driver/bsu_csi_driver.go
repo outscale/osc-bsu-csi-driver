@@ -101,14 +101,19 @@ func (d *bsuCSIDriver) GetPersistentVolume(volumeID string, fsType string, size 
 }
 
 // GetParameters returns the parameters specific for this driver
-func GetParameters(volumeType string, fsType string, encrypted bool, secretName string, secretNamespace string) map[string]string {
+func GetParameters(volumeType string, fsType string, iops string, encrypted bool, secretName string, secretNamespace string) map[string]string {
 	parameters := map[string]string{
 		"type":                      volumeType,
 		"csi.storage.k8s.io/fstype": fsType,
 	}
-	if iops := IOPSPerGBForVolumeType(volumeType); iops != "" {
+
+	if iops == "" {
+		iops = IOPSPerGBForVolumeType(volumeType)
+	}
+	if iops != "" {
 		parameters["iopsPerGB"] = iops
 	}
+
 	if encrypted {
 		parameters["encrypted"] = True
 	}

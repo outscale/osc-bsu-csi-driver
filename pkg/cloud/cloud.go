@@ -60,6 +60,8 @@ const (
 	MinTotalIOPS = 100
 	// MaxTotalIOPS represents the maximum Input Output per second.
 	MaxTotalIOPS = 13000
+	// MaxIopsPerGb represents the maximum Input Output per GigaBits
+	MaxIopsPerGb = 300
 	// MaxNumTagsPerResource represents the maximum number of tags per Outscale resource.
 	MaxNumTagsPerResource = 50
 	// MaxTagKeyLength represents the maximum key length for a tag.
@@ -308,13 +310,20 @@ func (c *cloud) CreateDisk(ctx context.Context, volumeName string, diskOptions *
 		createType = diskOptions.VolumeType
 	case VolumeTypeIO1:
 		createType = diskOptions.VolumeType
-		iops = capacityGiB * int64(diskOptions.IOPSPerGB)
+
+		iopsPerGb := diskOptions.IOPSPerGB
+		if iopsPerGb > MaxIopsPerGb {
+			iopsPerGb = 300
+		}
+
+		iops = capacityGiB * int64(iopsPerGb)
 		if iops < MinTotalIOPS {
 			iops = MinTotalIOPS
 		}
 		if iops > MaxTotalIOPS {
 			iops = MaxTotalIOPS
 		}
+
 		request.SetIops(int32(iops))
 	case "":
 		createType = DefaultVolumeType

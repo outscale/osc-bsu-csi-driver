@@ -119,3 +119,8 @@ func GetSvc(client clientset.Interface, namespace *v1.Namespace, name string) (r
 func WaitForSvc(client clientset.Interface, namespace *v1.Namespace, svc *v1.Service) {
 	e2esvc.WaitForServiceUpdatedWithFinalizer(client, namespace.Name, svc.GetObjectMeta().GetName(), true)
 }
+
+// WaitForDeletedSvc waits for an svc to be deleted
+func WaitForDeletedSvc(client clientset.Interface, namespace *v1.Namespace, svc *v1.Service) {
+	e2esvc.WaitForServiceDeletedWithFinalizer(client, namespace.Name, svc.GetObjectMeta().GetName())
+}

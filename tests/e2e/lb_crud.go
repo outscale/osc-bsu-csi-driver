@@ -110,13 +110,10 @@ var _ = ginkgo.Describe("[ccm-e2e] SVC-LB", func() {
 			ginkgo.By("Listing svc")
 			e2eutils.ListSvc(cs, ns)
 
-			fmt.Printf("Wait to have stable sg")
-			time.Sleep(120 * time.Second)
-
 			ginkgo.By("Get Updated svc")
 			count := 0
 			var updatedSvc *v1.Service
-			for count < 3 {
+			for count < 10 {
 				updatedSvc = e2eutils.GetSvc(cs, ns, svc.GetObjectMeta().GetName())
 				fmt.Printf("Ingress:  %v\n", updatedSvc.Status.LoadBalancer.Ingress)
 				if len(updatedSvc.Status.LoadBalancer.Ingress) > 0 {
@@ -165,13 +162,19 @@ var _ = ginkgo.Describe("[ccm-e2e] SVC-LB", func() {
 			fmt.Printf("svc updated:  %v\n", svc)
 
 			ginkgo.By("Test LB updated(wait to have vm registred)")
-			time.Sleep(120 * time.Second)
+			count = 0
+			for count < 10 {
+				lb, err = e2eutils.GetLb(elb, lbName)
+				if err == nil && len(lb.Instances) != 0 {
+					break
+				}
+				count++
+				time.Sleep(30 * time.Second)
+			}
 			lb, err = e2eutils.GetLb(elb, lbName)
+
 			framework.ExpectNoError(err)
 			framework.ExpectNotEqual(len(lb.Instances), 0)
-
-			fmt.Printf("Wait to have stable sg")
-			time.Sleep(120 * time.Second)
 
 			ginkgo.By("TestReachableHTTP after update")
 			e2esvc.TestReachableHTTP(address, 80, 240*time.Second)
@@ -240,9 +243,6 @@ var _ = ginkgo.Describe("[ccm-e2e] SVC-LB", func() {
 		e2eutils.ListSvc(cs, nsSvc1)
 		e2eutils.ListSvc(cs, nsSvc2)
 
-		fmt.Printf("Wait to have stable sg")
-		time.Sleep(120 * time.Second)
-
 		ginkgo.By("Get Updated svc")
 		addresses := [2]string{}
 		lbNames := [2]string{}
@@ -251,7 +251,7 @@ var _ = ginkgo.Describe("[ccm-e2e] SVC-LB", func() {
 		for i := 0; i < 2; i++ {
 			count := 0
 			var updatedSvc *v1.Service
-			for count < 3 {
+			for count < 10 {
 				updatedSvc = e2eutils.GetSvc(cs, nss[i], svcs[i].GetObjectMeta().GetName())
 				fmt.Printf("Ingress:  %v\n", updatedSvc.Status.LoadBalancer.Ingress)
 				if len(updatedSvc.Status.LoadBalancer.Ingress) > 0 {
@@ -273,6 +273,8 @@ var _ = ginkgo.Describe("[ccm-e2e] SVC-LB", func() {
 
 		ginkgo.By("Remove SVC 1")
 		e2eutils.DeleteSvc(cs, nsSvc1, svc1)
+
+		e2eutils.WaitForDeletedSvc(cs, nsSvc1, svc1)
 
 		fmt.Printf("Wait to have stable sg")
 		time.Sleep(120 * time.Second)

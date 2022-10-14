@@ -1,18 +1,33 @@
-name: Release 
+# Github action for releasing the binaries
+name: release
 
 on:
-  release:
-    types: [published]
+  push:
+    tags:
+    - 'v*'
+  workflow_dispatch:  
+
 jobs:
-  push-docker-image:
-    runs-on: ubuntu-20.04
+  goreleaser:
+    runs-on: ubuntu-latest
     steps:
-      - name: Check the repo
+      - name: Checkout
         uses: actions/checkout@v2
-      - name: Docker login
-        run: docker login -u $DOCKER_USER -p $DOCKER_PASSWORD
-        env:
-          DOCKER_USER: ${{secrets.DOCKER_USER}}
-          DOCKER_PASSWORD: ${{secrets.DOCKER_PASSWORD}}
-      - name : push to Docker Hub
-        run: make build-image image-push
+        with:
+          fetch-depth: 0
+        
+      - name: Get changelog for release
+        id: changelog
+        uses: mindsers/changelog-reader-action@v2
+        with:
+          path: "docs/CHANGELOG.md"
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: Release ${{ github.ref_name }}
+          draft: true
+          prerelease: false
+          body: ${{ steps.changelog.outputs.changes }}

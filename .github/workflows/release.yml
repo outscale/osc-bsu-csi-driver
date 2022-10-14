@@ -21,6 +21,7 @@ jobs:
         uses: mindsers/changelog-reader-action@v2
         with:
           path: "docs/CHANGELOG.md"
+          version: ${{ github.ref_name }}
 
       - name: Create Release
         uses: softprops/action-gh-release@v1

@@ -1,3 +1,12 @@
+# v0.1.0
+## Notable changes
+* Partial migration from AWS SDK to Outscale SDK ([#61](https://github.com/outscale-dev/cloud-provider-osc/issues/61))
+* Provide Region and Zone during node initialization ([#118](https://github.com/outscale-dev/cloud-provider-osc/issues/118))
+* Reduce log verbosity ([#64](https://github.com/outscale-dev/cloud-provider-osc/issues/64))
+
+## Bugfixes
+* Implement workaround for the public cloud issue ([#68](https://github.com/outscale-dev/cloud-provider-osc/issues/68)) 
+    > **NOTE**: The actual solution is to not delete (in Public Cloud) the rule that allows all Public Cloud Loadbalancers to forward traffic to the cluster. 
 # v0.0.10beta
 
 ## Notable changes

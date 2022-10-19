@@ -66,7 +66,7 @@ type DeviceManager interface {
 	NewDevice(instance osc.Vm, volumeID string) (device Device, err error)
 
 	// GetDevice returns the device already assigned to the volume.
-	GetDevice(instance osc.Vm, volumeID string) (device Device, err error)
+	GetDevice(instance osc.Vm, volumeID string) (device Device)
 }
 
 type deviceManager struct {
@@ -146,17 +146,17 @@ func (d *deviceManager) NewDevice(instance osc.Vm, volumeID string) (Device, err
 	return d.newBlockDevice(instance, volumeID, devPreffix+name, false), nil
 }
 
-func (d *deviceManager) GetDevice(instance osc.Vm, volumeID string) (Device, error) {
+func (d *deviceManager) GetDevice(instance osc.Vm, volumeID string) Device {
 	d.mux.Lock()
 	defer d.mux.Unlock()
 
 	inUse := d.getDeviceNamesInUse(instance)
 
 	if path := d.getPath(inUse, volumeID); path != "" {
-		return d.newBlockDevice(instance, volumeID, path, true), nil
+		return d.newBlockDevice(instance, volumeID, path, true)
 	}
 
-	return d.newBlockDevice(instance, volumeID, "", false), nil
+	return d.newBlockDevice(instance, volumeID, "", false)
 }
 
 func (d *deviceManager) newBlockDevice(instance osc.Vm, volumeID string, path string, isAlreadyAssigned bool) Device {

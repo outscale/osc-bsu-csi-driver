@@ -561,14 +561,12 @@ func (c *cloud) DetachDisk(ctx context.Context, volumeID, nodeID string) error {
 	}
 
 	// TODO: check if attached
-	device, err := c.dm.GetDevice(*instance, volumeID)
-	if err != nil {
-		return err
-	}
+	device := c.dm.GetDevice(*instance, volumeID)
 	defer device.Release(true)
 
 	if !device.IsAlreadyAssigned {
 		klog.Warningf("DetachDisk called on non-attached volume: %s", volumeID)
+		return ErrNotFound
 	}
 
 	request := osc.UnlinkVolumeRequest{

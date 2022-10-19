@@ -93,38 +93,54 @@ func TestNewDevice(t *testing.T) {
 
 func TestGetDevice(t *testing.T) {
 	testCases := []struct {
-		name               string
-		instanceID         string
-		existingDevicePath string
-		existingVolumeID   string
-		volumeID           string
+		name     string
+		testFunc func(t *testing.T)
 	}{
 		{
-			name:               "success: normal",
-			instanceID:         "instance-1",
-			existingDevicePath: "/dev/xvdbc",
-			existingVolumeID:   "vol-1",
-			volumeID:           "vol-2",
+			name: "success: normal",
+			testFunc: func(t *testing.T) {
+				instanceID := "instance-1"
+				existingDevicePath := "/dev/xvdbc"
+				existingVolumeID := "vol-1"
+				volumeID := "vol-2"
+
+				dm := NewDeviceManager()
+				fakeInstance := newFakeInstance(instanceID, existingVolumeID, existingDevicePath)
+
+				// Should create valid Device with valid path
+				dev1, err := dm.NewDevice(fakeInstance, volumeID)
+				assertDevice(t, dev1, false /*IsAlreadyAssigned*/, err)
+
+				// Devices with same instance and volume should have same paths
+				dev2 := dm.GetDevice(fakeInstance, volumeID)
+				assertDevice(t, dev2, true /*IsAlreadyAssigned*/, err)
+				if dev1.Path != dev2.Path {
+					t.Fatalf("Expected equal paths, got %v and %v", dev1.Path, dev2.Path)
+				}
+			},
+		},
+		{
+			name: "success: device not attached",
+			testFunc: func(t *testing.T) {
+				instanceID := "instance-1"
+				existingDevicePath := "/dev/xvdbc"
+				existingVolumeID := "vol-1"
+				volumeID := "vol-2"
+
+				dm := NewDeviceManager()
+				fakeInstance := newFakeInstance(instanceID, existingVolumeID, existingDevicePath)
+
+				// Devices with same instance and volume should have same paths
+				dev2 := dm.GetDevice(fakeInstance, volumeID)
+				assertDevice(t, dev2, false /*IsAlreadyAssigned*/, nil)
+			},
 		},
 	}
 
 	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			dm := NewDeviceManager()
-			fakeInstance := newFakeInstance(tc.instanceID, tc.existingVolumeID, tc.existingDevicePath)
-
-			// Should create valid Device with valid path
-			dev1, err := dm.NewDevice(fakeInstance, tc.volumeID)
-			assertDevice(t, dev1, false /*IsAlreadyAssigned*/, err)
-
-			// Devices with same instance and volume should have same paths
-			dev2, err := dm.GetDevice(fakeInstance, tc.volumeID)
-			assertDevice(t, dev2, true /*IsAlreadyAssigned*/, err)
-			if dev1.Path != dev2.Path {
-				t.Fatalf("Expected equal paths, got %v and %v", dev1.Path, dev2.Path)
-			}
-		})
+		t.Run(tc.name, tc.testFunc)
 	}
+
 }
 
 func TestReleaseDevice(t *testing.T) {
@@ -154,16 +170,16 @@ func TestReleaseDevice(t *testing.T) {
 			assertDevice(t, dev, false /*IsAlreadyAssigned*/, err)
 			dev.Taint()
 			dev.Release(false)
-			dev2, err := dm.GetDevice(fakeInstance, tc.volumeID)
-			assertDevice(t, dev2, true /*IsAlreadyAssigned*/, err)
+			dev2 := dm.GetDevice(fakeInstance, tc.volumeID)
+			assertDevice(t, dev2, true /*IsAlreadyAssigned*/, nil)
 			if dev.Path != dev2.Path {
 				t.Fatalf("Expected device to be already assigned, got unassigned")
 			}
 
 			// Should release tainted device if force=true is passed in
 			dev2.Release(true)
-			dev3, err := dm.GetDevice(fakeInstance, tc.volumeID)
-			assertDevice(t, dev3, false /*IsAlreadyAssigned*/, err)
+			dev3 := dm.GetDevice(fakeInstance, tc.volumeID)
+			assertDevice(t, dev3, false /*IsAlreadyAssigned*/, nil)
 		})
 	}
 }

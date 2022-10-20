@@ -360,7 +360,18 @@ func TestDetachDisk(t *testing.T) {
 
 			ctx := context.Background()
 			mockOscInterface.EXPECT().ReadVolumes(gomock.Eq(ctx), gomock.Any()).Return(osc.ReadVolumesResponse{Volumes: &[]osc.Volume{vol}}, nil, nil).AnyTimes()
-			mockOscInterface.EXPECT().ReadVms(gomock.Eq(ctx), gomock.Any()).Return(newDescribeInstancesOutput(tc.nodeID), nil, nil)
+			// Create a Vm and add device in BSU
+			vm := newDescribeInstancesOutput(tc.nodeID)
+			devicePath := "/dev/sdb"
+			vm.GetVms()[0].BlockDeviceMappings = &[]osc.BlockDeviceMappingCreated{
+				{
+					DeviceName: &devicePath,
+					Bsu: &osc.BsuCreated{
+						VolumeId: &tc.volumeID,
+					},
+				},
+			}
+			mockOscInterface.EXPECT().ReadVms(gomock.Eq(ctx), gomock.Any()).Return(vm, nil, nil)
 			mockOscInterface.EXPECT().UnlinkVolume(gomock.Eq(ctx), gomock.Any()).Return(osc.UnlinkVolumeResponse{}, nil, tc.expErr)
 
 			err := c.DetachDisk(ctx, tc.volumeID, tc.nodeID)

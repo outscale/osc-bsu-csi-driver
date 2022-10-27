@@ -116,12 +116,18 @@ func (i *instancesV2) InstanceMetadata(ctx context.Context, node *v1.Node) (*clo
 		return nil, err
 	}
 
+	zone := oscInstance.Placement.GetSubregionName()
+	region, err := azToRegion(zone)
+	if err != nil {
+		return nil, err
+	}
+
 	metadata := &cloudprovider.InstanceMetadata{
 		ProviderID:    providerID,
 		InstanceType:  oscInstance.GetVmType(),
 		NodeAddresses: nodeAddresses,
-		Zone:          i.availabilityZone,
-		Region:        i.region,
+		Zone:          zone,
+		Region:        region,
 	}
 
 	klog.Warningf("InstanceMetadata is %+v", metadata)

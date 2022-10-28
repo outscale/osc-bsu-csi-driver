@@ -31,7 +31,9 @@ jobs:
           repository: ${{ github.event.pull_request.head.repo.full_name }}
           ref: ${{ github.event.pull_request.head.ref }}
     - uses: azure/setup-kubectl@v2.0
-    - uses: azure/setup-helm@v1
+    - uses: azure/setup-helm@v3
+      with:
+        version: v3.10.1
     - uses: actions/setup-python@v2
     - uses: outscale-dev/frieza-github-actions/frieza-clean@master
       with:

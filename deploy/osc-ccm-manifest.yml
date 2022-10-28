@@ -1,3 +1,5 @@
+---
+# Source: osc-cloud-controller-manager/templates/serviceaccount.yaml
 # ServiceAccount Def
 apiVersion: v1
 kind: ServiceAccount
@@ -5,21 +7,7 @@ metadata:
   name: cloud-controller-manager
   namespace: kube-system
 ---
-apiVersion: rbac.authorization.k8s.io/v1
-kind: RoleBinding
-metadata:
-  name: cloud-controller-manager:apiserver-authentication-reader
-  namespace: kube-system
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: Role
-  name: extension-apiserver-authentication-reader
-subjects:
-- apiGroup: ""
-  kind: ServiceAccount
-  name: cloud-controller-manager
-  namespace: kube-system
----
+# Source: osc-cloud-controller-manager/templates/osc-ccm.yaml
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
@@ -104,6 +92,7 @@ rules:
   - update
   - watch
 ---
+# Source: osc-cloud-controller-manager/templates/osc-ccm.yaml
 # CCM Service
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
@@ -119,6 +108,23 @@ subjects:
   name: cloud-controller-manager
   namespace: kube-system
 ---
+# Source: osc-cloud-controller-manager/templates/osc-ccm.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: cloud-controller-manager:apiserver-authentication-reader
+  namespace: kube-system
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: extension-apiserver-authentication-reader
+subjects:
+- apiGroup: ""
+  kind: ServiceAccount
+  name: cloud-controller-manager
+  namespace: kube-system
+---
+# Source: osc-cloud-controller-manager/templates/osc-ccm.yaml
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
@@ -138,9 +144,11 @@ spec:
         app: osc-cloud-controller-manager
     spec:
       serviceAccountName: cloud-controller-manager
+      imagePullSecrets:
+        - name: registry-dockerconfigjson
       containers:
         - name: osc-cloud-controller-manager
-          image: outscale/cloud-provider-osc:v0.0.10beta
+          image: outscale/cloud-provider-osc:v0.1.0
           imagePullPolicy: IfNotPresent
           command:
             - /bin/osc-cloud-controller-manager
@@ -152,50 +160,62 @@ spec:
             - name: OSC_ACCOUNT_ID
               valueFrom:
                 secretKeyRef:
-                  name: "osc-secret"
+                  name: osc-secret
                   key: osc_account_id
                   optional: false
             - name: OSC_ACCOUNT_IAM
               valueFrom:
                 secretKeyRef:
-                  name: "osc-secret"
+                  name: osc-secret
                   key: osc_account_iam
                   optional: false
             - name: OSC_USER_ID
               valueFrom:
                 secretKeyRef:
-                  name: "osc-secret"
+                  name: osc-secret
                   key: osc_user_id
                   optional: false
             - name: OSC_ARN
               valueFrom:
                 secretKeyRef:
-                  name: "osc-secret"
+                  name: osc-secret
                   key: osc_arn
                   optional: false
             - name: AWS_ACCESS_KEY_ID
               valueFrom:
                 secretKeyRef:
-                  name: "osc-secret"
+                  name: osc-secret
                   key: key_id
                   optional: false
             - name: AWS_SECRET_ACCESS_KEY
               valueFrom:
                 secretKeyRef:
-                  name: "osc-secret"
+                  name: osc-secret
                   key: access_key
                   optional: false
             - name: AWS_DEFAULT_REGION
               valueFrom:
                 secretKeyRef:
-                  name: "osc-secret"
+                  name: osc-secret
                   key: aws_default_region
                   optional: false
             - name: AWS_AVAILABILITY_ZONES
               valueFrom:
                 secretKeyRef:
-                  name: "osc-secret"
+                  name: osc-secret
                   key: aws_availability_zones
+                  optional: false
+            - name: OSC_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: osc-secret
+                  key: access_key
+                  optional: false
+            - name: OSC_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: osc-secret
+                  key: key_id
                   optional: false
       hostNetwork: true
       tolerations:

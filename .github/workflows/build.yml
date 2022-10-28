@@ -42,6 +42,8 @@ jobs:
       run: bash -c "make build-image"
     - name: Check docs
       run: bash -c "make check-helm-docs"
+    - name: Check manifest
+      run: bash -c "make check-helm-manifest"
     - name: Trivy-Scan
       id: trivyscan
       run: bash -c "make trivy-scan"

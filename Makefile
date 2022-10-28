@@ -148,3 +148,9 @@ helm-docs:
 
 check-helm-docs:
 	./hack/verify-helm-docs
+
+helm-manifest:
+	@helm template test ./deploy/k8s-osc-ccm/ --values deploy/k8s-osc-ccm/values.yaml > deploy/osc-ccm-manifest.yml
+
+check-helm-manifest:
+	./hack/verify-helm-manifest.sh

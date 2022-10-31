@@ -39,7 +39,9 @@ jobs:
         repository: 'outscale-dev/osc-k8s-rke-cluster'
         path: "set-up-rke-cluster"
     - uses: azure/setup-kubectl@v2.0
-    - uses: azure/setup-helm@v1
+    - uses: azure/setup-helm@v3
+      with:
+        version: v3.10.1
     - uses: actions/setup-go@v2
       with:
         go-version: '1.17'

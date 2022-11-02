@@ -1,8 +1,8 @@
 apiVersion: v1
-appVersion: "0.1.0"
+appVersion: "0.1.1"
 description: A Helm chart for OSC CCM cloud provider
 name: osc-cloud-controller-manager
-version: 0.1.0
+version: 0.1.1
 kubeVersion: ">=1.14.0-0"
 home: https://github.com/outscale-dev/cloud-provider-osc/
 sources:

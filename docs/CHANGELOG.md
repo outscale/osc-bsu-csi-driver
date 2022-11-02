@@ -1,4 +1,8 @@
 # Changelog
+
+## [v0.1.1]
+### Bugfixes
+* Invalid zone in the metadata ([#149](https://github.com/outscale-dev/cloud-provider-osc/issues/149)) 
 ## [v0.1.0]
 ### Notable changes
 * Partial migration from AWS SDK to Outscale SDK ([#61](https://github.com/outscale-dev/cloud-provider-osc/issues/61))

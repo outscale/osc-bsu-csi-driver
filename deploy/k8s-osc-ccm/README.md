@@ -1,6 +1,6 @@
 # osc-cloud-controller-manager
 
-![Version: 0.1.0](https://img.shields.io/badge/Version-0.1.0-informational?style=flat-square) ![AppVersion: 0.1.0](https://img.shields.io/badge/AppVersion-0.1.0-informational?style=flat-square)
+![Version: 0.1.1](https://img.shields.io/badge/Version-0.1.1-informational?style=flat-square) ![AppVersion: 0.1.1](https://img.shields.io/badge/AppVersion-0.1.1-informational?style=flat-square)
 
 A Helm chart for OSC CCM cloud provider
 
@@ -26,7 +26,7 @@ Kubernetes: `>=1.14.0-0`
 |-----|------|---------|-------------|
 | image.pullPolicy | string | `"IfNotPresent"` | Container pull policy |
 | image.repository | string | `"outscale/cloud-provider-osc"` | Container image to use |
-| image.tag | string | `"v0.1.0"` | Container image tag to deploy |
+| image.tag | string | `"v0.1.1"` | Container image tag to deploy |
 | imagePullSecrets | list | `[]` | Specify image pull secrets |
 | oscSecretName | string | `"osc-secret"` | Secret name containing cloud credentials |
 | podLabels | object | `{}` | Labels for pod |

@@ -1,4 +1,12 @@
 # Changelog
+## [v0.1.1]
+### Features
+* Add alternative to generate the Kubernetes secret using helm ([#370](https://github.com/outscale-dev/osc-bsu-csi-driver/pull/370))
+* Add logs about request cache ([#476](https://github.com/outscale-dev/osc-bsu-csi-driver/pull/476))
+### Bugfixes
+* Fix the Iops regarding of the storage class parameter iopsPerGb, Outscale maximum iops and Outscale ratio iops/Gb ([#386](https://github.com/outscale-dev/osc-bsu-csi-driver/issues/386), [#394](https://github.com/outscale-dev/osc-bsu-csi-driver/issues/386))
+* Fix idempotency on ControllerUnpublishVolume ([#409](https://github.com/outscale-dev/osc-bsu-csi-driver/issues/409))
+* Fix idempotency on DeleteVolume and DeleteSnapshot ([#448](https://github.com/outscale-dev/osc-bsu-csi-driver/issues/448))
 ## [v0.1.0]
 > **_NOTE:_** In case no topology is provided by the CO (not the case for Kubernetes > v1.17), the volume will be created in the AZ A.
 ### Notable changes

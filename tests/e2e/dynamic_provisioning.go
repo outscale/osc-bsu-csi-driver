@@ -15,11 +15,13 @@ limitations under the License.
 package e2e
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"math/rand"
 	"os"
 	"strings"
+	"time"
 
 	. "github.com/onsi/ginkgo"
 	v1 "k8s.io/api/core/v1"
@@ -31,12 +33,15 @@ import (
 	"github.com/outscale-dev/osc-bsu-csi-driver/tests/e2e/driver"
 	"github.com/outscale-dev/osc-bsu-csi-driver/tests/e2e/testsuites"
 
+	"github.com/outscale-dev/osc-bsu-csi-driver/pkg/cloud"
 	osccloud "github.com/outscale-dev/osc-bsu-csi-driver/pkg/cloud"
 	bsucsidriver "github.com/outscale-dev/osc-bsu-csi-driver/pkg/driver"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 )
+
+const OSC_REGION = "OSC_REGION"
 
 var _ = Describe("[ebs-csi-e2e] [single-az] Dynamic Provisioning", func() {
 	f := framework.NewDefaultFramework("ebs")
@@ -540,6 +545,49 @@ var _ = Describe("[ebs-csi-e2e] [single-az] Dynamic Provisioning", func() {
 
 		test.Run(cs, ns, f)
 	})
+
+	It("should create a volume, delete it from outside and release the volume", func() {
+		binding := storagev1.VolumeBindingImmediate
+		retain := v1.PersistentVolumeReclaimDelete
+		volume := testsuites.VolumeDetails{
+			VolumeType:        osccloud.VolumeTypeGP2,
+			FSType:            bsucsidriver.FSTypeExt4,
+			ClaimSize:         driver.MinimumSizeForVolumeType(osccloud.VolumeTypeGP2),
+			VolumeBindingMode: &binding,
+			ReclaimPolicy:     &retain,
+		}
+
+		By("Create the PVC")
+		tpvc, cleanups := volume.SetupDynamicPersistentVolumeClaim(cs, ns, ebsDriver)
+		for i := range cleanups {
+			defer cleanups[i]()
+		}
+
+		tpvc.WaitForBound()
+
+		if os.Getenv(OSC_REGION) == "" {
+			Skip(fmt.Sprintf("env %q not set", OSC_REGION))
+		}
+
+		By("Create the cloud")
+
+		oscCloud, err := osccloud.NewCloudWithoutMetadata(os.Getenv(OSC_REGION))
+		framework.ExpectNoError(err, "Error while creating a cloud configuration")
+
+		By("Keep delete the disk until error")
+		tpvc.DeleteBackingVolume(oscCloud)
+
+		pv := tpvc.GetPersistentVolume()
+		for i := 1; i < 100; i++ {
+			_, err := oscCloud.DeleteDisk(context.Background(), pv.Spec.CSI.VolumeHandle)
+			if err == cloud.ErrNotFound {
+				break
+			}
+			fmt.Println("Disk still present, waiting")
+			time.Sleep(1 * time.Second)
+		}
+
+	})
 })
 
 var _ = Describe("[ebs-csi-e2e] [single-az] Snapshot", func() {
@@ -599,6 +647,60 @@ var _ = Describe("[ebs-csi-e2e] [single-az] Snapshot", func() {
 			RestoredPod: restoredPod,
 		}
 		test.Run(cs, snapshotrcs, ns)
+	})
+
+	It("should create a snapshot, delete it from outside and release the snapshot", func() {
+		binding := storagev1.VolumeBindingImmediate
+		retain := v1.PersistentVolumeReclaimDelete
+		volume := testsuites.VolumeDetails{
+			VolumeType:        osccloud.VolumeTypeGP2,
+			FSType:            bsucsidriver.FSTypeExt4,
+			ClaimSize:         driver.MinimumSizeForVolumeType(osccloud.VolumeTypeGP2),
+			VolumeBindingMode: &binding,
+			ReclaimPolicy:     &retain,
+		}
+
+		By("Create the PVC")
+		tpvc, cleanups := volume.SetupDynamicPersistentVolumeClaim(cs, ns, ebsDriver)
+		for i := range cleanups {
+			defer cleanups[i]()
+		}
+
+		pvc := tpvc.WaitForBound()
+
+		if os.Getenv(OSC_REGION) == "" {
+			Skip(fmt.Sprintf("env %q not set", OSC_REGION))
+		}
+
+		By("Create the Snapshot")
+		tvsc, cleanup := testsuites.CreateVolumeSnapshotClass(snapshotrcs, ns, ebsDriver)
+		defer cleanup()
+		snapshot := tvsc.CreateSnapshot(&pvc)
+		defer tvsc.DeleteSnapshot(snapshot)
+		tvsc.ReadyToUse(snapshot)
+
+		By("Create the cloud")
+		oscCloud, err := osccloud.NewCloudWithoutMetadata(os.Getenv(OSC_REGION))
+		framework.ExpectNoError(err, "Error while creating a cloud configuration")
+
+		By("Retrieve the snapshot")
+		snap, err := oscCloud.GetSnapshotByName(context.Background(), fmt.Sprintf("snapshot-%v", snapshot.UID))
+		framework.ExpectNoError(err, fmt.Sprintf("Error while retrieving snapshot %v", snapshot.UID))
+
+		By("Deleting the snapshot")
+		_, err = oscCloud.DeleteSnapshot(context.Background(), snap.SnapshotID)
+		framework.ExpectNoError(err, fmt.Sprintf("Error while deleting snapshot %v", snap.SnapshotID))
+
+		By("Keep deleting the snapshot until error")
+		for i := 1; i < 100; i++ {
+			_, err := oscCloud.DeleteSnapshot(context.Background(), snap.SnapshotID)
+			if err == cloud.ErrNotFound {
+				break
+			}
+			fmt.Println("Snapshot still present, waiting")
+			time.Sleep(1 * time.Second)
+		}
+
 	})
 })
 

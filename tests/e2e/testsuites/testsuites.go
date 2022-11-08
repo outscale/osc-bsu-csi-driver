@@ -372,6 +372,10 @@ func (t *TestPersistentVolumeClaim) DeleteBackingVolume(cloud awscloud.Cloud) {
 	}
 }
 
+func (t *TestPersistentVolumeClaim) GetPersistentVolume() *v1.PersistentVolume {
+	return t.persistentVolume
+}
+
 type TestDeployment struct {
 	client     clientset.Interface
 	deployment *apps.Deployment

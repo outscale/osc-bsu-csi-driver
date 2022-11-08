@@ -458,6 +458,9 @@ func (c *cloud) DeleteDisk(ctx context.Context, volumeID string) (bool, error) {
 					return false, nil
 				}
 			}
+			if isVolumeNotFoundError(err) {
+				return false, ErrNotFound
+			}
 			return false, fmt.Errorf("DeleteDisk could not delete volume in Outscale: %v", err)
 		}
 		return true, nil
@@ -804,6 +807,9 @@ func (c *cloud) DeleteSnapshot(ctx context.Context, snapshotID string) (success 
 					ThrottlingError) {
 					return false, nil
 				}
+			}
+			if isSnapshotNotFoundError(err) {
+				return false, ErrNotFound
 			}
 			return false, fmt.Errorf("DeleteSnapshot could not delete volume: %v", err)
 		}

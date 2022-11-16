@@ -27,7 +27,6 @@ import (
 
 	osc "github.com/outscale/osc-sdk-go/v2"
 
-	"github.com/aws/aws-sdk-go/aws/awserr"
 	dm "github.com/outscale-dev/osc-bsu-csi-driver/pkg/cloud/devicemanager"
 	"github.com/outscale-dev/osc-bsu-csi-driver/pkg/util"
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -51,6 +50,9 @@ const (
 var (
 	// ValidVolumeTypes = []string{VolumeTypeIO1, VolumeTypeGP2,             VolumeTypeSC1, VolumeTypeST1}
 	ValidVolumeTypes = []string{VolumeTypeIO1, VolumeTypeGP2, VolumeTypeSTANDARD}
+
+	// Throtlling
+	ThrottlingError = []int{503, 429}
 )
 
 // Outscale provisioning limits.
@@ -366,13 +368,13 @@ func (c *cloud) CreateDisk(ctx context.Context, volumeName string, diskOptions *
 		if err != nil {
 			if httpRes != nil {
 				fmt.Fprintln(os.Stderr, httpRes.Status)
-			}
-			requestStr := fmt.Sprintf("%v", request)
-			if keepRetryWithError(
-				requestStr,
-				err,
-				[]string{"RequestLimitExceeded"}) {
-				return false, nil
+				requestStr := fmt.Sprintf("%v", request)
+				if keepRetryWithError(
+					requestStr,
+					httpRes.StatusCode,
+					ThrottlingError) {
+					return false, nil
+				}
 			}
 			return false, fmt.Errorf("could not create volume in Outscale: %v", err)
 		}
@@ -410,13 +412,13 @@ func (c *cloud) CreateDisk(ctx context.Context, volumeName string, diskOptions *
 		if err != nil {
 			if httpRes != nil {
 				fmt.Fprintln(os.Stderr, httpRes.Status)
-			}
-			requestStr := fmt.Sprintf("%v", request)
-			if keepRetryWithError(
-				requestStr,
-				err,
-				[]string{"RequestLimitExceeded"}) {
-				return false, nil
+				requestStr := fmt.Sprintf("%v", request)
+				if keepRetryWithError(
+					requestStr,
+					httpRes.StatusCode,
+					ThrottlingError) {
+					return false, nil
+				}
 			}
 			return false, fmt.Errorf("error creating tags %v of volume %v: %v, http Status: %v", resTag, volumeID, err, httpRes)
 		}
@@ -448,13 +450,13 @@ func (c *cloud) DeleteDisk(ctx context.Context, volumeID string) (bool, error) {
 		if err != nil {
 			if httpRes != nil {
 				fmt.Fprintln(os.Stderr, httpRes.Status)
-			}
-			requestStr := fmt.Sprintf("%v", request)
-			if keepRetryWithError(
-				requestStr,
-				err,
-				[]string{"RequestLimitExceeded"}) {
-				return false, nil
+				requestStr := fmt.Sprintf("%v", request)
+				if keepRetryWithError(
+					requestStr,
+					httpRes.StatusCode,
+					ThrottlingError) {
+					return false, nil
+				}
 			}
 			return false, fmt.Errorf("DeleteDisk could not delete volume in Outscale: %v", err)
 		}
@@ -497,13 +499,13 @@ func (c *cloud) AttachDisk(ctx context.Context, volumeID, nodeID string) (string
 			if err != nil {
 				if httpRes != nil {
 					fmt.Fprintln(os.Stderr, httpRes.Status)
-				}
-				requestStr := fmt.Sprintf("%v", request)
-				if keepRetryWithError(
-					requestStr,
-					err,
-					[]string{"RequestLimitExceeded"}) {
-					return false, nil
+					requestStr := fmt.Sprintf("%v", request)
+					if keepRetryWithError(
+						requestStr,
+						httpRes.StatusCode,
+						ThrottlingError) {
+						return false, nil
+					}
 				}
 				return false, fmt.Errorf("could not attach volume %q to node %q: %v", volumeID, nodeID, err)
 			}
@@ -578,13 +580,13 @@ func (c *cloud) DetachDisk(ctx context.Context, volumeID, nodeID string) error {
 		if err != nil {
 			if httpRes != nil {
 				fmt.Fprintln(os.Stderr, httpRes.Status)
-			}
-			requestStr := fmt.Sprintf("%v", request)
-			if keepRetryWithError(
-				requestStr,
-				err,
-				[]string{"RequestLimitExceeded"}) {
-				return false, nil
+				requestStr := fmt.Sprintf("%v", request)
+				if keepRetryWithError(
+					requestStr,
+					httpRes.StatusCode,
+					ThrottlingError) {
+					return false, nil
+				}
 			}
 			return false, fmt.Errorf("could not detach volume %q from node %q: %v", volumeID, nodeID, err)
 		}
@@ -721,13 +723,13 @@ func (c *cloud) CreateSnapshot(ctx context.Context, volumeID string, snapshotOpt
 		if err != nil {
 			if httpRes != nil {
 				fmt.Fprintln(os.Stderr, httpRes.Status)
-			}
-			requestStr := fmt.Sprintf("%v", request)
-			if keepRetryWithError(
-				requestStr,
-				err,
-				[]string{"RequestLimitExceeded"}) {
-				return false, nil
+				requestStr := fmt.Sprintf("%v", request)
+				if keepRetryWithError(
+					requestStr,
+					httpRes.StatusCode,
+					ThrottlingError) {
+					return false, nil
+				}
 			}
 			return false, err
 		}
@@ -760,13 +762,13 @@ func (c *cloud) CreateSnapshot(ctx context.Context, volumeID string, snapshotOpt
 		if errTag != nil {
 			if httpResTag != nil {
 				fmt.Fprintln(os.Stderr, httpResTag.Status)
-			}
-			requestStr := fmt.Sprintf("%v", resTag)
-			if keepRetryWithError(
-				requestStr,
-				errTag,
-				[]string{"RequestLimitExceeded"}) {
-				return false, nil
+				requestStr := fmt.Sprintf("%v", resTag)
+				if keepRetryWithError(
+					requestStr,
+					httpResTag.StatusCode,
+					ThrottlingError) {
+					return false, nil
+				}
 			}
 			return false, errTag
 		}
@@ -795,13 +797,13 @@ func (c *cloud) DeleteSnapshot(ctx context.Context, snapshotID string) (success 
 		if err != nil {
 			if httpRes != nil {
 				fmt.Fprintln(os.Stderr, httpRes.Status)
-			}
-			requestStr := fmt.Sprintf("%v", request)
-			if keepRetryWithError(
-				requestStr,
-				err,
-				[]string{"RequestLimitExceeded"}) {
-				return false, nil
+				requestStr := fmt.Sprintf("%v", request)
+				if keepRetryWithError(
+					requestStr,
+					httpRes.StatusCode,
+					ThrottlingError) {
+					return false, nil
+				}
 			}
 			return false, fmt.Errorf("DeleteSnapshot could not delete volume: %v", err)
 		}
@@ -913,16 +915,14 @@ func (c *cloud) oscSnapshotResponseToStruct(oscSnapshot osc.Snapshot) Snapshot {
 	return snapshot
 }
 
-func keepRetryWithError(requestStr string, err error, allowedErrors []string) bool {
-	if awsError, ok := err.(awserr.Error); ok {
-		for _, v := range allowedErrors {
-			if awsError.Code() == v {
-				klog.Warningf(
-					"Retry even if got (%v) error on request (%s)",
-					awsError.Code(),
-					requestStr)
-				return true
-			}
+func keepRetryWithError(requestStr string, httpCode int, allowedErrors []int) bool {
+	for _, v := range allowedErrors {
+		if httpCode == v {
+			klog.Warningf(
+				"Retry even if got (%v) error on request (%s)",
+				httpCode,
+				requestStr)
+			return true
 		}
 	}
 	return false
@@ -945,13 +945,13 @@ func (c *cloud) getVolume(ctx context.Context, request osc.ReadVolumesRequest) (
 		if err != nil {
 			if httpRes != nil {
 				fmt.Fprintln(os.Stderr, httpRes.Status)
-			}
-			requestStr := fmt.Sprintf("%v", request)
-			if keepRetryWithError(
-				requestStr,
-				err,
-				[]string{"RequestLimitExceeded"}) {
-				return false, nil
+				requestStr := fmt.Sprintf("%v", request)
+				if keepRetryWithError(
+					requestStr,
+					httpRes.StatusCode,
+					ThrottlingError) {
+					return false, nil
+				}
 			}
 			return false, err
 		}
@@ -994,13 +994,13 @@ func (c *cloud) getInstance(ctx context.Context, vmID string) (*osc.Vm, error) {
 		if err != nil {
 			if httpRes != nil {
 				fmt.Fprintln(os.Stderr, httpRes.Status)
-			}
-			requestStr := fmt.Sprintf("%v", request)
-			if keepRetryWithError(
-				requestStr,
-				err,
-				[]string{"RequestLimitExceeded"}) {
-				return false, nil
+				requestStr := fmt.Sprintf("%v", request)
+				if keepRetryWithError(
+					requestStr,
+					httpRes.StatusCode,
+					ThrottlingError) {
+					return false, nil
+				}
 			}
 			return false, fmt.Errorf("error listing Outscale instances: %q", err)
 		}
@@ -1035,13 +1035,13 @@ func (c *cloud) getSnapshot(ctx context.Context, request osc.ReadSnapshotsReques
 		if err != nil {
 			if httpRes != nil {
 				fmt.Fprintln(os.Stderr, httpRes.Status)
-			}
-			requestStr := fmt.Sprintf("%v", request)
-			if keepRetryWithError(
-				requestStr,
-				err,
-				[]string{"RequestLimitExceeded"}) {
-				return false, nil
+				requestStr := fmt.Sprintf("%v", request)
+				if keepRetryWithError(
+					requestStr,
+					httpRes.StatusCode,
+					ThrottlingError) {
+					return false, nil
+				}
 			}
 			return false, err
 		}
@@ -1078,13 +1078,13 @@ func (c *cloud) listSnapshots(ctx context.Context, request osc.ReadSnapshotsRequ
 		if err != nil {
 			if httpRes != nil {
 				fmt.Fprintln(os.Stderr, httpRes.Status)
-			}
-			requestStr := fmt.Sprintf("%v", request)
-			if keepRetryWithError(
-				requestStr,
-				err,
-				[]string{"RequestLimitExceeded"}) {
-				return false, nil
+				requestStr := fmt.Sprintf("%v", request)
+				if keepRetryWithError(
+					requestStr,
+					httpRes.StatusCode,
+					ThrottlingError) {
+					return false, nil
+				}
 			}
 			return false, err
 		}
@@ -1180,13 +1180,13 @@ func (c *cloud) ResizeDisk(ctx context.Context, volumeID string, newSizeBytes in
 		if err != nil {
 			if httpRes != nil {
 				fmt.Fprintln(os.Stderr, httpRes.Status)
-			}
-			requestStr := fmt.Sprintf("%v", request)
-			if keepRetryWithError(
-				requestStr,
-				err,
-				[]string{"RequestLimitExceeded"}) {
-				return false, nil
+				requestStr := fmt.Sprintf("%v", request)
+				if keepRetryWithError(
+					requestStr,
+					httpRes.StatusCode,
+					ThrottlingError) {
+					return false, nil
+				}
 			}
 			return false, fmt.Errorf("could not modify volume %q: %v", volumeID, err)
 		}

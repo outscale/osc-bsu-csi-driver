@@ -139,3 +139,9 @@ helm-docs:
 
 check-helm-docs:
 	./hack/verify-helm-docs
+
+helm-package:
+	helm package osc-bsu-csi-driver -d out-helm
+
+helm-push: helm-package
+	helm push out-helm/*.tgz oci://registry-1.docker.io/${DOCKER_USER}

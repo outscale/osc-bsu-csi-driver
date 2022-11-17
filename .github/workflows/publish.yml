@@ -18,3 +18,23 @@ jobs:
           DOCKER_PASSWORD: ${{secrets.DOCKER_PASSWORD}}
       - name : push to Docker Hub
         run: make build-image image-push
+  push-artifact-hub:
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Check the repo
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - uses: azure/setup-helm@v3
+        with:
+          version: v3.10.1
+      - name: Docker login
+        run: docker login -u $DOCKER_USER -p $DOCKER_PASSWORD
+        env:
+          DOCKER_USER: ${{secrets.DOCKER_USER_HELM}}
+          DOCKER_PASSWORD: ${{secrets.DOCKER_PASSWORD_HELM}}
+      - name : push to Artifact Hub
+        run: make helm-push
+        env:
+          DOCKER_USER: ${{secrets.DOCKER_USER_HELM}}
+      

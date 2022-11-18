@@ -1,0 +1,4 @@
+repositoryID: b7448ecb-2c2c-4aa8-b8a7-bb85bee1f25d
+owners: # (optional, used to claim repository ownership)
+  - name: outscale
+    email: opensource@outscale.com

@@ -1,6 +1,6 @@
 
 # Outscale Block Storage Unit (BSU) CSI driver
-
+[![Artifact Hub](https://img.shields.io/endpoint?url=https://artifacthub.io/badge/repository/osc-bsu-csi-driver)](https://artifacthub.io/packages/search?repo=osc-bsu-csi-driver)
 ## Overview
 
 The Outscale Block Storage Unit Container Storage Interface (CSI) Driver provides a [CSI](https://github.com/container-storage-interface/spec/blob/master/spec.md) interface used by Container Orchestrators to manage the lifecycle of 3DS outscale BSU volumes.

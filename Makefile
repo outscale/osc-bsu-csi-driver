@@ -154,3 +154,9 @@ helm-manifest:
 
 check-helm-manifest:
 	./hack/verify-helm-manifest.sh
+
+helm-package:
+	helm package deploy/k8s-osc-ccm -d out-helm
+
+helm-push: helm-package
+	helm push out-helm/*.tgz oci://registry-1.docker.io/${DOCKER_USER}

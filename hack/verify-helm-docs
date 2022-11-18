@@ -4,4 +4,4 @@ set -e
 
 make helm-docs
 
-git diff --exit-code deploy/k8s-osc-ccm/README.md
+git diff --exit-code docs/helm.md

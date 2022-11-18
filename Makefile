@@ -144,7 +144,7 @@ helm_deploy:
 	kubectl taint nodes --all node.cloudprovider.kubernetes.io/uninitialized=true:NoSchedule
 
 helm-docs:
-	docker run --rm --volume "$$(pwd):/helm-docs" -u "$$(id -u)" jnorwood/helm-docs:v1.11.0 --output-file ../../deploy/k8s-osc-ccm/README.md
+	docker run --rm --volume "$$(pwd):/helm-docs" -u "$$(id -u)" jnorwood/helm-docs:v1.11.0 --output-file ../../docs/helm.md
 
 check-helm-docs:
 	./hack/verify-helm-docs

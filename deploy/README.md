@@ -77,7 +77,7 @@ Alternatively, you can deploy using Helm:
 ```
 helm upgrade --install --wait --wait-for-jobs k8s-osc-ccm deploy/k8s-osc-ccm --set oscSecretName=osc-secret
 ```
-More [helm options are available](../deploy/k8s-osc-ccm/README.md)
+More [helm options are available](../docs/helm.md)
 
 # Check Deployment
 

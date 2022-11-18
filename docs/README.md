@@ -3,6 +3,7 @@
 
 > **_NOTE:_** We are currently maintaining two versions of the plugin: v1.X (`master` branch) and v0.X (`OSC-MIGRATION` branch). If you are using the v0.X, we provide a guide to migrate to the new version [here](#migration-from-v0x-to-v100). The version v0.X will still receive bug and CVE fixes for as long it is used but no more features should be added.
 
+[![Artifact Hub](https://img.shields.io/endpoint?url=https://artifacthub.io/badge/repository/osc-bsu-csi-driver)](https://artifacthub.io/packages/search?repo=osc-bsu-csi-driver)
 ## Overview
 
 The Outscale Block Storage Unit Container Storage Interface (CSI) Driver provides a [CSI](https://github.com/container-storage-interface/spec/blob/master/spec.md) interface used by Container Orchestrators to manage the lifecycle of 3DS outscale BSU volumes.

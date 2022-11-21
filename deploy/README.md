@@ -14,7 +14,7 @@ You will need a Kubernetes cluster on 3DS Outscale cloud. The next sections deta
 
 You must tag some cloud resources with a cluster identifier in order to allow Cloud Controller Manager to identify which resources are part of the cluster.
 This includes:
-- [VPC](https://docs.outscale.com/en/userguide/About-VPCs.html)
+- [VPC and Subnets](https://docs.outscale.com/en/userguide/About-VPCs.html)
 - [Instances](https://docs.outscale.com/en/userguide/About-Instances.html)
 - [Security Groups](https://docs.outscale.com/en/userguide/About-Security-Groups-(Concepts).html)
 - [Route Tables](https://docs.outscale.com/en/userguide/About-Route-Tables.html)

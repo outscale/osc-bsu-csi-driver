@@ -161,6 +161,10 @@ const ServiceAnnotationLoadBalancerNameLength = "service.beta.kubernetes.io/osc-
 // service to specify, the load balancer name max length is 32 else it will be truncated.
 const ServiceAnnotationLoadBalancerName = "service.beta.kubernetes.io/osc-load-balancer-name"
 
+// ServiceAnnotationLoadBalancerSubnetID is the annotation used on the
+// service to specify, the subnet in which to create the load balancer.
+const ServiceAnnotationLoadBalancerSubnetID = "service.beta.kubernetes.io/osc-load-balancer-subnet-id"
+
 // LbNameMaxLength the load balancer name max length value.
 const LbNameMaxLength = int64(32)
 

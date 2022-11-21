@@ -1271,6 +1271,28 @@ func (c *Cloud) EnsureLoadBalancer(ctx context.Context, clusterName string, apiS
 		klog.Warningf("could not find any suitable subnets for creating the ELB")
 	}
 
+	if len(subnetIDs) > 0 && annotations[ServiceAnnotationLoadBalancerSubnetID] != "" {
+		targetSubnet := annotations[ServiceAnnotationLoadBalancerSubnetID]
+
+		if Contains(subnetIDs, targetSubnet) {
+			klog.V(2).Infof("User subnet found, override list of subnets (%v) to ([%v]) ", subnetIDs, targetSubnet)
+			subnetIDs = []string{targetSubnet}
+		} else {
+			return nil, fmt.Errorf("user subnet specified in the annotation %v=%v was not found (%v)", ServiceAnnotationLoadBalancerSubnetID, targetSubnet, subnetIDs)
+		}
+	} else if len(subnetIDs) > 1 {
+		// OAPI does not support multiple subnets
+		current := subnetIDs[0]
+		for _, subnet := range subnetIDs {
+			if strings.Compare(current, subnet) > 0 {
+				current = subnet
+				continue
+			}
+		}
+		klog.V(2).Infof("LB does not support multiple subnets and the user does not request a specific subnet. Taking the first lexicography subnet of (%v) -> %v", subnetIDs, current)
+		subnetIDs = []string{current}
+	}
+
 	loadBalancerName := c.GetLoadBalancerName(ctx, clusterName, apiService)
 	serviceName := types.NamespacedName{Namespace: apiService.Namespace, Name: apiService.Name}
 

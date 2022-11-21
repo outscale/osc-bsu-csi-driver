@@ -27,4 +27,5 @@ The Service for load balancer type supported annotation are :
 | service.beta.kubernetes.io/aws-load-balancer-healthcheck-interval | the annotation used on the service to specify, in seconds, the interval between health checks. |
 | service.beta.kubernetes.io/osc-load-balancer-name-length | the annotation used on the service to specify, the load balancer name length max value is 32. |
 | service.beta.kubernetes.io/osc-load-balancer-name | the annotation used on the service to specify, the load balancer name max length is 32 else it will be truncated. |
+| service.beta.kubernetes.io/osc-load-balancer-subnet-id | the annotation used on the service to specify, the subnet in which to create the load balancer |
 

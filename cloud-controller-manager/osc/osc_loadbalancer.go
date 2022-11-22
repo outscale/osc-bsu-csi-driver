@@ -317,7 +317,7 @@ func (c *Cloud) ensureLoadBalancer(namespacedName types.NamespacedName, loadBala
 			return nil, err
 		}
 
-		foundAttributes := &describeAttributesOutput.LoadBalancerAttributes
+		foundAttributes := describeAttributesOutput.LoadBalancerAttributes
 
 		// Update attributes if they're dirty
 		if !reflect.DeepEqual(loadBalancerAttributes, foundAttributes) {

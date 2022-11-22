@@ -38,6 +38,7 @@ import (
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes/fake"
@@ -1818,4 +1819,133 @@ func newMockedFakeAWSServices(id string) *FakeOscServices {
 	s.compute = &MockedFakeCompute{FakeComputeImpl: s.compute.(*FakeComputeImpl)}
 	s.elb = &MockedFakeELB{FakeELB: s.elb.(*FakeELB)}
 	return s
+}
+
+func TestMultipleSubnetsAZAnnotation(t *testing.T) {
+	tests := []struct {
+		name           string
+		service        v1.Service
+		errExpected    bool
+		subnetExpected string
+	}{
+		{
+			name: "Test if the created loadbalancer is in the first lexicography subnet",
+			service: v1.Service{ObjectMeta: metav1.ObjectMeta{Name: "myservice", UID: "anuid"}, Spec: v1.ServiceSpec{
+				SessionAffinity: v1.ServiceAffinityNone,
+				Ports: []v1.ServicePort{
+					{
+						Port:       8383,
+						TargetPort: intstr.FromInt(80),
+						Protocol:   "TCP",
+						NodePort:   4040,
+					},
+				},
+			}},
+			errExpected:    false,
+			subnetExpected: "subnet-a0000001",
+		},
+		{
+			name: "test if the created loadbalancer is in the subnet wanted by the user",
+			service: v1.Service{ObjectMeta: metav1.ObjectMeta{
+				Name: "myservice",
+				UID:  "anuid",
+				Annotations: map[string]string{
+					ServiceAnnotationLoadBalancerSubnetID: "subnet-b0000001",
+				},
+			}, Spec: v1.ServiceSpec{
+				SessionAffinity: v1.ServiceAffinityNone,
+				Ports: []v1.ServicePort{
+					{
+						Port:       8383,
+						TargetPort: intstr.FromInt(80),
+						Protocol:   "TCP",
+						NodePort:   4040,
+					},
+				},
+			}},
+			errExpected:    false,
+			subnetExpected: "subnet-b0000001",
+		},
+		{
+			name: "test if it fails if the user request a wrong subnet",
+			service: v1.Service{ObjectMeta: metav1.ObjectMeta{
+				Name: "myservice",
+				UID:  "anuid",
+				Annotations: map[string]string{
+					ServiceAnnotationLoadBalancerSubnetID: "subnet-c0000001",
+				},
+			}, Spec: v1.ServiceSpec{
+				SessionAffinity: v1.ServiceAffinityNone,
+				Ports: []v1.ServicePort{
+					{
+						Port:       8383,
+						TargetPort: intstr.FromInt(80),
+						Protocol:   "TCP",
+						NodePort:   4040,
+					},
+				},
+			}},
+			errExpected:    true,
+			subnetExpected: "",
+		},
+	}
+
+	for _, test := range tests {
+		awsServices := NewFakeAWSServices(TestClusterID)
+		c, err := newCloud(CloudConfig{}, awsServices)
+		c.vpcID = "vpc-123456"
+		if err != nil {
+			t.Errorf("Error building aws cloud: %v", err)
+			return
+		}
+
+		subnets := make(map[int]map[string]string)
+		subnets[0] = make(map[string]string)
+		subnets[0]["id"] = "subnet-a0000001"
+		subnets[0]["az"] = "af-south-1a"
+		subnets[1] = make(map[string]string)
+		subnets[1]["id"] = "subnet-b0000001"
+		subnets[1]["az"] = "af-south-1b"
+		constructedSubnets := constructSubnets(subnets)
+		awsServices.compute.RemoveSubnets()
+		for _, subnet := range constructedSubnets {
+			awsServices.compute.CreateSubnet(subnet)
+		}
+
+		routeTables := map[string]bool{
+			"subnet-a0000001": true,
+			"subnet-b0000001": true,
+		}
+		constructedRouteTables := constructRouteTables(routeTables)
+		awsServices.compute.RemoveRouteTables()
+		for _, rt := range constructedRouteTables {
+			awsServices.compute.CreateRouteTable(rt)
+		}
+
+		res, err := c.EnsureLoadBalancer(context.TODO(), TestClusterName, &test.service, []*v1.Node{})
+
+		if err != nil {
+			if !test.errExpected {
+				t.Errorf("Error while ensuring Loadbalancer with multiple subnets with no user request %v", err)
+				return
+			}
+			return
+		}
+
+		if test.errExpected {
+			t.Errorf("Did not get error on EnsureLodbalancer for test '%v'", test.name)
+			return
+		}
+
+		iasLb := awsServices.elb.(*FakeELB).LoadBalancers[res.Ingress[0].Hostname]
+		if iasLb == nil {
+			t.Error("Did not found LB in moked Iaas")
+			return
+		}
+
+		if !(len(iasLb.Subnets) == 1 && *(iasLb.Subnets[0]) == test.subnetExpected) {
+			t.Error("Wrong subnet found in the lb with user request")
+			return
+		}
+	}
 }

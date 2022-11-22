@@ -77,15 +77,15 @@ func NewFakeAWSServices(clusterID string) *FakeOscServices {
 		SecurityGroupId: aws.String("sg-1234"),
 		Tags: &[]osc.ResourceTag{
 			{
-				Key: fmt.Sprintf("%v%v", TagNameKubernetesClusterPrefix, clusterID),
+				Key:   fmt.Sprintf("%v%v", TagNameKubernetesClusterPrefix, clusterID),
 				Value: "owned",
 			},
 			{
-				Key: fmt.Sprintf("%v%v", TagNameMainSG, clusterID),
+				Key:   fmt.Sprintf("%v%v", TagNameMainSG, clusterID),
 				Value: "true",
 			},
 		},
-		InboundRules: &[]osc.SecurityGroupRule{},
+		InboundRules:  &[]osc.SecurityGroupRule{},
 		OutboundRules: &[]osc.SecurityGroupRule{},
 	}
 
@@ -132,7 +132,7 @@ type FakeComputeImpl struct {
 	DescribeSubnetsInput     *osc.ReadSubnetsRequest
 	RouteTables              []osc.RouteTable
 	DescribeRouteTablesInput *osc.ReadRouteTablesRequest
-	MainSecurityGroup			*osc.SecurityGroup
+	MainSecurityGroup        *osc.SecurityGroup
 }
 
 // ReadVms returns fake instance descriptions
@@ -243,9 +243,9 @@ func (ec2i *FakeComputeImpl) CreateSecurityGroupRule(request *osc.CreateSecurity
 
 	rule := osc.SecurityGroupRule{
 		FromPortRange: request.FromPortRange,
-		IpProtocol: request.IpProtocol,
-		IpRanges: &[]string{request.GetIpRange()},
-		ToPortRange: request.ToPortRange, 
+		IpProtocol:    request.IpProtocol,
+		IpRanges:      &[]string{request.GetIpRange()},
+		ToPortRange:   request.ToPortRange,
 	}
 
 	if flow == "Inbound" {
@@ -491,20 +491,19 @@ func (m *FakeMetadata) GetMetadata(key string) (string, error) {
 
 // FakeELB is a fake ELB client used for testing
 type FakeELB struct {
-	aws *FakeOscServices
+	aws           *FakeOscServices
 	LoadBalancers map[string]*elb.LoadBalancerDescription
 }
 
 // CreateLoadBalancer is not implemented but is required for interface
 // conformance
 func (fakeElb *FakeELB) CreateLoadBalancer(input *elb.CreateLoadBalancerInput) (*elb.CreateLoadBalancerOutput, error) {
-	lb := elb.LoadBalancerDescription {
-		Subnets: input.Subnets,
+	lb := elb.LoadBalancerDescription{
+		Subnets:           input.Subnets,
 		AvailabilityZones: input.AvailabilityZones,
-		DNSName: aws.String(fmt.Sprintf("%v", *input.LoadBalancerName)),
-		HealthCheck: &elb.HealthCheck{},
-		LoadBalancerName: input.LoadBalancerName,
-		
+		DNSName:           aws.String(fmt.Sprintf("%v", *input.LoadBalancerName)),
+		HealthCheck:       &elb.HealthCheck{},
+		LoadBalancerName:  input.LoadBalancerName,
 	}
 
 	if fakeElb.LoadBalancers == nil {
@@ -630,11 +629,11 @@ func (fakeElb *FakeELB) DescribeLoadBalancerPolicies(input *elb.DescribeLoadBala
 // interface conformance
 func (fakeElb *FakeELB) DescribeLoadBalancerAttributes(input *elb.DescribeLoadBalancerAttributesInput) (*elb.DescribeLoadBalancerAttributesOutput, error) {
 	return &elb.DescribeLoadBalancerAttributesOutput{
-				LoadBalancerAttributes: &elb.LoadBalancerAttributes{
-					ConnectionDraining: &elb.ConnectionDraining{Enabled: aws.Bool(false)},
-					ConnectionSettings: &elb.ConnectionSettings{IdleTimeout: aws.Int64(60)},
-				},
-			}, nil
+		LoadBalancerAttributes: &elb.LoadBalancerAttributes{
+			ConnectionDraining: &elb.ConnectionDraining{Enabled: aws.Bool(false)},
+			ConnectionSettings: &elb.ConnectionSettings{IdleTimeout: aws.Int64(60)},
+		},
+	}, nil
 }
 
 // ModifyLoadBalancerAttributes is not implemented but is required for

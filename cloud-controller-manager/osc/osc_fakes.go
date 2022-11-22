@@ -20,6 +20,7 @@ limitations under the License.
 package osc
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -68,9 +69,25 @@ func NewFakeAWSServices(clusterID string) *FakeOscServices {
 	s.instances = []*osc.Vm{selfInstance}
 
 	var tag osc.ResourceTag
-	tag.SetKey(TagNameKubernetesClusterLegacy)
-	tag.SetValue(clusterID)
+	tag.SetKey(fmt.Sprintf("%v%v", TagNameKubernetesClusterPrefix, clusterID))
+	tag.SetValue("owned")
 	selfInstance.Tags = &[]osc.ResourceTag{tag}
+
+	s.compute.(*FakeComputeImpl).MainSecurityGroup = &osc.SecurityGroup{
+		SecurityGroupId: aws.String("sg-1234"),
+		Tags: &[]osc.ResourceTag{
+			{
+				Key: fmt.Sprintf("%v%v", TagNameKubernetesClusterPrefix, clusterID),
+				Value: "owned",
+			},
+			{
+				Key: fmt.Sprintf("%v%v", TagNameMainSG, clusterID),
+				Value: "true",
+			},
+		},
+		InboundRules: &[]osc.SecurityGroupRule{},
+		OutboundRules: &[]osc.SecurityGroupRule{},
+	}
 
 	return s
 }
@@ -115,6 +132,7 @@ type FakeComputeImpl struct {
 	DescribeSubnetsInput     *osc.ReadSubnetsRequest
 	RouteTables              []osc.RouteTable
 	DescribeRouteTablesInput *osc.ReadRouteTablesRequest
+	MainSecurityGroup			*osc.SecurityGroup
 }
 
 // ReadVms returns fake instance descriptions
@@ -197,7 +215,7 @@ func (ec2i *FakeComputeImpl) ReadVms(request *osc.ReadVmsRequest) ([]osc.Vm, err
 // ReadSecurityGroups is not implemented but is required for interface
 // conformance
 func (ec2i *FakeComputeImpl) ReadSecurityGroups(request *osc.ReadSecurityGroupsRequest) ([]osc.SecurityGroup, error) {
-	panic("Not implemented")
+	return []osc.SecurityGroup{*ec2i.MainSecurityGroup}, nil
 }
 
 // CreateSecurityGroup is not implemented but is required for interface
@@ -215,7 +233,36 @@ func (ec2i *FakeComputeImpl) DeleteSecurityGroup(request *osc.DeleteSecurityGrou
 // CreateSecurityGroupRule is not implemented but is required for
 // interface conformance
 func (ec2i *FakeComputeImpl) CreateSecurityGroupRule(request *osc.CreateSecurityGroupRuleRequest) (*osc.CreateSecurityGroupRuleResponse, error) {
-	panic("Not implemented")
+	securityGroupID := request.GetSecurityGroupId()
+
+	if ec2i.MainSecurityGroup.GetSecurityGroupId() != securityGroupID {
+		return nil, fmt.Errorf("OSC Fake: Wrong security Group Id")
+	}
+
+	flow := request.GetFlow()
+
+	rule := osc.SecurityGroupRule{
+		FromPortRange: request.FromPortRange,
+		IpProtocol: request.IpProtocol,
+		IpRanges: &[]string{request.GetIpRange()},
+		ToPortRange: request.ToPortRange, 
+	}
+
+	if flow == "Inbound" {
+		rules := ec2i.MainSecurityGroup.GetInboundRules()
+
+		rules = append(rules, rule)
+		ec2i.MainSecurityGroup.SetInboundRules(rules)
+	} else {
+		rules := ec2i.MainSecurityGroup.GetOutboundRules()
+
+		rules = append(rules, rule)
+		ec2i.MainSecurityGroup.SetOutboundRules(rules)
+	}
+
+	return &osc.CreateSecurityGroupRuleResponse{
+		SecurityGroup: ec2i.MainSecurityGroup,
+	}, nil
 }
 
 // DeleteSecurityGroupRule is not implemented but is required for interface
@@ -445,118 +492,160 @@ func (m *FakeMetadata) GetMetadata(key string) (string, error) {
 // FakeELB is a fake ELB client used for testing
 type FakeELB struct {
 	aws *FakeOscServices
+	LoadBalancers map[string]*elb.LoadBalancerDescription
 }
 
 // CreateLoadBalancer is not implemented but is required for interface
 // conformance
-func (elb *FakeELB) CreateLoadBalancer(*elb.CreateLoadBalancerInput) (*elb.CreateLoadBalancerOutput, error) {
-	panic("Not implemented")
+func (fakeElb *FakeELB) CreateLoadBalancer(input *elb.CreateLoadBalancerInput) (*elb.CreateLoadBalancerOutput, error) {
+	lb := elb.LoadBalancerDescription {
+		Subnets: input.Subnets,
+		AvailabilityZones: input.AvailabilityZones,
+		DNSName: aws.String(fmt.Sprintf("%v", *input.LoadBalancerName)),
+		HealthCheck: &elb.HealthCheck{},
+		LoadBalancerName: input.LoadBalancerName,
+		
+	}
+
+	if fakeElb.LoadBalancers == nil {
+		fakeElb.LoadBalancers = make(map[string]*elb.LoadBalancerDescription)
+	}
+	fakeElb.LoadBalancers[*input.LoadBalancerName] = &lb
+
+	return &elb.CreateLoadBalancerOutput{
+		DNSName: lb.DNSName,
+	}, nil
 }
 
 // DeleteLoadBalancer is not implemented but is required for interface
 // conformance
-func (elb *FakeELB) DeleteLoadBalancer(input *elb.DeleteLoadBalancerInput) (*elb.DeleteLoadBalancerOutput, error) {
+func (fakeElb *FakeELB) DeleteLoadBalancer(input *elb.DeleteLoadBalancerInput) (*elb.DeleteLoadBalancerOutput, error) {
 	panic("Not implemented")
 }
 
 // DescribeLoadBalancers is not implemented but is required for interface
 // conformance
-func (elb *FakeELB) DescribeLoadBalancers(input *elb.DescribeLoadBalancersInput) (*elb.DescribeLoadBalancersOutput, error) {
-	panic("Not implemented")
+func (fakeElb *FakeELB) DescribeLoadBalancers(input *elb.DescribeLoadBalancersInput) (*elb.DescribeLoadBalancersOutput, error) {
+	lbs := []*elb.LoadBalancerDescription{}
+
+	for _, lb := range input.LoadBalancerNames {
+		desc := fakeElb.LoadBalancers[*lb]
+		lbs = append(lbs, desc)
+	}
+
+	return &elb.DescribeLoadBalancersOutput{
+		LoadBalancerDescriptions: lbs,
+	}, nil
 }
 
 // AddTags is not implemented but is required for interface conformance
-func (elb *FakeELB) AddTags(input *elb.AddTagsInput) (*elb.AddTagsOutput, error) {
+func (fakeElb *FakeELB) AddTags(input *elb.AddTagsInput) (*elb.AddTagsOutput, error) {
 	panic("Not implemented")
 }
 
 // RegisterInstancesWithLoadBalancer is not implemented but is required for
 // interface conformance
-func (elb *FakeELB) RegisterInstancesWithLoadBalancer(*elb.RegisterInstancesWithLoadBalancerInput) (*elb.RegisterInstancesWithLoadBalancerOutput, error) {
+func (fakeElb *FakeELB) RegisterInstancesWithLoadBalancer(*elb.RegisterInstancesWithLoadBalancerInput) (*elb.RegisterInstancesWithLoadBalancerOutput, error) {
 	panic("Not implemented")
 }
 
 // DeregisterInstancesFromLoadBalancer is not implemented but is required for
 // interface conformance
-func (elb *FakeELB) DeregisterInstancesFromLoadBalancer(*elb.DeregisterInstancesFromLoadBalancerInput) (*elb.DeregisterInstancesFromLoadBalancerOutput, error) {
+func (fakeElb *FakeELB) DeregisterInstancesFromLoadBalancer(*elb.DeregisterInstancesFromLoadBalancerInput) (*elb.DeregisterInstancesFromLoadBalancerOutput, error) {
 	panic("Not implemented")
 }
 
 // DetachLoadBalancerFromSubnets is not implemented but is required for
 // interface conformance
-func (elb *FakeELB) DetachLoadBalancerFromSubnets(*elb.DetachLoadBalancerFromSubnetsInput) (*elb.DetachLoadBalancerFromSubnetsOutput, error) {
+func (fakeElb *FakeELB) DetachLoadBalancerFromSubnets(*elb.DetachLoadBalancerFromSubnetsInput) (*elb.DetachLoadBalancerFromSubnetsOutput, error) {
 	panic("Not implemented")
 }
 
 // AttachLoadBalancerToSubnets is not implemented but is required for interface
 // conformance
-func (elb *FakeELB) AttachLoadBalancerToSubnets(*elb.AttachLoadBalancerToSubnetsInput) (*elb.AttachLoadBalancerToSubnetsOutput, error) {
+func (fakeElb *FakeELB) AttachLoadBalancerToSubnets(*elb.AttachLoadBalancerToSubnetsInput) (*elb.AttachLoadBalancerToSubnetsOutput, error) {
 	panic("Not implemented")
 }
 
 // CreateLoadBalancerListeners is not implemented but is required for interface
 // conformance
-func (elb *FakeELB) CreateLoadBalancerListeners(*elb.CreateLoadBalancerListenersInput) (*elb.CreateLoadBalancerListenersOutput, error) {
+func (fakeElb *FakeELB) CreateLoadBalancerListeners(*elb.CreateLoadBalancerListenersInput) (*elb.CreateLoadBalancerListenersOutput, error) {
 	panic("Not implemented")
 }
 
 // DeleteLoadBalancerListeners is not implemented but is required for interface
 // conformance
-func (elb *FakeELB) DeleteLoadBalancerListeners(*elb.DeleteLoadBalancerListenersInput) (*elb.DeleteLoadBalancerListenersOutput, error) {
+func (fakeElb *FakeELB) DeleteLoadBalancerListeners(*elb.DeleteLoadBalancerListenersInput) (*elb.DeleteLoadBalancerListenersOutput, error) {
 	panic("Not implemented")
 }
 
 // ApplySecurityGroupsToLoadBalancer is not implemented but is required for
 // interface conformance
-func (elb *FakeELB) ApplySecurityGroupsToLoadBalancer(*elb.ApplySecurityGroupsToLoadBalancerInput) (*elb.ApplySecurityGroupsToLoadBalancerOutput, error) {
+func (fakeElb *FakeELB) ApplySecurityGroupsToLoadBalancer(*elb.ApplySecurityGroupsToLoadBalancerInput) (*elb.ApplySecurityGroupsToLoadBalancerOutput, error) {
 	panic("Not implemented")
 }
 
 // ConfigureHealthCheck is not implemented but is required for interface
 // conformance
-func (elb *FakeELB) ConfigureHealthCheck(*elb.ConfigureHealthCheckInput) (*elb.ConfigureHealthCheckOutput, error) {
-	panic("Not implemented")
+func (fakeElb *FakeELB) ConfigureHealthCheck(input *elb.ConfigureHealthCheckInput) (*elb.ConfigureHealthCheckOutput, error) {
+	lbName := *input.LoadBalancerName
+	lb := fakeElb.LoadBalancers[lbName]
+	if lb == nil {
+		return nil, fmt.Errorf("LoadBalancer not found")
+	}
+
+	lb.HealthCheck = input.HealthCheck
+
+	return &elb.ConfigureHealthCheckOutput{
+		HealthCheck: input.HealthCheck,
+	}, nil
+
 }
 
 // CreateLoadBalancerPolicy is not implemented but is required for interface
 // conformance
-func (elb *FakeELB) CreateLoadBalancerPolicy(*elb.CreateLoadBalancerPolicyInput) (*elb.CreateLoadBalancerPolicyOutput, error) {
+func (fakeElb *FakeELB) CreateLoadBalancerPolicy(*elb.CreateLoadBalancerPolicyInput) (*elb.CreateLoadBalancerPolicyOutput, error) {
 	panic("Not implemented")
 }
 
 // SetLoadBalancerPoliciesForBackendServer is not implemented but is required
 // for interface conformance
-func (elb *FakeELB) SetLoadBalancerPoliciesForBackendServer(*elb.SetLoadBalancerPoliciesForBackendServerInput) (*elb.SetLoadBalancerPoliciesForBackendServerOutput, error) {
+func (fakeElb *FakeELB) SetLoadBalancerPoliciesForBackendServer(*elb.SetLoadBalancerPoliciesForBackendServerInput) (*elb.SetLoadBalancerPoliciesForBackendServerOutput, error) {
 	panic("Not implemented")
 }
 
 // SetLoadBalancerPoliciesOfListener is not implemented but is required for
 // interface conformance
-func (elb *FakeELB) SetLoadBalancerPoliciesOfListener(input *elb.SetLoadBalancerPoliciesOfListenerInput) (*elb.SetLoadBalancerPoliciesOfListenerOutput, error) {
+func (fakeElb *FakeELB) SetLoadBalancerPoliciesOfListener(input *elb.SetLoadBalancerPoliciesOfListenerInput) (*elb.SetLoadBalancerPoliciesOfListenerOutput, error) {
 	panic("Not implemented")
 }
 
 // DescribeLoadBalancerPolicies is not implemented but is required for
 // interface conformance
-func (elb *FakeELB) DescribeLoadBalancerPolicies(input *elb.DescribeLoadBalancerPoliciesInput) (*elb.DescribeLoadBalancerPoliciesOutput, error) {
+func (fakeElb *FakeELB) DescribeLoadBalancerPolicies(input *elb.DescribeLoadBalancerPoliciesInput) (*elb.DescribeLoadBalancerPoliciesOutput, error) {
 	panic("Not implemented")
 }
 
 // DescribeLoadBalancerAttributes is not implemented but is required for
 // interface conformance
-func (elb *FakeELB) DescribeLoadBalancerAttributes(*elb.DescribeLoadBalancerAttributesInput) (*elb.DescribeLoadBalancerAttributesOutput, error) {
-	panic("Not implemented")
+func (fakeElb *FakeELB) DescribeLoadBalancerAttributes(input *elb.DescribeLoadBalancerAttributesInput) (*elb.DescribeLoadBalancerAttributesOutput, error) {
+	return &elb.DescribeLoadBalancerAttributesOutput{
+				LoadBalancerAttributes: &elb.LoadBalancerAttributes{
+					ConnectionDraining: &elb.ConnectionDraining{Enabled: aws.Bool(false)},
+					ConnectionSettings: &elb.ConnectionSettings{IdleTimeout: aws.Int64(60)},
+				},
+			}, nil
 }
 
 // ModifyLoadBalancerAttributes is not implemented but is required for
 // interface conformance
-func (elb *FakeELB) ModifyLoadBalancerAttributes(*elb.ModifyLoadBalancerAttributesInput) (*elb.ModifyLoadBalancerAttributesOutput, error) {
+func (fakeElb *FakeELB) ModifyLoadBalancerAttributes(*elb.ModifyLoadBalancerAttributesInput) (*elb.ModifyLoadBalancerAttributesOutput, error) {
 	panic("Not implemented")
 }
 
 // expectDescribeLoadBalancers is not implemented but is required for interface
 // conformance
-func (elb *FakeELB) expectDescribeLoadBalancers(loadBalancerName string) {
+func (fakeElb *FakeELB) expectDescribeLoadBalancers(loadBalancerName string) {
 	panic("Not implemented")
 }
 

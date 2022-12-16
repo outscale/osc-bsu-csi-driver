@@ -9,7 +9,7 @@ image:
   # -- Container image to use   
   repository: outscale/osc-bsu-csi-driver
   # -- Container image tag to deploy
-  tag: v1.1.0
+  tag: v1.1.1
   # -- Container pull policy
   pullPolicy: IfNotPresent
 

@@ -1,6 +1,6 @@
 # osc-bsu-csi-driver
 
-![Version: 0.9.0](https://img.shields.io/badge/Version-0.9.0-informational?style=flat-square) ![AppVersion: v0.1.1](https://img.shields.io/badge/AppVersion-v0.1.1-informational?style=flat-square)
+![Version: 0.9.1](https://img.shields.io/badge/Version-0.9.1-informational?style=flat-square) ![AppVersion: v0.1.2](https://img.shields.io/badge/AppVersion-v0.1.2-informational?style=flat-square)
 
 A Helm chart for Outscale BSU CSI Driver
 
@@ -18,7 +18,7 @@ A Helm chart for Outscale BSU CSI Driver
 
 ## Requirements
 
-Kubernetes: `>=1.20`
+Kubernetes: `>=1.20.0`
 
 ## Values
 
@@ -41,7 +41,7 @@ Kubernetes: `>=1.20`
 | extraVolumeTags | object | `{}` | Add extra tags on volume |
 | image.pullPolicy | string | `"IfNotPresent"` | Container pull policy |
 | image.repository | string | `"outscale/osc-ebs-csi-driver"` | Container image to use    |
-| image.tag | string | `"v0.1.1"` | Container image tag to deploy |
+| image.tag | string | `"v0.1.2"` | Container image tag to deploy |
 | imagePullSecrets | list | `[]` | Specify image pull secrets  |
 | maxBsuVolumes | string | `"25"` | Maximum volume to attach to a node (see [Docs](https://docs.outscale.com/en/userguide/About-Volumes.html)) |
 | nameOverride | string | `""` | Override name of the app (instead of `osc-bsu-csi-driver`) |

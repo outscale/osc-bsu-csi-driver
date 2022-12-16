@@ -1,4 +1,7 @@
 # Changelog
+## [v0.1.2]
+### Bugfixes
+* Fix deployement when using helm-git ([#520](https://github.com/outscale-dev/osc-bsu-csi-driver/issues/520))
 ## [v0.1.1]
 ### Features
 * Add alternative to generate the Kubernetes secret using helm ([#370](https://github.com/outscale-dev/osc-bsu-csi-driver/pull/370))

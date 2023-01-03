@@ -52,3 +52,8 @@ vendor/
 
 # Ignore code-workspaces
 *.code-workspace
+
+# Ignore env folder
+.trivyscan/
+.env/
+tests/e2e/single_az_test_e2e_report/

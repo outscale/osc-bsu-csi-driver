@@ -208,6 +208,9 @@ spec:
                   key: key_id
                   optional: false
       hostNetwork: true
+      {{- if .Values.nodeSelector }}
+      nodeSelector: {{- toYaml .Values.nodeSelector | nindent 8}}
+      {{- end }}
       tolerations:
         # this taint is set by all kubelets running `--cloud-provider=external`
         # so we should tolerate it to schedule the osc ccm
@@ -220,3 +223,6 @@ spec:
         # the taint may vary depending on your cluster setup
         - key: node-role.kubernetes.io/master
           effect: NoSchedule
+        {{- with .Values.tolerations }}
+          {{- toYaml . | nindent 8 }}
+        {{- end }}

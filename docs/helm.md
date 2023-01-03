@@ -28,9 +28,11 @@ Kubernetes: `>=1.14.0-0`
 | image.repository | string | `"outscale/cloud-provider-osc"` | Container image to use |
 | image.tag | string | `"v0.1.1"` | Container image tag to deploy |
 | imagePullSecrets | list | `[]` | Specify image pull secrets |
+| nodeSelector | object | `{}` | Assign Pod to Nodes (see [kubernetes doc](https://kubernetes.io/docs/tasks/configure-pod-container/assign-pods-nodes/)) |
 | oscSecretName | string | `"osc-secret"` | Secret name containing cloud credentials |
 | podLabels | object | `{}` | Labels for pod |
 | replicaCount | int | `1` | Number of replicas to deploy |
+| tolerations | list | `[]` | Pod tolerations (see [kubernetes doc](https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/)) |
 | verbose | int | `5` | Verbosity level of the plugin |
 
 ----------------------------------------------

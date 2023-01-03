@@ -21,3 +21,8 @@ oscSecretName: osc-secret
 imagePullSecrets: []
 # -- Labels for pod
 podLabels: {}
+
+# -- Assign Pod to Nodes (see [kubernetes doc](https://kubernetes.io/docs/tasks/configure-pod-container/assign-pods-nodes/))
+nodeSelector: {}
+# -- Pod tolerations (see [kubernetes doc](https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/))
+tolerations: []

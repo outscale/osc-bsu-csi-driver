@@ -156,7 +156,10 @@ check-helm-manifest:
 	./hack/verify-helm-manifest.sh
 
 helm-package:
+# Copy docs into the archive for ArtfactHub, symlink does not work with helm-git
+	cp docs/CHANGELOG.md docs/README.md LICENSE deploy/k8s-osc-ccm/
 	helm package deploy/k8s-osc-ccm -d out-helm
+	rm deploy/k8s-osc-ccm/CHANGELOG.md deploy/k8s-osc-ccm/README.md deploy/k8s-osc-ccm/LICENSE 
 
 helm-push: helm-package
 	helm push out-helm/*.tgz oci://registry-1.docker.io/${DOCKER_USER}

@@ -57,3 +57,9 @@ vendor/
 .trivyscan/
 .env/
 tests/e2e/single_az_test_e2e_report/
+out-helm/
+
+# Ignore docs in the helm package
+deploy/k8s-osc-ccm/CHANGELOG.md
+deploy/k8s-osc-ccm/README.md
+deploy/k8s-osc-ccm/LICENSE

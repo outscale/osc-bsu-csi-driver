@@ -29,7 +29,7 @@ import (
 )
 
 // newInstances returns an implementation of cloudprovider.InstancesV2
-func newInstancesV2(az string) (cloudprovider.InstancesV2, error) {
+func newInstancesV2(az string, tagging *resourceTagging) (cloudprovider.InstancesV2, error) {
 
 	region, err := azToRegion(az)
 	if err != nil {
@@ -50,6 +50,7 @@ func newInstancesV2(az string) (cloudprovider.InstancesV2, error) {
 		region:           region,
 		client:           client,
 		ctx:              ctx,
+		tags:             tagging,
 	}, nil
 }
 
@@ -59,6 +60,7 @@ type instancesV2 struct {
 	client           *osc.APIClient
 	ctx              context.Context
 	region           string
+	tags             *resourceTagging
 }
 
 // InstanceExists indicates whether a given node exists according to the cloud provider
@@ -157,6 +159,12 @@ func (i *instancesV2) getInstance(ctx context.Context, node *v1.Node) (*osc.Vm, 
 		klog.V(4).Infof("looking for node by provider ID %v", node.Spec.ProviderID)
 	}
 
+	// Add cluster tagging to reduce the search and possible collisions
+	if request.Filters == nil {
+		request.Filters = &osc.FiltersVm{}
+	}
+	request.Filters.TagKeys = &[]string{i.tags.clusterTagKey()}
+
 	response, httpRes, err := i.client.VmApi.ReadVms(i.ctx).ReadVmsRequest(*request).Execute()
 	klog.V(4).Infof("Get Response from Describe Instances  %v", response)
 
@@ -174,9 +182,26 @@ func (i *instancesV2) getInstance(ctx context.Context, node *v1.Node) (*osc.Vm, 
 	instances := []osc.Vm{}
 
 	if node.Spec.ProviderID == "" {
+		// Match NodeName with the privateDNS
 		for _, instance := range response.GetVms() {
 			if instance.GetPrivateDnsName() == node.Name {
 				instances = append(instances, instance)
+			}
+		}
+		// Fallback to NodeName
+		if len(instances) == 0 {
+			klog.V(4).Infof("looking for node by tag %v", TagNameClusterNode)
+			for _, instance := range response.GetVms() {
+				tags, ok := instance.GetTagsOk()
+				if !ok {
+					continue
+				}
+
+				for _, tag := range *tags {
+					if tag.GetKey() == TagNameClusterNode && tag.GetValue() == node.Name {
+						instances = append(instances, instance)
+					}
+				}
 			}
 		}
 	} else {

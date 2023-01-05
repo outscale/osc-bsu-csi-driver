@@ -71,11 +71,6 @@ func newCloud(cfg CloudConfig, awsServices Services) (*Cloud, error) {
 		return nil, err
 	}
 
-	instances, err := newInstancesV2(zone)
-	if err != nil {
-		return nil, err
-	}
-
 	if !cfg.Global.DisableStrictZoneCheck {
 		if !isRegionValid(regionName, metadata) {
 			return nil, fmt.Errorf("not a valid AWS zone (unknown region): %s", zone)
@@ -104,7 +99,6 @@ func newCloud(cfg CloudConfig, awsServices Services) (*Cloud, error) {
 		metadata:     metadata,
 		cfg:          &cfg,
 		region:       regionName,
-		instances:    instances,
 	}
 	awsCloud.instanceCache.cloud = awsCloud
 
@@ -146,6 +140,14 @@ func newCloud(cfg CloudConfig, awsServices Services) (*Cloud, error) {
 			return nil, err
 		}
 	}
+
+	instances, err := newInstancesV2(zone, &awsCloud.tagging)
+	if err != nil {
+		return nil, err
+	}
+
+	awsCloud.instances = instances
+
 	klog.Infof("OSC CCM awsCloud %v", awsCloud)
 	return awsCloud, nil
 }

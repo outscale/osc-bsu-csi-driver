@@ -1,5 +1,12 @@
 # Changelog
 
+## [v0.2.0]
+### Features
+* Support link  kubernetes node name and IaaS tag OscK8sNodeName ([#177](https://github.com/outscale-dev/cloud-provider-osc/issues/177))
+* Add NodeSelector and Tolerations in helm Chart ([#173](https://github.com/outscale-dev/cloud-provider-osc/issues/173))
+### Bugfixes
+* Fix LoadBalancer creation in multi-AZ architecture ([#165](https://github.com/outscale-dev/cloud-provider-osc/issues/165))
+* Update IAM Policy ([#167](https://github.com/outscale-dev/cloud-provider-osc/issues/167))
 ## [v0.1.1]
 ### Bugfixes
 * Invalid zone in the metadata ([#149](https://github.com/outscale-dev/cloud-provider-osc/issues/149)) 

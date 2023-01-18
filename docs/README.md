@@ -1,5 +1,6 @@
 # Outscale Cloud Controller Manager (CCM)
 [![Artifact Hub](https://img.shields.io/endpoint?url=https://artifacthub.io/badge/repository/osc-cloud-controller-manager)](https://artifacthub.io/packages/search?repo=osc-cloud-controller-manager)
+[![Project Graduated](https://docs.outscale.com/fr/userguide/_images/Project-Graduated-green.svg)](https://docs.outscale.com/en/userguide/Open-Source-Projects.html)
 
 The Outscale Cloud Controller Manager (cloud-provider-osc) provides the interface between a Kubernetes cluster and 3DS Outscale service APIs. 
 This project is necessary for operating the cluster.

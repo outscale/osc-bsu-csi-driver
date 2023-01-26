@@ -43,9 +43,9 @@ require (
 	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/gomega v1.18.1
 	github.com/outscale/osc-sdk-go/v2 v2.9.0
-	golang.org/x/sys v0.0.0-20220318055525-2edf467146b5
-	google.golang.org/grpc v1.47.0
-	google.golang.org/protobuf v1.28.0
+	golang.org/x/sys v0.3.0
+	google.golang.org/grpc v1.52.3
+	google.golang.org/protobuf v1.28.1
 	k8s.io/api v0.23.4
 	k8s.io/apimachinery v0.23.4
 	k8s.io/client-go v0.23.4
@@ -71,7 +71,7 @@ require (
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
-	github.com/google/go-cmp v0.5.6 // indirect
+	github.com/google/go-cmp v0.5.9 // indirect
 	github.com/google/gofuzz v1.1.0 // indirect
 	github.com/google/uuid v1.3.0 // indirect
 	github.com/googleapis/gnostic v0.5.5 // indirect
@@ -106,13 +106,13 @@ require (
 	go.opentelemetry.io/otel/trace v0.20.0 // indirect
 	go.opentelemetry.io/proto/otlp v0.7.0 // indirect
 	golang.org/x/crypto v0.0.0-20210817164053-32db794688a5 // indirect
-	golang.org/x/net v0.0.0-20220225172249-27dd8689420f // indirect
-	golang.org/x/oauth2 v0.0.0-20210819190943-2bc19b11175f // indirect
-	golang.org/x/term v0.0.0-20210927222741-03fcf44c2211 // indirect
-	golang.org/x/text v0.3.7 // indirect
+	golang.org/x/net v0.4.0 // indirect
+	golang.org/x/oauth2 v0.0.0-20221014153046-6fdb5e3db783 // indirect
+	golang.org/x/term v0.3.0 // indirect
+	golang.org/x/text v0.5.0 // indirect
 	golang.org/x/time v0.0.0-20210723032227-1f47c861a9ac // indirect
 	google.golang.org/appengine v1.6.7 // indirect
-	google.golang.org/genproto v0.0.0-20210831024726-fe130286e0e2 // indirect
+	google.golang.org/genproto v0.0.0-20221118155620-16455021b5e6 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect

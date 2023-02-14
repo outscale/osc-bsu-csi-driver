@@ -141,7 +141,11 @@ check-helm-docs:
 	./hack/verify-helm-docs
 
 helm-package:
+# Copy docs into the archive for ArtfactHub, symlink does not work with helm-git
+	cp CHANGELOG-1.X.md osc-bsu-csi-driver/CHANGELOG.md
+	cp docs/README.md LICENSE osc-bsu-csi-driver/
 	helm package osc-bsu-csi-driver -d out-helm
+	rm osc-bsu-csi-driver/CHANGELOG.md osc-bsu-csi-driver/README.md osc-bsu-csi-driver/LICENSE
 
 helm-push: helm-package
 	helm push out-helm/*.tgz oci://registry-1.docker.io/${DOCKER_USER}

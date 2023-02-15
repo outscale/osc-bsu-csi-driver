@@ -21,7 +21,7 @@ import (
 	"os"
 	"strings"
 
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	osccloud "github.com/outscale-dev/osc-bsu-csi-driver/pkg/cloud"
 	"github.com/outscale-dev/osc-bsu-csi-driver/tests/e2e/driver"
 	"github.com/outscale-dev/osc-bsu-csi-driver/tests/e2e/testsuites"

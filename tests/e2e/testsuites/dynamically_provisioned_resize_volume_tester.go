@@ -21,12 +21,12 @@ import (
 
 	"github.com/outscale-dev/osc-bsu-csi-driver/pkg/util"
 	"github.com/outscale-dev/osc-bsu-csi-driver/tests/e2e/driver"
+	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/kubernetes/test/e2e/framework"
 
-	. "github.com/onsi/ginkgo"
-	"k8s.io/api/core/v1"
+	. "github.com/onsi/ginkgo/v2"
 	clientset "k8s.io/client-go/kubernetes"
 )
 

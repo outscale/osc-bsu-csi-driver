@@ -19,6 +19,7 @@ import (
 	v1 "k8s.io/api/core/v1"
 	clientset "k8s.io/client-go/kubernetes"
 	"k8s.io/kubernetes/test/e2e/framework"
+	admissionapi "k8s.io/pod-security-admission/api"
 
 	"github.com/outscale-dev/osc-bsu-csi-driver/tests/e2e/driver"
 	"github.com/outscale-dev/osc-bsu-csi-driver/tests/e2e/testsuites"
@@ -29,6 +30,7 @@ import (
 
 var _ = Describe("[bsu-csi-e2e] [single-az] Stats", func() {
 	f := framework.NewDefaultFramework("bsu")
+	f.NamespacePodSecurityEnforceLevel = admissionapi.LevelPrivileged
 
 	var (
 		cs        clientset.Interface

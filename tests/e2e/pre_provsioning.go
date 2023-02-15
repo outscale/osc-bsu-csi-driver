@@ -28,6 +28,7 @@ import (
 	v1 "k8s.io/api/core/v1"
 	clientset "k8s.io/client-go/kubernetes"
 	"k8s.io/kubernetes/test/e2e/framework"
+	admissionapi "k8s.io/pod-security-admission/api"
 
 	bsucsidriver "github.com/outscale-dev/osc-bsu-csi-driver/pkg/driver"
 )
@@ -48,6 +49,7 @@ var (
 // Requires env AWS_AVAILABILITY_ZONES a comma separated list of AZs to be set
 var _ = Describe("[ebs-csi-e2e] [single-az] Pre-Provisioned", func() {
 	f := framework.NewDefaultFramework("ebs")
+	f.NamespacePodSecurityEnforceLevel = admissionapi.LevelPrivileged
 
 	var (
 		cs        clientset.Interface

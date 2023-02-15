@@ -29,6 +29,7 @@ import (
 	clientset "k8s.io/client-go/kubernetes"
 	restclientset "k8s.io/client-go/rest"
 	"k8s.io/kubernetes/test/e2e/framework"
+	admissionapi "k8s.io/pod-security-admission/api"
 
 	"github.com/outscale-dev/osc-bsu-csi-driver/tests/e2e/driver"
 	"github.com/outscale-dev/osc-bsu-csi-driver/tests/e2e/testsuites"
@@ -45,6 +46,7 @@ const OSC_REGION = "OSC_REGION"
 
 var _ = Describe("[ebs-csi-e2e] [single-az] Dynamic Provisioning", func() {
 	f := framework.NewDefaultFramework("ebs")
+	f.NamespacePodSecurityEnforceLevel = admissionapi.LevelPrivileged
 
 	var (
 		cs        clientset.Interface
@@ -592,6 +594,7 @@ var _ = Describe("[ebs-csi-e2e] [single-az] Dynamic Provisioning", func() {
 
 var _ = Describe("[ebs-csi-e2e] [single-az] Snapshot", func() {
 	f := framework.NewDefaultFramework("ebs")
+	f.NamespacePodSecurityEnforceLevel = admissionapi.LevelPrivileged
 
 	var (
 		cs          clientset.Interface
@@ -706,6 +709,7 @@ var _ = Describe("[ebs-csi-e2e] [single-az] Snapshot", func() {
 
 var _ = Describe("[ebs-csi-e2e] [multi-az] Dynamic Provisioning", func() {
 	f := framework.NewDefaultFramework("ebs")
+	f.NamespacePodSecurityEnforceLevel = admissionapi.LevelPrivileged
 
 	var (
 		cs        clientset.Interface

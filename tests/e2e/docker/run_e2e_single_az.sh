@@ -77,7 +77,7 @@ export NODES=4
 FOCUS_REGEXP="\[bsu-csi-e2e\] \[single-az\]"
 SKIP_REGEXP="and encryption"
 $GOPATH/bin/ginkgo build -r tests/e2e
-$GOPATH/bin/ginkgo --progress -debug -p -nodes=$NODES \
-					--slowSpecThreshold=120 \
+$GOPATH/bin/ginkgo  -p -nodes=$NODES \
+					--show-node-events \
 					-v --focus="${FOCUS_REGEXP}" --skip="${SKIP_REGEXP}" \
 					tests/e2e -- -report-dir=$ARTIFACTS

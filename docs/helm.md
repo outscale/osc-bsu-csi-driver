@@ -59,29 +59,29 @@ Kubernetes: `>=1.20.0`
 | sidecars.attacherImage.enableHttpEndpoint | bool | `false` | Enable http endpoint to get metrics of the container |
 | sidecars.attacherImage.enableLivenessProbe | bool | `false` | Enable liveness probe for the container |
 | sidecars.attacherImage.httpEndpointPort | string | `"8090"` | Port of the http endpoint |
-| sidecars.attacherImage.repository | string | `"k8s.gcr.io/sig-storage/csi-attacher"` |  |
+| sidecars.attacherImage.repository | string | `"registry.k8s.io/sig-storage/csi-attacher"` |  |
 | sidecars.attacherImage.tag | string | `"v3.3.0"` |  |
-| sidecars.livenessProbeImage.repository | string | `"k8s.gcr.io/sig-storage/livenessprobe"` |  |
+| sidecars.livenessProbeImage.repository | string | `"registry.k8s.io/sig-storage/livenessprobe"` |  |
 | sidecars.livenessProbeImage.tag | string | `"v2.5.0"` |  |
 | sidecars.nodeDriverRegistrarImage.enableHttpEndpoint | bool | `false` | Enable http endpoint to get metrics of the container |
 | sidecars.nodeDriverRegistrarImage.enableLivenessProbe | bool | `false` | Enable liveness probe for the container |
 | sidecars.nodeDriverRegistrarImage.httpEndpointPort | string | `"8093"` | Port of the http endpoint |
-| sidecars.nodeDriverRegistrarImage.repository | string | `"k8s.gcr.io/sig-storage/csi-node-driver-registrar"` |  |
+| sidecars.nodeDriverRegistrarImage.repository | string | `"registry.k8s.io/sig-storage/csi-node-driver-registrar"` |  |
 | sidecars.nodeDriverRegistrarImage.tag | string | `"v2.3.0"` |  |
 | sidecars.provisionerImage.enableHttpEndpoint | bool | `false` | Enable http endpoint to get metrics of the container |
 | sidecars.provisionerImage.enableLivenessProbe | bool | `false` | Enable liveness probe for the container |
 | sidecars.provisionerImage.httpEndpointPort | string | `"8089"` | Port of the http endpoint |
-| sidecars.provisionerImage.repository | string | `"k8s.gcr.io/sig-storage/csi-provisioner"` |  |
+| sidecars.provisionerImage.repository | string | `"registry.k8s.io/sig-storage/csi-provisioner"` |  |
 | sidecars.provisionerImage.tag | string | `"v3.0.0"` |  |
 | sidecars.resizerImage.enableHttpEndpoint | bool | `false` | Enable http endpoint to get metrics of the container |
 | sidecars.resizerImage.enableLivenessProbe | bool | `false` | Enable liveness probe for the container |
 | sidecars.resizerImage.httpEndpointPort | string | `"8092"` | Port of the http endpoint |
-| sidecars.resizerImage.repository | string | `"k8s.gcr.io/sig-storage/csi-resizer"` |  |
+| sidecars.resizerImage.repository | string | `"registry.k8s.io/sig-storage/csi-resizer"` |  |
 | sidecars.resizerImage.tag | string | `"v1.3.0"` |  |
 | sidecars.snapshotterImage.enableHttpEndpoint | bool | `false` | Enable http endpoint to get metrics of the container |
 | sidecars.snapshotterImage.enableLivenessProbe | bool | `false` | Enable liveness probe for the container |
 | sidecars.snapshotterImage.httpEndpointPort | string | `"8091"` | Port of the http endpoint |
-| sidecars.snapshotterImage.repository | string | `"k8s.gcr.io/sig-storage/csi-snapshotter"` |  |
+| sidecars.snapshotterImage.repository | string | `"registry.k8s.io/sig-storage/csi-snapshotter"` |  |
 | sidecars.snapshotterImage.tag | string | `"v4.2.1"` |  |
 | timeout | string | `"60s"` | Timeout for sidecars |
 | tolerations | list | `[]` | Pod tolerations |

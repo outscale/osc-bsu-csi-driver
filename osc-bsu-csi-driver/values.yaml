@@ -32,7 +32,7 @@ backoff:
 
 sidecars:
   provisionerImage:
-    repository: k8s.gcr.io/sig-storage/csi-provisioner
+    repository: registry.k8s.io/sig-storage/csi-provisioner
     tag: "v3.0.0"
     # -- Enable http endpoint to get metrics of the container
     enableHttpEndpoint: false
@@ -41,7 +41,7 @@ sidecars:
     # -- Enable liveness probe for the container
     enableLivenessProbe: false
   attacherImage:
-    repository: k8s.gcr.io/sig-storage/csi-attacher
+    repository: registry.k8s.io/sig-storage/csi-attacher
     tag: "v3.3.0"
     # -- Enable http endpoint to get metrics of the container
     enableHttpEndpoint: false
@@ -50,7 +50,7 @@ sidecars:
     # -- Enable liveness probe for the container
     enableLivenessProbe: false
   snapshotterImage:
-    repository: k8s.gcr.io/sig-storage/csi-snapshotter
+    repository: registry.k8s.io/sig-storage/csi-snapshotter
     tag: "v4.2.1"
     # -- Enable http endpoint to get metrics of the container
     enableHttpEndpoint: false
@@ -59,10 +59,10 @@ sidecars:
     # -- Enable liveness probe for the container
     enableLivenessProbe: false
   livenessProbeImage:
-    repository: k8s.gcr.io/sig-storage/livenessprobe
+    repository: registry.k8s.io/sig-storage/livenessprobe
     tag: "v2.5.0"
   resizerImage:
-    repository: k8s.gcr.io/sig-storage/csi-resizer
+    repository: registry.k8s.io/sig-storage/csi-resizer
     tag: "v1.3.0"
     # -- Enable http endpoint to get metrics of the container
     enableHttpEndpoint: false
@@ -71,7 +71,7 @@ sidecars:
     # -- Enable liveness probe for the container
     enableLivenessProbe: false
   nodeDriverRegistrarImage:
-    repository: k8s.gcr.io/sig-storage/csi-node-driver-registrar
+    repository: registry.k8s.io/sig-storage/csi-node-driver-registrar
     tag: "v2.3.0"
     # -- Enable http endpoint to get metrics of the container
     enableHttpEndpoint: false

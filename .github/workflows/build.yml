@@ -27,7 +27,7 @@ on:
     - cron: '0 0 * * *'
   workflow_dispatch:
 jobs:
-  Build:
+  format:
     runs-on: ubuntu-20.04
     steps:
     - uses: actions/checkout@v2
@@ -39,12 +39,36 @@ jobs:
       run: bash -c "make dockerlint"
     - name: Verify
       run: bash -c "make verify"
+  unit-test:
+    runs-on: ubuntu-20.04
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/setup-python@v2
+    - uses: actions/setup-go@v2
+      with:
+        go-version: '1.17'
     - name: Test
       run: bash -c "make test"
-    - name: Image
-      run: bash -c "make build-image"
+  docs:
+    runs-on: ubuntu-20.04
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/setup-python@v2
+    - uses: actions/setup-go@v2
+      with:
+        go-version: '1.17'
     - name: Check docs
       run: bash -c "make check-helm-docs"
+  build:
+    runs-on: ubuntu-20.04
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/setup-python@v2
+    - uses: actions/setup-go@v2
+      with:
+        go-version: '1.17'
+    - name: Image
+      run: bash -c "make build-image"
     - name: Trivy-Scan
       run: bash -c "make trivy-scan"
     - name: Trivy-Ignore-Check

@@ -3,7 +3,7 @@ module github.com/outscale-dev/osc-bsu-csi-driver
 go 1.19
 
 replace (
-	gopkg.in/yaml.v3 => gopkg.in/yaml.v3 v3.0.1
+	gopkg.in/yaml.v3 => gopkg.in/yaml.v3 v3.0.1 // for the CVE-2022-28948
 	k8s.io/api => k8s.io/api v0.25.6
 	k8s.io/apiextensions-apiserver => k8s.io/apiextensions-apiserver v0.25.6
 	k8s.io/apimachinery => k8s.io/apimachinery v0.25.6

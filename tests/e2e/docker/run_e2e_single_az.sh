@@ -44,4 +44,4 @@ export ARTIFACTS=./single_az_test_e2e_report
 mkdir -p $ARTIFACTS
 
 $GOPATH/bin/ginkgo build -r tests/e2e
-$GOPATH/bin/ginkgo --progress -debug -v tests/e2e -- -report-dir=$ARTIFACTS
+$GOPATH/bin/ginkgo --show-node-events -v tests/e2e -- -report-dir=$ARTIFACTS

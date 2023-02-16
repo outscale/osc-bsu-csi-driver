@@ -22,7 +22,7 @@ import (
 	e2eutils "github.com/outscale-dev/cloud-provider-osc/tests/e2e/utils"
 
 	elbApi "github.com/aws/aws-sdk-go/service/elb"
-	"github.com/onsi/ginkgo"
+	"github.com/onsi/ginkgo/v2"
 	v1 "k8s.io/api/core/v1"
 
 	"k8s.io/apimachinery/pkg/util/intstr"

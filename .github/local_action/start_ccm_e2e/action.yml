@@ -35,8 +35,8 @@ runs:
         osc_secret_key: ${{ inputs.osc_secret_key }}
         osc_region: ${{ inputs.osc_region }}
         will_install_ccm: "true"
-        rke_version: "v1.3.12"
-        kubernetes_version: "v1.23.7-rancher1-1"
+        rke_version: "v1.4.2"
+        kubernetes_version: "v1.24.9-rancher1-1"
         bastion_vm_type: "tinav5.c4r8p1"
         bastion_volume_type: "gp2"
         bastion_volume_size: 30

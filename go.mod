@@ -123,6 +123,7 @@ replace (
 	github.com/coreos/etcd => github.com/coreos/etcd v3.3.13+incompatible
 	go.etcd.io/etcd => go.etcd.io/etcd v0.5.0-alpha.5.0.20200910180754-dd1b699fc489 // ae9734ed278b is the SHA for git tag v3.4.13
 	google.golang.org/grpc => google.golang.org/grpc v1.45.0
+	gopkg.in/yaml.v3 => gopkg.in/yaml.v3 v3.0.1 // for the CVE-2022-28948
 	k8s.io/api => k8s.io/api v0.25.6
 	k8s.io/apiextensions-apiserver => k8s.io/apiextensions-apiserver v0.25.6
 	k8s.io/apimachinery => k8s.io/apimachinery v0.25.6

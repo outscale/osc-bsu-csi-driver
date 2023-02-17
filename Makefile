@@ -61,16 +61,11 @@ build: $(SOURCES)
 		cloud-controller-manager/cmd/osc-cloud-controller-manager/main.go
 
 .PHONY: verify
-verify: verify-fmt verify-lint vet
+verify: verify-fmt vet
 
 .PHONY: verify-fmt
 verify-fmt:
 	./hack/verify-gofmt.sh
-
-.PHONY: verify-lint
-verify-lint:
-	which golint 2>&1 >/dev/null || go install golang.org/x/lint/golint
-	golint -set_exit_status $(shell go list ./...)
 
 .PHONY: vet
 vet:

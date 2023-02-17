@@ -11,7 +11,7 @@ import (
 	e2esvc "k8s.io/kubernetes/test/e2e/framework/service"
 )
 
-//getAnnotations return Annotations
+// getAnnotations return Annotations
 func getAnnotations() map[string]string {
 	return map[string]string{
 		//Tags
@@ -24,7 +24,7 @@ func getAnnotations() map[string]string {
 	}
 }
 
-//CreateSvc create an svc
+// CreateSvc create an svc
 func CreateSvc(client clientset.Interface, namespace *v1.Namespace, additional map[string]string) *v1.Service {
 	fmt.Printf("Creating Service...\n")
 	svcClient := client.CoreV1().Services(namespace.Name)
@@ -64,7 +64,7 @@ func CreateSvc(client clientset.Interface, namespace *v1.Namespace, additional m
 	return result
 }
 
-//UpdateSvcPorts update an svc
+// UpdateSvcPorts update an svc
 func UpdateSvcPorts(client clientset.Interface, namespace *v1.Namespace, service *v1.Service, port v1.ServicePort) *v1.Service {
 	fmt.Printf("Updating Service ports %v\n", port)
 	svcClient := client.CoreV1().Services(namespace.Name)
@@ -80,7 +80,7 @@ func UpdateSvcPorts(client clientset.Interface, namespace *v1.Namespace, service
 	return result
 }
 
-//DeleteSvc delete an svc
+// DeleteSvc delete an svc
 func DeleteSvc(client clientset.Interface, namespace *v1.Namespace, svc *v1.Service) {
 	fmt.Printf("Deleting Service...")
 	svcClient := client.CoreV1().Services(namespace.Name)
@@ -92,7 +92,7 @@ func DeleteSvc(client clientset.Interface, namespace *v1.Namespace, svc *v1.Serv
 	fmt.Printf("Deleted Service.")
 }
 
-//ListSvc list and svc
+// ListSvc list and svc
 func ListSvc(client clientset.Interface, namespace *v1.Namespace) {
 	svcClient := client.CoreV1().Services(namespace.Name)
 	fmt.Printf("Listing Services in namespace %q:\n", namespace.Name)
@@ -103,7 +103,7 @@ func ListSvc(client clientset.Interface, namespace *v1.Namespace) {
 	fmt.Printf("svc:  %v\n", list.Items)
 }
 
-//GetSvc return an svc
+// GetSvc return an svc
 func GetSvc(client clientset.Interface, namespace *v1.Namespace, name string) (result *v1.Service) {
 	svcClient := client.CoreV1().Services(namespace.Name)
 	fmt.Printf("Getting Services in namespace %q:\n", namespace.Name)
@@ -115,7 +115,7 @@ func GetSvc(client clientset.Interface, namespace *v1.Namespace, name string) (r
 	return result
 }
 
-//WaitForSvc wait for an svc to be ready
+// WaitForSvc wait for an svc to be ready
 func WaitForSvc(client clientset.Interface, namespace *v1.Namespace, svc *v1.Service) {
 	e2esvc.WaitForServiceUpdatedWithFinalizer(client, namespace.Name, svc.GetObjectMeta().GetName(), true)
 }

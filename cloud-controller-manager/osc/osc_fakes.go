@@ -411,22 +411,22 @@ type FakeMetadata struct {
 	aws *FakeOscServices
 }
 
-//GetInstanceID is a fake metadata for testing
+// GetInstanceID is a fake metadata for testing
 func (m *FakeMetadata) GetInstanceID() string {
 	return ""
 }
 
-//GetInstanceType is a fake metadata for testing
+// GetInstanceType is a fake metadata for testing
 func (m *FakeMetadata) GetInstanceType() string {
 	return ""
 }
 
-//GetRegion is a fake metadata for testing
+// GetRegion is a fake metadata for testing
 func (m *FakeMetadata) GetRegion() string {
 	return ""
 }
 
-//GetAvailabilityZone is a fake metadata for testing
+// GetAvailabilityZone is a fake metadata for testing
 func (m *FakeMetadata) GetAvailabilityZone() string {
 	return ""
 }

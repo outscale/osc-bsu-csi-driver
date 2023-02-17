@@ -44,9 +44,9 @@ type InstanceID string
 
 // KubernetesInstanceID represents the id for an instance in the kubernetes API;
 // the following form
-//  * aws:///<zone>/<awsInstanceId>
-//  * aws:////<awsInstanceId>
-//  * <awsInstanceId>
+//   - aws:///<zone>/<awsInstanceId>
+//   - aws:////<awsInstanceId>
+//   - <awsInstanceId>
 type KubernetesInstanceID string
 
 // MapToAWSInstanceID extracts the InstanceID from the KubernetesInstanceID

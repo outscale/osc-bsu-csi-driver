@@ -86,7 +86,7 @@ func CreateDeployment(client clientset.Interface, namespace *v1.Namespace, cmd s
 	return result
 }
 
-//DeleteDeployment delete a Deployment
+// DeleteDeployment delete a Deployment
 func DeleteDeployment(client clientset.Interface, namespace *v1.Namespace, deployment *apps.Deployment) {
 	deploymentsClient := client.AppsV1().Deployments(namespace.Name)
 	deletePolicy := metav1.DeletePropagationForeground
@@ -98,7 +98,7 @@ func DeleteDeployment(client clientset.Interface, namespace *v1.Namespace, deplo
 	fmt.Printf("Deleted deployment.\n")
 }
 
-//WaitForDeployementReady wait for a Deployement
+// WaitForDeployementReady wait for a Deployement
 func WaitForDeployementReady(client clientset.Interface, namespace *v1.Namespace, deployment *apps.Deployment) {
 	err := e2edeployment.WaitForDeploymentComplete(client, deployment)
 	framework.ExpectNoError(err)

@@ -45,7 +45,7 @@ func elbSession() (*session.Session, error) {
 	return sess, nil
 }
 
-//ElbAPI instanciate elb service
+// ElbAPI instanciate elb service
 func ElbAPI() (osc.LoadBalancer, error) {
 	sess, err := elbSession()
 	if err != nil {
@@ -55,7 +55,7 @@ func ElbAPI() (osc.LoadBalancer, error) {
 	return elbClient, nil
 }
 
-//RemoveLbInst remove instance from lb
+// RemoveLbInst remove instance from lb
 func RemoveLbInst(elb osc.LoadBalancer, lbName string, lbInstances []*elbApi.Instance) error {
 	fmt.Printf("Instances removed from load-balancer %s", lbName)
 	deregisterRequest := &elbApi.DeregisterInstancesFromLoadBalancerInput{}
@@ -68,7 +68,7 @@ func RemoveLbInst(elb osc.LoadBalancer, lbName string, lbInstances []*elbApi.Ins
 	return nil
 }
 
-//GetLb describe an LB
+// GetLb describe an LB
 func GetLb(elb osc.LoadBalancer, name string) (*elbApi.LoadBalancerDescription, error) {
 	request := &elbApi.DescribeLoadBalancersInput{}
 	request.LoadBalancerNames = []*string{&name}

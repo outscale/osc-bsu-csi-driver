@@ -29,6 +29,7 @@ import (
 	clientset "k8s.io/client-go/kubernetes"
 	"k8s.io/kubernetes/test/e2e/framework"
 	e2esvc "k8s.io/kubernetes/test/e2e/framework/service"
+	admissionapi "k8s.io/pod-security-admission/api"
 )
 
 // TestParam customize e2e tests and lb annotations
@@ -40,6 +41,7 @@ type TestParam struct {
 
 var _ = ginkgo.Describe("[ccm-e2e] SVC-LB", func() {
 	f := framework.NewDefaultFramework("ccm")
+	f.NamespacePodSecurityEnforceLevel = admissionapi.LevelPrivileged
 
 	var (
 		cs clientset.Interface
@@ -186,6 +188,7 @@ var _ = ginkgo.Describe("[ccm-e2e] SVC-LB", func() {
 // Test to check that the issue 68 is solved
 var _ = ginkgo.Describe("[ccm-e2e] SVC-LB", func() {
 	f := framework.NewDefaultFramework("ccm")
+	f.NamespacePodSecurityEnforceLevel = admissionapi.LevelPrivileged
 
 	var (
 		cs clientset.Interface

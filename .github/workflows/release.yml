@@ -23,6 +23,12 @@ jobs:
           path: "docs/CHANGELOG.md"
           version: ${{ github.ref_name }}
 
+      - uses: azure/setup-helm@v3
+        with:
+          version: v3.10.1
+      - name : Create Helm-package
+        run: make helm-package
+
       - name: Create Release
         uses: softprops/action-gh-release@v1
         if: startsWith(github.ref, 'refs/tags/')
@@ -32,3 +38,4 @@ jobs:
           draft: true
           prerelease: false
           body: ${{ steps.changelog.outputs.changes }}
+          files: out-helm/*

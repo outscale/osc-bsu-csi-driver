@@ -38,7 +38,7 @@ jobs:
       with:
         repository: 'outscale-dev/osc-k8s-rke-cluster'
         path: "set-up-rke-cluster"
-    - uses: azure/setup-kubectl@v2.0
+    - uses: azure/setup-kubectl@v3.0
     - uses: azure/setup-helm@v3
       with:
         version: v3.10.1

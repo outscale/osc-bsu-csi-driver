@@ -57,6 +57,10 @@ build:
 build-image:
 	docker build --build-arg VERSION=$(VERSION) -t $(IMAGE):$(IMAGE_TAG) .
 
+.PHONY: buildx-image
+buildx-image:
+	docker buildx build --build-arg VERSION=$(VERSION) --load -t $(IMAGE):$(IMAGE_TAG) . 
+
 .PHONY: verify
 verify:
 	./hack/verify-all

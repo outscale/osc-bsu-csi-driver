@@ -79,7 +79,7 @@ jobs:
       working-directory: set-up-rke-cluster
     - name: Push the Docker image
       run: |
-        make build-image image-tag image-push
+        make buildx-image image-tag image-push
         docker image prune -a -f
       env:
         REGISTRY_IMAGE: localhost:4242/csi

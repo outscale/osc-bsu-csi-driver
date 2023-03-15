@@ -52,7 +52,7 @@ const (
 
 	// defaultMaxBSUVolumes is the maximum number of volumes that an OSC instance can have attached.
 	// https://docs.outscale.com/en/userguide/About-Volumes.html#_volumes_and_instances
-	defaultMaxBSUVolumes = 25
+	defaultMaxBSUVolumes = 39
 )
 
 var (

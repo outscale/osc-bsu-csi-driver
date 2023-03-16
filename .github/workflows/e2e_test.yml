@@ -109,7 +109,7 @@ jobs:
         OSC_ACCESS_KEY: ${{ secrets.OSC_ACCESS_KEY }}
         OSC_SECRET_KEY: ${{ secrets.OSC_SECRET_KEY }}
         OSC_REGION: ${{ secrets.OSC_REGION }}
-      run: bash -c "KC=$(base64 -w 0 set-up-rke-cluster/rke/kube_config_cluster.yml) make test-e2e-single-az"
+      run: bash -c "KC=$(base64 -w 0 set-up-rke-cluster/rke/kube_config_cluster.yml) make test-e2e-single-az-buildx"
     - name: Uninstall CSI
       run: |
         kubectl delete -f set-up-rke-cluster/addons/csi/secrets.yaml

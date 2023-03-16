@@ -53,7 +53,7 @@ jobs:
         osc_region: ${{ secrets.OSC_REGION }}
     - name: Build image
       run: |
-        make build-image image-tag
+        make buildx-image image-tag
       env:
         REGISTRY_IMAGE: localhost:4242/osc/cloud-provider-osc
         VERSION: ${{ format('{0}.{1}', github.sha, github.run_attempt) }}

@@ -74,10 +74,9 @@ dockerlint:
 	@echo "Lint images =>  $(DOCKERFILES)"
 	$(foreach image,$(DOCKERFILES), echo "Lint  ${image} " ; docker run --rm -i hadolint/hadolint:${LINTER_VERSION} hadolint - < ${image} || exit 1 ; )
 
-.PHONY: test-e2e-single-az
-test-e2e-single-az:
-	@echo "test-e2e-single-az"
-	docker build  -t $(E2E_ENV) -f ./tests/e2e/docker/Dockerfile_e2eTest .
+.PHONY: test-e2e-single-az-run
+test-e2e-single-az-run:
+	@echo "test-e2e-single-az-run"
 	docker run --rm \
 		-v ${PWD}:/root/osc-bsu-csi-driver \
 		-e OSC_ACCESS_KEY=${OSC_ACCESS_KEY} \
@@ -86,6 +85,18 @@ test-e2e-single-az:
 		-e OSC_REGION=${OSC_REGION} \
 		-e KC="$${KC}" \
 		--name $(E2E_ENV_RUN) $(E2E_ENV) tests/e2e/docker/run_e2e_single_az.sh
+
+.PHONY: test-e2e-single-az
+test-e2e-single-az:
+	@echo "test-e2e-single-az"
+	docker build -t $(E2E_ENV) -f ./tests/e2e/docker/Dockerfile_e2eTest .
+	$(MAKE) test-e2e-single-az-run
+
+.PHONY: test-e2e-single-az-buildx
+test-e2e-single-az-buildx:
+	@echo "test-e2e-single-az"
+	docker buildx build  --load -t $(E2E_ENV) -f ./tests/e2e/docker/Dockerfile_e2eTest .
+	$(MAKE) test-e2e-single-az-run
 
 bin/mockgen: | bin
 	go get github.com/golang/mock/mockgen@latest

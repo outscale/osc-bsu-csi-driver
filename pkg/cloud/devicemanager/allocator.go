@@ -52,8 +52,9 @@ var _ NameAllocator = &nameAllocator{}
 //
 // and return the first one that is not used yet.
 func (d *nameAllocator) GetNext(existingNames ExistingNames) (string, error) {
-	for c2 := 'b'; c2 <= 'z'; c2++ {
-		name := string(c2)
+	device_map := [40]string{"a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z", "aa", "ab", "ac", "ad", "ae", "af", "ag", "ah", "ai", "aj", "ak", "al", "am", "an"}
+	for i := 1; i < 40; i++ {
+		name := device_map[i]
 		if _, found := existingNames[name]; !found {
 			return name, nil
 		}

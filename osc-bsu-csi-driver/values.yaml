@@ -144,7 +144,7 @@ extraCreateMetadata: false
 region: ""
 
 # -- Maximum volume to attach to a node (see [Docs](https://docs.outscale.com/en/userguide/About-Volumes.html))
-maxBsuVolumes: "25"
+maxBsuVolumes: "39"
 
 # -- Default filesystem for the volume if no `FsType` is set in `StorageClass`
 defaultFsType: "ext4"

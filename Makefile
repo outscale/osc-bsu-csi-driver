@@ -15,7 +15,7 @@
 # Docker env
 DOCKERFILES := $(shell find . -type f -name '*Dockerfile*' !  -path "./debug/*" )
 LINTER_VERSION := v1.17.5
-
+# test
 E2E_ENV ?= "e2e/osc-bsu-csi-driver:0.0"
 E2E_ENV_RUN ?= "e2e-osc-bsu-csi-driver"
 

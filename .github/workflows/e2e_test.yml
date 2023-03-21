@@ -23,6 +23,7 @@ on:
     
 jobs:
   create_cluster:
+    environment: us-east-2
     runs-on: [self-hosted, linux]
     steps:
     # Retrieve the code from the repo (UNSAFE)

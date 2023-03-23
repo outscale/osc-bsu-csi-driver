@@ -2,7 +2,7 @@ name: Github sanity scanner
 
 on:
   pull_request:
-    branches: [ master, OSC_MIGRATION ]
+    branches: [ master, OSC-MIGRATION ]
 
 jobs:
   cred-scan:

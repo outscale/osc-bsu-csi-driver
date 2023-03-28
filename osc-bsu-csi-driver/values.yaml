@@ -9,7 +9,7 @@ image:
   # -- Container image to use   
   repository: outscale/osc-bsu-csi-driver
   # -- Container image tag to deploy
-  tag: v1.1.1
+  tag: v1.2.0
   # -- Container pull policy
   pullPolicy: IfNotPresent
 
@@ -98,7 +98,7 @@ podLabels: {}
 
 # -- Enable schedule volume for dynamic volume provisioning
 # True if enable volume scheduling for dynamic volume provisioning
-enableVolumeScheduling: false
+enableVolumeScheduling: true
 
 # -- Enable volume resizing 
 # True if enable volume resizing

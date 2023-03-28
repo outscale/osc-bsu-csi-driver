@@ -1,4 +1,11 @@
 # Changelog
+## [v0.2.0]
+### Features
+* Increase maximum volumes per node (from 25 to 40) ([#657](https://github.com/outscale/osc-bsu-csi-driver/pull/657))
+* Upgrade plugin to support 1.25 Kubernetes version cluster ([#613](https://github.com/outscale/osc-bsu-csi-driver/pull/613))
+
+## Notable Changes
+* Volume scheduling is enabled by default in the helm chart
 ## [v0.1.2]
 ### Bugfixes
 * Fix deployement when using helm-git ([#520](https://github.com/outscale-dev/osc-bsu-csi-driver/issues/520))

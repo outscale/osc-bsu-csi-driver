@@ -1,10 +1,10 @@
 # osc-bsu-csi-driver
 
-![Version: 0.9.1](https://img.shields.io/badge/Version-0.9.1-informational?style=flat-square) ![AppVersion: v0.1.2](https://img.shields.io/badge/AppVersion-v0.1.2-informational?style=flat-square)
+![Version: 0.10.0](https://img.shields.io/badge/Version-0.10.0-informational?style=flat-square) ![AppVersion: v0.2.0](https://img.shields.io/badge/AppVersion-v0.2.0-informational?style=flat-square)
 
 A Helm chart for Outscale BSU CSI Driver
 
-**Homepage:** <https://github.com/outscale-dev/osc-bsu-csi-driver>
+**Homepage:** <https://github.com/outscale/osc-bsu-csi-driver>
 
 ## Maintainers
 
@@ -14,7 +14,7 @@ A Helm chart for Outscale BSU CSI Driver
 
 ## Source Code
 
-* <https://github.com/outscale-dev/osc-bsu-csi-driver>
+* <https://github.com/outscale/osc-bsu-csi-driver>
 
 ## Requirements
 
@@ -35,13 +35,13 @@ Kubernetes: `>=1.20.0`
 | csiDriver.fsGroupPolicy | string | `"File"` | Policy of the FileSystem (see [Docs](https://kubernetes-csi.github.io/docs/support-fsgroup.html#supported-modes)) |
 | defaultFsType | string | `"ext4"` | Default filesystem for the volume if no `FsType` is set in `StorageClass` |
 | enableVolumeResizing | bool | `false` | Enable volume resizing  True if enable volume resizing |
-| enableVolumeScheduling | bool | `false` | Enable schedule volume for dynamic volume provisioning True if enable volume scheduling for dynamic volume provisioning |
+| enableVolumeScheduling | bool | `true` | Enable schedule volume for dynamic volume provisioning True if enable volume scheduling for dynamic volume provisioning |
 | enableVolumeSnapshot | bool | `false` | Enable volume snapshot  True if enable volume snapshot |
 | extraCreateMetadata | bool | `false` | Add pv/pvc metadata to plugin create requests as parameters |
 | extraVolumeTags | object | `{}` | Add extra tags on volume |
 | image.pullPolicy | string | `"IfNotPresent"` | Container pull policy |
 | image.repository | string | `"outscale/osc-ebs-csi-driver"` | Container image to use    |
-| image.tag | string | `"v0.1.2"` | Container image tag to deploy |
+| image.tag | string | `"v0.2.0"` | Container image tag to deploy |
 | imagePullSecrets | list | `[]` | Specify image pull secrets  |
 | maxBsuVolumes | string | `"39"` | Maximum volume to attach to a node (see [Docs](https://docs.outscale.com/en/userguide/About-Volumes.html)) |
 | nameOverride | string | `""` | Override name of the app (instead of `osc-bsu-csi-driver`) |

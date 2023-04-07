@@ -59,8 +59,8 @@ jobs:
         osc_secret_key: ${{ secrets.OSC_SECRET_KEY }}
         osc_region: ${{ secrets.OSC_REGION }}
         image_id: ${{ secrets.OMI_ID }}
-        rke_version: "v1.4.2"
-        kubernetes_version: "v1.24.9-rancher1-1"
+        rke_version: "v1.4.4"
+        kubernetes_version: "v1.25.6-rancher4-1"
     - name: Wait to access the cluster
       uses: nick-invision/retry@v2
       with:

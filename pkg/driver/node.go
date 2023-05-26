@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strconv"
 	"strings"
 
@@ -654,9 +655,29 @@ func (d *nodeService) findDevicePath(devicePath, volumeID string) (string, error
 	}
 
 	// assumption it is a scsi volume for 3DS env
-	scsiName := "scsi-0QEMU_QEMU_HARDDISK_sd" + devicePath[len(devicePath)-1:]
+	scsiName, err := findScsiName(devicePath)
+	if err != nil {
+		return "", err
+	}
+
 	klog.V(4).Infof("findDevicePath: check if scsi device for %s is %s and return the device", devicePath, scsiName)
 	return findScsiVolume(scsiName)
+}
+
+func findScsiName(devicePath string) (string, error) {
+	myreg := regexp.MustCompile(`^/dev/xvd(?P<suffix>[a-z]{1,2})$`)
+	match := myreg.FindStringSubmatch(devicePath)
+	result := make(map[string]string)
+	if myreg.MatchString(devicePath) {
+		for i, name := range myreg.SubexpNames() {
+			if i != 0 && name != "" {
+				result[name] = match[i]
+			}
+		}
+		scsiName := "scsi-0QEMU_QEMU_HARDDISK_sd" + result["suffix"]
+		return scsiName, nil
+	}
+	return "", fmt.Errorf("devicePath %s is not supported", devicePath)
 }
 
 func findScsiVolume(findName string) (device string, err error) {

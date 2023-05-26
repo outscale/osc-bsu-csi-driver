@@ -1,10 +1,10 @@
 # osc-bsu-csi-driver
 
-![Version: 1.1.1](https://img.shields.io/badge/Version-1.1.1-informational?style=flat-square) ![AppVersion: v1.1.1](https://img.shields.io/badge/AppVersion-v1.1.1-informational?style=flat-square)
+![Version: 1.2.0](https://img.shields.io/badge/Version-1.2.0-informational?style=flat-square) ![AppVersion: v1.2.0](https://img.shields.io/badge/AppVersion-v1.2.0-informational?style=flat-square)
 
 A Helm chart for Outscale BSU CSI Driver
 
-**Homepage:** <https://github.com/outscale-dev/osc-bsu-csi-driver>
+**Homepage:** <https://github.com/outscale/osc-bsu-csi-driver>
 
 ## Maintainers
 
@@ -14,7 +14,7 @@ A Helm chart for Outscale BSU CSI Driver
 
 ## Source Code
 
-* <https://github.com/outscale-dev/osc-bsu-csi-driver>
+* <https://github.com/outscale/osc-bsu-csi-driver>
 
 ## Requirements
 

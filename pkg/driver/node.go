@@ -751,7 +751,7 @@ func (d *nodeService) findDevicePath(devicePath, volumeID string) (string, error
 	}
 
 	// assumption it is a scsi volume for 3DS env
-	scsiName := "scsi-0QEMU_QEMU_HARDDISK_sd" + devicePath[len(devicePath)-1:]
+	scsiName := "scsi-0QEMU_QEMU_HARDDISK_sd" + devicePath[len(devicePath):]
 	klog.V(4).Infof("findDevicePath: check if scsi device for %s is %s and return the device", devicePath, scsiName)
 	return findScsiVolume(scsiName)
 }

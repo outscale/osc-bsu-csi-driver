@@ -19,6 +19,7 @@ package driver
 import (
 	"context"
 	"errors"
+	"fmt"
 	"os"
 	"reflect"
 	"testing"
@@ -27,6 +28,7 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/outscale-dev/osc-bsu-csi-driver/pkg/driver/internal"
 	"github.com/outscale-dev/osc-bsu-csi-driver/pkg/driver/mocks"
+	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	exec "k8s.io/utils/exec"
@@ -1523,6 +1525,44 @@ func TestNodeGetInfo(t *testing.T) {
 
 			if resp.GetMaxVolumesPerNode() != tc.expMaxVolumes {
 				t.Fatalf("Expected %d max volumes per node, got %d", tc.expMaxVolumes, resp.GetMaxVolumesPerNode())
+			}
+		})
+	}
+}
+
+func TestFindScsiName(t *testing.T) {
+	findScsiNameCase := []struct {
+		name                string
+		devicePath          string
+		scsiName            string
+		expTestFindScsiName error
+	}{
+		{
+			name:                "Validate format xvdx",
+			devicePath:          "/dev/xvda",
+			scsiName:            "scsi-0QEMU_QEMU_HARDDISK_sda",
+			expTestFindScsiName: nil,
+		},
+		{
+			name:                "Validate format xvdxy",
+			devicePath:          "/dev/xvdaa",
+			scsiName:            "scsi-0QEMU_QEMU_HARDDISK_sdaa",
+			expTestFindScsiName: nil,
+		},
+		{
+			name:                "Invalide format xvdxyz",
+			devicePath:          "/dev/xvdaaa",
+			scsiName:            "scsi-0QEMU_QEMU_HARDDISK_sd",
+			expTestFindScsiName: fmt.Errorf("devicePath /dev/xvdaaa is not supported"),
+		},
+	}
+	for _, fsnc := range findScsiNameCase {
+		t.Run(fsnc.name, func(t *testing.T) {
+			scsiName, err := findScsiName(fsnc.devicePath)
+			if err != nil {
+				assert.Equal(t, fsnc.expTestFindScsiName.Error(), err.Error())
+			} else {
+				assert.Equal(t, fsnc.scsiName, scsiName)
 			}
 		})
 	}

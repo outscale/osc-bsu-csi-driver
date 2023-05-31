@@ -1,4 +1,9 @@
 # Changelog
+
+## [v0.2.1]
+### Bugfixes
+* Handle 39 volumes for scsi device per node ([#733](https://github.com/outscale/osc-bsu-csi-driver/issues/733))
+
 ## [v0.2.0]
 ### Features
 * Increase maximum volumes per node (from 25 to 40) ([#657](https://github.com/outscale/osc-bsu-csi-driver/pull/657))

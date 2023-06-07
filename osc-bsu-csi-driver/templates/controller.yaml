@@ -135,6 +135,15 @@ spec:
             - --extra-create-metadata
             {{- end}}
             - --leader-election=true
+            {{- if .Values.sidecars.provisionerImage.leaderElection.leaseDuration }}
+            - --leader-election-lease-duration={{ .Values.sidecars.provisionerImage.leaderElection.leaseDuration }}
+            {{- end }}
+            {{- if .Values.sidecars.provisionerImage.leaderElection.renewDeadline}}
+            - --leader-election-renew-deadline={{ .Values.sidecars.provisionerImage.leaderElection.renewDeadline }}
+            {{- end }}
+            {{- if .Values.sidecars.provisionerImage.leaderElection.retryPeriod }}
+            - --leader-election-retry-period={{ .Values.sidecars.provisionerImage.leaderElection.retryPeriod }}
+            {{- end }}
             - --timeout={{ .Values.timeout }}
             - --default-fstype={{ .Values.defaultFsType }}
           {{- if .Values.sidecars.provisionerImage.enableHttpEndpoint }}
@@ -168,6 +177,15 @@ spec:
             - --csi-address=$(ADDRESS)
             - --v={{ .Values.verbosity }}
             - --leader-election=true
+            {{- if .Values.sidecars.attacherImage.leaderElection.leaseDuration }}
+            - --leader-election-lease-duration={{ .Values.sidecars.attacherImage.leaderElection.leaseDuration }}
+            {{- end }}
+            {{- if .Values.sidecars.attacherImage.leaderElection.renewDeadline}}
+            - --leader-election-renew-deadline={{ .Values.sidecars.attacherImage.leaderElection.renewDeadline }}
+            {{- end }}
+            {{- if .Values.sidecars.attacherImage.leaderElection.retryPeriod }}
+            - --leader-election-retry-period={{ .Values.sidecars.attacherImage.leaderElection.retryPeriod }}
+            {{- end }}
             - --timeout={{ .Values.timeout }}
           {{- if .Values.sidecars.attacherImage.enableHttpEndpoint }}
             - --http-endpoint=:{{ .Values.sidecars.attacherImage.httpEndpointPort }}
@@ -200,6 +218,15 @@ spec:
           args:
             - --csi-address=$(ADDRESS)
             - --leader-election=true
+            {{- if .Values.sidecars.snapshotterImage.leaderElection.leaseDuration }}
+            - --leader-election-lease-duration={{ .Values.sidecars.snapshotterImage.leaderElection.leaseDuration }}
+            {{- end }}
+            {{- if .Values.sidecars.snapshotterImage.leaderElection.renewDeadline}}
+            - --leader-election-renew-deadline={{ .Values.sidecars.snapshotterImage.leaderElection.renewDeadline }}
+            {{- end }}
+            {{- if .Values.sidecars.snapshotterImage.leaderElection.retryPeriod }}
+            - --leader-election-retry-period={{ .Values.sidecars.snapshotterImage.leaderElection.retryPeriod }}
+            {{- end }}
           {{- if .Values.sidecars.snapshotterImage.enableHttpEndpoint }}
             - --http-endpoint=:{{ .Values.sidecars.snapshotterImage.httpEndpointPort }}
           {{- end }}
@@ -235,6 +262,15 @@ spec:
             - --v={{ .Values.verbosity }}
             - --timeout={{ .Values.timeout }}
             - --leader-election=true
+            {{- if .Values.sidecars.resizerImage.leaderElection.leaseDuration }}
+            - --leader-election-lease-duration={{ .Values.sidecars.resizerImage.leaderElection.leaseDuration }}
+            {{- end }}
+            {{- if .Values.sidecars.resizerImage.leaderElection.renewDeadline}}
+            - --leader-election-renew-deadline={{ .Values.sidecars.resizerImage.leaderElection.renewDeadline }}
+            {{- end }}
+            {{- if .Values.sidecars.resizerImage.leaderElection.retryPeriod }}
+            - --leader-election-retry-period={{ .Values.sidecars.resizerImage.leaderElection.retryPeriod }}
+            {{- end }}
         {{- if .Values.sidecars.resizerImage.enableHttpEndpoint }}
             - --http-endpoint=:{{ .Values.sidecars.resizerImage.httpEndpointPort }}
         {{- end }}

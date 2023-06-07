@@ -59,6 +59,7 @@ Kubernetes: `>=1.20.0`
 | sidecars.attacherImage.enableHttpEndpoint | bool | `false` | Enable http endpoint to get metrics of the container |
 | sidecars.attacherImage.enableLivenessProbe | bool | `false` | Enable liveness probe for the container |
 | sidecars.attacherImage.httpEndpointPort | string | `"8090"` | Port of the http endpoint |
+| sidecars.attacherImage.leaderElection | object | `{}` | Customize leaderElection, you can specify `leaseDuration`, `renewDeadline` and/or `retryPeriod`. Each value must be in an acceptable time.ParseDuration format.(Ref: https://pkg.go.dev/flag#Duration) |
 | sidecars.attacherImage.repository | string | `"registry.k8s.io/sig-storage/csi-attacher"` |  |
 | sidecars.attacherImage.tag | string | `"v3.3.0"` |  |
 | sidecars.livenessProbeImage.repository | string | `"registry.k8s.io/sig-storage/livenessprobe"` |  |
@@ -71,16 +72,19 @@ Kubernetes: `>=1.20.0`
 | sidecars.provisionerImage.enableHttpEndpoint | bool | `false` | Enable http endpoint to get metrics of the container |
 | sidecars.provisionerImage.enableLivenessProbe | bool | `false` | Enable liveness probe for the container |
 | sidecars.provisionerImage.httpEndpointPort | string | `"8089"` | Port of the http endpoint |
+| sidecars.provisionerImage.leaderElection | object | `{}` | Customize leaderElection, you can specify `leaseDuration`, `renewDeadline` and/or `retryPeriod`. Each value must be in an acceptable time.ParseDuration format.(Ref: https://pkg.go.dev/flag#Duration) |
 | sidecars.provisionerImage.repository | string | `"registry.k8s.io/sig-storage/csi-provisioner"` |  |
 | sidecars.provisionerImage.tag | string | `"v3.0.0"` |  |
 | sidecars.resizerImage.enableHttpEndpoint | bool | `false` | Enable http endpoint to get metrics of the container |
 | sidecars.resizerImage.enableLivenessProbe | bool | `false` | Enable liveness probe for the container |
 | sidecars.resizerImage.httpEndpointPort | string | `"8092"` | Port of the http endpoint |
+| sidecars.resizerImage.leaderElection | object | `{}` | Customize leaderElection, you can specify `leaseDuration`, `renewDeadline` and/or `retryPeriod`. Each value must be in an acceptable time.ParseDuration format.(Ref: https://pkg.go.dev/flag#Duration) |
 | sidecars.resizerImage.repository | string | `"registry.k8s.io/sig-storage/csi-resizer"` |  |
 | sidecars.resizerImage.tag | string | `"v1.3.0"` |  |
 | sidecars.snapshotterImage.enableHttpEndpoint | bool | `false` | Enable http endpoint to get metrics of the container |
 | sidecars.snapshotterImage.enableLivenessProbe | bool | `false` | Enable liveness probe for the container |
 | sidecars.snapshotterImage.httpEndpointPort | string | `"8091"` | Port of the http endpoint |
+| sidecars.snapshotterImage.leaderElection | object | `{}` | Customize leaderElection, you can specify `leaseDuration`, `renewDeadline` and/or `retryPeriod`. Each value must be in an acceptable time.ParseDuration format.(Ref: https://pkg.go.dev/flag#Duration) |
 | sidecars.snapshotterImage.repository | string | `"registry.k8s.io/sig-storage/csi-snapshotter"` |  |
 | sidecars.snapshotterImage.tag | string | `"v4.2.1"` |  |
 | timeout | string | `"60s"` | Timeout for sidecars |

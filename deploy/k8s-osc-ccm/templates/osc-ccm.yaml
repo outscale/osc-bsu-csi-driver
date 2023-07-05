@@ -146,6 +146,12 @@ spec:
             - --cloud-provider=osc
             - -v={{ .Values.verbose }}
             - --logtostderr
+          {{- if .Values.caBundle.name }}
+          volumeMounts:
+            - name: ca-bundle
+              mountPath: /etc/ssl/certs
+              readOnly: true
+          {{- end }}
           env:
             - name: OSC_ACCOUNT_ID
               valueFrom:
@@ -223,6 +229,21 @@ spec:
             - name: OSC_ENDPOINT_EIM
               value: {{ .Values.customEndpointEim }}
             {{- end }}
+            {{- if .Values.httpsProxy }}
+            - name: HTTPS_PROXY
+              value: {{ .Values.httpsProxy }}
+            - name: NO_PROXY
+              value: {{ .Values.noProxy }}
+            {{- end }}
+      {{- if .Values.caBundle.name }}
+      volumes:
+        - name: ca-bundle
+          secret:
+            secretName: {{ .Values.caBundle.name }}
+            items:
+              - key: {{ .Values.caBundle.key }}
+                path: ca-certificates.crt
+      {{- end }}
       hostNetwork: true
       {{- if .Values.nodeSelector }}
       nodeSelector: {{- toYaml .Values.nodeSelector | nindent 8}}

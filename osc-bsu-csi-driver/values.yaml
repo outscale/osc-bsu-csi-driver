@@ -196,3 +196,12 @@ credentials:
 csiDriver:
   # -- Policy of the FileSystem (see [Docs](https://kubernetes-csi.github.io/docs/support-fsgroup.html#supported-modes))
   fsGroupPolicy: File
+
+# -- HTTP proxy configuration example 
+# caBundle:
+#   name: my-ca-bundle
+#   key: my-ca-bundle.pem
+
+# httpsProxy: https://my-proxy.foo.bar
+
+noProxy: 10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,169.254.169.254

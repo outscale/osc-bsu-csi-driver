@@ -101,9 +101,20 @@ spec:
               value: "{{ .Values.backoff.factor }}"
             - name: BACKOFF_STEPS
               value: "{{ .Values.backoff.steps }}"
+            {{- if .Values.httpsProxy }}
+            - name: HTTPS_PROXY
+              value: {{ .Values.httpsProxy }}
+            - name: NO_PROXY
+              value: {{ .Values.noProxy }}
+            {{- end }}
           volumeMounts:
             - name: socket-dir
               mountPath: /var/lib/csi/sockets/pluginproxy/
+            {{- if .Values.caBundle.name }}
+            - name: ca-bundle
+              mountPath: /etc/ssl/certs
+              readOnly: true
+            {{- end }}
           ports:
             - name: healthz
               containerPort: {{ .Values.sidecars.livenessProbeImage.port }}
@@ -279,3 +290,11 @@ spec:
       volumes:
         - name: socket-dir
           emptyDir: {}
+        {{- if .Values.caBundle.name }}
+        - name: ca-bundle
+          secret:
+            secretName: {{ .Values.caBundle.name }}
+            items:
+              - key: {{ .Values.caBundle.key }}
+                path: ca-certificates.crt
+        {{- end }}

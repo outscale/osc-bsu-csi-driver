@@ -43,7 +43,7 @@ require (
 	github.com/kubernetes-csi/external-snapshotter/client/v4 v4.2.0
 	github.com/onsi/ginkgo/v2 v2.8.1
 	github.com/onsi/gomega v1.26.0
-	github.com/outscale/osc-sdk-go/v2 v2.15.0
+	github.com/outscale/osc-sdk-go/v2 v2.18.1
 	github.com/stretchr/testify v1.8.4
 	golang.org/x/sys v0.5.0
 	google.golang.org/grpc v1.47.0
@@ -107,7 +107,6 @@ require (
 	github.com/prometheus/procfs v0.7.3 // indirect
 	github.com/spf13/cobra v1.4.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
-	github.com/stretchr/objx v0.5.0 // indirect
 	go.opentelemetry.io/contrib v0.20.0 // indirect
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.20.0 // indirect
 	go.opentelemetry.io/otel v0.20.0 // indirect

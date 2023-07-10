@@ -3,10 +3,10 @@ module github.com/outscale-dev/cloud-provider-osc
 go 1.19
 
 require (
-	github.com/aws/aws-sdk-go v1.44.32
+	github.com/aws/aws-sdk-go v1.44.103
 	github.com/onsi/ginkgo/v2 v2.8.1
 	github.com/onsi/gomega v1.26.0
-	github.com/outscale/osc-sdk-go/v2 v2.10.0
+	github.com/outscale/osc-sdk-go/v2 v2.18.1
 	github.com/prometheus/client_golang v1.12.1
 	github.com/stretchr/testify v1.8.0
 	gopkg.in/gcfg.v1 v1.2.3

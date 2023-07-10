@@ -7,6 +7,7 @@ You will need a Kubernetes cluster on 3DS Outscale cloud. The next sections deta
 | Plugin Version | Minimal Kubernetes Version | Recommended Kubernetes Version |
 | -------------- | -------------------------- | ------------------------------ |
 | <= v0.0.10beta | 1.20                       | 1.23                           |
+|    v0.2.1      | 1.20                       | 1.23                           |
 
 # Configuration
 

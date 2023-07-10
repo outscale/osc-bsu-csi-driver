@@ -9,7 +9,7 @@ image:
   # -- Container image to use   
   repository: outscale/osc-ebs-csi-driver
   # -- Container image tag to deploy
-  tag: v0.2.1
+  tag: v0.2.2
   # -- Container pull policy
   pullPolicy: IfNotPresent
 

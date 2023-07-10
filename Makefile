@@ -92,7 +92,7 @@ dockerlint:
 .PHONY: test-e2e
 test-e2e:
 	@echo "e2e-test"
-	docker build  -t $(E2E_ENV) -f ./tests/e2e/docker/Dockerfile_e2eTest .
+	docker build  -t $(E2E_ENV):latest -f ./tests/e2e/docker/Dockerfile_e2eTest .
 	docker run --rm \
 		-v ${PWD}:/go/src/cloud-provider-osc \
 		-e AWS_ACCESS_KEY_ID=${OSC_ACCESS_KEY} \
@@ -100,7 +100,7 @@ test-e2e:
 		-e AWS_DEFAULT_REGION=${OSC_REGION} \
 		-e AWS_AVAILABILITY_ZONES="${OSC_REGION}a" \
 		-e KC="$${KC}" \
-		--name $(E2E_ENV_RUN) $(E2E_ENV) tests/e2e/docker/run_e2e_single_az.sh
+		--name $(E2E_ENV_RUN) $(E2E_ENV):latest tests/e2e/docker/run_e2e_single_az.sh
 
 .PHONY: trivy-scan
 trivy-scan:

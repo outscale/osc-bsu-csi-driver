@@ -5,6 +5,9 @@
 # -- Number of replicas to deploy
 replicaCount: 2
 
+# -- Use customEndpoint (url with protocol) ex: https://api.eu-west-2.outscale.com/api/v1
+customEndpoint: ""
+
 image:
   # -- Container image to use   
   repository: outscale/osc-ebs-csi-driver

@@ -1245,21 +1245,24 @@ func NewCloudWithoutMetadata(region string) (Cloud, error) {
 	client.config = osc.NewConfiguration()
 	client.config.Debug = true
 	client.config.UserAgent = fmt.Sprintf("osc-bsu-csi-driver/%s", version.DriverVersion)
-
+	OSC_ENDPOINT_API := os.Getenv("OSC_ENDPOINT_API")
+	client.config.Servers[0].URL = OSC_ENDPOINT_API
 	client.api = osc.NewAPIClient(client.config)
 
 	client.auth = context.WithValue(context.Background(), osc.ContextAWSv4, osc.AWSv4{
 		AccessKey: os.Getenv("OSC_ACCESS_KEY"),
 		SecretKey: os.Getenv("OSC_SECRET_KEY"),
 	})
-	OSC_ENDPOINT_API := os.Getenv("OSC_ENDPOINT_API")
-	if OSC_ENDPOINT_API != "" {
-		client.config.Servers[0].URL = OSC_ENDPOINT_API
-	}	
+
+
 
 	client.auth = context.WithValue(client.auth, osc.ContextServerIndex, 0)
 	client.auth = context.WithValue(client.auth, osc.ContextServerVariables, map[string]string{"region": region})
-
+	fmt.Fprintln(os.Stderr, "########## Find URL 0 #####:"+ client.config.Servers[0].URL)
+	fmt.Fprintln(os.Stderr, "########## Find EnumValues 0 #####:"+ client.config.Servers[0].Variables["region"].EnumValues[0])
+	fmt.Fprintln(os.Stderr, "########## Find URL 1 #####:"+ client.config.Servers[1].URL)
+	fmt.Fprintln(os.Stderr, "########## Find EnumValues 1 #####:"+ client.config.Servers[1].Variables["region"].EnumValues[0])
+	
 	return &cloud{
 		region: region,
 		dm:     dm.NewDeviceManager(),

@@ -83,6 +83,10 @@ spec:
                   name: {{ .Values.credentials.secretName }}
                   key: secret_key
                   optional: true
+            {{- if .Values.customEndpoint }}
+            - name: OSC_ENDPOINT_API
+              value: {{ .Values.customEndpoint }}
+            {{- end }}
             {{- if .Values.region }}
             - name: AWS_REGION
               value: {{ .Values.region }}

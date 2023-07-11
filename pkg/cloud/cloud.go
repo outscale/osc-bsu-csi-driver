@@ -268,11 +268,14 @@ func newOscCloud(region string) (Cloud, error) {
 	client := &OscClient{}
 	// Set User-Agent with name and version of the CSI driver
 	version := util.GetVersion()
-
-	client.config = osc.NewConfiguration()
+	configEnv := osc.NewConfigEnv()
+	config, err := configEnv.Configuration()
+	if err != nil {
+		return nil, err
+	}
+	client.config = config
 	client.config.Debug = true
 	client.config.UserAgent = fmt.Sprintf("osc-bsu-csi-driver/%s", version.DriverVersion)
-
 	client.api = osc.NewAPIClient(client.config)
 
 	client.auth = context.WithValue(context.Background(), osc.ContextAWSv4, osc.AWSv4{
@@ -1242,10 +1245,14 @@ func NewCloudWithoutMetadata(region string) (Cloud, error) {
 	version := util.GetVersion()
 
 	client := &OscClient{}
-	client.config = osc.NewConfiguration()
+	configEnv := osc.NewConfigEnv()
+	config, err := configEnv.Configuration()
+	if err != nil {
+		return nil, err
+	}
+	client.config = config
 	client.config.Debug = true
 	client.config.UserAgent = fmt.Sprintf("osc-bsu-csi-driver/%s", version.DriverVersion)
-
 	client.api = osc.NewAPIClient(client.config)
 
 	client.auth = context.WithValue(context.Background(), osc.ContextAWSv4, osc.AWSv4{

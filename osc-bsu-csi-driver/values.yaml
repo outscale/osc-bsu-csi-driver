@@ -4,7 +4,8 @@
 
 # -- Number of replicas to deploy
 replicaCount: 2
-
+# -- Use customEndpoint (url with protocol)
+customEndpoint: ""
 image:
   # -- Container image to use   
   repository: outscale/osc-bsu-csi-driver

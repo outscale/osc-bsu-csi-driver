@@ -33,6 +33,7 @@ Kubernetes: `>=1.20`
 | credentials.secretKey | string | `nil` | If creating a secret, put this SK inside. |
 | credentials.secretName | string | `"osc-csi-bsu"` | Use AK/SK from this secret  |
 | csiDriver.fsGroupPolicy | string | `"File"` | Policy of the FileSystem (see [Docs](https://kubernetes-csi.github.io/docs/support-fsgroup.html#supported-modes)) |
+| customEndpoint | string | `""` | Use customEndpoint (url with protocol) |
 | defaultFsType | string | `"ext4"` | Default filesystem for the volume if no `FsType` is set in `StorageClass` |
 | enableVolumeResizing | bool | `false` | Enable volume resizing  True if enable volume resizing |
 | enableVolumeScheduling | bool | `true` | Enable schedule volume for dynamic volume provisioning True if enable volume scheduling for dynamic volume provisioning |

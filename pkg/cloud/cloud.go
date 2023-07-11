@@ -1252,6 +1252,10 @@ func NewCloudWithoutMetadata(region string) (Cloud, error) {
 		AccessKey: os.Getenv("OSC_ACCESS_KEY"),
 		SecretKey: os.Getenv("OSC_SECRET_KEY"),
 	})
+	OSC_ENDPOINT_API := os.Getenv("OSC_ENDPOINT_API")
+	if OSC_ENDPOINT_API != "" {
+		client.config.Servers[0].URL = OSC_ENDPOINT_API
+	}	
 
 	client.auth = context.WithValue(client.auth, osc.ContextServerIndex, 0)
 	client.auth = context.WithValue(client.auth, osc.ContextServerVariables, map[string]string{"region": region})

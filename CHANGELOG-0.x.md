@@ -1,5 +1,9 @@
 # Changelog
 
+## [v0.2.3]
+### Bugfixes
+* Set custom endpoint ([#768]https://github.com/outscale/osc-bsu-csi-driver/pull/768))
+
 ## [v0.2.2]
 ### Bugfixes
 * Update osc-sdk-go package in order not to check region ([#762]https://github.com/outscale/osc-bsu-csi-driver/pull/762))

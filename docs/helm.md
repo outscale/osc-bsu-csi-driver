@@ -24,6 +24,10 @@ Kubernetes: `>=1.20.0-0`
 
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
+| customEndpoint | string | `""` | Use customEndpoint (url with protocol) ex: https://api.eu-west-2.outscale.com/api/v1 |
+| customEndpointEim | string | `""` | Use customEndpointEim (url with protocol) ex: https://eim.eu-west-2.outscale.com     |
+| customEndpointFcu | string | `""` | Use customEndpointFcu (url with protocol) ex: https://fcu.eu-west-2.outscale.com |
+| customEndpointLbu | string | `""` | Use customEndpointLbu (url with protocol) ex: https://lbu.eu-west-2.outscale.com   |
 | image.pullPolicy | string | `"IfNotPresent"` | Container pull policy |
 | image.repository | string | `"outscale/cloud-provider-osc"` | Container image to use |
 | image.tag | string | `"v0.2.1"` | Container image tag to deploy |

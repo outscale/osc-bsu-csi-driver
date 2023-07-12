@@ -18,11 +18,6 @@ package osc
 
 import (
 	"fmt"
-	"net"
-	"runtime"
-	"strconv"
-	"strings"
-
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/ec2metadata"
@@ -31,6 +26,11 @@ import (
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/aws/aws-sdk-go/service/elb"
 	"github.com/outscale/osc-sdk-go/v2"
+	"net"
+	"os"
+	"runtime"
+	"strconv"
+	"strings"
 
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -69,9 +69,20 @@ func SetupServiceResolver(region string) endpoints.ResolverFunc {
 		}
 		var oscService string
 		var ok bool
+		var url string
 		if oscService, ok = supportedService[service]; ok {
+			switch {
+			case os.Getenv("OSC_ENDPOINT_LBU") != "" && service == endpoints.ElasticloadbalancingServiceID:
+				url = os.Getenv("OSC_ENDPOINT_LBU")
+			case os.Getenv("OSC_ENDPOINT_FCU") != "" && service == endpoints.Ec2ServiceID:
+				url = os.Getenv("OSC_ENDPOINT_FCU")
+			case os.Getenv("OSC_ENDPOINT_EIM") != "" && service == endpoints.IamServiceID:
+				url = os.Getenv("OSC_ENDPOINT_EIM")
+			default:
+				url = Endpoint(region, oscService)
+			}
 			return endpoints.ResolvedEndpoint{
-				URL:           Endpoint(region, oscService),
+				URL:           url,
 				SigningRegion: region,
 				SigningName:   service,
 			}, nil

@@ -4,7 +4,14 @@
 
 # -- Number of replicas to deploy
 replicaCount: 1
-
+# -- Use customEndpoint (url with protocol) ex: https://api.eu-west-2.outscale.com/api/v1
+customEndpoint: ""
+# -- Use customEndpointFcu (url with protocol) ex: https://fcu.eu-west-2.outscale.com
+customEndpointFcu: ""
+# -- Use customEndpointLbu (url with protocol) ex: https://lbu.eu-west-2.outscale.com  
+customEndpointLbu: ""
+# -- Use customEndpointEim (url with protocol) ex: https://eim.eu-west-2.outscale.com    
+customEndpointEim: ""
 image:
   # -- Container image to use
   repository: outscale/cloud-provider-osc

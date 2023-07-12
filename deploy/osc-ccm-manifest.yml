@@ -148,7 +148,7 @@ spec:
         - name: registry-dockerconfigjson
       containers:
         - name: osc-cloud-controller-manager
-          image: outscale/cloud-provider-osc:v0.2.0
+          image: outscale/cloud-provider-osc:v0.2.1
           imagePullPolicy: IfNotPresent
           command:
             - /bin/osc-cloud-controller-manager

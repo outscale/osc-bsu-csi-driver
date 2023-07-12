@@ -207,6 +207,22 @@ spec:
                   name: {{ .Values.oscSecretName | default "osc-secret" }}
                   key: key_id
                   optional: false
+            {{- if .Values.customEndpoint }}
+            - name: OSC_ENDPOINT_API
+              value: {{ .Values.customEndpoint }}
+            {{- end }}
+            {{- if .Values.customEndpointLbu }}
+            - name: OSC_ENDPOINT_LBU
+              value: {{ .Values.customEndpointLbu }}
+            {{- end }}
+            {{- if .Values.customEndpointFcu }}
+            - name: OSC_ENDPOINT_FCU
+              value: {{ .Values.customEndpointFcu }}
+            {{- end }}
+            {{- if .Values.customEndpointEim }}
+            - name: OSC_ENDPOINT_EIM
+              value: {{ .Values.customEndpointEim }}
+            {{- end }}
       hostNetwork: true
       {{- if .Values.nodeSelector }}
       nodeSelector: {{- toYaml .Values.nodeSelector | nindent 8}}

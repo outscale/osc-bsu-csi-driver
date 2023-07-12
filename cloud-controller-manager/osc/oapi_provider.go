@@ -122,7 +122,11 @@ func (p *awsSDKProvider) Compute(regionName string) (Compute, error) {
 	debugPrintCallerFunctionName()
 	klog.V(5).Infof("Compute(%v)", regionName)
 	// osc config
-	config := osc.NewConfiguration()
+	configEnv := osc.NewConfigEnv()
+	config, err := configEnv.Configuration()
+	if err != nil {
+		return nil, err
+	}
 	config.Debug = true
 	config.UserAgent = fmt.Sprintf("osc-cloud-controller-manager/%v", utils.GetVersion())
 	client := osc.NewAPIClient(config)

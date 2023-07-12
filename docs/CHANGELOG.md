@@ -1,5 +1,9 @@
 # Changelog
 
+## [v0.2.2]
+### Bugfixes
+* Can set customEndpoint for api, fcu, lbu, eim ([#321](https://github.com/outscale/cloud-provider-osc/pull/321))
+
 ## [v0.2.1]
 ### Bugfixes
 * Update osc-sdk-go package in order not to check region ([#319](https://github.com/outscale/cloud-provider-osc/pull/319))

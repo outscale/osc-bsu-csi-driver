@@ -73,7 +73,7 @@ vet:
 
 .PHONY: test
 test:
-	CGO_ENABLED=1 go test -count=1  -v $(shell go list ./cloud-controller-manager/...)
+	CGO_ENABLED=1 OSC_ACCESS_KEY=test OSC_SECRET_KEY=test go test -count=1  -v $(shell go list ./cloud-controller-manager/...)
 
 
 .PHONY: build-image

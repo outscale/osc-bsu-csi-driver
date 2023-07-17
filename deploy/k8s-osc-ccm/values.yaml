@@ -16,7 +16,7 @@ image:
   # -- Container image to use
   repository: outscale/cloud-provider-osc
   # -- Container image tag to deploy
-  tag: v0.2.2
+  tag: v0.2.3
   # -- Container pull policy
   pullPolicy: IfNotPresent
 

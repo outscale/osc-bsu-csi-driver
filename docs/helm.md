@@ -30,7 +30,7 @@ Kubernetes: `>=1.20.0-0`
 | customEndpointLbu | string | `""` | Use customEndpointLbu (url with protocol) ex: https://lbu.eu-west-2.outscale.com   |
 | image.pullPolicy | string | `"IfNotPresent"` | Container pull policy |
 | image.repository | string | `"outscale/cloud-provider-osc"` | Container image to use |
-| image.tag | string | `"v0.2.2"` | Container image tag to deploy |
+| image.tag | string | `"v0.2.3"` | Container image tag to deploy |
 | imagePullSecrets | list | `[]` | Specify image pull secrets |
 | nodeSelector | object | `{}` | Assign Pod to Nodes (see [kubernetes doc](https://kubernetes.io/docs/tasks/configure-pod-container/assign-pods-nodes/)) |
 | oscSecretName | string | `"osc-secret"` | Secret name containing cloud credentials |

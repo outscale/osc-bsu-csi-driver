@@ -1,5 +1,9 @@
 # Changelog
 
+## [v0.2.3]
+### Bugfixes
+* Can set customEndpoint for instancev2 ([#323](https://github.com/outscale/cloud-provider-osc/pull/323))
+
 ## [v0.2.2]
 ### Bugfixes
 * Can set customEndpoint for api, fcu, lbu, eim ([#321](https://github.com/outscale/cloud-provider-osc/pull/321))

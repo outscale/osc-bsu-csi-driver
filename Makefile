@@ -92,7 +92,7 @@ dockerlint:
 .PHONY: test-e2e
 test-e2e:
 	@echo "e2e-test"
-	docker build  -t $(E2E_ENV):latest -f ./tests/e2e/docker/Dockerfile_e2eTest .
+	docker buildx build --load  -t $(E2E_ENV):latest -f ./tests/e2e/docker/Dockerfile_e2eTest .
 	docker run --rm \
 		-v ${PWD}:/go/src/cloud-provider-osc \
 		-e AWS_ACCESS_KEY_ID=${OSC_ACCESS_KEY} \

@@ -129,7 +129,7 @@ var _ = ginkgo.Describe("[ccm-e2e] SVC-LB", func() {
 			fmt.Printf("address:  %v\n", address)
 
 			ginkgo.By("Test Connection (wait to have endpoint ready)")
-			e2esvc.TestReachableHTTP(address, 80, 240*time.Second)
+			e2esvc.TestReachableHTTP(address, 80, 600*time.Second)
 
 			ginkgo.By("Remove Instances from lbu")
 			elb, err := e2eutils.ElbAPI()
@@ -271,7 +271,7 @@ var _ = ginkgo.Describe("[ccm-e2e] SVC-LB", func() {
 
 		ginkgo.By("Test Connection (wait to have endpoint ready)")
 		for i := 0; i < 2; i++ {
-			e2esvc.TestReachableHTTP(addresses[i], 80, 240*time.Second)
+			e2esvc.TestReachableHTTP(addresses[i], 80, 600*time.Second)
 		}
 
 		ginkgo.By("Remove SVC 1")

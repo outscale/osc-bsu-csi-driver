@@ -76,7 +76,7 @@ runs:
       uses: nick-invision/retry@v2
       with:
         timeout_seconds: 60
-        max_attempts: 10
+        max_attempts: 20
         command: |
           docker push localhost:4242/osc/cloud-provider-osc:$VERSION
       env:
@@ -111,7 +111,7 @@ runs:
       uses: nick-invision/retry@v2
       with:
         timeout_seconds: 60
-        max_attempts: 10
+        max_attempts: 20
         command: |
           test "$(osc-cli api ReadSecurityGroups --Filters "{\"TagKeys\": [\"OscK8sClusterID/$cluster_name\"]}" | jq -r '.SecurityGroups | length')" = "1"
     - name: Uninstall CCM

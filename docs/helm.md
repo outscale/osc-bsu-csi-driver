@@ -28,6 +28,8 @@ Kubernetes: `>=1.20.0`
 | backoff.duration | string | `"1"` | Initial duraction of backoff    |
 | backoff.factor | string | `"1.9"` | Factor multiplied by Duration for each iteration |
 | backoff.steps | string | `"20"` | Remaining number of iterations in which the duration parameter may change |
+| caBundle.key | string | `""` | Entry key in secret used to store additional certificates authorities |
+| caBundle.name | string | `""` | Secret name containing additional certificates authorities |
 | credentials.accessKey | string | `nil` | If creating a secret, put this AK inside. |
 | credentials.create | bool | `false` | Actually create a secret in the deployment for AK/SK (else, only reference it) |
 | credentials.secretKey | string | `nil` | If creating a secret, put this SK inside. |
@@ -40,12 +42,14 @@ Kubernetes: `>=1.20.0`
 | enableVolumeSnapshot | bool | `false` | Enable volume snapshot  True if enable volume snapshot |
 | extraCreateMetadata | bool | `false` | Add pv/pvc metadata to plugin create requests as parameters |
 | extraVolumeTags | object | `{}` | Add extra tags on volume |
+| httpsProxy | string | `""` | Value used to create environment variable HTTPS_PROXY |
 | image.pullPolicy | string | `"IfNotPresent"` | Container pull policy |
 | image.repository | string | `"outscale/osc-ebs-csi-driver"` | Container image to use    |
 | image.tag | string | `"v0.2.3"` | Container image tag to deploy |
 | imagePullSecrets | list | `[]` | Specify image pull secrets  |
 | maxBsuVolumes | string | `"39"` | Maximum volume to attach to a node (see [Docs](https://docs.outscale.com/en/userguide/About-Volumes.html)) |
 | nameOverride | string | `""` | Override name of the app (instead of `osc-bsu-csi-driver`) |
+| noProxy | string | `""` | Value used to create environment variable NO_PROXY |
 | node.podAnnotations | object | `{}` | Annotations for controller pod |
 | node.podLabels | object | `{}` | Labels for controller pod |
 | node.tolerations | list | `[]` | Pod tolerations |

@@ -1,5 +1,10 @@
 # Changelog
 
+## [v1.2.4]
+### Bugfixes
+* xfs as fstype: missing xfsgrowfs in $PATH ([#777](https://github.com/outscale/osc-bsu-csi-driver/pull/777))
+* Configure https proxy + ca bundle ([#761](https://github.com/outscale/osc-bsu-csi-driver/pull/761))
+
 ## [v1.2.3]
 ### Bugfixes
 * Set custom endpoint ([#767]https://github.com/outscale/osc-bsu-csi-driver/pull/767))

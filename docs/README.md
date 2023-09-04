@@ -21,6 +21,7 @@ The Outscale Block Storage Unit Container Storage Interface (CSI) Driver provide
 | v1.1.1         | [v1.5.0](https://github.com/container-storage-interface/spec/releases/tag/v1.5.0) | 1.20            | 1.23                    |
 | v1.2.2         | [v1.5.0](https://github.com/container-storage-interface/spec/releases/tag/v1.5.0) | 1.20            | 1.23                    |
 | v1.2.3         | [v1.5.0](https://github.com/container-storage-interface/spec/releases/tag/v1.5.0) | 1.20            | 1.23                    |
+| v1.2.4         | [v1.5.0](https://github.com/container-storage-interface/spec/releases/tag/v1.5.0) | 1.20            | 1.23                    |
 
 ## Features
 The following CSI gRPC calls are implemented:

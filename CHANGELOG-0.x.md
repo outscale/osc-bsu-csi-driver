@@ -3,6 +3,7 @@
 ## [v0.2.4]
 ### Bugfixes
 * xfs as fstype: missing xfsgrowfs in $PATH ([#778](https://github.com/outscale/osc-bsu-csi-driver/pull/778))
+### Features
 * Configure https proxy + ca bundle ([#776](https://github.com/outscale/osc-bsu-csi-driver/pull/776))
 
 

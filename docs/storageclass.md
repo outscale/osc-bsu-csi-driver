@@ -16,7 +16,7 @@ provisioner: bsu.csi.outscale.com
 parameters:
   type: io1
   iopsPerGB: "10"
-  fsType: ext4
+  csi.storage.k8s.io/fstype: ext4
 ```
 
 * `type`: `standard`, `gp2`, `io1`. See

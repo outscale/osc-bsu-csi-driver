@@ -19,10 +19,6 @@ package driver
 import (
 	"context"
 	"fmt"
-	"os"
-	"strconv"
-	"strings"
-
 	csi "github.com/container-storage-interface/spec/lib/go/csi"
 	"github.com/outscale-dev/osc-bsu-csi-driver/pkg/cloud"
 	"github.com/outscale-dev/osc-bsu-csi-driver/pkg/util"
@@ -30,6 +26,10 @@ import (
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
 	"k8s.io/klog/v2"
+	"os"
+	"strconv"
+	"strings"
+	"time"
 )
 
 var (
@@ -455,7 +455,19 @@ func (d *controllerService) CreateSnapshot(ctx context.Context, req *csi.CreateS
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "Could not create snapshot %q: %v", snapshotName, err)
 	}
-	return newCreateSnapshotResponse(snapshot)
+	for i := 0; i < 3; i++ {
+		snapshot, err = d.cloud.GetSnapshotByName(ctx, snapshotName)
+		if err != nil && err != cloud.ErrNotFound {
+			klog.Errorf("Error looking for the snapshot %s: %v", snapshotName, err)
+			return nil, err
+		}
+		time.Sleep(3)
+		if snapshot.ReadyToUse {
+			return newCreateSnapshotResponse(snapshot)
+		}
+
+	}
+	return nil, status.Errorf(codes.Internal, "Could not create snapshot %q: %s", snapshotName, "cut in progress")
 }
 
 func (d *controllerService) DeleteSnapshot(ctx context.Context, req *csi.DeleteSnapshotRequest) (*csi.DeleteSnapshotResponse, error) {

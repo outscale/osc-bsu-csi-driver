@@ -19,12 +19,12 @@ import (
 	"regexp"
 
 	. "github.com/onsi/ginkgo/v2"
+	"github.com/outscale-dev/osc-bsu-csi-driver/tests/e2e/driver"
 	v1 "k8s.io/api/core/v1"
 	clientset "k8s.io/client-go/kubernetes"
 	"k8s.io/kubernetes/test/e2e/framework"
 	e2edeployment "k8s.io/kubernetes/test/e2e/framework/deployment"
-
-	"github.com/outscale-dev/osc-bsu-csi-driver/tests/e2e/driver"
+	e2epod "k8s.io/kubernetes/test/e2e/framework/pod"
 )
 
 type DynamicallyProvisionedCustomPodTest struct {
@@ -84,7 +84,7 @@ func (t *DynamicallyProvisionedCustomPodTest) Run(client clientset.Interface, na
 	singleSpacePattern := regexp.MustCompile(`\s+`)
 	for _, podCmd := range t.PodCmds {
 		By(fmt.Sprintf("Extended pod and volumes checks: %v", podCmd.Cmd))
-		stdout, stderr, err := f.ExecCommandInContainerWithFullOutput(tDeployment.podName, pods.Items[0].Spec.Containers[0].Name, podCmd.Cmd...)
+		stdout, stderr, err := e2epod.ExecCommandInContainerWithFullOutput(f, tDeployment.podName, pods.Items[0].Spec.Containers[0].Name, podCmd.Cmd...)
 		fmt.Printf("stdout %v, stderr %v, err %v\n", stdout, stderr, err)
 		if err != nil {
 			panic(err.Error())

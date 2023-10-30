@@ -28,6 +28,8 @@ import (
 	v1 "k8s.io/api/core/v1"
 	clientset "k8s.io/client-go/kubernetes"
 	"k8s.io/kubernetes/test/e2e/framework"
+	e2epod "k8s.io/kubernetes/test/e2e/framework/pod"
+
 	e2edeployment "k8s.io/kubernetes/test/e2e/framework/deployment"
 )
 
@@ -150,7 +152,7 @@ func (t *DynamicallyProvisionedStatsPodTest) Run(client clientset.Interface, nam
 			"-s",
 			fmt.Sprintf("http://%s:10255/metrics", pod_host_ip),
 		}
-		metricsStdout, metricsStderr, metricsErr := f.ExecCommandInContainerWithFullOutput(tDeployment.podName, pods.Items[0].Spec.Containers[0].Name, cmd...)
+		metricsStdout, metricsStderr, metricsErr := e2epod.ExecCommandInContainerWithFullOutput(f, tDeployment.podName, pods.Items[0].Spec.Containers[0].Name, cmd...)
 		fmt.Printf("Metrics: stdout %v, stderr %v, err %v\n", metricsStdout, metricsStderr, metricsErr)
 
 		// Retrieve stats using df
@@ -160,7 +162,7 @@ func (t *DynamicallyProvisionedStatsPodTest) Run(client clientset.Interface, nam
 			"--block-size=1",
 			"/mnt/test-1",
 		}
-		dfStdout, dfStderr, dfErr := f.ExecCommandInContainerWithFullOutput(tDeployment.podName, pods.Items[0].Spec.Containers[0].Name, dfCmd...)
+		dfStdout, dfStderr, dfErr := e2epod.ExecCommandInContainerWithFullOutput(f, tDeployment.podName, pods.Items[0].Spec.Containers[0].Name, dfCmd...)
 		fmt.Printf("DfStats stdout %v, stderr %v, err %v\n", dfStdout, dfStderr, dfErr)
 
 		if dfErr != nil || metricsErr != nil {

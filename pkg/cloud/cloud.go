@@ -677,6 +677,7 @@ func (c *cloud) GetDiskByName(ctx context.Context, name string, capacityBytes in
 		VolumeID:         volume.GetVolumeId(),
 		CapacityGiB:      int64(volSizeBytes),
 		AvailabilityZone: volume.GetSubregionName(),
+		SnapshotID:       volume.GetSnapshotId(),
 	}, nil
 }
 
@@ -697,6 +698,7 @@ func (c *cloud) GetDiskByID(ctx context.Context, volumeID string) (Disk, error) 
 		VolumeID:         volume.GetVolumeId(),
 		CapacityGiB:      int64(volume.GetSize()),
 		AvailabilityZone: volume.GetSubregionName(),
+		SnapshotID:       volume.GetSnapshotId(),
 	}, nil
 }
 

@@ -396,12 +396,22 @@ func TestGetDiskByName(t *testing.T) {
 		volumeName       string
 		volumeCapacity   int64
 		availabilityZone string
+		snapshotId       *string
 		expErr           error
 	}{
 		{
 			name:             "success: normal",
 			volumeName:       "vol-test-1234",
 			volumeCapacity:   util.GiBToBytes(1),
+			snapshotId:       nil,
+			availabilityZone: expZone,
+			expErr:           nil,
+		},
+		{
+			name:             "success: normal with snapshotId",
+			volumeName:       "vol-test-1234",
+			volumeCapacity:   util.GiBToBytes(1),
+			snapshotId:       osc.PtrString("snapshot-id123"),
 			availabilityZone: expZone,
 			expErr:           nil,
 		},
@@ -409,6 +419,7 @@ func TestGetDiskByName(t *testing.T) {
 			name:           "fail: DescribeVolumes returned generic error",
 			volumeName:     "vol-test-1234",
 			volumeCapacity: util.GiBToBytes(1),
+			snapshotId:     nil,
 			expErr:         fmt.Errorf("DescribeVolumes generic error"),
 		},
 	}
@@ -422,6 +433,7 @@ func TestGetDiskByName(t *testing.T) {
 			vol := osc.Volume{
 				VolumeId:      &tc.volumeName,
 				SubregionName: &tc.availabilityZone,
+				SnapshotId:    tc.snapshotId,
 			}
 			vol.SetSize(int32(util.BytesToGiB(tc.volumeCapacity)))
 
@@ -443,6 +455,9 @@ func TestGetDiskByName(t *testing.T) {
 				if tc.availabilityZone != disk.AvailabilityZone {
 					t.Fatalf("GetDiskByName() failed: expected availabilityZone %q, got %q", tc.availabilityZone, disk.AvailabilityZone)
 				}
+				if tc.snapshotId != nil && *tc.snapshotId != disk.SnapshotID {
+					t.Fatalf("GetDiskByName() failed: expected snapshotId %q, got %q", *tc.snapshotId, disk.SnapshotID)
+				}
 			}
 
 			mockCtrl.Finish()
@@ -455,18 +470,29 @@ func TestGetDiskByID(t *testing.T) {
 		name             string
 		volumeID         string
 		availabilityZone string
+		snapshotId       *string
 		expErr           error
 	}{
+
 		{
 			name:             "success: normal",
 			volumeID:         "vol-test-1234",
+			snapshotId:       nil,
 			availabilityZone: expZone,
 			expErr:           nil,
 		},
 		{
-			name:     "fail: DescribeVolumes returned generic error",
-			volumeID: "vol-test-1234",
-			expErr:   fmt.Errorf("DescribeVolumes generic error"),
+			name:             "success: normal with snapshotId",
+			volumeID:         "vol-test-1234",
+			snapshotId:       osc.PtrString("snapshot-id123"),
+			availabilityZone: expZone,
+			expErr:           nil,
+		},
+		{
+			name:       "fail: DescribeVolumes returned generic error",
+			volumeID:   "vol-test-1234",
+			snapshotId: nil,
+			expErr:     fmt.Errorf("DescribeVolumes generic error"),
 		},
 	}
 
@@ -483,6 +509,7 @@ func TestGetDiskByID(t *testing.T) {
 						{
 							VolumeId:      &tc.volumeID,
 							SubregionName: &tc.availabilityZone,
+							SnapshotId:    tc.snapshotId,
 						},
 					},
 				},
@@ -493,17 +520,20 @@ func TestGetDiskByID(t *testing.T) {
 			disk, err := c.GetDiskByID(ctx, tc.volumeID)
 			if err != nil {
 				if tc.expErr == nil {
-					t.Fatalf("GetDisk() failed: expected no error, got: %v", err)
+					t.Fatalf("GetDiskByID() failed: expected no error, got: %v", err)
 				}
 			} else {
 				if tc.expErr != nil {
-					t.Fatal("GetDisk() failed: expected error, got nothing")
+					t.Fatal("GetDiskByID() failed: expected error, got nothing")
 				}
 				if disk.VolumeID != tc.volumeID {
-					t.Fatalf("GetDisk() failed: expected ID %q, got %q", tc.volumeID, disk.VolumeID)
+					t.Fatalf("GetDiskByID() failed: expected ID %q, got %q", tc.volumeID, disk.VolumeID)
 				}
 				if tc.availabilityZone != disk.AvailabilityZone {
-					t.Fatalf("GetDiskByName() failed: expected availabilityZone %q, got %q", tc.availabilityZone, disk.AvailabilityZone)
+					t.Fatalf("GetDiskByID() failed: expected availabilityZone %q, got %q", tc.availabilityZone, disk.AvailabilityZone)
+				}
+				if tc.snapshotId != nil && *tc.snapshotId != disk.SnapshotID {
+					t.Fatalf("GetDiskByID() failed: expected snapshotId %q, got %q", *tc.snapshotId, disk.SnapshotID)
 				}
 			}
 

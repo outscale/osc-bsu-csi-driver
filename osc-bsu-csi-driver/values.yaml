@@ -24,7 +24,7 @@ timeout: 60s
 
 backoff:
   # integer in second defining initial duration
-  # -- Initial duraction of backoff   
+  # -- Initial duraction of backoff
   duration: "1"
   # float define the factor multiplied by Duration each iteration
   # -- Factor multiplied by Duration for each iteration
@@ -91,7 +91,7 @@ sidecars:
     # -- Enable liveness probe for the container
     enableLivenessProbe: false
 
-# -- Specify image pull secrets 
+# -- Specify image pull secrets
 imagePullSecrets: []
 # -- Override name of the app (instead of `osc-bsu-csi-driver`)
 nameOverride: ""
@@ -109,11 +109,11 @@ podLabels: {}
 # True if enable volume scheduling for dynamic volume provisioning
 enableVolumeScheduling: true
 
-# -- Enable volume resizing 
+# -- Enable volume resizing
 # True if enable volume resizing
 enableVolumeResizing: false
 
-# -- Enable volume snapshot 
+# -- Enable volume snapshot
 # True if enable volume snapshot
 enableVolumeSnapshot: false
 
@@ -136,9 +136,15 @@ nodeSelector: {}
 #@ignored
 tolerateAllTaints: true
 # -- Pod tolerations
-tolerations: []
+tolerations:
+  - key: CriticalAddonsOnly
+    operator: Exists
+  - operator: Exists
+    effect: NoExecute
+    tolerationSeconds: 300
 
-# -- Affinity settings  
+
+# -- Affinity settings
 affinity: {}
 
 # Extra volume tags to attach to each dynamically provisioned volume.

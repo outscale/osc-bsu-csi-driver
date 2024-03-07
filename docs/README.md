@@ -11,17 +11,11 @@ The Outscale Block Storage Unit Container Storage Interface (CSI) Driver provide
 
 ## CSI Specification Compability Matrix
 
-| Plugin Version | Compatible with CSI Version                                                       | Min K8s Version | Recommended K8s Version |
-| -------------- | --------------------------------------------------------------------------------- | --------------- | ----------------------- |
-| <= v0.0.14beta | [v1.3.0](https://github.com/container-storage-interface/spec/releases/tag/v1.3.0) | 1.16            | 1.22                    |
-| v0.0.15        | [v1.5.0](https://github.com/container-storage-interface/spec/releases/tag/v1.5.0) | 1.20            | 1.23                    |
-| v0.1.0         | [v1.5.0](https://github.com/container-storage-interface/spec/releases/tag/v1.5.0) | 1.20            | 1.23                    |
-| v1.0.0         | [v1.5.0](https://github.com/container-storage-interface/spec/releases/tag/v1.5.0) | 1.20            | 1.23                    |
-| v1.1.0         | [v1.5.0](https://github.com/container-storage-interface/spec/releases/tag/v1.5.0) | 1.20            | 1.23                    |
-| v1.1.1         | [v1.5.0](https://github.com/container-storage-interface/spec/releases/tag/v1.5.0) | 1.20            | 1.23                    |
-| v1.2.2         | [v1.5.0](https://github.com/container-storage-interface/spec/releases/tag/v1.5.0) | 1.20            | 1.23                    |
-| v1.2.3         | [v1.5.0](https://github.com/container-storage-interface/spec/releases/tag/v1.5.0) | 1.20            | 1.23                    |
-| v1.2.4         | [v1.5.0](https://github.com/container-storage-interface/spec/releases/tag/v1.5.0) | 1.20            | 1.23                    |
+| Plugin Version   | Compatible with CSI Version                                                       | Min K8s Version | Recommended K8s Version |
+| ---------------- | --------------------------------------------------------------------------------- | --------------- | ----------------------- |
+| <= v0.0.14beta   | [v1.3.0](https://github.com/container-storage-interface/spec/releases/tag/v1.3.0) | 1.16            | 1.22                    |
+| v0.0.15          | [v1.5.0](https://github.com/container-storage-interface/spec/releases/tag/v1.5.0) | 1.20            | 1.23                    |
+| v0.1.0 -  v1.3.0 | [v1.5.0](https://github.com/container-storage-interface/spec/releases/tag/v1.5.0) | 1.20            | 1.23                    |
 
 ## Features
 The following CSI gRPC calls are implemented:
@@ -37,18 +31,18 @@ The following CSI gRPC calls are **not yet** implemented:
 ### CreateVolume Parameters
 There are several optional parameters that could be passed into `CreateVolumeRequest.parameters` map:
 
-| Parameters                                       | Values                | Default | Description                                                                                                                                      |
-| ------------------------------------------------ | --------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
-| "csi.storage.k8s.io/fstype"                      | xfs, ext2, ext3, ext4 | ext4    | File system type that will be formatted during volume creation                                                                                   |
-| "type"                                           | io1, gp2, standard    | gp2     | BSU volume type                                                                                                                                  |
-| "iopsPerGB"                                      |                       |         | I/O operations per second per GiB. Required when io1 volume type is specified                                                                    |
-| "encrypted"                                      | "true", "false"       | "false" | Specify if we want to encrypt te disk or not                                                                                                     |
-| "csi.storage.k8s.io/node-stage-secret-name"      | string                |         | The name of the secret  (See [template](https://kubernetes-csi.github.io/docs/secrets-and-credentials-storage-class.html#node-stage-secret))     |
-| "csi.storage.k8s.io/node-stage-secret-namespace" | string                |         | The namespace of the secret (See [template](https://kubernetes-csi.github.io/docs/secrets-and-credentials-storage-class.html#node-stage-secret)) |
-| "kmsKeyId"                                       | string                |         | Not yet supported                                                                                                                                |
-| "luks-cipher"                                    | string                |         | LUKS encryption cipher to use  (See [doc](https://gitlab.com/cryptsetup/cryptsetup/blob/master/docs/on-disk-format-luks2.pdf) or `cryptsetup --help`). Default value depends on the cryptsetup version.                    |
-| "luks-hash"                                      | string                |         | Derivation Password hash algorithm (See [doc](https://gitlab.com/cryptsetup/cryptsetup/blob/master/docs/on-disk-format-luks2.pdf) or `cryptsetup --help`). Default value depends on the cryptsetup version.    |
-| "luks-key-size"                                  | string                |         | Size of the encryption key  (See [doc](https://gitlab.com/cryptsetup/cryptsetup/blob/master/docs/on-disk-format-luks2.pdf) or `cryptsetup --help`). Default value depends on the cryptsetup version.            |
+| Parameters                                       | Values                | Default | Description                                                                                                                                                                                                 |
+| ------------------------------------------------ | --------------------- | ------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| "csi.storage.k8s.io/fstype"                      | xfs, ext2, ext3, ext4 | ext4    | File system type that will be formatted during volume creation                                                                                                                                              |
+| "type"                                           | io1, gp2, standard    | gp2     | BSU volume type                                                                                                                                                                                             |
+| "iopsPerGB"                                      |                       |         | I/O operations per second per GiB. Required when io1 volume type is specified                                                                                                                               |
+| "encrypted"                                      | "true", "false"       | "false" | Specify if we want to encrypt te disk or not                                                                                                                                                                |
+| "csi.storage.k8s.io/node-stage-secret-name"      | string                |         | The name of the secret  (See [template](https://kubernetes-csi.github.io/docs/secrets-and-credentials-storage-class.html#node-stage-secret))                                                                |
+| "csi.storage.k8s.io/node-stage-secret-namespace" | string                |         | The namespace of the secret (See [template](https://kubernetes-csi.github.io/docs/secrets-and-credentials-storage-class.html#node-stage-secret))                                                            |
+| "kmsKeyId"                                       | string                |         | Not yet supported                                                                                                                                                                                           |
+| "luks-cipher"                                    | string                |         | LUKS encryption cipher to use  (See [doc](https://gitlab.com/cryptsetup/cryptsetup/blob/master/docs/on-disk-format-luks2.pdf) or `cryptsetup --help`). Default value depends on the cryptsetup version.     |
+| "luks-hash"                                      | string                |         | Derivation Password hash algorithm (See [doc](https://gitlab.com/cryptsetup/cryptsetup/blob/master/docs/on-disk-format-luks2.pdf) or `cryptsetup --help`). Default value depends on the cryptsetup version. |
+| "luks-key-size"                                  | string                |         | Size of the encryption key  (See [doc](https://gitlab.com/cryptsetup/cryptsetup/blob/master/docs/on-disk-format-luks2.pdf) or `cryptsetup --help`). Default value depends on the cryptsetup version.        |
 
 **Notes**:
 * The parameters are case sensitive.

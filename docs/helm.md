@@ -24,8 +24,8 @@ Kubernetes: `>=1.20`
 
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
-| affinity | object | `{}` | Affinity settings   |
-| backoff.duration | string | `"1"` | Initial duraction of backoff    |
+| affinity | object | `{}` | Affinity settings |
+| backoff.duration | string | `"1"` | Initial duraction of backoff |
 | backoff.factor | string | `"1.9"` | Factor multiplied by Duration for each iteration |
 | backoff.steps | string | `"20"` | Remaining number of iterations in which the duration parameter may change |
 | caBundle.key | string | `""` | Entry key in secret used to store additional certificates authorities |
@@ -33,20 +33,20 @@ Kubernetes: `>=1.20`
 | credentials.accessKey | string | `nil` | If creating a secret, put this AK inside. |
 | credentials.create | bool | `false` | Actually create a secret in the deployment for AK/SK (else, only reference it) |
 | credentials.secretKey | string | `nil` | If creating a secret, put this SK inside. |
-| credentials.secretName | string | `"osc-csi-bsu"` | Use AK/SK from this secret  |
+| credentials.secretName | string | `"osc-csi-bsu"` | Use AK/SK from this secret |
 | csiDriver.fsGroupPolicy | string | `"File"` | Policy of the FileSystem (see [Docs](https://kubernetes-csi.github.io/docs/support-fsgroup.html#supported-modes)) |
 | customEndpoint | string | `""` | Use customEndpoint (url with protocol) ex: https://api.eu-west-2.outscale.com/api/v1 |
 | defaultFsType | string | `"ext4"` | Default filesystem for the volume if no `FsType` is set in `StorageClass` |
-| enableVolumeResizing | bool | `false` | Enable volume resizing  True if enable volume resizing |
+| enableVolumeResizing | bool | `false` | Enable volume resizing True if enable volume resizing |
 | enableVolumeScheduling | bool | `true` | Enable schedule volume for dynamic volume provisioning True if enable volume scheduling for dynamic volume provisioning |
-| enableVolumeSnapshot | bool | `false` | Enable volume snapshot  True if enable volume snapshot |
+| enableVolumeSnapshot | bool | `false` | Enable volume snapshot True if enable volume snapshot |
 | extraCreateMetadata | bool | `false` | Add pv/pvc metadata to plugin create requests as parameters |
 | extraVolumeTags | object | `{}` | Add extra tags on volume |
 | httpsProxy | string | `""` | Value used to create environment variable HTTPS_PROXY |
 | image.pullPolicy | string | `"IfNotPresent"` | Container pull policy |
-| image.repository | string | `"outscale/osc-bsu-csi-driver"` | Container image to use    |
-| image.tag | string | `"v1.2.4"` | Container image tag to deploy |
-| imagePullSecrets | list | `[]` | Specify image pull secrets  |
+| image.repository | string | `"outscale/osc-bsu-csi-driver"` | Container image to use |
+| image.tag | string | `"v1.3.0"` | Container image tag to deploy |
+| imagePullSecrets | list | `[]` | Specify image pull secrets |
 | maxBsuVolumes | string | `"39"` | Maximum volume to attach to a node (see [Docs](https://docs.outscale.com/en/userguide/About-Volumes.html)) |
 | nameOverride | string | `""` | Override name of the app (instead of `osc-bsu-csi-driver`) |
 | noProxy | string | `""` | Value used to create environment variable NO_PROXY |
@@ -94,7 +94,7 @@ Kubernetes: `>=1.20`
 | sidecars.snapshotterImage.repository | string | `"registry.k8s.io/sig-storage/csi-snapshotter"` |  |
 | sidecars.snapshotterImage.tag | string | `"v4.2.1"` |  |
 | timeout | string | `"60s"` | Timeout for sidecars |
-| tolerations | list | `[]` | Pod tolerations |
+| tolerations | list | `[{"key":"CriticalAddonsOnly","operator":"Exists"},{"effect":"NoExecute","operator":"Exists","tolerationSeconds":300}]` | Pod tolerations |
 | verbosity | int | `10` | Verbosity level of the plugin |
 
 ----------------------------------------------

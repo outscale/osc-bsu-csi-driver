@@ -1,5 +1,12 @@
 # Changelog
 
+## [v0.3.0]
+### Features
+* Upgrade plugin to support 1.26 Kubernetes version cluster ([#801](https://github.com/outscale/osc-bsu-csi-driver/pull/801))
+* Override controller toleration in chart ([#805](https://github.com/outscale/osc-bsu-csi-driver/pull/805))
+### Bugfixes
+* Fix idempotency problem for Volumes created from Snapshot ([#798](https://github.com/outscale/osc-bsu-csi-driver/pull/798))
+
 ## [v0.2.4]
 ### Bugfixes
 * xfs as fstype: missing xfsgrowfs in $PATH ([#778](https://github.com/outscale/osc-bsu-csi-driver/pull/778))

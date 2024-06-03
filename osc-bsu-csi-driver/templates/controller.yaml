@@ -143,6 +143,9 @@ spec:
             {{- if .Values.extraCreateMetadata }}
             - --extra-create-metadata
             {{- end}}
+            {{- range $key, $value := .Values.sidecars.provisionerImage.extraArgs }}
+            - {{ $key }}={{ $value }}
+            {{- end }
             - --leader-election=true
             {{- if .Values.sidecars.provisionerImage.leaderElection.leaseDuration }}
             - --leader-election-lease-duration={{ .Values.sidecars.provisionerImage.leaderElection.leaseDuration }}

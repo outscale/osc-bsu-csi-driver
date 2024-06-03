@@ -43,6 +43,10 @@ sidecars:
     enableLivenessProbe: false
     # -- Customize leaderElection, you can specify `leaseDuration`, `renewDeadline` and/or `retryPeriod`. Each value must be in an acceptable time.ParseDuration format.(Ref: https://pkg.go.dev/flag#Duration)
     leaderElection: {}
+    extraArgs:
+      --feature-gates: "CrossNamespaceVolumeDataSource=true"
+      --feature-gates: "NodeSwap=true"
+      # ... other arguments that can be used by the provisioner when it is needed. 
   attacherImage:
     repository: registry.k8s.io/sig-storage/csi-attacher
     tag: "v3.3.0"

@@ -383,6 +383,8 @@ func (c *cloud) CreateDisk(ctx context.Context, volumeName string, diskOptions *
 		}
 		return true, nil
 	}
+	// Implement a delay before retrying
+	time.Sleep(4* time.Second) // Adjust this based on expected volume creation time
 
 	backoff := util.EnvBackoff()
 	waitErr := wait.ExponentialBackoff(backoff, createVolumeCallBack)

@@ -15,6 +15,7 @@ limitations under the License.
 package testsuites
 
 import (
+	"context"
 	"bufio"
 	"fmt"
 	"math/big"
@@ -134,7 +135,7 @@ func (t *DynamicallyProvisionedStatsPodTest) Run(client clientset.Interface, nam
 	By("checking that the pod is running")
 	tDeployment.WaitForPodReady()
 
-	pods, err := e2edeployment.GetPodsForDeployment(client, tDeployment.deployment)
+	pods, err := e2edeployment.GetPodsForDeployment(context.Background(), client, tDeployment.deployment)
 	framework.ExpectNoError(err)
 
 	pod_host_ip := pods.Items[0].Status.HostIP

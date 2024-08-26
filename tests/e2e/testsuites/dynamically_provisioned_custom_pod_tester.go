@@ -15,11 +15,12 @@ limitations under the License.
 package testsuites
 
 import (
+	"context"
 	"fmt"
 	"regexp"
 
 	. "github.com/onsi/ginkgo/v2"
-	"github.com/outscale-dev/osc-bsu-csi-driver/tests/e2e/driver"
+	omega "github.com/onsi/gomega"
 	v1 "k8s.io/api/core/v1"
 	clientset "k8s.io/client-go/kubernetes"
 	"k8s.io/kubernetes/test/e2e/framework"
@@ -79,7 +80,7 @@ func (t *DynamicallyProvisionedCustomPodTest) Run(client clientset.Interface, na
 	By("checking that the pod is running")
 	tDeployment.WaitForPodReady()
 
-	pods, err := e2edeployment.GetPodsForDeployment(client, tDeployment.deployment)
+	pods, err := e2edeployment.GetPodsForDeployment(context.Background(), client, tDeployment.deployment)
 	framework.ExpectNoError(err)
 	singleSpacePattern := regexp.MustCompile(`\s+`)
 	for _, podCmd := range t.PodCmds {
@@ -89,6 +90,7 @@ func (t *DynamicallyProvisionedCustomPodTest) Run(client clientset.Interface, na
 		if err != nil {
 			panic(err.Error())
 		}
-		framework.ExpectEqual(singleSpacePattern.ReplaceAllString(stdout, " "), podCmd.ExpectedString)
+		omega.Expect(singleSpacePattern.ReplaceAllString(stdout, " ")).To(omega.Equal(podCmd.ExpectedString), "Value should match the expected string")
+		//framework.ExpectEqual(singleSpacePattern.ReplaceAllString(stdout, " "), podCmd.ExpectedString)
 	}
 }

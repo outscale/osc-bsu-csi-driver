@@ -220,8 +220,7 @@ func (d *deviceManager) getDeviceNamesInUse(instance osc.Vm) map[string]string {
 		name = strings.TrimPrefix(name, "/dev/xvd")
 
 		if len(name) < 1 || len(name) > 2 {
-			klog.Warningf("Unexpected EBS DeviceName: %q", blockDevice.DeviceName)
-		}
+			klog.Warningf("Unexpected BSU DeviceName: %q", *blockDevice.DeviceName)		}
 		inUse[name] = blockDevice.Bsu.GetVolumeId()
 	}
 

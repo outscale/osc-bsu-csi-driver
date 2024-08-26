@@ -104,7 +104,7 @@ func LuksClose(mounter Mounter, encryptedDeviceName string) error {
 	}
 
 	if err = mounter.Command("cryptsetup", "-v", "luksClose", encryptedDeviceName).Run(); err != nil {
-		klog.V(4).Info("error while closing luks device %v", encryptedDeviceName)
+		klog.V(4).Info("error while closing luks device", encryptedDeviceName)
 		return err
 	}
 

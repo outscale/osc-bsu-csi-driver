@@ -1,8 +1,9 @@
-ARG GOLANG_IMAGE_TAG=1.19-buster
-ARG RUNTIME_IMAGE_TAG=3.13.12
+ARG GOLANG_IMAGE_TAG=1.23.2-bookworm
+ARG RUNTIME_IMAGE_TAG=3.13
 
 # Build image
 FROM golang:${GOLANG_IMAGE_TAG} AS builder
+
 # This build arg is the version to embed in the CPI binary
 ARG VERSION=${VERSION}
 

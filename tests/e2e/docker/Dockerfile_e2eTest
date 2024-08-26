@@ -1,7 +1,7 @@
-FROM golang:1.19.6-buster
+FROM golang:1.23.0
 
-RUN curl -o /usr/local/bin/kubectl -LO https://storage.googleapis.com/kubernetes-release/release/v1.24.10/bin/linux/amd64/kubectl && chmod +x /usr/local/bin/kubectl
-RUN export GO111MODULE=on && export PATH=$PATH:/usr/local/go/bin && export GOPATH="/go" && go install "github.com/onsi/ginkgo/v2/ginkgo@v2.8.1"
+RUN curl -o /usr/local/bin/kubectl -LO https://storage.googleapis.com/kubernetes-release/release/v1.30.2/bin/linux/amd64/kubectl && chmod +x /usr/local/bin/kubectl
+RUN export GO111MODULE=on && export PATH=$PATH:/usr/local/go/bin && export GOPATH="/go" && go install "github.com/onsi/ginkgo/v2/ginkgo@v2.20.1"
 
 WORKDIR /root/osc-bsu-csi-driver
 

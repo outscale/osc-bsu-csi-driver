@@ -34,7 +34,7 @@ backoff:
 sidecars:
   provisionerImage:
     repository: registry.k8s.io/sig-storage/csi-provisioner
-    tag: "v4.0.0"
+    tag: "v5.0.2"
     # -- Enable http endpoint to get metrics of the container
     enableHttpEndpoint: false
     # -- Port of the http endpoint
@@ -48,7 +48,7 @@ sidecars:
     additionalClusterRoleRules:
   attacherImage:
     repository: registry.k8s.io/sig-storage/csi-attacher
-    tag: "v4.7.0"
+    tag: "v4.6.1"
     # -- Enable http endpoint to get metrics of the container
     enableHttpEndpoint: false
     # -- Port of the http endpoint
@@ -76,12 +76,12 @@ sidecars:
     additionalClusterRoleRules:
   livenessProbeImage:
     repository: registry.k8s.io/sig-storage/livenessprobe
-    tag: "v2.14.0"
+    tag: "v2.13.1"
     # -- Port of the liveness of the main container
     port: "9808"
   resizerImage:
     repository: registry.k8s.io/sig-storage/csi-resizer
-    tag: "v1.12.0"
+    tag: "v1.11.2"
     # -- Enable http endpoint to get metrics of the container
     enableHttpEndpoint: false
     # -- Port of the http endpoint
@@ -95,7 +95,7 @@ sidecars:
     additionalClusterRoleRules:
   nodeDriverRegistrarImage:
     repository: registry.k8s.io/sig-storage/csi-node-driver-registrar
-    tag: "v2.12.0"
+    tag: "v2.11.1"
     # -- Enable http endpoint to get metrics of the container
     enableHttpEndpoint: false
     # -- Port of the http endpoint
@@ -187,6 +187,10 @@ node:
   tolerateAllTaints: true
   # -- Pod tolerations
   tolerations: []
+  # Warning: This option will be removed in a future release. It is a temporary workaround for users unable to immediately migrate off of older kernel versions.
+  # Formats XFS volumes with bigtime=0,inobtcount=0,reflink=0, for mounting onto nodes with linux kernel version <= 5.4.
+  # Note that XFS volumes formatted with this option will only have timestamp records until 2038.
+  legacyXFS: false
 
 serviceAccount:
   controller:
@@ -195,6 +199,7 @@ serviceAccount:
   snapshot:
     # -- Annotations to add to the Snapshot ServiceAccount
     annotations: {}
+
 
 credentials:
   # The name of the secret storing the below fields

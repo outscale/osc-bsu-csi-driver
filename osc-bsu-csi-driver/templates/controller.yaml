@@ -43,8 +43,10 @@ spec:
         {{- with .Values.tolerations }}
 {{ toYaml . | indent 8 }}
         {{- end }}
+      {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
-        - name: {{ .Values.imagePullSecrets | default "registry-dockerconfigjson" }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       containers:
         - name: osc-plugin
           image: {{ .Values.image.repository }}:{{ .Values.image.tag }}

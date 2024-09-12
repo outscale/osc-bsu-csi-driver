@@ -76,6 +76,8 @@ Kubernetes: `>=1.20.0`
 | sidecars.nodeDriverRegistrarImage.tag | string | `"v2.3.0"` |  |
 | sidecars.provisionerImage.enableHttpEndpoint | bool | `false` | Enable http endpoint to get metrics of the container |
 | sidecars.provisionerImage.enableLivenessProbe | bool | `false` | Enable liveness probe for the container |
+| sidecars.provisionerImage.extraArgs.--feature-gates | string | `"NodeSwap=true"` |  |
+| sidecars.provisionerImage.extraArgs.--feature-gates | string | `"CrossNamespaceVolumeDataSource=true"` |  |
 | sidecars.provisionerImage.httpEndpointPort | string | `"8089"` | Port of the http endpoint |
 | sidecars.provisionerImage.leaderElection | object | `{}` | Customize leaderElection, you can specify `leaseDuration`, `renewDeadline` and/or `retryPeriod`. Each value must be in an acceptable time.ParseDuration format.(Ref: https://pkg.go.dev/flag#Duration) |
 | sidecars.provisionerImage.repository | string | `"registry.k8s.io/sig-storage/csi-provisioner"` |  |

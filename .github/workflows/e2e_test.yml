@@ -103,6 +103,8 @@ jobs:
       env:
         KUBECONFIG: set-up-rke-cluster/rke/kube_config_cluster.yml
         OSC_REGION: ${{ secrets.OSC_REGION}}
+        TARGET_TAG: ${{ github.sha }}
+        TARGET_IMAGE: localhost:4242/csi
         IMAGE_TAG: ${{ github.sha }}
     - name: Run e2e tests
       env:

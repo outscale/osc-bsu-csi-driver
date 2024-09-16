@@ -140,6 +140,7 @@ helm_deploy:
 			--install \
 			--wait \
 			--wait-for-jobs  \
+			--debug \
 			osc-bsu-csi-driver ./osc-bsu-csi-driver \
 			--namespace kube-system \
 			--set enableVolumeScheduling=true \

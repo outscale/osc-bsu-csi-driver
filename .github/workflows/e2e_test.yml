@@ -41,7 +41,7 @@ jobs:
     - uses: azure/setup-kubectl@v3.0
     - uses: azure/setup-helm@v3
       with:
-        version: v3.10.1
+        version: v3.16.1
     - uses: actions/setup-go@v3
       with:
         go-version-file: 'go.mod'

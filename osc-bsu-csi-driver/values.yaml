@@ -34,7 +34,7 @@ backoff:
 sidecars:
   provisionerImage:
     repository: registry.k8s.io/sig-storage/csi-provisioner
-    tag: "v3.0.0"
+    tag: "v5.1.0"
     # -- Enable http endpoint to get metrics of the container
     enableHttpEndpoint: false
     # -- Port of the http endpoint
@@ -49,7 +49,7 @@ sidecars:
       # ... other arguments that can be used by the provisioner when it is needed. 
   attacherImage:
     repository: registry.k8s.io/sig-storage/csi-attacher
-    tag: "v3.3.0"
+    tag: "v4.7.0"
     # -- Enable http endpoint to get metrics of the container
     enableHttpEndpoint: false
     # -- Port of the http endpoint
@@ -71,12 +71,12 @@ sidecars:
     leaderElection: {}
   livenessProbeImage:
     repository: registry.k8s.io/sig-storage/livenessprobe
-    tag: "v2.5.0"
+    tag: "v2.14.0"
     # -- Port of the liveness of the main container
     port: "9808"
   resizerImage:
     repository: registry.k8s.io/sig-storage/csi-resizer
-    tag: "v1.3.0"
+    tag: "v1.12.0"
     # -- Enable http endpoint to get metrics of the container
     enableHttpEndpoint: false
     # -- Port of the http endpoint
@@ -87,7 +87,7 @@ sidecars:
     leaderElection: {}
   nodeDriverRegistrarImage:
     repository: registry.k8s.io/sig-storage/csi-node-driver-registrar
-    tag: "v2.3.0"
+    tag: "v2.12.0"
     # -- Enable http endpoint to get metrics of the container
     enableHttpEndpoint: false
     # -- Port of the http endpoint

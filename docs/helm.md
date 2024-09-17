@@ -61,6 +61,8 @@ Kubernetes: `>=1.20.0`
 | resources | object | `{}` | Specify limits of resources used by the pod |
 | serviceAccount.controller.annotations | object | `{}` | Annotations to add to the Controller ServiceAccount |
 | serviceAccount.snapshot.annotations | object | `{}` | Annotations to add to the Snapshot ServiceAccount |
+| sidecars.attacherImage.additionalArgs | list | `[]` |  |
+| sidecars.attacherImage.additionalClusterRoleRules | string | `nil` |  |
 | sidecars.attacherImage.enableHttpEndpoint | bool | `false` | Enable http endpoint to get metrics of the container |
 | sidecars.attacherImage.enableLivenessProbe | bool | `false` | Enable liveness probe for the container |
 | sidecars.attacherImage.httpEndpointPort | string | `"8090"` | Port of the http endpoint |
@@ -68,26 +70,30 @@ Kubernetes: `>=1.20.0`
 | sidecars.attacherImage.repository | string | `"registry.k8s.io/sig-storage/csi-attacher"` |  |
 | sidecars.attacherImage.tag | string | `"v3.3.0"` |  |
 | sidecars.livenessProbeImage.repository | string | `"registry.k8s.io/sig-storage/livenessprobe"` |  |
-| sidecars.livenessProbeImage.tag | string | `"v2.5.0"` |  |
+| sidecars.livenessProbeImage.tag | string | `"v2.14.0"` |  |
 | sidecars.nodeDriverRegistrarImage.enableHttpEndpoint | bool | `false` | Enable http endpoint to get metrics of the container |
 | sidecars.nodeDriverRegistrarImage.enableLivenessProbe | bool | `false` | Enable liveness probe for the container |
 | sidecars.nodeDriverRegistrarImage.httpEndpointPort | string | `"8093"` | Port of the http endpoint |
 | sidecars.nodeDriverRegistrarImage.repository | string | `"registry.k8s.io/sig-storage/csi-node-driver-registrar"` |  |
-| sidecars.nodeDriverRegistrarImage.tag | string | `"v2.3.0"` |  |
+| sidecars.nodeDriverRegistrarImage.tag | string | `"v2.12.0"` |  |
+| sidecars.provisionerImage.additionalArgs | list | `[]` |  |
+| sidecars.provisionerImage.additionalClusterRoleRules | string | `nil` |  |
 | sidecars.provisionerImage.enableHttpEndpoint | bool | `false` | Enable http endpoint to get metrics of the container |
 | sidecars.provisionerImage.enableLivenessProbe | bool | `false` | Enable liveness probe for the container |
-| sidecars.provisionerImage.extraArgs.--feature-gates | string | `"NodeSwap=true"` |  |
-| sidecars.provisionerImage.extraArgs.--feature-gates | string | `"CrossNamespaceVolumeDataSource=true"` |  |
 | sidecars.provisionerImage.httpEndpointPort | string | `"8089"` | Port of the http endpoint |
 | sidecars.provisionerImage.leaderElection | object | `{}` | Customize leaderElection, you can specify `leaseDuration`, `renewDeadline` and/or `retryPeriod`. Each value must be in an acceptable time.ParseDuration format.(Ref: https://pkg.go.dev/flag#Duration) |
 | sidecars.provisionerImage.repository | string | `"registry.k8s.io/sig-storage/csi-provisioner"` |  |
-| sidecars.provisionerImage.tag | string | `"v3.0.0"` |  |
+| sidecars.provisionerImage.tag | string | `"v4.0.0"` |  |
+| sidecars.resizerImage.additionalArgs | list | `[]` |  |
+| sidecars.resizerImage.additionalClusterRoleRules | string | `nil` |  |
 | sidecars.resizerImage.enableHttpEndpoint | bool | `false` | Enable http endpoint to get metrics of the container |
 | sidecars.resizerImage.enableLivenessProbe | bool | `false` | Enable liveness probe for the container |
 | sidecars.resizerImage.httpEndpointPort | string | `"8092"` | Port of the http endpoint |
 | sidecars.resizerImage.leaderElection | object | `{}` | Customize leaderElection, you can specify `leaseDuration`, `renewDeadline` and/or `retryPeriod`. Each value must be in an acceptable time.ParseDuration format.(Ref: https://pkg.go.dev/flag#Duration) |
 | sidecars.resizerImage.repository | string | `"registry.k8s.io/sig-storage/csi-resizer"` |  |
-| sidecars.resizerImage.tag | string | `"v1.3.0"` |  |
+| sidecars.resizerImage.tag | string | `"v1.12.0"` |  |
+| sidecars.snapshotterImage.additionalArgs | list | `[]` |  |
+| sidecars.snapshotterImage.additionalClusterRoleRules | string | `nil` |  |
 | sidecars.snapshotterImage.enableHttpEndpoint | bool | `false` | Enable http endpoint to get metrics of the container |
 | sidecars.snapshotterImage.enableLivenessProbe | bool | `false` | Enable liveness probe for the container |
 | sidecars.snapshotterImage.httpEndpointPort | string | `"8091"` | Port of the http endpoint |

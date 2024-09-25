@@ -145,10 +145,9 @@ spec:
             {{- if .Values.extraCreateMetadata }}
             - --extra-create-metadata
             {{- end}}
-            {{- if .Values.sidecars.provisionerImage.extraArgs }}
-            {{- range $key, $value := .Values.sidecars.provisionerImage.extraArgs }}
-            - {{ $key }}={{ $value }}
-            {{- end }}
+            # Dynamically adding additionalArgs from values.yaml
+            {{- range .Values.sidecars.provisionerImage.additionalArgs }}
+            - {{ . }}
             {{- end }}
             - --leader-election=true
             {{- if .Values.sidecars.provisionerImage.leaderElection.leaseDuration }}
@@ -192,6 +191,10 @@ spec:
           args:
             - --csi-address=$(ADDRESS)
             - --v={{ .Values.verbosity }}
+            # Dynamically adding additionalArgs from values.yaml
+            {{- range .Values.sidecars.attacherImage.additionalArgs }}
+            - {{ . }}
+            {{- end }}
             - --leader-election=true
             {{- if .Values.sidecars.attacherImage.leaderElection.leaseDuration }}
             - --leader-election-lease-duration={{ .Values.sidecars.attacherImage.leaderElection.leaseDuration }}
@@ -233,6 +236,10 @@ spec:
           image: {{ printf "%s:%s" .Values.sidecars.snapshotterImage.repository .Values.sidecars.snapshotterImage.tag }}
           args:
             - --csi-address=$(ADDRESS)
+            # Dynamically adding additionalArgs from values.yaml
+            {{- range .Values.sidecars.snapshotterImage.additionalArgs }}
+            - {{ . }}
+            {{- end }}
             - --leader-election=true
             {{- if .Values.sidecars.snapshotterImage.leaderElection.leaseDuration }}
             - --leader-election-lease-duration={{ .Values.sidecars.snapshotterImage.leaderElection.leaseDuration }}
@@ -277,6 +284,10 @@ spec:
             - --csi-address=$(ADDRESS)
             - --v={{ .Values.verbosity }}
             - --timeout={{ .Values.timeout }}
+            # Dynamically adding additionalArgs from values.yaml
+            {{- range .Values.sidecars.resizerImage.additionalArgs }}
+            - {{ . }}
+            {{- end }}
             - --leader-election=true
             {{- if .Values.sidecars.resizerImage.leaderElection.leaseDuration }}
             - --leader-election-lease-duration={{ .Values.sidecars.resizerImage.leaderElection.leaseDuration }}

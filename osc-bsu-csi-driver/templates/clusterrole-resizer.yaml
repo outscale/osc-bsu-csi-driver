@@ -30,4 +30,8 @@ rules:
   - apiGroups: [""]
     resources: ["pods"]
     verbs: ["get", "list", "watch"]
+  {{- with .Values.sidecars.resizerImage.additionalClusterRoleRules }}
+    {{- . | toYaml | nindent 2 }}
+  {{- end }}
 {{- end}}
+

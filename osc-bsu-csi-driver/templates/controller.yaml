@@ -137,6 +137,9 @@ spec:
         - name: csi-provisioner
           image: {{ printf "%s:%s" .Values.sidecars.provisionerImage.repository .Values.sidecars.provisionerImage.tag }}
           args:
+            {{- if not (regexMatch "(-timeout)" (join " " .Values.sidecars.provisioner.additionalArgs)) }}
+            - --timeout=60s
+            {{- end }}
             - --csi-address=$(ADDRESS)
             - --v={{ .Values.verbosity }}
             {{- if .Values.enableVolumeScheduling }}
@@ -190,6 +193,9 @@ spec:
         - name: csi-attacher
           image: {{ printf "%s:%s" .Values.sidecars.attacherImage.repository .Values.sidecars.attacherImage.tag }}
           args:
+            {{- if not (regexMatch "(-timeout)" (join " " .Values.sidecars.provisioner.additionalArgs)) }}
+            - --timeout=60s
+            {{- end }}
             - --csi-address=$(ADDRESS)
             - --v={{ .Values.verbosity }}
             - --leader-election=true
@@ -232,6 +238,9 @@ spec:
         - name: csi-snapshotter
           image: {{ printf "%s:%s" .Values.sidecars.snapshotterImage.repository .Values.sidecars.snapshotterImage.tag }}
           args:
+            {{- if not (regexMatch "(-timeout)" (join " " .Values.sidecars.provisioner.additionalArgs)) }}
+            - --timeout=60s
+            {{- end }}
             - --csi-address=$(ADDRESS)
             - --leader-election=true
             {{- if .Values.sidecars.snapshotterImage.leaderElection.leaseDuration }}
@@ -274,6 +283,9 @@ spec:
           image: {{ printf "%s:%s" .Values.sidecars.resizerImage.repository .Values.sidecars.resizerImage.tag }}
           imagePullPolicy: Always
           args:
+            {{- if not (regexMatch "(-timeout)" (join " " .Values.sidecars.provisioner.additionalArgs)) }}
+            - --timeout=60s
+            {{- end }}
             - --csi-address=$(ADDRESS)
             - --v={{ .Values.verbosity }}
             - --timeout={{ .Values.timeout }}

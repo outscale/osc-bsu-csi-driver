@@ -64,7 +64,7 @@ sidecars:
     additionalClusterRoleRules:
   snapshotterImage:
     repository: registry.k8s.io/sig-storage/csi-snapshotter
-    tag: "v4.2.1"
+    tag: "v8.0.1"
     # -- Enable http endpoint to get metrics of the container
     enableHttpEndpoint: false
     # -- Port of the http endpoint
@@ -189,10 +189,6 @@ node:
   tolerateAllTaints: true
   # -- Pod tolerations
   tolerations: []
-  # Warning: This option will be removed in a future release. It is a temporary workaround for users unable to immediately migrate off of older kernel versions.
-  # Formats XFS volumes with bigtime=0,inobtcount=0,reflink=0, for mounting onto nodes with linux kernel version <= 5.4.
-  # Note that XFS volumes formatted with this option will only have timestamp records until 2038.
-  legacyXFS: false
 
 serviceAccount:
   controller:
@@ -201,7 +197,6 @@ serviceAccount:
   snapshot:
     # -- Annotations to add to the Snapshot ServiceAccount
     annotations: {}
-
 
 credentials:
   # The name of the secret storing the below fields

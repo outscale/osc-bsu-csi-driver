@@ -100,7 +100,7 @@ Kubernetes: `>=1.20`
 | sidecars.snapshotterImage.httpEndpointPort | string | `"8091"` | Port of the http endpoint |
 | sidecars.snapshotterImage.leaderElection | object | `{}` | Customize leaderElection, you can specify `leaseDuration`, `renewDeadline` and/or `retryPeriod`. Each value must be in an acceptable time.ParseDuration format.(Ref: https://pkg.go.dev/flag#Duration) |
 | sidecars.snapshotterImage.repository | string | `"registry.k8s.io/sig-storage/csi-snapshotter"` |  |
-| sidecars.snapshotterImage.tag | string | `"v4.2.1"` |  |
+| sidecars.snapshotterImage.tag | string | `"v8.0.1"` |  |
 | timeout | string | `"60s"` | Timeout for sidecars |
 | tolerations | list | `[{"key":"CriticalAddonsOnly","operator":"Exists"},{"effect":"NoExecute","operator":"Exists","tolerationSeconds":300}]` | Pod tolerations |
 | verbosity | int | `10` | Verbosity level of the plugin |

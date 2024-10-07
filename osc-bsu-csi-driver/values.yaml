@@ -15,7 +15,7 @@ image:
   pullPolicy: IfNotPresent
 
 # -- Verbosity level of the plugin
-verbosity: 10
+verbosity: 3
 
 # -- Timeout for sidecars
 timeout: 60s

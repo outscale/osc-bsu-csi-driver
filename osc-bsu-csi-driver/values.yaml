@@ -45,6 +45,11 @@ sidecars:
     enableLivenessProbe: false
     # -- Customize leaderElection, you can specify `leaseDuration`, `renewDeadline` and/or `retryPeriod`. Each value must be in an acceptable time.ParseDuration format.(Ref: https://pkg.go.dev/flag#Duration)
     leaderElection: {}
+    securityContext:
+      seccompProfile:
+        type: RuntimeDefault
+      readOnlyRootFilesystem: true
+      allowPrivilegeEscalation: false
     additionalArgs: []
     # Grant additional permissions to external-provisioner
     additionalClusterRoleRules:
@@ -59,6 +64,11 @@ sidecars:
     enableLivenessProbe: false
     # -- Customize leaderElection, you can specify `leaseDuration`, `renewDeadline` and/or `retryPeriod`. Each value must be in an acceptable time.ParseDuration format.(Ref: https://pkg.go.dev/flag#Duration)
     leaderElection: {}
+    securityContext:
+      seccompProfile:
+        type: RuntimeDefault
+      readOnlyRootFilesystem: true
+      allowPrivilegeEscalation: false
     additionalArgs: []
     # Grant additional permissions to external-provisioner
     additionalClusterRoleRules:
@@ -73,6 +83,11 @@ sidecars:
     enableLivenessProbe: false
     # -- Customize leaderElection, you can specify `leaseDuration`, `renewDeadline` and/or `retryPeriod`. Each value must be in an acceptable time.ParseDuration format.(Ref: https://pkg.go.dev/flag#Duration)
     leaderElection: {}
+    securityContext:
+      seccompProfile:
+        type: RuntimeDefault
+      readOnlyRootFilesystem: true
+      allowPrivilegeEscalation: false
     additionalArgs: []
     # Grant additional permissions to external-provisioner
     additionalClusterRoleRules:
@@ -81,6 +96,11 @@ sidecars:
     tag: "v2.13.1"
     # -- Port of the liveness of the main container
     port: "9808"
+    securityContext:
+      seccompProfile:
+        type: RuntimeDefault
+      readOnlyRootFilesystem: true
+      allowPrivilegeEscalation: false
   resizerImage:
     repository: registry.k8s.io/sig-storage/csi-resizer
     tag: "v1.11.2"
@@ -92,6 +112,11 @@ sidecars:
     enableLivenessProbe: false
     # -- Customize leaderElection, you can specify `leaseDuration`, `renewDeadline` and/or `retryPeriod`. Each value must be in an acceptable time.ParseDuration format.(Ref: https://pkg.go.dev/flag#Duration)
     leaderElection: {}
+    securityContext:
+      seccompProfile:
+        type: RuntimeDefault
+      readOnlyRootFilesystem: true
+      allowPrivilegeEscalation: false
     additionalArgs: []
     # Grant additional permissions to external-provisioner
     additionalClusterRoleRules:
@@ -104,6 +129,12 @@ sidecars:
     httpEndpointPort: "8093"
     # -- Enable liveness probe for the container
     enableLivenessProbe: false
+    securityContext:
+      seccompProfile:
+        type: RuntimeDefault
+      readOnlyRootFilesystem: true
+      allowPrivilegeEscalation: false
+  
 
 # -- Specify image pull secrets
 imagePullSecrets: []
@@ -144,7 +175,6 @@ resources:
   # requests:
   #   cpu: 100m
   #   memory: 128Mi
-
 nodeSelector: {}
 
 #@ignored
@@ -189,11 +219,20 @@ node:
   tolerateAllTaints: true
   # -- Pod tolerations
   tolerations: []
-
+  # Privileged containers always run as `Unconfined`, which means that they are not restricted by a seccomp profile.
+  containerSecurityContext:
+    readOnlyRootFilesystem: true
+    privileged: true
 serviceAccount:
   controller:
     # -- Annotations to add to the Controller ServiceAccount
     annotations: {}
+    # securityContext on the controller container (see sidecars for securityContext on sidecar containers)
+    containerSecurityContext:
+      seccompProfile:
+        type: RuntimeDefault
+      readOnlyRootFilesystem: true
+      allowPrivilegeEscalation: false
   snapshot:
     # -- Annotations to add to the Snapshot ServiceAccount
     annotations: {}

@@ -9,6 +9,27 @@
 
 The Outscale Block Storage Unit Container Storage Interface (CSI) Driver provides a [CSI](https://github.com/container-storage-interface/spec/blob/master/spec.md) interface used by Container Orchestrators to manage the lifecycle of 3DS outscale BSU volumes.
 
+## Kernel Minimum Requirements for XFS Support
+
+To use the XFS file system with this CSI driver, ensure your system meets the following requirements:
+
+Minimum Linux Kernel Version
+* **Recommended Minimum Kernel Version** 3.13
+Required Packages
+* **xfsprogs** (Version: 5.10.0-r0): Provides utilities for managing XFS file systems. Kernel support for XFS is required.
+* **e2fsprogs** (Version: 1.45.7-r0): Utilities for managing ext2, ext3, and ext4 file systems. While not directly related to XFS, it is useful for various disk operations.
+* **cryptsetup** (Version: 2.3.7-r0): Required for disk encryption, which can be used in conjunction with XFS.
+
+You can verify your kernel version and XFS module support with the following commands:
+# Check the current kernel version
+`uname -r`
+
+# Check if the XFS module is loaded
+`lsmod | grep xfs`
+
+# Load the XFS module if it is not loaded
+`sudo modprobe xfs`
+
 ## CSI Specification Compability Matrix
 
 | Plugin Version   | Compatible with CSI Version                                                       | Min K8s Version | Recommended K8s Version |

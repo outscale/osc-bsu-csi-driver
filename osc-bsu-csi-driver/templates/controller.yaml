@@ -47,6 +47,10 @@ spec:
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
       {{- end }}
+      {{- with .Values.containerSecurityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       containers:
         - name: osc-plugin
           image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
@@ -134,6 +138,10 @@ spec:
           {{- with .Values.resources }}
           resources: {{ toYaml . | nindent 12 }}
           {{- end }}
+          {{- with .Values.containerSecurityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
         - name: csi-provisioner
           image: {{ printf "%s:%s" .Values.sidecars.provisionerImage.repository .Values.sidecars.provisionerImage.tag }}
           args:
@@ -189,6 +197,10 @@ spec:
           {{- with .Values.resources }}
           resources: {{ toYaml . | nindent 12 }}
           {{- end }}
+          {{- with .Values.sidecars.provisionerImage.securityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
         - name: csi-attacher
           image: {{ printf "%s:%s" .Values.sidecars.attacherImage.repository .Values.sidecars.attacherImage.tag }}
           args:
@@ -237,6 +249,10 @@ spec:
           {{- with .Values.resources }}
           resources: {{ toYaml . | nindent 12 }}
           {{- end }}
+          {{- with .Values.sidecars.attacherImage.securityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
         {{- if .Values.enableVolumeSnapshot }}
         - name: csi-snapshotter
           image: {{ printf "%s:%s" .Values.sidecars.snapshotterImage.repository .Values.sidecars.snapshotterImage.tag }}
@@ -283,6 +299,10 @@ spec:
               mountPath: /var/lib/csi/sockets/pluginproxy/
           {{- with .Values.resources }}
           resources: {{ toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.sidecars.snapshotterImage.securityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
           {{- end }}
         {{- end }}
         {{- if .Values.enableVolumeResizing }}
@@ -335,6 +355,10 @@ spec:
           {{- with .Values.resources }}
           resources: {{ toYaml . | nindent 12 }}
           {{- end }}
+          {{- with .Values.sidecars.resizerImage.securityContext }}
+          securityContext:  
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
         {{- end }}
         - name: liveness-probe
           image: {{ printf "%s:%s" .Values.sidecars.livenessProbeImage.repository .Values.sidecars.livenessProbeImage.tag }}
@@ -346,6 +370,10 @@ spec:
               mountPath: /csi
           {{- with .Values.resources }}
           resources: {{ toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.sidecars.livenessProbeImage.securityContext }}
+          securityContext:  
+            {{- toYaml . | nindent 12 }}
           {{- end }}
       volumes:
         - name: socket-dir

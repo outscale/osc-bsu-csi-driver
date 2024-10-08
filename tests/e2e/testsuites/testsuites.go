@@ -20,8 +20,8 @@ import (
 	"math/rand"
 	"time"
 
-	volumesnapshotv1 "github.com/kubernetes-csi/external-snapshotter/client/v4/apis/volumesnapshot/v1"
-	snapshotclientset "github.com/kubernetes-csi/external-snapshotter/client/v4/clientset/versioned"
+	volumesnapshotv1 "github.com/kubernetes-csi/external-snapshotter/client/v8/apis/volumesnapshot/v1"
+	snapshotclientset "github.com/kubernetes-csi/external-snapshotter/client/v8/clientset/versioned"
 	e2epodoutput "k8s.io/kubernetes/test/e2e/framework/pod/output"
 
 	. "github.com/onsi/ginkgo/v2"

@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	sanity "github.com/kubernetes-csi/csi-test/v4/pkg/sanity"
+	sanity "github.com/kubernetes-csi/csi-test/v5/pkg/sanity"
 	"github.com/outscale-dev/osc-bsu-csi-driver/pkg/cloud"
 	"github.com/outscale-dev/osc-bsu-csi-driver/pkg/driver/internal"
 	"github.com/outscale-dev/osc-bsu-csi-driver/pkg/driver/luks"

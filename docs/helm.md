@@ -84,7 +84,7 @@ Kubernetes: `>=1.20`
 | sidecars.provisionerImage.httpEndpointPort | string | `"8089"` | Port of the http endpoint |
 | sidecars.provisionerImage.leaderElection | object | `{}` | Customize leaderElection, you can specify `leaseDuration`, `renewDeadline` and/or `retryPeriod`. Each value must be in an acceptable time.ParseDuration format.(Ref: https://pkg.go.dev/flag#Duration) |
 | sidecars.provisionerImage.repository | string | `"registry.k8s.io/sig-storage/csi-provisioner"` |  |
-| sidecars.provisionerImage.tag | string | `"v4.0.0"` |  |
+| sidecars.provisionerImage.tag | string | `"v5.0.0"` |  |
 | sidecars.resizerImage.additionalArgs | list | `[]` |  |
 | sidecars.resizerImage.additionalClusterRoleRules | string | `nil` |  |
 | sidecars.resizerImage.enableHttpEndpoint | bool | `false` | Enable http endpoint to get metrics of the container |

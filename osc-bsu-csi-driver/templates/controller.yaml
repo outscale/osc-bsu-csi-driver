@@ -142,6 +142,11 @@ spec:
             {{- end }}
             - --csi-address=$(ADDRESS)
             - --v={{ .Values.verbosity }}
+            {{- if not (regexMatch "(-kube-api-qps)|(-kube-api-burst)|(-worker-threads)" (join " " .Values.sidecars.provisionerImage.additionalArgs)) }}
+            - --kube-api-qps=20
+            - --kube-api-burst=100
+            - --worker-threads=100
+            {{- end }}
             {{- if .Values.enableVolumeScheduling }}
             - --feature-gates=Topology=true
             {{- end}}
@@ -197,6 +202,11 @@ spec:
             {{- end }}
             - --csi-address=$(ADDRESS)
             - --v={{ .Values.verbosity }}
+            {{- if not (regexMatch "(-kube-api-qps)|(-kube-api-burst)|(-worker-threads)" (join " " .Values.sidecars.attacherImage.additionalArgs)) }}
+            - --kube-api-qps=20
+            - --kube-api-burst=100
+            - --worker-threads=100
+            {{- end }}
             # Dynamically adding additionalArgs from values.yaml
             {{- range .Values.sidecars.attacherImage.additionalArgs }}
             - {{ . }}
@@ -296,6 +306,11 @@ spec:
             - --csi-address=$(ADDRESS)
             - --v={{ .Values.verbosity }}
             - --timeout={{ .Values.timeout }}
+            {{- if not (regexMatch "(-kube-api-qps)|(-kube-api-burst)|(-workers)" (join " " .Values.sidecars.resizerImage.additionalArgs)) }}
+            - --kube-api-qps=20
+            - --kube-api-burst=100
+            - --workers=100
+            {{- end }}
             # Dynamically adding additionalArgs from values.yaml
             {{- range .Values.sidecars.resizerImage.additionalArgs }}
             - {{ . }}

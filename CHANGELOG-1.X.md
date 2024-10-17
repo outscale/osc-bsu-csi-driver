@@ -1,4 +1,17 @@
 # Changelog
+## [v1.4.0]
+### Features
+* Add support for multiple feature-gates arguments for the csi-provisioner([#810](https://github.com/outscale/osc-bsu-csi-driver/pull/810/))
+* Upgrade plugin to support 1.30 Kubernetes version cluster and sideCars versions ([#814](https://github.com/outscale/osc-bsu-csi-driver/pull/814)
+* Clean way to set imagePullSecrets and respect list  ([#815](https://github.com/outscale/osc-bsu-csi-driver/pull/815))
+* Increase default provisioner, resizer, snapshotter retry-interval-max ([#820](https://github.com/outscale/osc-bsu-csi-driver/pull/820))
+* Reduce verbosity level ([#823](https://github.com/outscale/osc-bsu-csi-driver/pull/823))
+* Support Volume Group Snapshots k8s 1.27 ([#827](https://github.com/outscale/osc-bsu-csi-driver/pull/827))
+* Add default kube-api-qps, burst, and worker-threads values in CSI driver ([#826](https://github.com/outscale/osc-bsu-csi-driver/pull/826))
+* Set RuntimeDefault as default seccompProfile in securityContext ([#828](https://github.com/outscale/osc-bsu-csi-driver/pull/828))
+
+### Bugfixes
+* Fix extra arg([#818](https://github.com/outscale/osc-bsu-csi-driver/pull/818)
 
 ## [v1.3.0]
 ### Features

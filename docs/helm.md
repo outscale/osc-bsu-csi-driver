@@ -1,6 +1,6 @@
 # osc-bsu-csi-driver
 
-![Version: 1.5.0](https://img.shields.io/badge/Version-1.5.0-informational?style=flat-square) ![AppVersion: v1.2.4](https://img.shields.io/badge/AppVersion-v1.2.4-informational?style=flat-square)
+![Version: 1.6.0](https://img.shields.io/badge/Version-1.6.0-informational?style=flat-square) ![AppVersion: v1.2.4](https://img.shields.io/badge/AppVersion-v1.2.4-informational?style=flat-square)
 
 A Helm chart for Outscale BSU CSI Driver
 
@@ -45,7 +45,7 @@ Kubernetes: `>=1.20`
 | httpsProxy | string | `""` | Value used to create environment variable HTTPS_PROXY |
 | image.pullPolicy | string | `"IfNotPresent"` | Container pull policy |
 | image.repository | string | `"outscale/osc-bsu-csi-driver"` | Container image to use |
-| image.tag | string | `"v1.3.0"` | Container image tag to deploy |
+| image.tag | string | `"v1.4.0"` | Container image tag to deploy |
 | imagePullSecrets | list | `[]` | Specify image pull secrets |
 | maxBsuVolumes | string | `"39"` | Maximum volume to attach to a node (see [Docs](https://docs.outscale.com/en/userguide/About-Volumes.html)) |
 | nameOverride | string | `""` | Override name of the app (instead of `osc-bsu-csi-driver`) |
@@ -68,15 +68,15 @@ Kubernetes: `>=1.20`
 | sidecars.attacherImage.httpEndpointPort | string | `"8090"` | Port of the http endpoint |
 | sidecars.attacherImage.leaderElection | object | `{}` | Customize leaderElection, you can specify `leaseDuration`, `renewDeadline` and/or `retryPeriod`. Each value must be in an acceptable time.ParseDuration format.(Ref: https://pkg.go.dev/flag#Duration) |
 | sidecars.attacherImage.repository | string | `"registry.k8s.io/sig-storage/csi-attacher"` |  |
-| sidecars.attacherImage.tag | string | `"v4.7.0"` |  |
+| sidecars.attacherImage.tag | string | `"v4.6.1"` |  |
 | sidecars.livenessProbeImage.port | string | `"9808"` | Port of the liveness of the main container |
 | sidecars.livenessProbeImage.repository | string | `"registry.k8s.io/sig-storage/livenessprobe"` |  |
-| sidecars.livenessProbeImage.tag | string | `"v2.14.0"` |  |
+| sidecars.livenessProbeImage.tag | string | `"v2.13.1"` |  |
 | sidecars.nodeDriverRegistrarImage.enableHttpEndpoint | bool | `false` | Enable http endpoint to get metrics of the container |
 | sidecars.nodeDriverRegistrarImage.enableLivenessProbe | bool | `false` | Enable liveness probe for the container |
 | sidecars.nodeDriverRegistrarImage.httpEndpointPort | string | `"8093"` | Port of the http endpoint |
 | sidecars.nodeDriverRegistrarImage.repository | string | `"registry.k8s.io/sig-storage/csi-node-driver-registrar"` |  |
-| sidecars.nodeDriverRegistrarImage.tag | string | `"v2.12.0"` |  |
+| sidecars.nodeDriverRegistrarImage.tag | string | `"v2.11.1"` |  |
 | sidecars.provisionerImage.additionalArgs | list | `[]` |  |
 | sidecars.provisionerImage.additionalClusterRoleRules | string | `nil` |  |
 | sidecars.provisionerImage.enableHttpEndpoint | bool | `false` | Enable http endpoint to get metrics of the container |
@@ -84,7 +84,7 @@ Kubernetes: `>=1.20`
 | sidecars.provisionerImage.httpEndpointPort | string | `"8089"` | Port of the http endpoint |
 | sidecars.provisionerImage.leaderElection | object | `{}` | Customize leaderElection, you can specify `leaseDuration`, `renewDeadline` and/or `retryPeriod`. Each value must be in an acceptable time.ParseDuration format.(Ref: https://pkg.go.dev/flag#Duration) |
 | sidecars.provisionerImage.repository | string | `"registry.k8s.io/sig-storage/csi-provisioner"` |  |
-| sidecars.provisionerImage.tag | string | `"v4.0.0"` |  |
+| sidecars.provisionerImage.tag | string | `"v5.0.2"` |  |
 | sidecars.resizerImage.additionalArgs | list | `[]` |  |
 | sidecars.resizerImage.additionalClusterRoleRules | string | `nil` |  |
 | sidecars.resizerImage.enableHttpEndpoint | bool | `false` | Enable http endpoint to get metrics of the container |
@@ -92,7 +92,7 @@ Kubernetes: `>=1.20`
 | sidecars.resizerImage.httpEndpointPort | string | `"8092"` | Port of the http endpoint |
 | sidecars.resizerImage.leaderElection | object | `{}` | Customize leaderElection, you can specify `leaseDuration`, `renewDeadline` and/or `retryPeriod`. Each value must be in an acceptable time.ParseDuration format.(Ref: https://pkg.go.dev/flag#Duration) |
 | sidecars.resizerImage.repository | string | `"registry.k8s.io/sig-storage/csi-resizer"` |  |
-| sidecars.resizerImage.tag | string | `"v1.12.0"` |  |
+| sidecars.resizerImage.tag | string | `"v1.11.2"` |  |
 | sidecars.snapshotterImage.additionalArgs | list | `[]` |  |
 | sidecars.snapshotterImage.additionalClusterRoleRules | string | `nil` |  |
 | sidecars.snapshotterImage.enableHttpEndpoint | bool | `false` | Enable http endpoint to get metrics of the container |
@@ -100,7 +100,7 @@ Kubernetes: `>=1.20`
 | sidecars.snapshotterImage.httpEndpointPort | string | `"8091"` | Port of the http endpoint |
 | sidecars.snapshotterImage.leaderElection | object | `{}` | Customize leaderElection, you can specify `leaseDuration`, `renewDeadline` and/or `retryPeriod`. Each value must be in an acceptable time.ParseDuration format.(Ref: https://pkg.go.dev/flag#Duration) |
 | sidecars.snapshotterImage.repository | string | `"registry.k8s.io/sig-storage/csi-snapshotter"` |  |
-| sidecars.snapshotterImage.tag | string | `"v4.2.1"` |  |
+| sidecars.snapshotterImage.tag | string | `"v8.0.1"` |  |
 | timeout | string | `"60s"` | Timeout for sidecars |
 | tolerations | list | `[{"key":"CriticalAddonsOnly","operator":"Exists"},{"effect":"NoExecute","operator":"Exists","tolerationSeconds":300}]` | Pod tolerations |
 | verbosity | int | `3` | Verbosity level of the plugin |

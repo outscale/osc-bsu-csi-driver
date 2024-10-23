@@ -12,6 +12,6 @@ type LuksService interface {
 	CheckLuksPassphrase(devicePath string, passphrase string) bool
 	LuksOpen(devicePath string, encryptedDeviceName string, passphrase string) (bool, error)
 	IsLuksMapping(devicePath string) (bool, string, error)
-	LuksResize(deviceName string) error
+	LuksResize(deviceName string, passphrase string) error
 	LuksClose(deviceName string) error
 }

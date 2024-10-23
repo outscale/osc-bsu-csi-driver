@@ -86,10 +86,22 @@ func IsLuksMapping(exec k8sExec.Interface, devicePath string) (bool, string, err
 	return false, "", nil
 }
 
-func LuksResize(exec k8sExec.Interface, deviceName string) error {
+func LuksResize(exec k8sExec.Interface, deviceName string, passphrase string) error {
 	cryptsetupArgs := []string{"--batch-mode", "resize", deviceName}
 
-	return exec.Command("cryptsetup", cryptsetupArgs...).Run()
+	// Créer la commande cryptsetup
+	resizeCmd := exec.Command("cryptsetup", cryptsetupArgs...)
+
+	// Passer la passphrase via stdin
+	passwordReader := strings.NewReader(passphrase)
+	resizeCmd.SetStdin(passwordReader)
+
+	// Exécuter la commande et gérer les erreurs
+	if out, err := resizeCmd.CombinedOutput(); err != nil {
+		return fmt.Errorf("err: %v, output: %v", err, string(out))
+	}
+
+	return nil
 }
 
 func LuksClose(mounter Mounter, encryptedDeviceName string) error {

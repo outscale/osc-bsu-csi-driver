@@ -219,8 +219,12 @@ node:
   tolerations: []
   # Privileged containers always run as `Unconfined`, which means that they are not restricted by a seccomp profile.
   containerSecurityContext:
-    readOnlyRootFilesystem: true
+    readOnlyRootFilesystem: false  # Allow write operations needed for volume management
     privileged: true
+    allowPrivilegeEscalation: true  # Ensure privileges can be escalated for volume management if needed
+    seccompProfile:
+      type: Unconfined     # temporarily disable seccomp restrictions to allow necessary system calls for LUKS volumes
+serviceAccount:
 serviceAccount:
   controller:
     # -- Annotations to add to the Controller ServiceAccount

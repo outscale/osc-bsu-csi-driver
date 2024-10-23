@@ -811,7 +811,6 @@ var _ = Describe("[bsu-csi-e2e] [single-az] [encryption] Dynamic Provisioning", 
 	})
 
 	It("should create A PV that will be encrypted", func() {
-		Skip("Volume encryption is not supported for volume")
 		pods := []testsuites.PodDetails{
 			{
 				Cmd: "mount | grep ' /mnt/test-1 ' | awk '{ print $1}' | grep  '^/dev/mapper/.*_crypt$'",

@@ -19,12 +19,13 @@ package driver
 import (
 	"context"
 	"fmt"
-	"golang.org/x/sys/unix"
 	"os"
 	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
+
+	"golang.org/x/sys/unix"
 
 	csi "github.com/container-storage-interface/spec/lib/go/csi"
 	"github.com/outscale-dev/osc-bsu-csi-driver/pkg/cloud"
@@ -386,7 +387,12 @@ func (d *nodeService) NodeExpandVolume(ctx context.Context, req *csi.NodeExpandV
 	}
 
 	if isLuksMapping {
-		if err := d.mounter.LuksResize(mappingName); err != nil {
+		passphrase, ok := req.Secrets[LuksPassphraseKey]
+		if !ok {
+			klog.Errorf("NodeStageVolume: no passphrase key has been provided in req.Secrets: %+v", req.Secrets)
+			return nil, status.Error(codes.InvalidArgument, "no passphrase key has been provided")
+		}
+		if err := d.mounter.LuksResize(mappingName, passphrase); err != nil {
 			return nil, status.Errorf(codes.Internal, "Could not resize Luks volume %q: %v", volumeID, err)
 		}
 	}

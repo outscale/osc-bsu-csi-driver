@@ -111,8 +111,8 @@ func (m *NodeMounter) IsLuksMapping(devicePath string) (bool, string, error) {
 	return IsLuksMapping(m, devicePath)
 }
 
-func (m *NodeMounter) LuksResize(deviceName string) error {
-	return LuksResize(m, deviceName)
+func (m *NodeMounter) LuksResize(deviceName string, passphrase string) error {
+	return LuksResize(m, deviceName, passphrase)
 }
 
 func (m *NodeMounter) LuksClose(deviceName string) error {

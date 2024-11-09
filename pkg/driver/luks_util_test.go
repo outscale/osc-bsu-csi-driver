@@ -2,6 +2,8 @@ package driver
 
 import (
 	"fmt"
+	"io"
+	"strings"
 	"testing"
 
 	"github.com/golang/mock/gomock"
@@ -268,33 +270,58 @@ func TestIsLuksMapping(t *testing.T) {
 
 func TestLuksResize(t *testing.T) {
 	mockCtl := gomock.NewController(t)
+	defer mockCtl.Finish()
+
 	devicePath := "fake_crypt"
+	passphrase := "fake_passphrase"
 
 	// Check normal success
 	mockCommand := mocks.NewMockInterface(mockCtl)
 	mockRun := mocks.NewMockCmd(mockCtl)
+
+	// Expect Command to be called with only four arguments, as passphrase is passed via stdin
 	mockCommand.EXPECT().Command(
 		gomock.Eq("cryptsetup"),
 		gomock.Eq("--batch-mode"),
 		gomock.Eq("resize"),
 		gomock.Eq(devicePath),
 	).Return(mockRun)
-	mockRun.EXPECT().Run().Return(nil)
 
-	assert.Equal(t, nil, LuksResize(mockCommand, devicePath))
+	// Expect SetStdin to be called with passphrase
+	mockRun.EXPECT().SetStdin(gomock.Any()).DoAndReturn(func(r io.Reader) {
+		// Check that the reader contains the passphrase
+		buf := new(strings.Builder)
+		io.Copy(buf, r)
+		assert.Equal(t, passphrase, buf.String())
+	})
 
-	// Check failure
+	// Expect CombinedOutput instead of Run
+	mockRun.EXPECT().CombinedOutput().Return([]byte(""), nil)
+
+	// Call LuksResize with the mock command and passphrase
+	assert.Equal(t, nil, LuksResize(mockCommand, devicePath, passphrase))
+
+	// Check failure case
 	mockCommand = mocks.NewMockInterface(mockCtl)
 	mockRun = mocks.NewMockCmd(mockCtl)
+
 	mockCommand.EXPECT().Command(
 		gomock.Eq("cryptsetup"),
 		gomock.Eq("--batch-mode"),
 		gomock.Eq("resize"),
 		gomock.Eq(devicePath),
 	).Return(mockRun)
-	mockRun.EXPECT().Run().Return(fmt.Errorf("Error"))
 
-	assert.NotEqual(t, nil, LuksResize(mockCommand, devicePath))
+	mockRun.EXPECT().SetStdin(gomock.Any()).DoAndReturn(func(r io.Reader) {
+		buf := new(strings.Builder)
+		io.Copy(buf, r)
+		assert.Equal(t, passphrase, buf.String())
+	})
+
+	// Expect CombinedOutput to return an error
+	mockRun.EXPECT().CombinedOutput().Return([]byte(""), fmt.Errorf("Error"))
+
+	assert.NotEqual(t, nil, LuksResize(mockCommand, devicePath, passphrase))
 }
 
 func TestLuksClose(t *testing.T) {

@@ -393,7 +393,7 @@ func (m *fakeMounter) IsLuksMapping(devicePath string) (bool, string, error) {
 	return false, "", nil
 }
 
-func (m *fakeMounter) LuksResize(deviceName string) error {
+func (m *fakeMounter) LuksResize(deviceName string, passphrase string) error {
 	return nil
 }
 

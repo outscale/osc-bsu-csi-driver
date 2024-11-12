@@ -22,7 +22,7 @@ import (
 
 func TestSanity(t *testing.T) {
 	// Setup the full driver and its environment
-	dir, err := ioutil.TempDir("", "sanity-bsu-csi")
+	dir, err :=os.MkdirTemp("", "sanity-bsu-csi")
 	if err != nil {
 		t.Fatalf("error creating directory %v", err)
 	}

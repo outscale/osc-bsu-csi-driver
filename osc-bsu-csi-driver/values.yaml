@@ -225,16 +225,8 @@ node:
     privileged: true
 serviceAccount:
   controller:
-    # -- Annotations to add to the Controller ServiceAccount
     annotations: {}
-    # securityContext on the controller container (see sidecars for securityContext on sidecar containers)
-    containerSecurityContext:
-      seccompProfile:
-        type: RuntimeDefault
-      readOnlyRootFilesystem: true
-      allowPrivilegeEscalation: false
   snapshot:
-    # -- Annotations to add to the Snapshot ServiceAccount
     annotations: {}
 
 credentials:

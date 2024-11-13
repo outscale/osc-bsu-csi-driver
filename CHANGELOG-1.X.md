@@ -1,4 +1,14 @@
 # Changelog
+## [v1.4.1]
+### Bugfixes
+* Fix PV will be encrypted failing due to restictive securityContext ([#835](https://github.com/outscale/osc-bsu-csi-driver/pull/835))
+* Run skipped test ([#836](https://github.com/outscale/osc-bsu-csi-driver/pull/836))
+* Remove duplicate sc and misplaced containerSecurityContext ([#838](https://github.com/outscale/osc-bsu-csi-driver/pull/838))
+* Fix resize luks volume  ([#839](https://github.com/outscale/osc-bsu-csi-driver/pull/839))
+* Replace deprecated ioutil.TempDir ([#840](https://github.com/outscale/osc-bsu-csi-driver/pull/840))
+* Add kernel Minimum Requirements for XFS Support ([#841](https://github.com/outscale/osc-bsu-csi-driver/pull/841))
+
+
 ## [v1.4.0]
 ### Features
 * Add support for multiple feature-gates arguments for the csi-provisioner([#810](https://github.com/outscale/osc-bsu-csi-driver/pull/810/))

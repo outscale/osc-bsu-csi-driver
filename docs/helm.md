@@ -45,11 +45,15 @@ Kubernetes: `>=1.20`
 | httpsProxy | string | `""` | Value used to create environment variable HTTPS_PROXY |
 | image.pullPolicy | string | `"IfNotPresent"` | Container pull policy |
 | image.repository | string | `"outscale/osc-bsu-csi-driver"` | Container image to use |
-| image.tag | string | `"v1.4.0"` | Container image tag to deploy |
+| image.tag | string | `"v1.4.1"` | Container image tag to deploy |
 | imagePullSecrets | list | `[]` | Specify image pull secrets |
 | maxBsuVolumes | string | `"39"` | Maximum volume to attach to a node (see [Docs](https://docs.outscale.com/en/userguide/About-Volumes.html)) |
 | nameOverride | string | `""` | Override name of the app (instead of `osc-bsu-csi-driver`) |
 | noProxy | string | `""` | Value used to create environment variable NO_PROXY |
+| node.containerSecurityContext.allowPrivilegeEscalation | bool | `true` |  |
+| node.containerSecurityContext.privileged | bool | `true` |  |
+| node.containerSecurityContext.readOnlyRootFilesystem | bool | `false` |  |
+| node.containerSecurityContext.seccompProfile.type | string | `"Unconfined"` |  |
 | node.podAnnotations | object | `{}` | Annotations for controller pod |
 | node.podLabels | object | `{}` | Labels for controller pod |
 | node.tolerations | list | `[]` | Pod tolerations |
@@ -59,8 +63,8 @@ Kubernetes: `>=1.20`
 | region | string | `""` | Region to use, otherwise it will be looked up via metadata. By providing this parameter, the controller will not require to access the metadata. |
 | replicaCount | int | `2` | Number of replicas to deploy |
 | resources | object | `{}` | Specify limits of resources used by the pod |
-| serviceAccount.controller.annotations | object | `{}` | Annotations to add to the Controller ServiceAccount |
-| serviceAccount.snapshot.annotations | object | `{}` | Annotations to add to the Snapshot ServiceAccount |
+| serviceAccount.controller.annotations | object | `{}` |  |
+| serviceAccount.snapshot.annotations | object | `{}` |  |
 | sidecars.attacherImage.additionalArgs | list | `[]` |  |
 | sidecars.attacherImage.additionalClusterRoleRules | string | `nil` |  |
 | sidecars.attacherImage.enableHttpEndpoint | bool | `false` | Enable http endpoint to get metrics of the container |
@@ -68,14 +72,23 @@ Kubernetes: `>=1.20`
 | sidecars.attacherImage.httpEndpointPort | string | `"8090"` | Port of the http endpoint |
 | sidecars.attacherImage.leaderElection | object | `{}` | Customize leaderElection, you can specify `leaseDuration`, `renewDeadline` and/or `retryPeriod`. Each value must be in an acceptable time.ParseDuration format.(Ref: https://pkg.go.dev/flag#Duration) |
 | sidecars.attacherImage.repository | string | `"registry.k8s.io/sig-storage/csi-attacher"` |  |
+| sidecars.attacherImage.securityContext.allowPrivilegeEscalation | bool | `false` |  |
+| sidecars.attacherImage.securityContext.readOnlyRootFilesystem | bool | `true` |  |
+| sidecars.attacherImage.securityContext.seccompProfile.type | string | `"RuntimeDefault"` |  |
 | sidecars.attacherImage.tag | string | `"v4.6.1"` |  |
 | sidecars.livenessProbeImage.port | string | `"9808"` | Port of the liveness of the main container |
 | sidecars.livenessProbeImage.repository | string | `"registry.k8s.io/sig-storage/livenessprobe"` |  |
+| sidecars.livenessProbeImage.securityContext.allowPrivilegeEscalation | bool | `false` |  |
+| sidecars.livenessProbeImage.securityContext.readOnlyRootFilesystem | bool | `true` |  |
+| sidecars.livenessProbeImage.securityContext.seccompProfile.type | string | `"RuntimeDefault"` |  |
 | sidecars.livenessProbeImage.tag | string | `"v2.13.1"` |  |
 | sidecars.nodeDriverRegistrarImage.enableHttpEndpoint | bool | `false` | Enable http endpoint to get metrics of the container |
 | sidecars.nodeDriverRegistrarImage.enableLivenessProbe | bool | `false` | Enable liveness probe for the container |
 | sidecars.nodeDriverRegistrarImage.httpEndpointPort | string | `"8093"` | Port of the http endpoint |
 | sidecars.nodeDriverRegistrarImage.repository | string | `"registry.k8s.io/sig-storage/csi-node-driver-registrar"` |  |
+| sidecars.nodeDriverRegistrarImage.securityContext.allowPrivilegeEscalation | bool | `false` |  |
+| sidecars.nodeDriverRegistrarImage.securityContext.readOnlyRootFilesystem | bool | `true` |  |
+| sidecars.nodeDriverRegistrarImage.securityContext.seccompProfile.type | string | `"RuntimeDefault"` |  |
 | sidecars.nodeDriverRegistrarImage.tag | string | `"v2.11.1"` |  |
 | sidecars.provisionerImage.additionalArgs | list | `[]` |  |
 | sidecars.provisionerImage.additionalClusterRoleRules | string | `nil` |  |
@@ -84,6 +97,9 @@ Kubernetes: `>=1.20`
 | sidecars.provisionerImage.httpEndpointPort | string | `"8089"` | Port of the http endpoint |
 | sidecars.provisionerImage.leaderElection | object | `{}` | Customize leaderElection, you can specify `leaseDuration`, `renewDeadline` and/or `retryPeriod`. Each value must be in an acceptable time.ParseDuration format.(Ref: https://pkg.go.dev/flag#Duration) |
 | sidecars.provisionerImage.repository | string | `"registry.k8s.io/sig-storage/csi-provisioner"` |  |
+| sidecars.provisionerImage.securityContext.allowPrivilegeEscalation | bool | `false` |  |
+| sidecars.provisionerImage.securityContext.readOnlyRootFilesystem | bool | `true` |  |
+| sidecars.provisionerImage.securityContext.seccompProfile.type | string | `"RuntimeDefault"` |  |
 | sidecars.provisionerImage.tag | string | `"v5.0.2"` |  |
 | sidecars.resizerImage.additionalArgs | list | `[]` |  |
 | sidecars.resizerImage.additionalClusterRoleRules | string | `nil` |  |
@@ -92,6 +108,9 @@ Kubernetes: `>=1.20`
 | sidecars.resizerImage.httpEndpointPort | string | `"8092"` | Port of the http endpoint |
 | sidecars.resizerImage.leaderElection | object | `{}` | Customize leaderElection, you can specify `leaseDuration`, `renewDeadline` and/or `retryPeriod`. Each value must be in an acceptable time.ParseDuration format.(Ref: https://pkg.go.dev/flag#Duration) |
 | sidecars.resizerImage.repository | string | `"registry.k8s.io/sig-storage/csi-resizer"` |  |
+| sidecars.resizerImage.securityContext.allowPrivilegeEscalation | bool | `false` |  |
+| sidecars.resizerImage.securityContext.readOnlyRootFilesystem | bool | `true` |  |
+| sidecars.resizerImage.securityContext.seccompProfile.type | string | `"RuntimeDefault"` |  |
 | sidecars.resizerImage.tag | string | `"v1.11.2"` |  |
 | sidecars.snapshotterImage.additionalArgs | list | `[]` |  |
 | sidecars.snapshotterImage.additionalClusterRoleRules | string | `nil` |  |
@@ -100,6 +119,9 @@ Kubernetes: `>=1.20`
 | sidecars.snapshotterImage.httpEndpointPort | string | `"8091"` | Port of the http endpoint |
 | sidecars.snapshotterImage.leaderElection | object | `{}` | Customize leaderElection, you can specify `leaseDuration`, `renewDeadline` and/or `retryPeriod`. Each value must be in an acceptable time.ParseDuration format.(Ref: https://pkg.go.dev/flag#Duration) |
 | sidecars.snapshotterImage.repository | string | `"registry.k8s.io/sig-storage/csi-snapshotter"` |  |
+| sidecars.snapshotterImage.securityContext.allowPrivilegeEscalation | bool | `false` |  |
+| sidecars.snapshotterImage.securityContext.readOnlyRootFilesystem | bool | `true` |  |
+| sidecars.snapshotterImage.securityContext.seccompProfile.type | string | `"RuntimeDefault"` |  |
 | sidecars.snapshotterImage.tag | string | `"v8.0.1"` |  |
 | timeout | string | `"60s"` | Timeout for sidecars |
 | tolerations | list | `[{"key":"CriticalAddonsOnly","operator":"Exists"},{"effect":"NoExecute","operator":"Exists","tolerationSeconds":300}]` | Pod tolerations |

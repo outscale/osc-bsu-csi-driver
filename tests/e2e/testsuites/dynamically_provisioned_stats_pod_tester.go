@@ -15,8 +15,8 @@ limitations under the License.
 package testsuites
 
 import (
-	"context"
 	"bufio"
+	"context"
 	"fmt"
 	"math/big"
 	"regexp"

@@ -19,11 +19,11 @@ package driver
 import (
 	"fmt"
 	"math/rand"
-	"reflect"
 	"strconv"
 	"testing"
 
 	"github.com/outscale-dev/osc-bsu-csi-driver/pkg/cloud"
+	"github.com/stretchr/testify/require"
 )
 
 func randomString(n int) string {
@@ -102,8 +102,10 @@ func TestValidateExtraVolumeTags(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			err := validateExtraVolumeTags(tc.tags)
-			if !reflect.DeepEqual(err, tc.expErr) {
-				t.Fatalf("error not equal\ngot:\n%s\nexpected:\n%s", err, tc.expErr)
+			if tc.expErr == nil {
+				require.NoError(t, err)
+			} else {
+				require.EqualError(t, err, tc.expErr.Error())
 			}
 		})
 	}
@@ -140,8 +142,10 @@ func TestValidateMode(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			err := validateMode(tc.mode)
-			if !reflect.DeepEqual(err, tc.expErr) {
-				t.Fatalf("error not equal\ngot:\n%s\nexpected:\n%s", err, tc.expErr)
+			if tc.expErr == nil {
+				require.NoError(t, err)
+			} else {
+				require.EqualError(t, err, tc.expErr.Error())
 			}
 		})
 	}
@@ -180,8 +184,10 @@ func TestValidateDriverOptions(t *testing.T) {
 				extraVolumeTags: tc.extraVolumeTags,
 				mode:            tc.mode,
 			})
-			if !reflect.DeepEqual(err, tc.expErr) {
-				t.Fatalf("error not equal\ngot:\n%s\nexpected:\n%s", err, tc.expErr)
+			if tc.expErr == nil {
+				require.NoError(t, err)
+			} else {
+				require.EqualError(t, err, tc.expErr.Error())
 			}
 		})
 	}

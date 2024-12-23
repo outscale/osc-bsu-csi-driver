@@ -17,109 +17,77 @@ limitations under the License.
 package driver
 
 import (
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestMakeDir(t *testing.T) {
 	// Setup the full driver and its environment
-	dir, err :=os.MkdirTemp("", "mount-bsu-csi")
-	if err != nil {
-		t.Fatalf("error creating directory %v", err)
-	}
-	defer os.RemoveAll(dir)
+	dir, err := os.MkdirTemp(t.TempDir(), "mount-bsu-csi")
+	require.NoError(t, err)
 
 	targetPath := filepath.Join(dir, "targetdir")
 
-	var (
-		mountObj = newNodeMounter()
-	)
+	mountObj := newNodeMounter()
 
-	if mountObj.MakeDir(targetPath) != nil {
-		t.Fatalf("Expect no error but got: %v", err)
-	}
+	err = mountObj.MakeDir(targetPath)
+	require.NoError(t, err)
 
-	if mountObj.MakeDir(targetPath) != nil {
-		t.Fatalf("Expect no error but got: %v", err)
-	}
+	err = mountObj.MakeDir(targetPath)
+	require.NoError(t, err)
 
-	if exists, err := mountObj.ExistsPath(targetPath); !exists {
-		t.Fatalf("Expect no error but got: %v", err)
-	}
+	exists, err := mountObj.ExistsPath(targetPath)
+	require.NoError(t, err)
+	assert.True(t, exists, "The directory must have been created")
 }
 
 func TestMakeFile(t *testing.T) {
 	// Setup the full driver and its environment
-	dir, err :=os.MkdirTemp("", "mount-bsu-csi")
-	if err != nil {
-		t.Fatalf("error creating directory %v", err)
-	}
-	defer os.RemoveAll(dir)
+	dir, err := os.MkdirTemp(t.TempDir(), "mount-bsu-csi")
+	require.NoError(t, err)
 
 	targetPath := filepath.Join(dir, "targetfile")
 
-	var (
-		mountObj = newNodeMounter()
-	)
+	mountObj := newNodeMounter()
 
-	if mountObj.MakeFile(targetPath) != nil {
-		t.Fatalf("Expect no error but got: %v", err)
-	}
+	err = mountObj.MakeFile(targetPath)
+	require.NoError(t, err)
 
-	if mountObj.MakeFile(targetPath) != nil {
-		t.Fatalf("Expect no error but got: %v", err)
-	}
+	err = mountObj.MakeFile(targetPath)
+	require.NoError(t, err)
 
-	if exists, err := mountObj.ExistsPath(targetPath); !exists {
-		t.Fatalf("Expect no error but got: %v", err)
-	}
-
+	exists, err := mountObj.ExistsPath(targetPath)
+	require.NoError(t, err)
+	assert.True(t, exists, "The file must have been created")
 }
 
 func TestExistsPath(t *testing.T) {
 	// Setup the full driver and its environment
-	dir, err :=os.MkdirTemp("", "mount-bsu-csi")
-	if err != nil {
-		t.Fatalf("error creating directory %v", err)
-	}
-	defer os.RemoveAll(dir)
+	dir, err := os.MkdirTemp(t.TempDir(), "mount-bsu-csi")
+	require.NoError(t, err)
 
 	targetPath := filepath.Join(dir, "notafile")
 
-	var (
-		mountObj = newNodeMounter()
-	)
+	mountObj := newNodeMounter()
 
 	exists, err := mountObj.ExistsPath(targetPath)
-
-	if err != nil {
-		t.Fatalf("Expect no error but got: %v", err)
-	}
-
-	if exists {
-		t.Fatalf("Expected file %s to not exist", targetPath)
-	}
-
+	require.NoError(t, err)
+	assert.False(t, exists, "The path must not exist")
 }
 
 func TestGetDeviceName(t *testing.T) {
 	// Setup the full driver and its environment
-	dir, err :=os.MkdirTemp("", "mount-bsu-csi")
-	if err != nil {
-		t.Fatalf("error creating directory %v", err)
-	}
-	defer os.RemoveAll(dir)
+	dir, err := os.MkdirTemp(t.TempDir(), "mount-bsu-csi")
+	require.NoError(t, err)
 
 	targetPath := filepath.Join(dir, "notafile")
 
-	var (
-		mountObj = newNodeMounter()
-	)
+	mountObj := newNodeMounter()
 
-	if _, _, err := mountObj.GetDeviceName(targetPath); err != nil {
-		t.Fatalf("Expect no error but got: %v", err)
-	}
-
+	_, _, err = mountObj.GetDeviceName(targetPath)
+	require.NoError(t, err)
 }

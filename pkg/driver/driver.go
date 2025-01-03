@@ -17,9 +17,7 @@ limitations under the License.
 package driver
 
 import (
-	"context"
 	"fmt"
-	"log"
 	"net"
 
 	csi "github.com/container-storage-interface/spec/lib/go/csi"
@@ -61,8 +59,6 @@ type DriverOptions struct {
 }
 
 func NewDriver(options ...func(*DriverOptions)) (*Driver, error) {
-	klog.Infof("Driver: %v Version: %v", DriverName, util.GetVersion().DriverVersion)
-
 	driverOptions := DriverOptions{
 		endpoint: DefaultCSIEndpoint,
 		mode:     AllMode,
@@ -95,27 +91,19 @@ func NewDriver(options ...func(*DriverOptions)) (*Driver, error) {
 }
 
 func (d *Driver) Run() error {
-	log.Printf("Driver: %+v", d)
-	log.Printf("endpoint: %s", d.options.endpoint)
+	version := util.GetVersion().DriverVersion
+	klog.V(1).Infof("Driver: %v Version: %v", DriverName, version)
 	scheme, addr, err := util.ParseEndpoint(d.options.endpoint)
 	if err != nil {
 		return err
 	}
-	log.Printf("scheme addr: %+v %+v", scheme, addr)
 	listener, err := net.Listen(scheme, addr)
 	if err != nil {
 		return err
 	}
 
-	logErr := func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
-		resp, err := handler(ctx, req)
-		if err != nil {
-			klog.Errorf("GRPC error: %v / (%v)", err, resp)
-		}
-		return resp, err
-	}
 	opts := []grpc.ServerOption{
-		grpc.UnaryInterceptor(logErr),
+		grpc.UnaryInterceptor(LoggingInterceptor(version)),
 	}
 	d.srv = grpc.NewServer(opts...)
 
@@ -133,12 +121,12 @@ func (d *Driver) Run() error {
 		return fmt.Errorf("unknown mode: %s", d.options.mode)
 	}
 
-	klog.Infof("Listening for connections on address: %#v", listener.Addr())
+	klog.V(1).Infof("Listening for connections on address: %v", listener.Addr())
 	return d.srv.Serve(listener)
 }
 
 func (d *Driver) Stop() {
-	klog.Infof("Stopping server")
+	klog.V(0).Infof("Stopping server")
 	d.srv.Stop()
 }
 

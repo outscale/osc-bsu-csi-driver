@@ -150,7 +150,6 @@ func EnvBackoff() wait.Backoff {
 	if err != nil {
 		steps = 13
 	}
-	fmt.Printf("Debug Returning backoff with params: duration(%v), factor(%v), steps(%v) \n", duration, factor, steps)
 	return wait.Backoff{
 		Duration: time.Duration(duration) * time.Second,
 		Factor:   factor,

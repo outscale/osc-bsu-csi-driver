@@ -18,13 +18,11 @@ package cloud
 
 import (
 	"fmt"
-	"log"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/ec2metadata"
 	"github.com/aws/aws-sdk-go/aws/endpoints"
 	"github.com/aws/aws-sdk-go/aws/session"
-
 	"github.com/outscale-dev/osc-bsu-csi-driver/pkg/util"
 )
 
@@ -81,7 +79,6 @@ func NewMetadata() (MetadataService, error) {
 
 // NewMetadataService returns a new MetadataServiceImplementation.
 func NewMetadataService(svc EC2Metadata) (MetadataService, error) {
-
 	if !svc.Available() {
 		return nil, fmt.Errorf("EC2 instance metadata is not available")
 	}
@@ -100,7 +97,6 @@ func NewMetadataService(svc EC2Metadata) (MetadataService, error) {
 		return nil, fmt.Errorf("could not get valid EC2 availavility zone")
 	}
 	region := availabilityZone[0 : len(availabilityZone)-1]
-	log.Println("region : ", region)
 	if len(region) == 0 {
 		return nil, fmt.Errorf("could not get valid EC2 region")
 	}

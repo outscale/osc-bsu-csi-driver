@@ -16,6 +16,7 @@ package e2e
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"math/rand"
@@ -581,7 +582,7 @@ var _ = Describe("[bsu-csi-e2e] [single-az] Dynamic Provisioning", func() {
 		pv := tpvc.GetPersistentVolume()
 		for i := 1; i < 100; i++ {
 			_, err := oscCloud.DeleteDisk(context.Background(), pv.Spec.CSI.VolumeHandle)
-			if err == cloud.ErrNotFound {
+			if errors.Is(err, cloud.ErrNotFound) {
 				break
 			}
 			fmt.Println("Disk still present, waiting")
@@ -696,7 +697,7 @@ var _ = Describe("[bsu-csi-e2e] [single-az] Snapshot", func() {
 		By("Keep deleting the snapshot until error")
 		for i := 1; i < 100; i++ {
 			_, err := oscCloud.DeleteSnapshot(context.Background(), snap.SnapshotID)
-			if err == cloud.ErrNotFound {
+			if errors.Is(err, cloud.ErrNotFound) {
 				break
 			}
 			fmt.Println("Snapshot still present, waiting")

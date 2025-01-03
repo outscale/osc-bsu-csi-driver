@@ -3,7 +3,6 @@ package driver
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
 	"math/rand"
 	"os"
 	"path/filepath"
@@ -15,6 +14,7 @@ import (
 	"github.com/outscale-dev/osc-bsu-csi-driver/pkg/driver/internal"
 	"github.com/outscale-dev/osc-bsu-csi-driver/pkg/driver/luks"
 	"github.com/outscale-dev/osc-bsu-csi-driver/pkg/util"
+	"github.com/stretchr/testify/require"
 	"k8s.io/utils/exec"
 	exectesting "k8s.io/utils/exec/testing"
 	"k8s.io/utils/mount"
@@ -22,11 +22,8 @@ import (
 
 func TestSanity(t *testing.T) {
 	// Setup the full driver and its environment
-	dir, err :=os.MkdirTemp("", "sanity-bsu-csi")
-	if err != nil {
-		t.Fatalf("error creating directory %v", err)
-	}
-	defer os.RemoveAll(dir)
+	dir, err := os.MkdirTemp(t.TempDir(), "sanity-bsu-csi")
+	require.NoError(t, err)
 
 	targetPath := filepath.Join(dir, "target")
 	stagingPath := filepath.Join(dir, "staging")

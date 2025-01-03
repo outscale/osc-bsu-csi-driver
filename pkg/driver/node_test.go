@@ -21,7 +21,6 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"reflect"
 	"testing"
 
 	"github.com/container-storage-interface/spec/lib/go/csi"
@@ -30,6 +29,7 @@ import (
 	"github.com/outscale-dev/osc-bsu-csi-driver/pkg/driver/luks"
 	"github.com/outscale-dev/osc-bsu-csi-driver/pkg/driver/mocks"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	exec "k8s.io/utils/exec"
@@ -90,9 +90,7 @@ func TestNodeStageVolume(t *testing.T) {
 				mockMounter.EXPECT().GetDiskFormat(devicePath).Return("", nil)
 				mockMounter.EXPECT().FormatAndMount(gomock.Eq(devicePath), gomock.Eq(targetPath), gomock.Eq(FSTypeExt4), gomock.Any())
 				_, err := oscDriver.NodeStageVolume(context.TODO(), req)
-				if err != nil {
-					t.Fatalf("Expect no error but got: %v", err)
-				}
+				require.NoError(t, err)
 			},
 		},
 		{
@@ -125,9 +123,7 @@ func TestNodeStageVolume(t *testing.T) {
 				}
 
 				_, err := oscDriver.NodeStageVolume(context.TODO(), req)
-				if err != nil {
-					t.Fatalf("Expect no error but got: %v", err)
-				}
+				require.NoError(t, err)
 			},
 		},
 		{
@@ -172,10 +168,7 @@ func TestNodeStageVolume(t *testing.T) {
 				mockMounter.EXPECT().Command(gomock.Eq("mkfs.xfs"), gomock.Eq(devicePath)).Return(exec.New().Command("mkfs"))
 				mockMounter.EXPECT().FormatAndMount(gomock.Eq(devicePath), gomock.Eq(targetPath), gomock.Eq(FSTypeXfs), gomock.Eq([]string{"dirsync", "noexec"}))
 				_, err := oscDriver.NodeStageVolume(context.TODO(), req)
-				if err != nil {
-					t.Fatalf("Expect no error but got: %v", err)
-				}
-
+				require.NoError(t, err)
 			},
 		},
 		{
@@ -219,9 +212,7 @@ func TestNodeStageVolume(t *testing.T) {
 				mockMounter.EXPECT().GetDiskFormat(devicePath).Return("", nil)
 				mockMounter.EXPECT().FormatAndMount(gomock.Eq(devicePath), gomock.Eq(targetPath), gomock.Eq(FSTypeExt3), gomock.Any())
 				_, err := oscDriver.NodeStageVolume(context.TODO(), req)
-				if err != nil {
-					t.Fatalf("Expect no error but got: %v", err)
-				}
+				require.NoError(t, err)
 			},
 		},
 		{
@@ -266,9 +257,7 @@ func TestNodeStageVolume(t *testing.T) {
 				mockMounter.EXPECT().Command(gomock.Eq("mkfs.xfs"), gomock.Eq(devicePath)).Return(exec.New().Command("mkfs"))
 				mockMounter.EXPECT().FormatAndMount(gomock.Eq(devicePath), gomock.Eq(targetPath), gomock.Eq(FSTypeXfs), gomock.Any())
 				_, err := oscDriver.NodeStageVolume(context.TODO(), req)
-				if err != nil {
-					t.Fatalf("Expect no error but got: %v", err)
-				}
+				require.NoError(t, err)
 			},
 		},
 		{
@@ -293,10 +282,6 @@ func TestNodeStageVolume(t *testing.T) {
 				}
 
 				_, err := oscDriver.NodeStageVolume(context.TODO(), req)
-				if err == nil {
-					t.Fatalf("Expect error but got no error")
-				}
-
 				expectErr(t, err, codes.InvalidArgument)
 			},
 		},
@@ -327,10 +312,6 @@ func TestNodeStageVolume(t *testing.T) {
 				}
 
 				_, err := oscDriver.NodeStageVolume(context.TODO(), req)
-				if err == nil {
-					t.Fatalf("Expect error but got no error")
-				}
-
 				expectErr(t, err, codes.InvalidArgument)
 			},
 		},
@@ -357,10 +338,6 @@ func TestNodeStageVolume(t *testing.T) {
 				}
 
 				_, err := oscDriver.NodeStageVolume(context.TODO(), req)
-				if err == nil {
-					t.Fatalf("Expect error but got no error")
-				}
-
 				expectErr(t, err, codes.InvalidArgument)
 			},
 		},
@@ -385,10 +362,6 @@ func TestNodeStageVolume(t *testing.T) {
 					VolumeId:          "vol-test",
 				}
 				_, err := oscDriver.NodeStageVolume(context.TODO(), req)
-				if err == nil {
-					t.Fatalf("Expect error but got no error")
-				}
-
 				expectErr(t, err, codes.InvalidArgument)
 			},
 		},
@@ -418,10 +391,6 @@ func TestNodeStageVolume(t *testing.T) {
 					VolumeId: "vol-test",
 				}
 				_, err := oscDriver.NodeStageVolume(context.TODO(), req)
-				if err == nil {
-					t.Fatalf("Expect error but got no error")
-				}
-
 				expectErr(t, err, codes.InvalidArgument)
 			},
 		},
@@ -446,12 +415,7 @@ func TestNodeStageVolume(t *testing.T) {
 					VolumeId:          "vol-test",
 				}
 				_, err := oscDriver.NodeStageVolume(context.TODO(), req)
-				if err == nil {
-					t.Fatalf("Expect error but got no error")
-				}
-
 				expectErr(t, err, codes.InvalidArgument)
-
 			},
 		},
 		{
@@ -484,9 +448,7 @@ func TestNodeStageVolume(t *testing.T) {
 				mockMounter.EXPECT().MakeDir(targetPath).Return(nil)
 				mockMounter.EXPECT().GetDeviceName(targetPath).Return(devicePath, 1, nil)
 				_, err := oscDriver.NodeStageVolume(context.TODO(), req)
-				if err != nil {
-					t.Fatalf("Expect no error but got: %v", err)
-				}
+				require.NoError(t, err)
 			},
 		},
 		{
@@ -530,9 +492,7 @@ func TestNodeStageVolume(t *testing.T) {
 				mockMounter.EXPECT().GetDiskFormat(gomock.Eq(devicePath)).Return("ext4", nil)
 				mockMounter.EXPECT().FormatAndMount(gomock.Eq(devicePath), gomock.Eq(targetPath), gomock.Eq(FSTypeExt4), gomock.Any())
 				_, err := oscDriver.NodeStageVolume(context.TODO(), req)
-				if err != nil {
-					t.Fatalf("Expect no error but got: %v", err)
-				}
+				require.NoError(t, err)
 			},
 		},
 		{
@@ -589,9 +549,7 @@ func TestNodeStageVolume(t *testing.T) {
 				mockMounter.EXPECT().GetDiskFormat(gomock.Eq(encryptedDevicePath)).Return(defaultFsType, nil)
 				mockMounter.EXPECT().FormatAndMount(gomock.Eq(encryptedDevicePath), gomock.Eq(targetPath), gomock.Eq(defaultFsType), gomock.Any())
 				_, err := oscDriver.NodeStageVolume(context.TODO(), req)
-				if err != nil {
-					t.Fatalf("Expect no error but got: %v", err)
-				}
+				require.NoError(t, err)
 			},
 		},
 		{
@@ -651,9 +609,7 @@ func TestNodeStageVolume(t *testing.T) {
 				mockMounter.EXPECT().GetDiskFormat(gomock.Eq(encryptedDevicePath)).Return(defaultFsType, nil)
 				mockMounter.EXPECT().FormatAndMount(gomock.Eq(encryptedDevicePath), gomock.Eq(targetPath), gomock.Eq(defaultFsType), gomock.Any())
 				_, err := oscDriver.NodeStageVolume(context.TODO(), req)
-				if err != nil {
-					t.Fatalf("Expect no error but got: %v", err)
-				}
+				require.NoError(t, err)
 			},
 		},
 		{
@@ -700,9 +656,7 @@ func TestNodeStageVolume(t *testing.T) {
 				mockMounter.EXPECT().GetDeviceName(targetPath).Return("", 1, nil)
 				// Check Luks
 				_, err := oscDriver.NodeStageVolume(context.TODO(), req)
-				if err == nil {
-					t.Fatalf("Expect an error but got nothing")
-				}
+				require.Error(t, err)
 			},
 		},
 		{
@@ -758,9 +712,7 @@ func TestNodeStageVolume(t *testing.T) {
 				mockMounter.EXPECT().GetDiskFormat(gomock.Eq(encryptedDevicePath)).Return(defaultFsType, nil)
 				mockMounter.EXPECT().FormatAndMount(gomock.Eq(encryptedDevicePath), gomock.Eq(targetPath), gomock.Eq(defaultFsType), gomock.Any())
 				_, err := oscDriver.NodeStageVolume(context.TODO(), req)
-				if err != nil {
-					t.Fatalf("Expect no error but got: %v", err)
-				}
+				require.NoError(t, err)
 			},
 		},
 	}
@@ -804,9 +756,7 @@ func TestNodeUnstageVolume(t *testing.T) {
 				}
 
 				_, err := oscDriver.NodeUnstageVolume(context.TODO(), req)
-				if err != nil {
-					t.Fatalf("Expect no error but got: %v", err)
-				}
+				require.NoError(t, err)
 			},
 		},
 		{
@@ -831,9 +781,7 @@ func TestNodeUnstageVolume(t *testing.T) {
 					VolumeId:          "vol-test",
 				}
 				_, err := oscDriver.NodeUnstageVolume(context.TODO(), req)
-				if err != nil {
-					t.Fatalf("Expect no error but got: %v", err)
-				}
+				require.NoError(t, err)
 			},
 		},
 		{
@@ -861,9 +809,7 @@ func TestNodeUnstageVolume(t *testing.T) {
 				}
 
 				_, err := oscDriver.NodeUnstageVolume(context.TODO(), req)
-				if err != nil {
-					t.Fatalf("Expect no error but got: %v", err)
-				}
+				require.NoError(t, err)
 			},
 		},
 		{
@@ -962,9 +908,7 @@ func TestNodeUnstageVolume(t *testing.T) {
 				}
 
 				_, err := oscDriver.NodeUnstageVolume(context.TODO(), req)
-				if err != nil {
-					t.Fatalf("Expect no error but got: %v", err)
-				}
+				require.NoError(t, err)
 			},
 		},
 	}
@@ -1018,9 +962,7 @@ func TestNodePublishVolume(t *testing.T) {
 				}
 
 				_, err := oscDriver.NodePublishVolume(context.TODO(), req)
-				if err != nil {
-					t.Fatalf("Expect no error but got: %v", err)
-				}
+				require.NoError(t, err)
 			},
 		},
 		{
@@ -1050,9 +992,7 @@ func TestNodePublishVolume(t *testing.T) {
 				}
 
 				_, err := oscDriver.NodePublishVolume(context.TODO(), req)
-				if err != nil {
-					t.Fatalf("Expect no error but got: %v", err)
-				}
+				require.NoError(t, err)
 			},
 		},
 		{
@@ -1092,9 +1032,7 @@ func TestNodePublishVolume(t *testing.T) {
 				}
 
 				_, err := oscDriver.NodePublishVolume(context.TODO(), req)
-				if err != nil {
-					t.Fatalf("Expect no error but got: %v", err)
-				}
+				require.NoError(t, err)
 			},
 		},
 		{
@@ -1126,9 +1064,7 @@ func TestNodePublishVolume(t *testing.T) {
 				}
 
 				_, err := oscDriver.NodePublishVolume(context.TODO(), req)
-				if err != nil {
-					t.Fatalf("Expect no error but got: %v", err)
-				}
+				require.NoError(t, err)
 			},
 		},
 		{
@@ -1172,9 +1108,7 @@ func TestNodePublishVolume(t *testing.T) {
 				}
 
 				_, err := oscDriver.NodePublishVolume(context.TODO(), req)
-				if err != nil {
-					t.Fatalf("Expect no error but got: %v", err)
-				}
+				require.NoError(t, err)
 			},
 		},
 		{
@@ -1217,9 +1151,7 @@ func TestNodePublishVolume(t *testing.T) {
 				}
 
 				_, err := oscDriver.NodePublishVolume(context.TODO(), req)
-				if err != nil {
-					t.Fatalf("Expect no error but got: %v", err)
-				}
+				require.NoError(t, err)
 			},
 		},
 		{
@@ -1253,7 +1185,6 @@ func TestNodePublishVolume(t *testing.T) {
 
 				_, err := oscDriver.NodePublishVolume(context.TODO(), req)
 				expectErr(t, err, codes.InvalidArgument)
-
 			},
 		},
 		{
@@ -1290,7 +1221,6 @@ func TestNodePublishVolume(t *testing.T) {
 
 				_, err := oscDriver.NodePublishVolume(context.TODO(), req)
 				expectErr(t, err, codes.Internal)
-
 			},
 		},
 		{
@@ -1317,7 +1247,6 @@ func TestNodePublishVolume(t *testing.T) {
 
 				_, err := oscDriver.NodePublishVolume(context.TODO(), req)
 				expectErr(t, err, codes.InvalidArgument)
-
 			},
 		},
 		{
@@ -1344,7 +1273,6 @@ func TestNodePublishVolume(t *testing.T) {
 
 				_, err := oscDriver.NodePublishVolume(context.TODO(), req)
 				expectErr(t, err, codes.InvalidArgument)
-
 			},
 		},
 		{
@@ -1371,7 +1299,6 @@ func TestNodePublishVolume(t *testing.T) {
 
 				_, err := oscDriver.NodePublishVolume(context.TODO(), req)
 				expectErr(t, err, codes.InvalidArgument)
-
 			},
 		},
 		{
@@ -1397,7 +1324,6 @@ func TestNodePublishVolume(t *testing.T) {
 				}
 				_, err := oscDriver.NodePublishVolume(context.TODO(), req)
 				expectErr(t, err, codes.InvalidArgument)
-
 			},
 		},
 		{
@@ -1429,7 +1355,6 @@ func TestNodePublishVolume(t *testing.T) {
 
 				_, err := oscDriver.NodePublishVolume(context.TODO(), req)
 				expectErr(t, err, codes.InvalidArgument)
-
 			},
 		},
 	}
@@ -1469,9 +1394,7 @@ func TestNodeUnpublishVolume(t *testing.T) {
 				mockMounter.EXPECT().IsLikelyNotMountPoint(gomock.Eq(targetPath)).Return(false, nil)
 				mockMounter.EXPECT().Unmount(gomock.Eq(targetPath)).Return(nil)
 				_, err := oscDriver.NodeUnpublishVolume(context.TODO(), req)
-				if err != nil {
-					t.Fatalf("Expect no error but got: %v", err)
-				}
+				require.NoError(t, err)
 			},
 		},
 		{
@@ -1496,9 +1419,7 @@ func TestNodeUnpublishVolume(t *testing.T) {
 
 				mockMounter.EXPECT().IsLikelyNotMountPoint(gomock.Eq(targetPath)).Return(true, nil)
 				_, err := oscDriver.NodeUnpublishVolume(context.TODO(), req)
-				if err != nil {
-					t.Fatalf("Expect no error but got: %v", err)
-				}
+				require.NoError(t, err)
 			},
 		},
 		{
@@ -1567,12 +1488,9 @@ func TestNodeGetVolumeStats(t *testing.T) {
 
 				mockMetadata := mocks.NewMockMetadataService(mockCtl)
 				mockMounter := mocks.NewMockMounter(mockCtl)
-				VolumePath := "./test"
+				VolumePath := t.TempDir()
 				err := os.MkdirAll(VolumePath, 0644)
-				if err != nil {
-					t.Fatalf("fail to create dir: %v", err)
-				}
-				defer os.RemoveAll(VolumePath)
+				require.NoError(t, err)
 
 				mockMounter.EXPECT().ExistsPath(VolumePath).Return(true, nil)
 
@@ -1587,9 +1505,7 @@ func TestNodeGetVolumeStats(t *testing.T) {
 					VolumePath: VolumePath,
 				}
 				_, err = oscDriver.NodeGetVolumeStats(context.TODO(), req)
-				if err != nil {
-					t.Fatalf("Expect no error but got: %v", err)
-				}
+				require.NoError(t, err)
 			},
 		},
 		{
@@ -1714,20 +1630,10 @@ func TestNodeGetCapabilities(t *testing.T) {
 			},
 		},
 	}
-	expResp := &csi.NodeGetCapabilitiesResponse{Capabilities: caps}
-
 	req := &csi.NodeGetCapabilitiesRequest{}
 	resp, err := oscDriver.NodeGetCapabilities(context.TODO(), req)
-	if err != nil {
-		srvErr, ok := status.FromError(err)
-		if !ok {
-			t.Fatalf("Could not get error status code from error: %v", srvErr)
-		}
-		t.Fatalf("Expected nil error, got %d message %s", srvErr.Code(), srvErr.Message())
-	}
-	if !reflect.DeepEqual(expResp, resp) {
-		t.Fatalf("Expected response {%+v}, got {%+v}", expResp, resp)
-	}
+	require.NoError(t, err)
+	assert.Equal(t, &csi.NodeGetCapabilitiesResponse{Capabilities: caps}, resp)
 }
 
 func TestNodeGetInfo(t *testing.T) {
@@ -1771,26 +1677,14 @@ func TestNodeGetInfo(t *testing.T) {
 			}
 
 			resp, err := oscDriver.NodeGetInfo(context.TODO(), &csi.NodeGetInfoRequest{})
-			if err != nil {
-				srvErr, ok := status.FromError(err)
-				if !ok {
-					t.Fatalf("Could not get error status code from error: %v", srvErr)
-				}
-				t.Fatalf("Expected nil error, got %d message %s", srvErr.Code(), srvErr.Message())
-			}
+			require.NoError(t, err)
 
-			if resp.GetNodeId() != tc.instanceID {
-				t.Fatalf("Expected node ID %q, got %q", tc.instanceID, resp.GetNodeId())
-			}
+			assert.Equal(t, tc.instanceID, resp.GetNodeId(), "Invalid node ID")
 
 			at := resp.GetAccessibleTopology()
-			if at.Segments[TopologyKey] != tc.availabilityZone {
-				t.Fatalf("Expected topology %q, got %q", tc.availabilityZone, at.Segments[TopologyKey])
-			}
+			assert.Equal(t, tc.availabilityZone, at.Segments[TopologyKey], "Invalid topology")
 
-			if resp.GetMaxVolumesPerNode() != tc.expMaxVolumes {
-				t.Fatalf("Expected %d max volumes per node, got %d", tc.expMaxVolumes, resp.GetMaxVolumesPerNode())
-			}
+			assert.Equal(t, tc.expMaxVolumes, resp.GetMaxVolumesPerNode(), "Invalid max volumes per node")
 		})
 	}
 }
@@ -1824,8 +1718,8 @@ func TestFindScsiName(t *testing.T) {
 	for _, fsnc := range findScsiNameCase {
 		t.Run(fsnc.name, func(t *testing.T) {
 			scsiName, err := findScsiName(fsnc.devicePath)
-			if err != nil {
-				assert.Equal(t, fsnc.expTestFindScsiName.Error(), err.Error())
+			if fsnc.expTestFindScsiName != nil {
+				assert.EqualError(t, err, fsnc.expTestFindScsiName.Error())
 			} else {
 				assert.Equal(t, fsnc.scsiName, scsiName)
 			}
@@ -1834,16 +1728,10 @@ func TestFindScsiName(t *testing.T) {
 }
 
 func expectErr(t *testing.T, actualErr error, expectedCode codes.Code) {
-	if actualErr == nil {
-		t.Fatalf("Expect error but got no error")
-	}
+	require.Error(t, actualErr)
 
 	status, ok := status.FromError(actualErr)
-	if !ok {
-		t.Fatalf("Failed to get error status code from error: %v", actualErr)
-	}
+	require.True(t, ok)
 
-	if status.Code() != expectedCode {
-		t.Fatalf("Expected error code %d, got %d message %s", codes.InvalidArgument, status.Code(), status.Message())
-	}
+	assert.Equal(t, expectedCode, status.Code())
 }

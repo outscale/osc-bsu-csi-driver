@@ -1,5 +1,5 @@
 # Release Process
-1. Update `CHANGELOG-0.x.md`
+1. Update `CHANGELOG-1.x.md`
 2. Update chart version (if necessary) in `osc-bsu-csi-driver/Chart.yaml` and driver version in  `osc-bsu-csi-driver/values.yaml`
 3. Update `docs/README.md`
  - Update the version of the plugin

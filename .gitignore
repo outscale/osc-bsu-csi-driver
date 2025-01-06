@@ -26,6 +26,9 @@ vendor/
 # IntelliJ
 .idea/
 
+# VS Code
+.vscode/
+
 # environment
 .trivyscan
 .env

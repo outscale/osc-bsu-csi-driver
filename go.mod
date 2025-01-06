@@ -44,6 +44,7 @@ require (
 	github.com/onsi/ginkgo/v2 v2.20.1
 	github.com/onsi/gomega v1.34.1
 	github.com/outscale/osc-sdk-go/v2 v2.21.0
+	github.com/rs/xid v1.6.0
 	github.com/stretchr/testify v1.10.0
 	golang.org/x/sys v0.23.0
 	google.golang.org/grpc v1.66.2

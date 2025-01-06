@@ -41,6 +41,7 @@ type Device struct {
 func (d *Device) Release(force bool) {
 	if !d.isTainted || force {
 		if err := d.releaseFunc(); err != nil {
+			// FIXME: low level function should never log
 			klog.Errorf("Error releasing device: %v", err)
 		}
 	}

@@ -106,7 +106,7 @@ func TestCreateDisk(t *testing.T) {
 				Tags:             map[string]string{VolumeNameTagKey: "vol-test"},
 				AvailabilityZone: expZone,
 			},
-			expErr:             fmt.Errorf("could not create volume in Outscale: CreateVolume generic error"),
+			expErr:             fmt.Errorf("could not create volume: CreateVolume generic error"),
 			expCreateVolumeErr: fmt.Errorf("CreateVolume generic error"),
 		},
 		{
@@ -118,7 +118,7 @@ func TestCreateDisk(t *testing.T) {
 				Tags:             map[string]string{VolumeNameTagKey: "vol-test"},
 				AvailabilityZone: expZone,
 			},
-			expErr:             fmt.Errorf("could not create volume in Outscale: DescribeVolumes generic error"),
+			expErr:             fmt.Errorf("could not create volume: DescribeVolumes generic error"),
 			expCreateVolumeErr: fmt.Errorf("DescribeVolumes generic error"),
 		},
 		{
@@ -130,7 +130,7 @@ func TestCreateDisk(t *testing.T) {
 				Tags:             map[string]string{VolumeNameTagKey: "vol-test"},
 				AvailabilityZone: expZone,
 			},
-			expErr: fmt.Errorf("failed to get an available volume in Outscale: timed out waiting for the condition"),
+			expErr: fmt.Errorf("unable to fetch newly created volume: timed out waiting for the condition"),
 		},
 		{
 			name:       "success: normal from snapshot",

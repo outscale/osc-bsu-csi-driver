@@ -83,7 +83,7 @@ func GetOptions(fs *flag.FlagSet) *Options {
 			args = os.Args[1:]
 
 		default:
-			fmt.Printf("unknown command: %s: expected %q, %q or %q", cmd, driver.ControllerMode, driver.NodeMode, driver.AllMode)
+			klog.V(0).Info(fmt.Sprintf("unknown command: %s: expected %q, %q or %q", cmd, driver.ControllerMode, driver.NodeMode, driver.AllMode))
 			os.Exit(1)
 		}
 	}

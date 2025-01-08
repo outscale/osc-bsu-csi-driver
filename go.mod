@@ -36,7 +36,7 @@ replace (
 )
 
 require (
-	github.com/aws/aws-sdk-go v1.44.203
+	github.com/aws/aws-sdk-go v1.55.5
 	github.com/container-storage-interface/spec v1.8.0
 	github.com/golang/mock v1.6.0
 	github.com/kubernetes-csi/csi-test/v5 v5.1.0

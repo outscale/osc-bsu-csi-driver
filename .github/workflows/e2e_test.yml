@@ -8,17 +8,6 @@ on:
     paths:
       - "**.go"
       - "Dockerfile"
-      - ".trivyignore"
-      - "Makefile"
-      - "go.*"
-      - "osc-bsu-csi-driver/**.yaml"
-      - ".github/workflows/e2e_test.yml"
-  push:
-    branches: [ OSC-MIGRATION, master ]
-    paths:
-      - "**.go"
-      - "Dockerfile"
-      - ".trivyignore"
       - "Makefile"
       - "go.*"
       - "osc-bsu-csi-driver/**.yaml"
@@ -30,29 +19,25 @@ jobs:
     runs-on: [self-hosted, linux]
     steps:
     # Retrieve the code from the repo (UNSAFE)
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
+    - uses: actions/checkout@v4
       with:
-          repository: ${{ github.event.pull_request.head.repo.full_name }}
-          ref: ${{ github.event.pull_request.head.ref }}
-    - uses: actions/checkout@v2
-      with:
-        repository: 'outscale-dev/osc-k8s-rke-cluster'
+        repository: 'outscale/osc-k8s-rke-cluster'
         path: "set-up-rke-cluster"
-    - uses: azure/setup-kubectl@v3.0
-    - uses: azure/setup-helm@v3
+    - uses: azure/setup-kubectl@v4
+    - uses: azure/setup-helm@v4
       with:
-        version: v3.16.1
-    - uses: actions/setup-go@v3
+        version: v3.16.2
+    - uses: actions/setup-go@v5
       with:
         go-version-file: 'go.mod'
-        cache: true
-    - uses: outscale-dev/frieza-github-actions/frieza-clean@master
+    - uses: outscale/frieza-github-actions/frieza-clean@master
       with:
         access_key: ${{ secrets.OSC_ACCESS_KEY }}
         secret_key: ${{ secrets.OSC_SECRET_KEY }}
         region: ${{ secrets.OSC_REGION }}
     - name: Deploy Cluster
-      uses: outscale-dev/osc-k8s-rke-cluster/github_actions/deploy_cluster@master
+      uses: outscale/osc-k8s-rke-cluster/github_actions/deploy_cluster@master
       with:
         repository_folder: "set-up-rke-cluster"
         osc_access_key: ${{ secrets.OSC_ACCESS_KEY }}
@@ -62,7 +47,7 @@ jobs:
         rke_version: "v1.6.0"
         kubernetes_version: "v1.30.2-rancher1-1"
     - name: Wait to access the cluster
-      uses: nick-invision/retry@v2
+      uses: nick-invision/retry@v3
       with:
         timeout_seconds: 60
         max_attempts: 10
@@ -85,7 +70,7 @@ jobs:
         REGISTRY_IMAGE: localhost:4242/csi
         IMAGE_TAG: ${{ github.sha }}
         REGISTRY_TAG: ${{ github.sha }}
-    - name: Retrieve NodePort Ip and NodePort
+    - name: Retrieve NodePort ip/port
       run: |
         echo nodeport_port=$(kubectl get --namespace default -o jsonpath="{.spec.ports[0].nodePort}" services docker-registry) >> $GITHUB_ENV
         echo nodeport_ip=$(kubectl get nodes --namespace default -o jsonpath="{.items[0].status.addresses[0].address}")  >> $GITHUB_ENV
@@ -122,7 +107,7 @@ jobs:
       env:
         KUBECONFIG: set-up-rke-cluster/rke/kube_config_cluster.yml
     - name: Destroy Cluster
-      uses: outscale-dev/osc-k8s-rke-cluster/github_actions/destroy_cluster@master
+      uses: outscale/osc-k8s-rke-cluster/github_actions/destroy_cluster@master
       if: ${{ always() }}
       with:
         repository_folder: "set-up-rke-cluster"

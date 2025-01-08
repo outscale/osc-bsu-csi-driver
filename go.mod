@@ -43,7 +43,7 @@ require (
 	github.com/kubernetes-csi/external-snapshotter/client/v8 v8.0.0
 	github.com/onsi/ginkgo/v2 v2.20.1
 	github.com/onsi/gomega v1.34.1
-	github.com/outscale/osc-sdk-go/v2 v2.21.0
+	github.com/outscale/osc-sdk-go/v2 v2.24.0
 	github.com/stretchr/testify v1.9.0
 	golang.org/x/sys v0.23.0
 	google.golang.org/grpc v1.66.2

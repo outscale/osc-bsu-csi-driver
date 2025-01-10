@@ -31,6 +31,10 @@ jobs:
     - uses: actions/setup-go@v5
       with:
         go-version-file: 'go.mod'
+    - name: Build the Docker image
+      run: make buildx-image 
+      env:
+        IMAGE_TAG: ${{ github.sha }}
     - uses: outscale/frieza-github-actions/frieza-clean@master
       with:
         access_key: ${{ secrets.OSC_ACCESS_KEY }}
@@ -64,7 +68,7 @@ jobs:
       working-directory: set-up-rke-cluster
     - name: Push the Docker image
       run: |
-        make buildx-image image-tag image-push
+        make image-tag image-push
         docker image prune -a -f
       env:
         REGISTRY_IMAGE: localhost:4242/csi

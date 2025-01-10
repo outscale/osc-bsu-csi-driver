@@ -1,4 +1,4 @@
-ARG GOLANG_IMAGE_TAG=1.23.2-bookworm
+ARG GOLANG_IMAGE_TAG=1.23.4-bookworm
 ARG RUNTIME_IMAGE_TAG=3.13
 
 # Build image

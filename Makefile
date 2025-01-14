@@ -98,10 +98,10 @@ test-e2e-single-az-buildx:
 	docker buildx build  --load -t $(E2E_ENV) -f ./tests/e2e/docker/Dockerfile_e2eTest .
 	$(MAKE) test-e2e-single-az-run
 
-bin/mockgen: | bin
-	go get github.com/golang/mock/mockgen@latest
+bin/mockgen:
+	go install github.com/golang/mock/mockgen@latest
 
-mockgen: bin/mockgen
+mockgen:
 	./hack/update-gomock
 
 .PHONY: trivy-scan

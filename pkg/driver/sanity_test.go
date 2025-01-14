@@ -103,7 +103,7 @@ type fakeCloudProvider struct {
 	// snapshots contains mapping from snapshot ID to snapshot
 	snapshots map[string]*fakeSnapshot
 	pub       map[string]string
-	tokens    map[string]int64
+	tokens    map[string]int32
 	m         *cloud.Metadata
 }
 
@@ -122,7 +122,7 @@ func newFakeCloudProvider() *fakeCloudProvider {
 		disks:     make(map[string]*fakeDisk),
 		snapshots: make(map[string]*fakeSnapshot),
 		pub:       make(map[string]string),
-		tokens:    make(map[string]int64),
+		tokens:    make(map[string]int32),
 		m: &cloud.Metadata{
 			InstanceID:       "instanceID",
 			Region:           "region",
@@ -262,7 +262,7 @@ func (c *fakeCloudProvider) GetSnapshotByID(ctx context.Context, snapshotID stri
 	return ret.Snapshot, nil
 }
 
-func (c *fakeCloudProvider) ListSnapshots(ctx context.Context, volumeID string, maxResults int64, nextToken string) (listSnapshotsResponse cloud.ListSnapshotsResponse, err error) {
+func (c *fakeCloudProvider) ListSnapshots(ctx context.Context, volumeID string, maxResults int32, nextToken string) (listSnapshotsResponse cloud.ListSnapshotsResponse, err error) {
 	var snapshots []cloud.Snapshot
 	var retToken string
 	for _, fakeSnapshot := range c.snapshots {

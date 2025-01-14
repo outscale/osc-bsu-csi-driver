@@ -178,7 +178,7 @@ type Cloud interface {
 	DeleteSnapshot(ctx context.Context, snapshotID string) (success bool, err error)
 	GetSnapshotByName(ctx context.Context, name string) (snapshot Snapshot, err error)
 	GetSnapshotByID(ctx context.Context, snapshotID string) (snapshot Snapshot, err error)
-	ListSnapshots(ctx context.Context, volumeID string, maxResults int64, nextToken string) (listSnapshotsResponse ListSnapshotsResponse, err error)
+	ListSnapshots(ctx context.Context, volumeID string, maxResults int32, nextToken string) (listSnapshotsResponse ListSnapshotsResponse, err error)
 }
 
 type OscInterface interface {
@@ -849,25 +849,31 @@ func (c *cloud) GetSnapshotByID(ctx context.Context, snapshotID string) (snapsho
 	return c.oscSnapshotResponseToStruct(oscsnapshot), nil
 }
 
+const maxResultsLimit = 1000
+
 // ListSnapshots retrieves Outscale BSU snapshots for an optionally specified volume ID.  If maxResults is set, it will return up to maxResults snapshots.  If there are more snapshots than maxResults,
 // a next token value will be returned to the client as well.  They can use this token with subsequent calls to retrieve the next page of results.
 // Pagination not supported
-func (c *cloud) ListSnapshots(ctx context.Context, volumeID string, maxResults int64, nextToken string) (listSnapshotsResponse ListSnapshotsResponse, err error) {
-	request := osc.ReadSnapshotsRequest{
+func (c *cloud) ListSnapshots(ctx context.Context, volumeID string, maxResults int32, nextToken string) (listSnapshotsResponse ListSnapshotsResponse, err error) {
+	if maxResults > maxResultsLimit {
+		maxResults = maxResultsLimit
+	}
+	req := osc.ReadSnapshotsRequest{
 		Filters: &osc.FiltersSnapshot{
 			VolumeIds: &[]string{},
 		},
+		ResultsPerPage: &maxResults,
 	}
 
 	if len(volumeID) != 0 {
-		request = osc.ReadSnapshotsRequest{
+		req = osc.ReadSnapshotsRequest{
 			Filters: &osc.FiltersSnapshot{
 				VolumeIds: &[]string{volumeID},
 			},
 		}
 	}
 
-	resp, err := c.listSnapshots(ctx, request)
+	resp, err := c.listSnapshots(ctx, req)
 	if err != nil {
 		return ListSnapshotsResponse{}, err
 	}

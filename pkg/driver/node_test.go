@@ -25,9 +25,9 @@ import (
 
 	"github.com/container-storage-interface/spec/lib/go/csi"
 	"github.com/golang/mock/gomock"
-	"github.com/outscale-dev/osc-bsu-csi-driver/pkg/driver/internal"
-	"github.com/outscale-dev/osc-bsu-csi-driver/pkg/driver/luks"
-	"github.com/outscale-dev/osc-bsu-csi-driver/pkg/driver/mocks"
+	"github.com/outscale/osc-bsu-csi-driver/pkg/driver/internal"
+	"github.com/outscale/osc-bsu-csi-driver/pkg/driver/luks"
+	"github.com/outscale/osc-bsu-csi-driver/pkg/driver/mocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc/codes"

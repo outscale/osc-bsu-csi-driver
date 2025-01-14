@@ -20,7 +20,7 @@ import (
 	"context"
 
 	csi "github.com/container-storage-interface/spec/lib/go/csi"
-	"github.com/outscale-dev/osc-bsu-csi-driver/pkg/util"
+	"github.com/outscale/osc-bsu-csi-driver/pkg/util"
 	"k8s.io/klog/v2"
 )
 

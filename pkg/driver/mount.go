@@ -19,7 +19,7 @@ package driver
 import (
 	"os"
 
-	"github.com/outscale-dev/osc-bsu-csi-driver/pkg/driver/luks"
+	"github.com/outscale/osc-bsu-csi-driver/pkg/driver/luks"
 	"k8s.io/utils/exec"
 	"k8s.io/utils/mount"
 )

@@ -22,9 +22,9 @@ import (
 	"os"
 	"strings"
 
-	"github.com/outscale-dev/osc-bsu-csi-driver/cmd/options"
-	"github.com/outscale-dev/osc-bsu-csi-driver/pkg/driver"
-	"github.com/outscale-dev/osc-bsu-csi-driver/pkg/util"
+	"github.com/outscale/osc-bsu-csi-driver/cmd/options"
+	"github.com/outscale/osc-bsu-csi-driver/pkg/driver"
+	"github.com/outscale/osc-bsu-csi-driver/pkg/util"
 
 	"k8s.io/klog/v2"
 )

@@ -24,8 +24,8 @@ import (
 	"os"
 	"time"
 
-	dm "github.com/outscale-dev/osc-bsu-csi-driver/pkg/cloud/devicemanager"
-	"github.com/outscale-dev/osc-bsu-csi-driver/pkg/util"
+	dm "github.com/outscale/osc-bsu-csi-driver/pkg/cloud/devicemanager"
+	"github.com/outscale/osc-bsu-csi-driver/pkg/util"
 	osc "github.com/outscale/osc-sdk-go/v2"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/klog/v2"

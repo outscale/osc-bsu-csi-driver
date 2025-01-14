@@ -19,7 +19,7 @@ LINTER_VERSION := v1.17.5
 E2E_ENV ?= "e2e/osc-bsu-csi-driver:0.0"
 E2E_ENV_RUN ?= "e2e-osc-bsu-csi-driver"
 
-PKG := github.com/outscale-dev/osc-bsu-csi-driver
+PKG := github.com/outscale/osc-bsu-csi-driver
 IMAGE := outscale/osc-bsu-csi-driver
 IMAGE_TAG ?= $(shell git describe --tags --always --dirty)
 VERSION ?= ${IMAGE_TAG}

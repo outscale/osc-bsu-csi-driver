@@ -22,7 +22,7 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/outscale-dev/osc-bsu-csi-driver/pkg/cloud"
+	"github.com/outscale/osc-bsu-csi-driver/pkg/cloud"
 	"github.com/stretchr/testify/require"
 )
 

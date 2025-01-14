@@ -15,7 +15,9 @@ import (
 func LoggingInterceptor(version string) grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
 		// no need to log identity requests, too many of them...
-		if strings.HasPrefix(info.FullMethod, "/csi.v1.Identity/") {
+		if strings.HasPrefix(info.FullMethod, "/csi.v1.Identity/") ||
+			info.FullMethod == "/csi.v1.Controller/ControllerGetCapabilities" ||
+			info.FullMethod == "/csi.v1.Node/NodeGetCapabilities" {
 			return handler(ctx, req)
 		}
 		kv := loggingContext(req, info, version)
@@ -58,6 +60,16 @@ func loggingContext(req any, info *grpc.UnaryServerInfo, version string) []any {
 		kv = append(kv, "snapshot_name", req.GetName(), "volume_id", req.GetSourceVolumeId())
 	case *csi.DeleteSnapshotRequest:
 		kv = append(kv, "snapshot_id", req.GetSnapshotId())
+	case *csi.NodeStageVolumeRequest:
+		kv = append(kv, "volume_id", req.GetVolumeId(), "encrypted", req.PublishContext[EncryptedKey] == "true")
+		volCap := req.GetVolumeCapability()
+		if volCap != nil {
+			// GetFsType() does not panic if GetMount() returns nil.
+			fsType := volCap.GetMount().GetFsType()
+			kv = append(kv, "fs_type", fsType)
+		}
+	case *csi.NodeUnstageVolumeRequest:
+		kv = append(kv, "volume_id", req.GetVolumeId())
 	}
 	return kv
 }

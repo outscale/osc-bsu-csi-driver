@@ -17,6 +17,7 @@ limitations under the License.
 package devicemanager
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 	"sync"
@@ -120,7 +121,7 @@ func (d *deviceManager) NewDevice(instance osc.Vm, volumeID string) (Device, err
 	defer d.mux.Unlock()
 
 	if IsNilVm(instance) {
-		return Device{}, fmt.Errorf("instance is nil")
+		return Device{}, errors.New("instance is nil")
 	}
 
 	// Get device names being attached and already attached to this instance
@@ -203,7 +204,7 @@ func (d *deviceManager) release(device Device) error {
 		return fmt.Errorf("release on device %q assigned to different volume: %q vs %q", device.Path, device.VolumeID, existingVolumeID)
 	}
 
-	klog.V(5).Infof("Releasing in-process attachment entry: %v -> volume %s", device.Path, device.VolumeID)
+	// klog.V(5).Infof("Releasing in-process attachment entry: %v -> volume %s", device.Path, device.VolumeID)
 	d.inFlight.Del(nodeID, name)
 
 	return nil
@@ -226,7 +227,7 @@ func (d *deviceManager) getDeviceNamesInUse(instance osc.Vm) map[string]string {
 		inUse[name] = blockDevice.Bsu.GetVolumeId()
 	}
 
-	klog.V(5).Infof("DeviceNameInUse: APIDevice: %v, CacheDevice: %v", inUse, d.inFlight.GetNames(nodeID))
+	// klog.V(5).Infof("DeviceNameInUse: APIDevice: %v, CacheDevice: %v", inUse, d.inFlight.GetNames(nodeID))
 	for name, volumeID := range d.inFlight.GetNames(nodeID) {
 		inUse[name] = volumeID
 	}
@@ -245,7 +246,7 @@ func (d *deviceManager) getPath(inUse map[string]string, volumeID string) string
 
 func getInstanceID(instance osc.Vm) (string, error) {
 	if IsNilVm(instance) {
-		return "", fmt.Errorf("can't get ID from a nil instance")
+		return "", errors.New("can't get ID from a nil instance")
 	}
 	return instance.GetVmId(), nil
 }

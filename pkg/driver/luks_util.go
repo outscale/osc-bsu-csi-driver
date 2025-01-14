@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	"github.com/outscale/osc-bsu-csi-driver/pkg/driver/luks"
-	"k8s.io/klog/v2"
 	k8sExec "k8s.io/utils/exec"
 )
 
@@ -22,11 +21,9 @@ func LuksFormat(exec k8sExec.Interface, devicePath string, passphrase string, co
 	}
 	if len(context.Hash) != 0 {
 		extraArgs = append(extraArgs, fmt.Sprintf("--hash=%v", context.Hash))
-
 	}
 	if len(context.KeySize) != 0 {
 		extraArgs = append(extraArgs, fmt.Sprintf("--key-size=%v", context.KeySize))
-
 	}
 	extraArgs = append(extraArgs, "luksFormat", devicePath)
 
@@ -35,7 +32,7 @@ func LuksFormat(exec k8sExec.Interface, devicePath string, passphrase string, co
 	formatCmd.SetStdin(passwordReader)
 
 	if out, err := formatCmd.CombinedOutput(); err != nil {
-		return fmt.Errorf("err: %v, output: %v", err, out)
+		return fmt.Errorf("unable to format LUKS volume: %w, output: %s", err, string(out))
 	}
 
 	return nil
@@ -54,14 +51,13 @@ func CheckLuksPassphrase(exec k8sExec.Interface, devicePath string, passphrase s
 
 func LuksOpen(exec Mounter, devicePath string, encryptedDeviceName string, passphrase string) (bool, error) {
 	if ok, err := exec.ExistsPath("/dev/mapper/" + encryptedDeviceName); err == nil && ok {
-		klog.V(4).Info("luks volume is already open")
 		return true, nil
 	}
 	openCmd := exec.Command("cryptsetup", "-v", "--type=luks2", "--batch-mode", "luksOpen", devicePath, encryptedDeviceName)
 	passwordReader := strings.NewReader(passphrase)
 	openCmd.SetStdin(passwordReader)
 	if out, err := openCmd.CombinedOutput(); err != nil {
-		return false, fmt.Errorf("err: %v, output: %v", err, out)
+		return false, fmt.Errorf("unable to open LUKS volume: %w, output: %s", err, string(out))
 	}
 
 	return true, nil
@@ -93,28 +89,24 @@ func LuksResize(exec k8sExec.Interface, deviceName string, passphrase string) er
 	resizeCmd.SetStdin(passwordReader)
 
 	if out, err := resizeCmd.CombinedOutput(); err != nil {
-		return fmt.Errorf("unable to resize LUKS volume on device %s: %w, output: %s", deviceName, err, string(out))
+		return fmt.Errorf("unable to resize LUKS volume: %w, output: %s", err, string(out))
 	}
 
 	return nil
 }
 
 func LuksClose(mounter Mounter, encryptedDeviceName string) error {
-	exists, err := mounter.ExistsPath(fmt.Sprintf("/dev/mapper/%v", encryptedDeviceName))
+	exists, err := mounter.ExistsPath("/dev/mapper/" + encryptedDeviceName)
 	if err != nil {
 		return err
 	}
-
 	if !exists {
-		klog.V(4).Infof("device %v is not opened", encryptedDeviceName)
 		return nil
 	}
 
 	if err = mounter.Command("cryptsetup", "-v", "luksClose", encryptedDeviceName).Run(); err != nil {
-		klog.V(4).Info("error while closing luks device", encryptedDeviceName)
-		return err
+		return fmt.Errorf("unable to close LUKS volume: %w", err)
 	}
 
 	return nil
-
 }

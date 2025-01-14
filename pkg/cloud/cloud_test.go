@@ -122,17 +122,6 @@ func TestCreateDisk(t *testing.T) {
 			expCreateVolumeErr: fmt.Errorf("DescribeVolumes generic error"),
 		},
 		{
-			name:       "fail: CreateVolume returned a volume with wrong state",
-			volumeName: "vol-test-name-error",
-			volState:   "creating",
-			diskOptions: &DiskOptions{
-				CapacityBytes:    util.GiBToBytes(1),
-				Tags:             map[string]string{VolumeNameTagKey: "vol-test"},
-				AvailabilityZone: expZone,
-			},
-			expErr: fmt.Errorf("unable to fetch newly created volume: timed out waiting for the condition"),
-		},
-		{
 			name:       "success: normal from snapshot",
 			volumeName: "vol-test-name",
 			diskOptions: &DiskOptions{

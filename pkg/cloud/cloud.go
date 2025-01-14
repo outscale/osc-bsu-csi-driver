@@ -894,8 +894,6 @@ func (c *cloud) oscSnapshotResponseToStruct(oscSnapshot osc.Snapshot) Snapshot {
 		SnapshotID:     oscSnapshot.GetSnapshotId(),
 		SourceVolumeID: oscSnapshot.GetVolumeId(),
 		Size:           snapshotSize,
-		//No StartTime for osc.Snapshot
-		//CreationTime:   oscSnapshot.StartTime,
 	}
 	if oscSnapshot.GetState() == "completed" {
 		snapshot.ReadyToUse = true
@@ -1090,21 +1088,14 @@ func (c *cloud) listSnapshots(ctx context.Context, request osc.ReadSnapshotsRequ
 func (c *cloud) waitForVolume(ctx context.Context, volumeID string) error {
 	logger := klog.FromContext(ctx)
 	logger.V(4).Info("Waiting for volume to be available")
-	var (
-		checkInterval = 3 * time.Second
-		// This timeout can be "ovewritten" if the value returned by ctx.Deadline()
-		// comes sooner. That value comes from the external provisioner controller.
-		checkTimeout = 1 * time.Minute
-	)
+	start := time.Now()
 
 	request := osc.ReadVolumesRequest{
 		Filters: &osc.FiltersVolume{
 			VolumeIds: &[]string{volumeID},
 		},
 	}
-
-	start := time.Now()
-	err := wait.Poll(checkInterval, checkTimeout, func() (done bool, err error) {
+	testVolume := func() (done bool, err error) {
 		vol, err := c.getVolume(ctx, request)
 		if err != nil {
 			return true, err
@@ -1113,9 +1104,15 @@ func (c *cloud) waitForVolume(ctx context.Context, volumeID string) error {
 			return vol.GetState() == "available", nil
 		}
 		return false, nil
-	})
+	}
+	backoff := util.EnvBackoff()
+	err := wait.ExponentialBackoff(backoff, testVolume)
 	logger.V(4).Info("End of wait", "success", err == nil, "duration", time.Since(start))
-	return err
+
+	if err != nil {
+		return fmt.Errorf("unable to wait for volume: %w", err)
+	}
+	return nil
 }
 
 // ResizeDisk resizes an BSU volume in GiB increments, rouding up to the next possible allocatable unit.

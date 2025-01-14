@@ -42,7 +42,6 @@ const (
 )
 
 func TestNewControllerService(t *testing.T) {
-
 	var (
 		cloudObj   cloud.Cloud
 		testErr    = errors.New("test error")

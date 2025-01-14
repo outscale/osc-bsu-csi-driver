@@ -25,11 +25,11 @@ import (
 
 func ValidateDriverOptions(options *DriverOptions) error {
 	if err := validateExtraVolumeTags(options.extraVolumeTags); err != nil {
-		return fmt.Errorf("Invalid extra volume tags: %v", err)
+		return fmt.Errorf("Invalid extra volume tags: %w", err)
 	}
 
 	if err := validateMode(options.mode); err != nil {
-		return fmt.Errorf("Invalid mode: %v", err)
+		return fmt.Errorf("Invalid mode: %w", err)
 	}
 
 	return nil

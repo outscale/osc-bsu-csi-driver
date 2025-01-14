@@ -199,7 +199,7 @@ func (mr *MockCloudMockRecorder) IsExistInstance(arg0, arg1 interface{}) *gomock
 }
 
 // ListSnapshots mocks base method.
-func (m *MockCloud) ListSnapshots(arg0 context.Context, arg1 string, arg2 int64, arg3 string) (cloud.ListSnapshotsResponse, error) {
+func (m *MockCloud) ListSnapshots(arg0 context.Context, arg1 string, arg2 int32, arg3 string) (cloud.ListSnapshotsResponse, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ListSnapshots", arg0, arg1, arg2, arg3)
 	ret0, _ := ret[0].(cloud.ListSnapshotsResponse)

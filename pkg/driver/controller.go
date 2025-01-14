@@ -486,7 +486,7 @@ func (d *controllerService) ListSnapshots(ctx context.Context, req *csi.ListSnap
 	nextToken := req.GetStartingToken()
 	maxEntries := req.GetMaxEntries()
 
-	cloudSnapshots, err := d.cloud.ListSnapshots(ctx, volumeID, int64(maxEntries), nextToken)
+	cloudSnapshots, err := d.cloud.ListSnapshots(ctx, volumeID, maxEntries, nextToken)
 	if err != nil {
 		if errors.Is(err, cloud.ErrNotFound) {
 			klog.FromContext(ctx).V(4).Info("Snapshot does not exist")

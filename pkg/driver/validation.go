@@ -20,7 +20,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/outscale-dev/osc-bsu-csi-driver/pkg/cloud"
+	"github.com/outscale/osc-bsu-csi-driver/pkg/cloud"
 )
 
 func ValidateDriverOptions(options *DriverOptions) error {

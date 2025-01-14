@@ -19,7 +19,7 @@ package main
 import (
 	"flag"
 
-	"github.com/outscale-dev/osc-bsu-csi-driver/pkg/driver"
+	"github.com/outscale/osc-bsu-csi-driver/pkg/driver"
 
 	"k8s.io/klog/v2"
 )

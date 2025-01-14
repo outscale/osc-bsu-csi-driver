@@ -27,7 +27,7 @@ import (
 	e2edeployment "k8s.io/kubernetes/test/e2e/framework/deployment"
 	e2epod "k8s.io/kubernetes/test/e2e/framework/pod"
 
-	"github.com/outscale-dev/osc-bsu-csi-driver/tests/e2e/driver"
+	"github.com/outscale/osc-bsu-csi-driver/tests/e2e/driver"
 )
 
 type DynamicallyProvisionedCustomPodTest struct {

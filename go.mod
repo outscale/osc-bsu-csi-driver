@@ -1,4 +1,4 @@
-module github.com/outscale-dev/osc-bsu-csi-driver
+module github.com/outscale/osc-bsu-csi-driver
 
 go 1.23.0
 

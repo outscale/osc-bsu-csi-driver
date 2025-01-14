@@ -26,7 +26,7 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	osccloud "github.com/outscale-dev/osc-bsu-csi-driver/pkg/cloud"
+	osccloud "github.com/outscale/osc-bsu-csi-driver/pkg/cloud"
 	apps "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	storagev1 "k8s.io/api/storage/v1"

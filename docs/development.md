@@ -14,7 +14,7 @@ To build the project, first turn on go mod using `export GO111MODULE=on`, then b
 ## Deploy local version
 First you need several things:
 - kubeconfig
-- docker registry (cf [example](https://github.com/outscale-dev/osc-k8s-rke-cluster/tree/master/addons/docker-registry))
+- docker registry (cf [example](https://github.com/outscale/osc-k8s-rke-cluster/tree/master/addons/docker-registry))
 
 Second, push the image to the docker registry. With the example above, here is how you push:
 ```sh

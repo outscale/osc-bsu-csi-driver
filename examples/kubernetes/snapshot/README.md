@@ -8,7 +8,7 @@ This driver implements basic volume snapshotting functionality using the [extern
 
 1. Kubernetes 1.20+ (CSI 1.5.0).
 2. The `VolumeSnapshotDataSource` must be set in `--feature-gates=` in the `kube-apiserver`.
-3. The [osc-bsu-csi-driver driver](https://github.com/outscale-dev/osc-bsu-csi-driver) is installed.
+3. The [osc-bsu-csi-driver driver](https://github.com/outscale/osc-bsu-csi-driver) is installed.
 
 ### Usage
 

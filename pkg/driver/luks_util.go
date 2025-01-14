@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/outscale-dev/osc-bsu-csi-driver/pkg/driver/luks"
+	"github.com/outscale/osc-bsu-csi-driver/pkg/driver/luks"
 	"k8s.io/klog/v2"
 	k8sExec "k8s.io/utils/exec"
 )

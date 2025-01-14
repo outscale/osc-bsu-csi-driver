@@ -29,9 +29,9 @@ import (
 
 	osc "github.com/outscale/osc-sdk-go/v2"
 
-	dm "github.com/outscale-dev/osc-bsu-csi-driver/pkg/cloud/devicemanager"
-	"github.com/outscale-dev/osc-bsu-csi-driver/pkg/cloud/mocks"
-	"github.com/outscale-dev/osc-bsu-csi-driver/pkg/util"
+	dm "github.com/outscale/osc-bsu-csi-driver/pkg/cloud/devicemanager"
+	"github.com/outscale/osc-bsu-csi-driver/pkg/cloud/mocks"
+	"github.com/outscale/osc-bsu-csi-driver/pkg/util"
 )
 
 const (

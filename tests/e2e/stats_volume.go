@@ -21,11 +21,11 @@ import (
 	"k8s.io/kubernetes/test/e2e/framework"
 	admissionapi "k8s.io/pod-security-admission/api"
 
-	"github.com/outscale-dev/osc-bsu-csi-driver/tests/e2e/driver"
-	"github.com/outscale-dev/osc-bsu-csi-driver/tests/e2e/testsuites"
+	"github.com/outscale/osc-bsu-csi-driver/tests/e2e/driver"
+	"github.com/outscale/osc-bsu-csi-driver/tests/e2e/testsuites"
 
-	osccloud "github.com/outscale-dev/osc-bsu-csi-driver/pkg/cloud"
-	bsucsidriver "github.com/outscale-dev/osc-bsu-csi-driver/pkg/driver"
+	osccloud "github.com/outscale/osc-bsu-csi-driver/pkg/cloud"
+	bsucsidriver "github.com/outscale/osc-bsu-csi-driver/pkg/driver"
 )
 
 var _ = Describe("[bsu-csi-e2e] [single-az] Stats", func() {

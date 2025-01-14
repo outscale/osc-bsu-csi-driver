@@ -32,12 +32,12 @@ import (
 	"k8s.io/kubernetes/test/e2e/framework"
 	admissionapi "k8s.io/pod-security-admission/api"
 
-	"github.com/outscale-dev/osc-bsu-csi-driver/tests/e2e/driver"
-	"github.com/outscale-dev/osc-bsu-csi-driver/tests/e2e/testsuites"
+	"github.com/outscale/osc-bsu-csi-driver/tests/e2e/driver"
+	"github.com/outscale/osc-bsu-csi-driver/tests/e2e/testsuites"
 
-	"github.com/outscale-dev/osc-bsu-csi-driver/pkg/cloud"
-	osccloud "github.com/outscale-dev/osc-bsu-csi-driver/pkg/cloud"
-	bsucsidriver "github.com/outscale-dev/osc-bsu-csi-driver/pkg/driver"
+	"github.com/outscale/osc-bsu-csi-driver/pkg/cloud"
+	osccloud "github.com/outscale/osc-bsu-csi-driver/pkg/cloud"
+	bsucsidriver "github.com/outscale/osc-bsu-csi-driver/pkg/driver"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/runtime/serializer"

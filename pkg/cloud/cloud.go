@@ -141,7 +141,11 @@ type Snapshot struct {
 	SourceVolumeID string
 	Size           int64
 	CreationTime   time.Time
-	ReadyToUse     bool
+	State          string
+}
+
+func (s *Snapshot) IsReadyToUse() bool {
+	return s.State == "completed"
 }
 
 // ListSnapshotsResponse is the container for our snapshots along with a pagination token to pass back to the caller
@@ -890,18 +894,12 @@ func (c *cloud) oscSnapshotResponseToStruct(oscSnapshot osc.Snapshot) Snapshot {
 		return Snapshot{}
 	}
 	snapshotSize := util.GiBToBytes(int64(oscSnapshot.GetVolumeSize()))
-	snapshot := Snapshot{
+	return Snapshot{
 		SnapshotID:     oscSnapshot.GetSnapshotId(),
 		SourceVolumeID: oscSnapshot.GetVolumeId(),
 		Size:           snapshotSize,
+		State:          oscSnapshot.GetState(),
 	}
-	if oscSnapshot.GetState() == "completed" {
-		snapshot.ReadyToUse = true
-	} else {
-		snapshot.ReadyToUse = false
-	}
-
-	return snapshot
 }
 
 func keepRetryWithError(requestStr string, httpCode int, allowedErrors []int) bool {

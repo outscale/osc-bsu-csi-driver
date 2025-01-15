@@ -211,7 +211,7 @@ func (d *controllerService) CreateVolume(ctx context.Context, req *csi.CreateVol
 		CapacityBytes:    volSizeBytes,
 		Tags:             volumeTags,
 		VolumeType:       volumeType,
-		IOPSPerGB:        iopsPerGB,
+		IOPSPerGB:        int32(iopsPerGB),
 		AvailabilityZone: zone,
 		Encrypted:        isEncrypted,
 		KmsKeyID:         kmsKeyID,
@@ -383,13 +383,13 @@ func (d *controllerService) ControllerExpandVolume(ctx context.Context, req *csi
 		return nil, status.Error(codes.InvalidArgument, "After round-up, volume size exceeds the limit specified")
 	}
 
-	actualSizeGiB, err := d.cloud.ResizeDisk(ctx, volumeID, newSize)
+	actualSize, err := d.cloud.ResizeDisk(ctx, volumeID, newSize)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "Could not resize volume %q: %v", volumeID, err)
 	}
 
 	return &csi.ControllerExpandVolumeResponse{
-		CapacityBytes:         int64(util.GiBToBytes(actualSizeGiB)),
+		CapacityBytes:         actualSize,
 		NodeExpansionRequired: true,
 	}, nil
 }

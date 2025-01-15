@@ -19,40 +19,30 @@ package util
 import (
 	"fmt"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestRoundUpBytes(t *testing.T) {
 	var sizeInBytes int64 = 1024
 	actual := RoundUpBytes(sizeInBytes)
-	if actual != 1*GiB {
-		t.Fatalf("Wrong result for RoundUpBytes. Got: %d", actual)
-	}
+	assert.Equal(t, GiB, actual)
 }
 
 func TestRoundUpGiB(t *testing.T) {
-	var sizeInBytes int64 = 1
-	actual := RoundUpGiB(sizeInBytes)
-	if actual != 1 {
-		t.Fatalf("Wrong result for RoundUpGiB. Got: %d", actual)
-	}
+	actual := RoundUpGiB(1)
+	assert.Equal(t, int32(1), actual)
 }
 
 func TestBytesToGiB(t *testing.T) {
-	var sizeInBytes int64 = 5 * GiB
-
-	actual := BytesToGiB(sizeInBytes)
-	if actual != 5 {
-		t.Fatalf("Wrong result for BytesToGiB. Got: %d", actual)
-	}
+	actual := BytesToGiB(5 * GiB)
+	assert.Equal(t, int32(5), actual)
 }
 
 func TestGiBToBytes(t *testing.T) {
-	var sizeInGiB int64 = 3
-
-	actual := GiBToBytes(sizeInGiB)
-	if actual != 3*GiB {
-		t.Fatalf("Wrong result for GiBToBytes. Got: %d", actual)
-	}
+	actual := GiBToBytes(3)
+	assert.Equal(t, 3*GiB, actual)
 }
 
 func TestParseEndpoint(t *testing.T) {
@@ -105,23 +95,12 @@ func TestParseEndpoint(t *testing.T) {
 			scheme, addr, err := ParseEndpoint(tc.endpoint)
 
 			if tc.expErr != nil {
-				if err.Error() != tc.expErr.Error() {
-					t.Fatalf("Expecting err: expected %v, got %v", tc.expErr, err)
-				}
-
+				require.EqualError(t, err, tc.expErr.Error())
 			} else {
-				if err != nil {
-					t.Fatalf("err is not nil. got: %v", err)
-				}
-				if scheme != tc.expScheme {
-					t.Fatalf("scheme mismatches: expected %v, got %v", tc.expScheme, scheme)
-				}
-
-				if addr != tc.expAddr {
-					t.Fatalf("addr mismatches: expected %v, got %v", tc.expAddr, addr)
-				}
+				require.NoError(t, err)
+				assert.Equal(t, tc.expScheme, scheme)
+				assert.Equal(t, tc.expAddr, addr)
 			}
 		})
 	}
-
 }

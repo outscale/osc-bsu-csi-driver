@@ -26,6 +26,8 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/golang/mock/gomock"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	osc "github.com/outscale/osc-sdk-go/v2"
 
@@ -153,7 +155,7 @@ func TestCreateDisk(t *testing.T) {
 				Volume: &osc.Volume{},
 			}
 			vol.Volume.SetVolumeId(tc.diskOptions.Tags[VolumeNameTagKey])
-			vol.Volume.SetSize(int32(util.BytesToGiB(tc.diskOptions.CapacityBytes)))
+			vol.Volume.SetSize(util.BytesToGiB(tc.diskOptions.CapacityBytes))
 			vol.Volume.SetState(volState)
 			vol.Volume.SetSubregionName(tc.diskOptions.AvailabilityZone)
 
@@ -1022,19 +1024,12 @@ func TestResizeDisk(t *testing.T) {
 					tc.modifiedVolumeError).AnyTimes()
 			}
 
-			newSize, err := c.ResizeDisk(ctx, tc.volumeID, util.GiBToBytes(int64(tc.reqSizeGiB)))
-			if err != nil {
-				if tc.expErr == nil {
-					t.Fatalf("ResizeDisk() failed: expected no error, got: %v", err)
-				}
+			newSize, err := c.ResizeDisk(ctx, tc.volumeID, util.GiBToBytes(tc.reqSizeGiB))
+			if tc.expErr != nil {
+				require.Error(t, err)
 			} else {
-				if tc.expErr != nil {
-					t.Fatal("ResizeDisk() failed: expected error, got nothing")
-				} else {
-					if int32(tc.reqSizeGiB) != int32(newSize) {
-						t.Fatalf("ResizeDisk() failed: expected capacity %d, got %d", tc.reqSizeGiB, newSize)
-					}
-				}
+				require.NoError(t, err)
+				assert.Equal(t, util.GiBToBytes(tc.reqSizeGiB), newSize)
 			}
 
 			mockCtrl.Finish()

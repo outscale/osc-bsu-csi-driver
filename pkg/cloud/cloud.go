@@ -116,7 +116,7 @@ var (
 // Disk represents a BSU volume
 type Disk struct {
 	VolumeID         string
-	CapacityGiB      int64
+	CapacityGiB      int32
 	AvailabilityZone string
 	SnapshotID       string
 }
@@ -126,7 +126,7 @@ type DiskOptions struct {
 	CapacityBytes    int64
 	Tags             map[string]string
 	VolumeType       string
-	IOPSPerGB        int
+	IOPSPerGB        int32
 	AvailabilityZone string
 	Encrypted        bool
 	// KmsKeyID represents a fully qualified resource name to the key to use for encryption.
@@ -312,11 +312,11 @@ func IsNilSnapshot(snapshot Snapshot) bool {
 func (c *cloud) CreateDisk(ctx context.Context, volumeName string, diskOptions *DiskOptions) (Disk, error) {
 	var (
 		createType string
-		iops       int64
+		iops       int32
 		request    osc.CreateVolumeRequest
 	)
 	capacityGiB := util.BytesToGiB(diskOptions.CapacityBytes)
-	request.SetSize(int32(capacityGiB))
+	request.SetSize(capacityGiB)
 
 	switch diskOptions.VolumeType {
 	case VolumeTypeGP2, VolumeTypeSTANDARD:
@@ -329,7 +329,7 @@ func (c *cloud) CreateDisk(ctx context.Context, volumeName string, diskOptions *
 			iopsPerGb = 300
 		}
 
-		iops = capacityGiB * int64(iopsPerGb)
+		iops = capacityGiB * iopsPerGb
 		if iops < MinTotalIOPS {
 			iops = MinTotalIOPS
 		}
@@ -337,7 +337,7 @@ func (c *cloud) CreateDisk(ctx context.Context, volumeName string, diskOptions *
 			iops = MaxTotalIOPS
 		}
 
-		request.SetIops(int32(iops))
+		request.SetIops(iops)
 	case "":
 		createType = DefaultVolumeType
 	default:
@@ -444,7 +444,7 @@ func (c *cloud) CreateDisk(ctx context.Context, volumeName string, diskOptions *
 		return Disk{}, fmt.Errorf("unable to fetch newly created volume: %w", err)
 	}
 
-	return Disk{CapacityGiB: int64(size), VolumeID: volumeID, AvailabilityZone: zone, SnapshotID: snapshotID}, nil
+	return Disk{CapacityGiB: size, VolumeID: volumeID, AvailabilityZone: zone, SnapshotID: snapshotID}, nil
 }
 
 func (c *cloud) DeleteDisk(ctx context.Context, volumeID string) (bool, error) {
@@ -667,14 +667,13 @@ func (c *cloud) GetDiskByName(ctx context.Context, name string, capacityBytes in
 		return Disk{}, err
 	}
 
-	volSizeBytes := volume.GetSize()
-	if int64(volSizeBytes) != util.BytesToGiB(capacityBytes) {
+	if volume.GetSize() != util.BytesToGiB(capacityBytes) {
 		return Disk{}, ErrDiskExistsDiffSize
 	}
 
 	return Disk{
 		VolumeID:         volume.GetVolumeId(),
-		CapacityGiB:      int64(volSizeBytes),
+		CapacityGiB:      volume.GetSize(),
 		AvailabilityZone: volume.GetSubregionName(),
 		SnapshotID:       volume.GetSnapshotId(),
 	}, nil
@@ -694,7 +693,7 @@ func (c *cloud) GetDiskByID(ctx context.Context, volumeID string) (Disk, error) 
 
 	return Disk{
 		VolumeID:         volume.GetVolumeId(),
-		CapacityGiB:      int64(volume.GetSize()),
+		CapacityGiB:      volume.GetSize(),
 		AvailabilityZone: volume.GetSubregionName(),
 		SnapshotID:       volume.GetSnapshotId(),
 	}, nil
@@ -893,7 +892,7 @@ func (c *cloud) oscSnapshotResponseToStruct(oscSnapshot osc.Snapshot) Snapshot {
 		!oscSnapshot.HasState() {
 		return Snapshot{}
 	}
-	snapshotSize := util.GiBToBytes(int64(oscSnapshot.GetVolumeSize()))
+	snapshotSize := util.GiBToBytes(oscSnapshot.GetVolumeSize())
 	return Snapshot{
 		SnapshotID:     oscSnapshot.GetSnapshotId(),
 		SourceVolumeID: oscSnapshot.GetVolumeId(),
@@ -1114,7 +1113,7 @@ func (c *cloud) waitForVolume(ctx context.Context, volumeID string) error {
 }
 
 // ResizeDisk resizes an BSU volume in GiB increments, rouding up to the next possible allocatable unit.
-// It returns the volume size after this call or an error if the size couldn't be determined.
+// It returns the volume size in bytes after this call or an error if the size couldn't be determined.
 func (c *cloud) ResizeDisk(ctx context.Context, volumeID string, newSizeBytes int64) (int64, error) {
 	logger := klog.FromContext(ctx)
 	request := osc.ReadVolumesRequest{
@@ -1133,18 +1132,18 @@ func (c *cloud) ResizeDisk(ctx context.Context, volumeID string, newSizeBytes in
 	}
 
 	// resizes in chunks of GiB (not GB)
-	newSizeGiB := int32(util.RoundUpGiB(newSizeBytes))
+	newSizeGiB := util.RoundUpGiB(newSizeBytes)
 	oldSizeGiB := volume.GetSize()
 
 	// Even if existing volume size is greater than user requested size, we should ensure that there are no pending
 	// volume modifications objects or volume has completed previously issued modification request.
 	if oldSizeGiB >= newSizeGiB {
 		logger.V(4).Info(fmt.Sprintf("Volume current size (%d GiB) is greater or equal to the new size (%d GiB)", oldSizeGiB, newSizeGiB))
-		return int64(oldSizeGiB), nil
+		return util.GiBToBytes(oldSizeGiB), nil
 	}
 
-	logger.V(4).Info(fmt.Sprintf("Expanding volume to size %d", newSizeGiB))
-	reqSize := int32(newSizeGiB)
+	logger.V(4).Info(fmt.Sprintf("Expanding volume to %dGiB", newSizeGiB))
+	reqSize := newSizeGiB
 	req := osc.UpdateVolumeRequest{
 		Size:     &reqSize,
 		VolumeId: volumeID,
@@ -1176,13 +1175,13 @@ func (c *cloud) ResizeDisk(ctx context.Context, volumeID string, newSizeBytes in
 	delay := 5
 	logger.V(4).Info(fmt.Sprintf("Waiting %d sec for the effective modification.", delay))
 	time.Sleep(time.Duration(delay) * time.Second)
-	return c.checkDesiredSize(ctx, volumeID, int64(newSizeGiB))
+	return c.checkDesiredSize(ctx, volumeID, newSizeGiB)
 }
 
 // Checks for desired size on volume by also verifying volume size by describing volume.
 // This is to get around potential eventual consistency problems with describing volume modifications
 // objects and ensuring that we read two different objects to verify volume state.
-func (c *cloud) checkDesiredSize(ctx context.Context, volumeID string, newSizeGiB int64) (int64, error) {
+func (c *cloud) checkDesiredSize(ctx context.Context, volumeID string, newSizeGiB int32) (int64, error) {
 	request := osc.ReadVolumesRequest{
 		Filters: &osc.FiltersVolume{
 			VolumeIds: &[]string{volumeID},
@@ -1194,11 +1193,11 @@ func (c *cloud) checkDesiredSize(ctx context.Context, volumeID string, newSizeGi
 	}
 
 	// resizes in chunks of GiB (not GB)
-	oldSizeGiB := volume.GetSize()
-	if oldSizeGiB >= int32(newSizeGiB) {
-		return int64(oldSizeGiB), nil
+	szGiB := volume.GetSize()
+	if szGiB >= newSizeGiB {
+		return util.GiBToBytes(szGiB), nil
 	}
-	return int64(oldSizeGiB), fmt.Errorf("volume %q is still being expanded to %d size", volumeID, newSizeGiB)
+	return util.GiBToBytes(szGiB), fmt.Errorf("volume %q is still being expanded to %d size", volumeID, newSizeGiB)
 }
 
 // NewCloudWithoutMetadata to instantiate a cloud object outside osc instances

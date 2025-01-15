@@ -434,8 +434,13 @@ func (d *controllerService) CreateSnapshot(ctx context.Context, req *csi.CreateS
 		klog.FromContext(ctx).V(3).Info("Snapshot already exists")
 		return newCreateSnapshotResponse(snapshot)
 	}
+
+	tags := map[string]string{cloud.SnapshotNameTagKey: snapshotName}
+	for k, v := range d.driverOptions.extraSnapshotTags {
+		tags[k] = v
+	}
 	opts := &cloud.SnapshotOptions{
-		Tags: map[string]string{cloud.SnapshotNameTagKey: snapshotName},
+		Tags: tags,
 	}
 	snapshot, err = d.cloud.CreateSnapshot(ctx, volumeID, opts)
 

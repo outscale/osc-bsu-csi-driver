@@ -31,6 +31,7 @@ func main() {
 	drv, err := driver.NewDriver(
 		driver.WithEndpoint(options.ServerOptions.Endpoint),
 		driver.WithExtraVolumeTags(options.ControllerOptions.ExtraVolumeTags),
+		driver.WithExtraSnapshotTags(options.ControllerOptions.ExtraSnapshotTags),
 		driver.WithMode(options.DriverMode),
 	)
 	if err != nil {

@@ -27,8 +27,11 @@ type ControllerOptions struct {
 	// ExtraVolumeTags is a map of tags that will be attached to each dynamically provisioned
 	// volume.
 	ExtraVolumeTags map[string]string
+	// ExtraSnapshotTags is a map of tags that will be attached to each snapshot created.
+	ExtraSnapshotTags map[string]string
 }
 
 func (s *ControllerOptions) AddFlags(fs *flag.FlagSet) {
 	fs.Var(cliflag.NewMapStringString(&s.ExtraVolumeTags), "extra-volume-tags", "Extra volume tags to attach to each dynamically provisioned volume. It is a comma separated list of key value pairs like '<key1>=<value1>,<key2>=<value2>'")
+	fs.Var(cliflag.NewMapStringString(&s.ExtraSnapshotTags), "extra-snapshot-tags", "Extra snapshot tags to attach to each created snapshot. It is a comma separated list of key value pairs like '<key1>=<value1>,<key2>=<value2>'")
 }

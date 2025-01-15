@@ -19,10 +19,10 @@ package main
 import (
 	"flag"
 	"os"
-	"reflect"
 	"testing"
 
 	"github.com/outscale/osc-bsu-csi-driver/pkg/driver"
+	"github.com/stretchr/testify/require"
 )
 
 func TestGetOptions(t *testing.T) {
@@ -45,6 +45,13 @@ func TestGetOptions(t *testing.T) {
 			extraVolumeTagKey: extraVolumeTagValue,
 		}
 
+		extraSnapshotTagsFlagName := "extra-snapshot-tags"
+		extraSnapshotTagKey := "bar"
+		extraSnapshotTagValue := "baz"
+		extraSnapshotTags := map[string]string{
+			extraSnapshotTagKey: extraSnapshotTagValue,
+		}
+
 		args := append([]string{
 			"osc-bsu-csi-driver",
 		}, additionalArgs...)
@@ -54,6 +61,7 @@ func TestGetOptions(t *testing.T) {
 		}
 		if withControllerOptions {
 			args = append(args, "-"+extraVolumeTagsFlagName+"="+extraVolumeTagKey+"="+extraVolumeTagValue)
+			args = append(args, "-"+extraSnapshotTagsFlagName+"="+extraSnapshotTagKey+"="+extraSnapshotTagValue)
 		}
 
 		oldArgs := os.Args
@@ -64,22 +72,18 @@ func TestGetOptions(t *testing.T) {
 
 		if withServerOptions {
 			endpointFlag := flagSet.Lookup(endpointFlagName)
-			if endpointFlag == nil {
-				t.Fatalf("expected %q flag to be added but it is not", endpointFlagName)
-			}
-			if options.ServerOptions.Endpoint != endpoint {
-				t.Fatalf("expected endpoint to be %q but it is %q", endpoint, options.ServerOptions.Endpoint)
-			}
+			require.NotNil(t, endpointFlag)
+			require.Equal(t, endpoint, options.ServerOptions.Endpoint)
 		}
 
 		if withControllerOptions {
 			extraVolumeTagsFlag := flagSet.Lookup(extraVolumeTagsFlagName)
-			if extraVolumeTagsFlag == nil {
-				t.Fatalf("expected %q flag to be added but it is not", extraVolumeTagsFlagName)
-			}
-			if !reflect.DeepEqual(options.ControllerOptions.ExtraVolumeTags, extraVolumeTags) {
-				t.Fatalf("expected extra volume tags to be %q but it is %q", extraVolumeTags, options.ControllerOptions.ExtraVolumeTags)
-			}
+			require.NotNil(t, extraVolumeTagsFlag)
+			require.Equal(t, extraVolumeTags, options.ControllerOptions.ExtraVolumeTags)
+
+			extraSnapshotTagsFlag := flagSet.Lookup(extraSnapshotTagsFlagName)
+			require.NotNil(t, extraSnapshotTagsFlag)
+			require.Equal(t, extraSnapshotTags, options.ControllerOptions.ExtraSnapshotTags)
 		}
 
 		return options
@@ -151,9 +155,7 @@ func TestGetOptions(t *testing.T) {
 				flagSet := flag.NewFlagSet("test-flagset", flag.ContinueOnError)
 				_ = GetOptions(flagSet)
 
-				if exitCode != 0 {
-					t.Fatalf("expected exit code 0 but got %d", exitCode)
-				}
+				require.Zero(t, exitCode)
 			},
 		},
 	}

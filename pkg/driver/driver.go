@@ -54,9 +54,10 @@ type Driver struct {
 }
 
 type DriverOptions struct {
-	endpoint        string
-	extraVolumeTags map[string]string
-	mode            Mode
+	endpoint          string
+	extraVolumeTags   map[string]string
+	extraSnapshotTags map[string]string
+	mode              Mode
 }
 
 func NewDriver(options ...func(*DriverOptions)) (*Driver, error) {
@@ -167,9 +168,15 @@ func WithEndpoint(endpoint string) func(*DriverOptions) {
 	}
 }
 
-func WithExtraVolumeTags(extraVolumeTags map[string]string) func(*DriverOptions) {
+func WithExtraVolumeTags(tags map[string]string) func(*DriverOptions) {
 	return func(o *DriverOptions) {
-		o.extraVolumeTags = extraVolumeTags
+		o.extraVolumeTags = tags
+	}
+}
+
+func WithExtraSnapshotTags(tags map[string]string) func(*DriverOptions) {
+	return func(o *DriverOptions) {
+		o.extraSnapshotTags = tags
 	}
 }
 

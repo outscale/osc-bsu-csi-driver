@@ -41,7 +41,8 @@ Kubernetes: `>=1.20`
 | enableVolumeScheduling | bool | `true` | Enable schedule volume for dynamic volume provisioning True if enable volume scheduling for dynamic volume provisioning |
 | enableVolumeSnapshot | bool | `false` | Enable volume snapshot True if enable volume snapshot |
 | extraCreateMetadata | bool | `false` | Add pv/pvc metadata to plugin create requests as parameters |
-| extraVolumeTags | object | `{}` | Add extra tags on volume |
+| extraSnapshotTags | object | `{}` | Add extra tags on snapshots |
+| extraVolumeTags | object | `{}` | Add extra tags on volumes |
 | httpsProxy | string | `""` | Value used to create environment variable HTTPS_PROXY |
 | image.pullPolicy | string | `"IfNotPresent"` | Container pull policy |
 | image.repository | string | `"outscale/osc-bsu-csi-driver"` | Container image to use |

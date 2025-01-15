@@ -1504,6 +1504,69 @@ func TestCreateSnapshot(t *testing.T) {
 				}
 			},
 		},
+		{
+			name: "success with extra tags",
+			testFunc: func(t *testing.T) {
+				req := &csi.CreateSnapshotRequest{
+					Name:           "test-snapshot",
+					Parameters:     nil,
+					SourceVolumeId: "vol-test",
+				}
+				extraReq := &csi.CreateSnapshotRequest{
+					Name:           "test-snapshot",
+					Parameters:     nil,
+					SourceVolumeId: "vol-test",
+				}
+				expSnapshot := &csi.Snapshot{
+					ReadyToUse: true,
+				}
+				extraSnapshotTagKey := "foo"
+				extraSnapshotTagValue := "bar"
+				snapshotOptions := &cloud.SnapshotOptions{
+					Tags: map[string]string{
+						cloud.SnapshotNameTagKey: req.Name,
+						extraSnapshotTagKey:      extraSnapshotTagValue,
+					},
+				}
+
+				ctx := context.Background()
+				mockSnapshot := cloud.Snapshot{
+					SnapshotID:     fmt.Sprintf("snapshot-%d", rand.New(rand.NewSource(time.Now().UnixNano())).Uint64()),
+					SourceVolumeID: req.SourceVolumeId,
+					Size:           1,
+					CreationTime:   time.Now(),
+				}
+				mockCtl := gomock.NewController(t)
+				defer mockCtl.Finish()
+
+				mockCloud := mocks.NewMockCloud(mockCtl)
+				mockCloud.EXPECT().GetSnapshotByName(gomock.Eq(ctx), gomock.Eq(req.GetName())).Return(cloud.Snapshot{}, cloud.ErrNotFound)
+				mockCloud.EXPECT().CreateSnapshot(gomock.Eq(ctx), gomock.Eq(req.SourceVolumeId), gomock.Eq(snapshotOptions)).Return(mockSnapshot, nil)
+
+				oscDriver := controllerService{
+					cloud: mockCloud,
+					driverOptions: &DriverOptions{
+						extraSnapshotTags: map[string]string{
+							extraSnapshotTagKey: extraSnapshotTagValue,
+						},
+					},
+				}
+				resp, err := oscDriver.CreateSnapshot(context.Background(), req)
+				if err != nil {
+					t.Fatalf("Unexpected error: %v", err)
+				}
+				snap := resp.GetSnapshot()
+				if snap == nil {
+					t.Fatalf("Expected snapshot %v, got nil", expSnapshot)
+				}
+
+				mockCloud.EXPECT().GetSnapshotByName(gomock.Eq(ctx), gomock.Eq(extraReq.GetName())).Return(mockSnapshot, nil)
+				_, err = oscDriver.CreateSnapshot(ctx, extraReq)
+				if err != nil {
+					t.Fatalf("Unexpected error: %v", err)
+				}
+			},
+		},
 	}
 
 	for _, tc := range testCases {

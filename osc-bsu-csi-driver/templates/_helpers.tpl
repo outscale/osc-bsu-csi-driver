@@ -67,3 +67,16 @@ Convert the `--extra-volume-tags` command line arg from a map.
 {{- printf "%s=%s" "- --extra-volume-tags" (join "," $result.pairs) -}}
 {{- end -}}
 {{- end -}}
+
+{{/*
+Convert the `--extra-snapshot-tags` command line arg from a map.
+*/}}
+{{- define "osc-bsu-csi-driver.extra-snapshot-tags" -}}
+{{- $result := dict "pairs" (list) -}}
+{{- range $key, $value := .Values.extraSnapshotTags -}}
+{{- $noop := printf "%s=%s" $key $value | append $result.pairs | set $result "pairs" -}}
+{{- end -}}
+{{- if gt (len $result.pairs) 0 -}}
+{{- printf "%s=%s" "- --extra-snapshot-tags" (join "," $result.pairs) -}}
+{{- end -}}
+{{- end -}}

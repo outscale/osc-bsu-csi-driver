@@ -65,6 +65,9 @@ spec:
             {{- if .Values.extraVolumeTags }}
               {{- include "osc-bsu-csi-driver.extra-volume-tags" . | nindent 12 }}
             {{- end }}
+            {{- if .Values.extraSnapshotTags }}
+              {{- include "osc-bsu-csi-driver.extra-snapshot-tags" . | nindent 12 }}
+            {{- end }}
             - --logtostderr
             - --v={{ .Values.verbosity }}
           env:

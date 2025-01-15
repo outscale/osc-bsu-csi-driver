@@ -96,7 +96,6 @@ func checkPath(targetPath string) (sanity.PathKind, error) {
 	}
 
 	return sanity.PathIsFile, nil
-
 }
 
 type fakeCloudProvider struct {
@@ -186,7 +185,7 @@ func (c *fakeCloudProvider) GetDiskByName(ctx context.Context, name string, capa
 	if len(disks) > 1 {
 		return cloud.Disk{}, cloud.ErrMultiDisks
 	} else if len(disks) == 1 {
-		if capacityBytes != disks[0].Disk.CapacityGiB*util.GiB {
+		if capacityBytes != int64(disks[0].Disk.CapacityGiB)*util.GiB {
 			return cloud.Disk{}, cloud.ErrDiskExistsDiffSize
 		}
 		return disks[0].Disk, nil
@@ -228,7 +227,6 @@ func (c *fakeCloudProvider) CreateSnapshot(ctx context.Context, volumeID string,
 	}
 	c.snapshots[snapshotID] = s
 	return s.Snapshot, nil
-
 }
 
 func (c *fakeCloudProvider) DeleteSnapshot(ctx context.Context, snapshotID string) (success bool, err error) {
@@ -293,7 +291,7 @@ func (c *fakeCloudProvider) ResizeDisk(ctx context.Context, volumeID string, new
 	for volName, f := range c.disks {
 		if f.Disk.VolumeID == volumeID {
 			c.disks[volName].CapacityGiB = util.RoundUpGiB(newSize)
-			return util.RoundUpGiB(newSize), nil
+			return int64(util.RoundUpGiB(newSize)) * util.GiB, nil
 		}
 	}
 	return 0, cloud.ErrNotFound

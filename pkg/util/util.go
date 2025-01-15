@@ -27,12 +27,11 @@ import (
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws/endpoints"
-
 	"k8s.io/apimachinery/pkg/util/wait"
 )
 
 const (
-	GiB = 1024 * 1024 * 1024
+	GiB int64 = 1024 * 1024 * 1024
 )
 
 // RoundUpBytes rounds up the volume size in bytes upto multiplications of GiB
@@ -43,24 +42,24 @@ func RoundUpBytes(volumeSizeBytes int64) int64 {
 
 // RoundUpGiB rounds up the volume size in bytes upto multiplications of GiB
 // in the unit of GiB
-func RoundUpGiB(volumeSizeBytes int64) int64 {
-	return roundUpSize(volumeSizeBytes, GiB)
+func RoundUpGiB(volumeSizeBytes int64) int32 {
+	return int32(roundUpSize(volumeSizeBytes, GiB))
 }
 
 // BytesToGiB converts Bytes to GiB
-func BytesToGiB(volumeSizeBytes int64) int64 {
-	return volumeSizeBytes / GiB
+func BytesToGiB(volumeSizeBytes int64) int32 {
+	return int32(volumeSizeBytes / GiB)
 }
 
 // GiBToBytes converts GiB to Bytes
-func GiBToBytes(volumeSizeGiB int64) int64 {
-	return volumeSizeGiB * GiB
+func GiBToBytes(volumeSizeGiB int32) int64 {
+	return int64(volumeSizeGiB) * GiB
 }
 
 func ParseEndpoint(endpoint string) (string, string, error) {
 	u, err := url.Parse(endpoint)
 	if err != nil {
-		return "", "", fmt.Errorf("could not parse endpoint: %v", err)
+		return "", "", fmt.Errorf("could not parse endpoint: %w", err)
 	}
 
 	addr := path.Join(u.Host, filepath.FromSlash(u.Path))
@@ -71,7 +70,7 @@ func ParseEndpoint(endpoint string) (string, string, error) {
 	case "unix":
 		addr = path.Join("/", addr)
 		if err := os.Remove(addr); err != nil && !os.IsNotExist(err) {
-			return "", "", fmt.Errorf("could not remove unix domain socket %q: %v", addr, err)
+			return "", "", fmt.Errorf("could not remove unix domain socket %q: %w", addr, err)
 		}
 	default:
 		return "", "", fmt.Errorf("unsupported protocol: %s", scheme)
@@ -99,9 +98,7 @@ func OscEndpoint(region string, service string) string {
 }
 
 func OscSetupServiceResolver(region string) endpoints.ResolverFunc {
-
 	return func(service, region string, optFns ...func(*endpoints.Options)) (endpoints.ResolvedEndpoint, error) {
-
 		supported_service := map[string]string{
 			endpoints.Ec2ServiceID:                  "fcu",
 			endpoints.ElasticloadbalancingServiceID: "lbu",
@@ -131,7 +128,6 @@ func getEnv(key string, defaultValue string) string {
 }
 
 func EnvBackoff() wait.Backoff {
-
 	// BACKOFF_DURATION integer in second The initial duration.
 	duration, err := strconv.Atoi(getEnv("BACKOFF_DURATION", "1"))
 	if err != nil {

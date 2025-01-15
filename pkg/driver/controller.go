@@ -569,7 +569,7 @@ func newCreateSnapshotResponse(snapshot cloud.Snapshot) (*csi.CreateSnapshotResp
 			SourceVolumeId: snapshot.SourceVolumeID,
 			SizeBytes:      int64(snapshot.Size),
 			CreationTime:   ts,
-			ReadyToUse:     snapshot.ReadyToUse,
+			ReadyToUse:     snapshot.IsReadyToUse(),
 		},
 	}, nil
 }
@@ -597,7 +597,7 @@ func newListSnapshotsResponseEntry(snapshot cloud.Snapshot) (*csi.ListSnapshotsR
 			SourceVolumeId: snapshot.SourceVolumeID,
 			SizeBytes:      int64(snapshot.Size),
 			CreationTime:   ts,
-			ReadyToUse:     snapshot.ReadyToUse,
+			ReadyToUse:     snapshot.IsReadyToUse(),
 		},
 	}, nil
 }

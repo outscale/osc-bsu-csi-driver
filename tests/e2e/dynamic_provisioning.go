@@ -675,6 +675,8 @@ var _ = Describe("[bsu-csi-e2e] [single-az] Snapshot", func() {
 			Skip(fmt.Sprintf("env %q not set", OSC_REGION))
 		}
 
+		ctx := context.Background()
+
 		By("Create the Snapshot")
 		tvsc, cleanup := testsuites.CreateVolumeSnapshotClass(snapshotrcs, ns, bsuDriver)
 		defer cleanup()
@@ -687,23 +689,26 @@ var _ = Describe("[bsu-csi-e2e] [single-az] Snapshot", func() {
 		framework.ExpectNoError(err, "Error while creating a cloud configuration")
 
 		By("Retrieve the snapshot")
-		snap, err := oscCloud.GetSnapshotByName(context.Background(), fmt.Sprintf("snapshot-%v", snapshot.UID))
+		snap, err := oscCloud.GetSnapshotByName(ctx, fmt.Sprintf("snapshot-%v", snapshot.UID))
 		framework.ExpectNoError(err, fmt.Sprintf("Error while retrieving snapshot %v", snapshot.UID))
 
 		By("Deleting the snapshot")
-		_, err = oscCloud.DeleteSnapshot(context.Background(), snap.SnapshotID)
+		_, err = oscCloud.DeleteSnapshot(ctx, snap.SnapshotID)
 		framework.ExpectNoError(err, fmt.Sprintf("Error while deleting snapshot %v", snap.SnapshotID))
 
 		By("Keep deleting the snapshot until error")
 		for i := 1; i < 100; i++ {
-			_, err := oscCloud.DeleteSnapshot(context.Background(), snap.SnapshotID)
+			esnap, err := oscCloud.GetSnapshotByID(ctx, snap.SnapshotID)
+			if errors.Is(err, cloud.ErrNotFound) || esnap.State == "deleting" {
+				break
+			}
+			_, err = oscCloud.DeleteSnapshot(ctx, snap.SnapshotID)
 			if errors.Is(err, cloud.ErrNotFound) {
 				break
 			}
 			fmt.Println("Snapshot still present, waiting")
 			time.Sleep(1 * time.Second)
 		}
-
 	})
 })
 

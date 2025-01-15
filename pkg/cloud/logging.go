@@ -36,7 +36,7 @@ func logAPICall(ctx context.Context, call string, request, resp any, httpResp *h
 	}
 	switch {
 	case err != nil && httpResp == nil:
-		logger.V(3).Error(err, "OAPI error", call, "OAPI", call)
+		logger.V(3).Error(err, "OAPI error", "OAPI", call)
 	case httpResp == nil:
 	case httpResp.StatusCode > 299 && logger.V(3).Enabled():
 		logger.Info("OAPI error response: "+truncatedBody(httpResp), "OAPI", call, "http_status", httpResp.Status)

@@ -23,14 +23,13 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	osccloud "github.com/outscale/osc-bsu-csi-driver/pkg/cloud"
+	bsucsidriver "github.com/outscale/osc-bsu-csi-driver/pkg/driver"
 	"github.com/outscale/osc-bsu-csi-driver/tests/e2e/driver"
 	"github.com/outscale/osc-bsu-csi-driver/tests/e2e/testsuites"
 	v1 "k8s.io/api/core/v1"
 	clientset "k8s.io/client-go/kubernetes"
 	"k8s.io/kubernetes/test/e2e/framework"
 	admissionapi "k8s.io/pod-security-admission/api"
-
-	bsucsidriver "github.com/outscale/osc-bsu-csi-driver/pkg/driver"
 )
 
 const (
@@ -72,7 +71,7 @@ var _ = Describe("[bsu-csi-e2e] [single-az] Pre-Provisioned", func() {
 			Skip(fmt.Sprintf("env %q not set", awsAvailabilityZonesEnv))
 		}
 		availabilityZones := strings.Split(os.Getenv(awsAvailabilityZonesEnv), ",")
-		availabilityZone := availabilityZones[rand.Intn(len(availabilityZones))]
+		availabilityZone := availabilityZones[rand.Intn(len(availabilityZones))] //nolint: gosec
 		region := availabilityZone[0 : len(availabilityZone)-1]
 
 		diskOptions := &osccloud.DiskOptions{
@@ -82,7 +81,7 @@ var _ = Describe("[bsu-csi-e2e] [single-az] Pre-Provisioned", func() {
 			Tags:             map[string]string{osccloud.VolumeNameTagKey: dummyVolumeName},
 		}
 		var err error
-		cloud, err = osccloud.NewCloudWithoutMetadata(region)
+		cloud, err = osccloud.NewCloud(region, osccloud.WithoutMetadata())
 		if err != nil {
 			Fail(fmt.Sprintf("could not get NewCloud: %v", err))
 		}

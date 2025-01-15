@@ -21,26 +21,25 @@ import (
 	"log"
 	"math/rand"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
 	. "github.com/onsi/ginkgo/v2"
+	"github.com/outscale/osc-bsu-csi-driver/pkg/cloud"
+	osccloud "github.com/outscale/osc-bsu-csi-driver/pkg/cloud"
+	bsucsidriver "github.com/outscale/osc-bsu-csi-driver/pkg/driver"
+	"github.com/outscale/osc-bsu-csi-driver/tests/e2e/driver"
+	"github.com/outscale/osc-bsu-csi-driver/tests/e2e/testsuites"
 	v1 "k8s.io/api/core/v1"
 	storagev1 "k8s.io/api/storage/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/runtime/serializer"
 	clientset "k8s.io/client-go/kubernetes"
 	restclientset "k8s.io/client-go/rest"
 	"k8s.io/kubernetes/test/e2e/framework"
 	admissionapi "k8s.io/pod-security-admission/api"
-
-	"github.com/outscale/osc-bsu-csi-driver/tests/e2e/driver"
-	"github.com/outscale/osc-bsu-csi-driver/tests/e2e/testsuites"
-
-	"github.com/outscale/osc-bsu-csi-driver/pkg/cloud"
-	osccloud "github.com/outscale/osc-bsu-csi-driver/pkg/cloud"
-	bsucsidriver "github.com/outscale/osc-bsu-csi-driver/pkg/driver"
-	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/apimachinery/pkg/runtime/serializer"
 )
 
 const OSC_REGION = "OSC_REGION"
@@ -348,7 +347,7 @@ var _ = Describe("[bsu-csi-e2e] [single-az] Dynamic Provisioning", func() {
 					{
 						VolumeType: osccloud.VolumeTypeIO1,
 						FSType:     bsucsidriver.FSTypeExt4,
-						IopsPerGB:  fmt.Sprintf("%v", osccloud.MaxIopsPerGb),
+						IopsPerGB:  strconv.Itoa(osccloud.MaxIopsPerGb),
 						ClaimSize:  "44Gi",
 						VolumeMount: testsuites.VolumeMountDetails{
 							NameGenerate:      "test-volume-",
@@ -374,7 +373,7 @@ var _ = Describe("[bsu-csi-e2e] [single-az] Dynamic Provisioning", func() {
 					{
 						VolumeType: osccloud.VolumeTypeIO1,
 						FSType:     bsucsidriver.FSTypeExt4,
-						IopsPerGB:  fmt.Sprintf("%v", osccloud.MaxIopsPerGb+1),
+						IopsPerGB:  strconv.Itoa(osccloud.MaxIopsPerGb + 1),
 						ClaimSize:  "4Gi",
 						VolumeMount: testsuites.VolumeMountDetails{
 							NameGenerate:      "test-volume-",
@@ -423,9 +422,9 @@ var _ = Describe("[bsu-csi-e2e] [single-az] Dynamic Provisioning", func() {
 			},
 		}
 		availabilityZones := strings.Split(os.Getenv(awsAvailabilityZonesEnv), ",")
-		availabilityZone := availabilityZones[rand.Intn(len(availabilityZones))]
+		availabilityZone := availabilityZones[rand.Intn(len(availabilityZones))] //nolint: gosec
 		region := availabilityZone[0 : len(availabilityZone)-1]
-		cloud, err := osccloud.NewCloudWithoutMetadata(region)
+		cloud, err := osccloud.NewCloud(region, osccloud.WithoutMetadata())
 		if err != nil {
 			Fail(fmt.Sprintf("could not get NewCloud: %v", err))
 		}
@@ -535,7 +534,7 @@ var _ = Describe("[bsu-csi-e2e] [single-az] Dynamic Provisioning", func() {
 					"%g",
 					"/mnt/test-1",
 				},
-				ExpectedString: fmt.Sprintf("%d", fsGroup),
+				ExpectedString: strconv.FormatInt(fsGroup, 10),
 			},
 		}
 		test := testsuites.DynamicallyProvisionedCustomPodTest{
@@ -573,7 +572,7 @@ var _ = Describe("[bsu-csi-e2e] [single-az] Dynamic Provisioning", func() {
 
 		By("Create the cloud")
 
-		oscCloud, err := osccloud.NewCloudWithoutMetadata(os.Getenv(OSC_REGION))
+		oscCloud, err := osccloud.NewCloud(os.Getenv(OSC_REGION), osccloud.WithoutMetadata())
 		framework.ExpectNoError(err, "Error while creating a cloud configuration")
 
 		By("Keep delete the disk until error")
@@ -685,7 +684,7 @@ var _ = Describe("[bsu-csi-e2e] [single-az] Snapshot", func() {
 		tvsc.ReadyToUse(snapshot)
 
 		By("Create the cloud")
-		oscCloud, err := osccloud.NewCloudWithoutMetadata(os.Getenv(OSC_REGION))
+		oscCloud, err := osccloud.NewCloud(os.Getenv(OSC_REGION), osccloud.WithoutMetadata())
 		framework.ExpectNoError(err, "Error while creating a cloud configuration")
 
 		By("Retrieve the snapshot")

@@ -48,9 +48,6 @@ const (
 var (
 	// ValidVolumeTypes = []string{VolumeTypeIO1, VolumeTypeGP2,             VolumeTypeSC1, VolumeTypeST1}
 	ValidVolumeTypes = []string{VolumeTypeIO1, VolumeTypeGP2, VolumeTypeSTANDARD}
-
-	// Throtlling
-	ThrottlingError = []int{503, 429}
 )
 
 // Outscale provisioning limits.
@@ -91,26 +88,29 @@ const (
 )
 
 var (
-	// ErrMultiDisks is an error that is returned when multiple
+	// ErrMultiDisks is returned when multiple
 	// disks are found with the same volume name.
 	ErrMultiDisks = errors.New("Multiple disks with same name")
 
-	// ErrDiskExistsDiffSize is an error that is returned if a disk with a given
+	// ErrDiskExistsDiffSize is returned if a disk with a given
 	// name, but different size, is found.
 	ErrDiskExistsDiffSize = errors.New("There is already a disk with same name and different size")
 
 	// ErrNotFound is returned when a resource is not found.
 	ErrNotFound = errors.New("Resource was not found")
 
-	// ErrAlreadyExists is returned when a resource is already existent.
+	// ErrAlreadyExists is returned when a resource already exists.
 	ErrAlreadyExists = errors.New("Resource already exists")
 
 	// ErrMultiSnapshots is returned when multiple snapshots are found
-	// with the same ID
-	ErrMultiSnapshots = errors.New("Multiple snapshots with the same name found")
+	// with the same ID or name
+	ErrMultiSnapshots = errors.New("Multiple snapshots with the same name/id found")
 
 	// ErrInvalidMaxResults is returned when a MaxResults pagination parameter is between 1 and 4
 	ErrInvalidMaxResults = errors.New("MaxResults parameter must be 0 or greater than or equal to 5")
+
+	// ErrMultiVMs is returned when multiple VMs are found with the same name.
+	ErrMultiVMs = errors.New("Multiple VMs with the same ID found")
 )
 
 // Disk represents a BSU volume
@@ -253,20 +253,38 @@ func (client *OscClient) UpdateVolume(ctx context.Context, localVarOptionals osc
 var _ OscInterface = &OscClient{}
 
 type cloud struct {
-	region string
-	dm     dm.DeviceManager
-	client OscInterface
+	region  string
+	dm      dm.DeviceManager
+	client  OscInterface
+	backoff BackoffPolicy
 }
 
 var _ Cloud = &cloud{}
 
-// NewCloud returns a new instance of Outscale cloud
-// It panics if session is invalid
-func NewCloud(region string) (Cloud, error) {
-	return newOscCloud(region)
+// CloudOption defines an option for NewCloud.
+type CloudOption func(*cloud) error
+
+// WithoutMetadata is a CloudOption that ensures that region is setup to avoid metadata calls.
+func WithoutMetadata() CloudOption {
+	return func(c *cloud) error {
+		if c.region == "" {
+			return errors.New("could not get region")
+		}
+		return nil
+	}
 }
 
-func newOscCloud(region string) (Cloud, error) {
+// WithBackoffPolicy is a CloudOption that replaces the default backoff policy (DefaultBackoffPolicy).
+func WithBackoffPolicy(p BackoffPolicy) CloudOption {
+	return func(c *cloud) error {
+		c.backoff = p
+		return nil
+	}
+}
+
+// NewCloud returns a new instance of Outscale cloud using the default backoff policy.
+// It panics if session is invalid
+func NewCloud(region string, opts ...CloudOption) (Cloud, error) {
 	client := &OscClient{}
 	// Set User-Agent with name and version of the CSI driver
 	version := util.GetVersion()
@@ -294,11 +312,19 @@ func newOscCloud(region string) (Cloud, error) {
 	client.auth = context.WithValue(client.auth, osc.ContextServerIndex, 0)
 	client.auth = context.WithValue(client.auth, osc.ContextServerVariables, map[string]string{"region": region})
 
-	return &cloud{
-		region: region,
-		dm:     dm.NewDeviceManager(),
-		client: client,
-	}, nil
+	c := &cloud{
+		region:  region,
+		dm:      dm.NewDeviceManager(),
+		client:  client,
+		backoff: DefaultBackoffPolicy,
+	}
+	for _, opt := range opts {
+		err := opt(c)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return c, nil
 }
 
 func IsNilDisk(disk Disk) bool {
@@ -362,7 +388,7 @@ func (c *cloud) CreateDisk(ctx context.Context, volumeName string, diskOptions *
 
 	// NOT SUPPORTED YET BY Outscale API
 	if len(diskOptions.KmsKeyID) > 0 {
-		return Disk{}, fmt.Errorf("Encryption is not supported yet by Outscale API")
+		return Disk{}, errors.New("Encryption is not supported yet by Outscale API")
 	}
 
 	snapshotID := diskOptions.SnapshotID
@@ -376,19 +402,7 @@ func (c *cloud) CreateDisk(ctx context.Context, volumeName string, diskOptions *
 		var err error
 		creation, httpRes, err = c.client.CreateVolume(ctx, request)
 		logAPICall(ctx, "CreateVolume", request, creation, httpRes, err)
-		if err != nil {
-			if httpRes != nil {
-				requestStr := fmt.Sprintf("%v", request)
-				if keepRetryWithError(
-					requestStr,
-					httpRes.StatusCode,
-					ThrottlingError) {
-					return false, nil
-				}
-			}
-			return false, err
-		}
-		return true, nil
+		return c.backoff(ctx, httpRes, err)
 	}
 
 	backoff := util.EnvBackoff()
@@ -398,17 +412,17 @@ func (c *cloud) CreateDisk(ctx context.Context, volumeName string, diskOptions *
 	}
 
 	if !creation.HasVolume() {
-		return Disk{}, fmt.Errorf("volume is empty when returned by CreateVolume")
+		return Disk{}, errors.New("volume is empty when returned by CreateVolume")
 	}
 
 	volumeID := creation.Volume.GetVolumeId()
 	if len(volumeID) == 0 {
-		return Disk{}, fmt.Errorf("volume ID was not returned by CreateVolume")
+		return Disk{}, errors.New("volume ID was not returned by CreateVolume")
 	}
 
 	size := creation.Volume.GetSize()
 	if size == 0 {
-		return Disk{}, fmt.Errorf("disk size was not returned by CreateVolume")
+		return Disk{}, errors.New("disk size was not returned by CreateVolume")
 	}
 
 	requestTag := osc.CreateTagsRequest{
@@ -419,19 +433,7 @@ func (c *cloud) CreateDisk(ctx context.Context, volumeName string, diskOptions *
 	createTagsCallBack := func() (bool, error) {
 		resTag, httpRes, err := c.client.CreateTags(ctx, requestTag)
 		logAPICall(ctx, "CreateTags", requestTag, resTag, httpRes, err)
-		if err != nil {
-			if httpRes != nil {
-				requestStr := fmt.Sprintf("%v", request)
-				if keepRetryWithError(
-					requestStr,
-					httpRes.StatusCode,
-					ThrottlingError) {
-					return false, nil
-				}
-			}
-			return false, err
-		}
-		return true, nil
+		return c.backoff(ctx, httpRes, err)
 	}
 
 	backoff = util.EnvBackoff()
@@ -455,31 +457,19 @@ func (c *cloud) DeleteDisk(ctx context.Context, volumeID string) (bool, error) {
 	deleteVolumeCallBack := func() (bool, error) {
 		response, httpRes, err := c.client.DeleteVolume(ctx, request)
 		logAPICall(ctx, "DeleteVolume", request, response, httpRes, err)
-		if err != nil {
-			if httpRes != nil {
-				requestStr := fmt.Sprintf("%v", request)
-				if keepRetryWithError(
-					requestStr,
-					httpRes.StatusCode,
-					ThrottlingError) {
-					return false, nil
-				}
-			}
-			if isVolumeNotFoundError(err) {
-				return false, ErrNotFound
-			}
-			return false, err
-		}
-		return true, nil
+		return c.backoff(ctx, httpRes, err)
 	}
 
 	backoff := util.EnvBackoff()
-	waitErr := wait.ExponentialBackoff(backoff, deleteVolumeCallBack)
-	if waitErr != nil {
-		return false, fmt.Errorf("unable to delete disk: %w", waitErr)
+	err := wait.ExponentialBackoff(backoff, deleteVolumeCallBack)
+	switch {
+	case isVolumeNotFoundError(err):
+		return false, ErrNotFound
+	case err != nil:
+		return false, fmt.Errorf("unable to delete disk: %w", err)
+	default:
+		return true, nil
 	}
-
-	return true, nil
 }
 
 func (c *cloud) AttachDisk(ctx context.Context, volumeID, nodeID string) (string, error) {
@@ -505,19 +495,7 @@ func (c *cloud) AttachDisk(ctx context.Context, volumeID, nodeID string) (string
 		linkVolumeCallBack := func() (bool, error) {
 			resp, httpRes, err = c.client.LinkVolume(ctx, request)
 			logAPICall(ctx, "LinkVolume", request, resp, httpRes, err)
-			if err != nil {
-				if httpRes != nil {
-					requestStr := fmt.Sprintf("%v", request)
-					if keepRetryWithError(
-						requestStr,
-						httpRes.StatusCode,
-						ThrottlingError) {
-						return false, nil
-					}
-				}
-				return false, err
-			}
-			return true, nil
+			return c.backoff(ctx, httpRes, err)
 		}
 
 		backoff := util.EnvBackoff()
@@ -577,19 +555,7 @@ func (c *cloud) DetachDisk(ctx context.Context, volumeID, nodeID string) error {
 	unlinkVolumeCallBack := func() (bool, error) {
 		resp, httpRes, err := c.client.UnlinkVolume(ctx, request)
 		logAPICall(ctx, "UnlinkVolume", request, resp, httpRes, err)
-		if err != nil {
-			if httpRes != nil {
-				requestStr := fmt.Sprintf("%v", request)
-				if keepRetryWithError(
-					requestStr,
-					httpRes.StatusCode,
-					ThrottlingError) {
-					return false, nil
-				}
-			}
-			return false, err
-		}
-		return true, nil
+		return c.backoff(ctx, httpRes, err)
 	}
 
 	backoff := util.EnvBackoff()
@@ -723,19 +689,7 @@ func (c *cloud) CreateSnapshot(ctx context.Context, volumeID string, snapshotOpt
 		var httpRes *http.Response
 		res, httpRes, err = c.client.CreateSnapshot(ctx, request)
 		logAPICall(ctx, "CreateSnapshot", request, res, httpRes, err)
-		if err != nil {
-			if httpRes != nil {
-				requestStr := fmt.Sprintf("%v", request)
-				if keepRetryWithError(
-					requestStr,
-					httpRes.StatusCode,
-					ThrottlingError) {
-					return false, nil
-				}
-			}
-			return false, err
-		}
-		return true, nil
+		return c.backoff(ctx, httpRes, err)
 	}
 
 	backoff := util.EnvBackoff()
@@ -745,7 +699,7 @@ func (c *cloud) CreateSnapshot(ctx context.Context, volumeID string, snapshotOpt
 	}
 
 	if !res.HasSnapshot() {
-		return Snapshot{}, fmt.Errorf("nil CreateSnapshotResponse")
+		return Snapshot{}, errors.New("nil CreateSnapshotResponse")
 	}
 
 	requestTag := osc.CreateTagsRequest{
@@ -755,23 +709,11 @@ func (c *cloud) CreateSnapshot(ctx context.Context, volumeID string, snapshotOpt
 
 	var resTag osc.CreateTagsResponse
 	createTagCallback := func() (bool, error) {
-		var httpResTag *http.Response
-		var errTag error
-		resTag, httpResTag, errTag = c.client.CreateTags(ctx, requestTag)
-		logAPICall(ctx, "CreateTags", requestTag, res, httpResTag, err)
-		if errTag != nil {
-			if httpResTag != nil {
-				requestStr := fmt.Sprintf("%v", resTag)
-				if keepRetryWithError(
-					requestStr,
-					httpResTag.StatusCode,
-					ThrottlingError) {
-					return false, nil
-				}
-			}
-			return false, errTag
-		}
-		return true, nil
+		var httpRes *http.Response
+		var err error
+		resTag, httpRes, err = c.client.CreateTags(ctx, requestTag)
+		logAPICall(ctx, "CreateTags", requestTag, resTag, httpRes, err)
+		return c.backoff(ctx, httpRes, err)
 	}
 
 	backoff = util.EnvBackoff()
@@ -791,22 +733,7 @@ func (c *cloud) DeleteSnapshot(ctx context.Context, snapshotID string) (success 
 	deleteSnapshotCallBack := func() (bool, error) {
 		response, httpRes, err := c.client.DeleteSnapshot(ctx, request)
 		logAPICall(ctx, "DeleteSnapshot", request, response, httpRes, err)
-		if err != nil {
-			if httpRes != nil {
-				requestStr := fmt.Sprintf("%v", request)
-				if keepRetryWithError(
-					requestStr,
-					httpRes.StatusCode,
-					ThrottlingError) {
-					return false, nil
-				}
-			}
-			if isSnapshotNotFoundError(err) {
-				return false, ErrNotFound
-			}
-			return false, err
-		}
-		return true, nil
+		return c.backoff(ctx, httpRes, err)
 	}
 
 	backoff := util.EnvBackoff()
@@ -907,54 +834,16 @@ func (c *cloud) oscSnapshotResponseToStruct(oscSnapshot osc.Snapshot) Snapshot {
 	}
 }
 
-func keepRetryWithError(requestStr string, httpCode int, allowedErrors []int) bool {
-	for _, v := range allowedErrors {
-		if httpCode == v {
-			// klog.Warningf(
-			// 	"Retry even if got (%v) error on request (%s)",
-			// 	httpCode,
-			// 	requestStr)
-			return true
-		}
-	}
-	return false
-}
-
 // Pagination not supported
 func (c *cloud) getVolume(ctx context.Context, request osc.ReadVolumesRequest) (*osc.Volume, error) {
-	var volume osc.Volume
+	var response osc.ReadVolumesResponse
 	getVolumeCallback := func() (bool, error) {
-		var volumes []osc.Volume
-
-		var response osc.ReadVolumesResponse
 		var httpRes *http.Response
 		var err error
 
 		response, httpRes, err = c.client.ReadVolumes(ctx, request)
 		logAPICall(ctx, "ReadVolumes", request, response, httpRes, err)
-
-		if err != nil {
-			if httpRes != nil {
-				requestStr := fmt.Sprintf("%v", request)
-				if keepRetryWithError(
-					requestStr,
-					httpRes.StatusCode,
-					ThrottlingError) {
-					return false, nil
-				}
-			}
-			return false, err
-		}
-		volumes = append(volumes, response.GetVolumes()...)
-
-		if l := len(volumes); l > 1 {
-			return false, ErrMultiDisks
-		} else if l < 1 {
-			return false, ErrNotFound
-		}
-
-		volume = volumes[0]
-		return true, nil
+		return c.backoff(ctx, httpRes, err)
 	}
 
 	backoff := util.EnvBackoff()
@@ -964,38 +853,32 @@ func (c *cloud) getVolume(ctx context.Context, request osc.ReadVolumesRequest) (
 		return nil, fmt.Errorf("unable to read volume: %w", waitErr)
 	}
 
-	return &volume, nil
+	volumes := response.GetVolumes()
+	switch len(volumes) {
+	case 0:
+		return nil, ErrNotFound
+	case 1:
+		return &volumes[0], nil
+	default:
+		return nil, ErrMultiDisks
+	}
 }
 
 // Pagination not supported
 func (c *cloud) getInstance(ctx context.Context, vmID string) (*osc.Vm, error) {
-	var instances []osc.Vm
-
 	request := osc.ReadVmsRequest{
 		Filters: &osc.FiltersVm{
 			VmIds: &[]string{vmID},
 		},
 	}
+	var response osc.ReadVmsResponse
 
 	getInstanceCallback := func() (bool, error) {
-		response, httpRes, err := c.client.ReadVms(ctx, request)
+		var httpRes *http.Response
+		var err error
+		response, httpRes, err = c.client.ReadVms(ctx, request)
 		logAPICall(ctx, "ReadVms", request, response, httpRes, err)
-		if err != nil {
-			if httpRes != nil {
-				requestStr := fmt.Sprintf("%v", request)
-				if keepRetryWithError(
-					requestStr,
-					httpRes.StatusCode,
-					ThrottlingError) {
-					return false, nil
-				}
-			}
-			return false, err
-		}
-
-		instances = append(instances, response.GetVms()...)
-
-		return true, nil
+		return c.backoff(ctx, httpRes, err)
 	}
 
 	backoff := util.EnvBackoff()
@@ -1004,35 +887,27 @@ func (c *cloud) getInstance(ctx context.Context, vmID string) (*osc.Vm, error) {
 		return nil, fmt.Errorf("error listing instances: %w", waitErr)
 	}
 
-	if l := len(instances); l > 1 {
-		return nil, fmt.Errorf("found %d instances with ID %q", l, vmID)
-	} else if l < 1 {
+	vms := *response.Vms
+	switch len(vms) {
+	case 0:
 		return nil, ErrNotFound
+	case 1:
+		return &vms[0], nil
+	default:
+		return nil, ErrMultiVMs
 	}
-
-	return &instances[0], nil
 }
 
 // Pagination not supported
 func (c *cloud) getSnapshot(ctx context.Context, request osc.ReadSnapshotsRequest) (osc.Snapshot, error) {
 	var snapshots []osc.Snapshot
+	var response osc.ReadSnapshotsResponse
 	getSnapshotsCallback := func() (bool, error) {
-		response, httpRes, err := c.client.ReadSnapshots(ctx, request)
+		var httpRes *http.Response
+		var err error
+		response, httpRes, err = c.client.ReadSnapshots(ctx, request)
 		logAPICall(ctx, "ReadSnapshots", request, response, httpRes, err)
-		if err != nil {
-			if httpRes != nil {
-				requestStr := fmt.Sprintf("%v", request)
-				if keepRetryWithError(
-					requestStr,
-					httpRes.StatusCode,
-					ThrottlingError) {
-					return false, nil
-				}
-			}
-			return false, err
-		}
-		snapshots = response.GetSnapshots()
-		return true, nil
+		return c.backoff(ctx, httpRes, err)
 	}
 
 	backoff := util.EnvBackoff()
@@ -1040,13 +915,15 @@ func (c *cloud) getSnapshot(ctx context.Context, request osc.ReadSnapshotsReques
 	if waitErr != nil {
 		return osc.Snapshot{}, fmt.Errorf("error listing snapshots: %w", waitErr)
 	}
-	klog.FromContext(ctx).V(5).Info(fmt.Sprintf("%d snapshots found", len(snapshots)))
-	if l := len(snapshots); l > 1 {
-		return osc.Snapshot{}, ErrMultiSnapshots
-	} else if l < 1 {
+	snapshots = response.GetSnapshots()
+	switch len(snapshots) {
+	case 0:
 		return osc.Snapshot{}, ErrNotFound
+	case 1:
+		return snapshots[0], nil
+	default:
+		return osc.Snapshot{}, ErrMultiSnapshots
 	}
-	return snapshots[0], nil
 }
 
 // listSnapshots returns all snapshots based from a request
@@ -1055,24 +932,12 @@ func (c *cloud) listSnapshots(ctx context.Context, request osc.ReadSnapshotsRequ
 	logger := klog.FromContext(ctx)
 	logger.V(4).Info(fmt.Sprintf("getSnapshot: %+v", request))
 	var response osc.ReadSnapshotsResponse
-	var httpRes *http.Response
-	var err error
 	listSnapshotsCallBack := func() (bool, error) {
+		var httpRes *http.Response
+		var err error
 		response, httpRes, err = c.client.ReadSnapshots(ctx, request)
 		logAPICall(ctx, "ReadSnapshots", request, response, httpRes, err)
-		if err != nil {
-			if httpRes != nil {
-				requestStr := fmt.Sprintf("%v", request)
-				if keepRetryWithError(
-					requestStr,
-					httpRes.StatusCode,
-					ThrottlingError) {
-					return false, nil
-				}
-			}
-			return false, err
-		}
-		return true, nil
+		return c.backoff(ctx, httpRes, err)
 	}
 	backoff := util.EnvBackoff()
 	waitErr := wait.ExponentialBackoff(backoff, listSnapshotsCallBack)
@@ -1158,19 +1023,7 @@ func (c *cloud) ResizeDisk(ctx context.Context, volumeID string, newSizeBytes in
 	updateVolumeCallBack := func() (bool, error) {
 		response, httpRes, err := c.client.UpdateVolume(ctx, req)
 		logAPICall(ctx, "UpdateVolume", req, response, httpRes, err)
-		if err != nil {
-			if httpRes != nil {
-				requestStr := fmt.Sprintf("%v", request)
-				if keepRetryWithError(
-					requestStr,
-					httpRes.StatusCode,
-					ThrottlingError) {
-					return false, nil
-				}
-			}
-			return false, err
-		}
-		return true, nil
+		return c.backoff(ctx, httpRes, err)
 	}
 
 	backoff := util.EnvBackoff()
@@ -1204,39 +1057,4 @@ func (c *cloud) checkDesiredSize(ctx context.Context, volumeID string, newSizeGi
 		return util.GiBToBytes(szGiB), nil
 	}
 	return util.GiBToBytes(szGiB), fmt.Errorf("volume %q is still being expanded to %d size", volumeID, newSizeGiB)
-}
-
-// NewCloudWithoutMetadata to instantiate a cloud object outside osc instances
-func NewCloudWithoutMetadata(region string) (Cloud, error) {
-	if len(region) == 0 {
-		return nil, fmt.Errorf("could not get region")
-	}
-
-	// Set User-Agent with name and version of the CSI driver
-	version := util.GetVersion()
-
-	client := &OscClient{}
-	configEnv := osc.NewConfigEnv()
-	config, err := configEnv.Configuration()
-	if err != nil {
-		return nil, err
-	}
-	client.config = config
-	client.config.Debug = true
-	client.config.UserAgent = "osc-bsu-csi-driver/" + version.DriverVersion
-	client.api = osc.NewAPIClient(client.config)
-
-	client.auth = context.WithValue(context.Background(), osc.ContextAWSv4, osc.AWSv4{
-		AccessKey: os.Getenv("OSC_ACCESS_KEY"),
-		SecretKey: os.Getenv("OSC_SECRET_KEY"),
-	})
-
-	client.auth = context.WithValue(client.auth, osc.ContextServerIndex, 0)
-	client.auth = context.WithValue(client.auth, osc.ContextServerVariables, map[string]string{"region": region})
-
-	return &cloud{
-		region: region,
-		dm:     dm.NewDeviceManager(),
-		client: client,
-	}, nil
 }

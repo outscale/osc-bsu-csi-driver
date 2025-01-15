@@ -19,21 +19,17 @@ package cloud
 import (
 	"context"
 	"errors"
-	"fmt"
 	"reflect"
 	"strings"
 	"testing"
 
-	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/golang/mock/gomock"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
-
-	osc "github.com/outscale/osc-sdk-go/v2"
-
 	dm "github.com/outscale/osc-bsu-csi-driver/pkg/cloud/devicemanager"
 	"github.com/outscale/osc-bsu-csi-driver/pkg/cloud/mocks"
 	"github.com/outscale/osc-bsu-csi-driver/pkg/util"
+	osc "github.com/outscale/osc-sdk-go/v2"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 const (
@@ -98,7 +94,7 @@ func TestCreateDisk(t *testing.T) {
 				CapacityGiB:      1,
 				AvailabilityZone: expZone,
 			},
-			expErr: fmt.Errorf("Encryption is not supported yet by Outscale API"),
+			expErr: errors.New("Encryption is not supported yet by Outscale API"),
 		},
 		{
 			name:       "fail: CreateVolume returned CreateVolume error",
@@ -108,8 +104,8 @@ func TestCreateDisk(t *testing.T) {
 				Tags:             map[string]string{VolumeNameTagKey: "vol-test"},
 				AvailabilityZone: expZone,
 			},
-			expErr:             fmt.Errorf("could not create volume: CreateVolume generic error"),
-			expCreateVolumeErr: fmt.Errorf("CreateVolume generic error"),
+			expErr:             errors.New("could not create volume: CreateVolume generic error"),
+			expCreateVolumeErr: errors.New("CreateVolume generic error"),
 		},
 		{
 			name:       "fail: CreateVolume returned a DescribeVolumes error",
@@ -120,8 +116,8 @@ func TestCreateDisk(t *testing.T) {
 				Tags:             map[string]string{VolumeNameTagKey: "vol-test"},
 				AvailabilityZone: expZone,
 			},
-			expErr:             fmt.Errorf("could not create volume: DescribeVolumes generic error"),
-			expCreateVolumeErr: fmt.Errorf("DescribeVolumes generic error"),
+			expErr:             errors.New("could not create volume: DescribeVolumes generic error"),
+			expCreateVolumeErr: errors.New("DescribeVolumes generic error"),
 		},
 		{
 			name:       "success: normal from snapshot",
@@ -177,26 +173,13 @@ func TestCreateDisk(t *testing.T) {
 			}
 
 			disk, err := c.CreateDisk(ctx, tc.volumeName, tc.diskOptions)
-			if err != nil {
-				if tc.expErr == nil {
-					t.Fatalf("CreateDisk() failed: expected no error, got: %v", err)
-				} else if tc.expErr.Error() != err.Error() {
-					t.Fatalf("CreateDisk() failed: expected error %q, got: %q", tc.expErr, err)
-				}
+			if tc.expErr != nil {
+				require.EqualError(t, err, tc.expErr.Error())
 			} else {
-				if tc.expErr != nil {
-					t.Fatal("CreateDisk() failed: expected error, got nothing")
-				} else {
-					if tc.expDisk.CapacityGiB != disk.CapacityGiB {
-						t.Fatalf("CreateDisk() failed: expected capacity %d, got %d", tc.expDisk.CapacityGiB, disk.CapacityGiB)
-					}
-					if tc.expDisk.VolumeID != disk.VolumeID {
-						t.Fatalf("CreateDisk() failed: expected capacity %q, got %q", tc.expDisk.VolumeID, disk.VolumeID)
-					}
-					if tc.expDisk.AvailabilityZone != disk.AvailabilityZone {
-						t.Fatalf("CreateDisk() failed: expected availabilityZone %q, got %q", tc.expDisk.AvailabilityZone, disk.AvailabilityZone)
-					}
-				}
+				require.NoError(t, err)
+				assert.Equal(t, tc.expDisk.CapacityGiB, disk.CapacityGiB)
+				assert.Equal(t, tc.expDisk.VolumeID, disk.VolumeID)
+				assert.Equal(t, tc.expDisk.AvailabilityZone, disk.AvailabilityZone)
 			}
 
 			mockCtrl.Finish()
@@ -221,13 +204,7 @@ func TestDeleteDisk(t *testing.T) {
 			name:     "fail: DeleteVolume returned generic error",
 			volumeID: "vol-test-1234",
 			expResp:  false,
-			expErr:   fmt.Errorf("DeleteVolume generic error"),
-		},
-		{
-			name:     "fail: DeleteVolume returned not found error",
-			volumeID: "vol-test-1234",
-			expResp:  false,
-			expErr:   awserr.New("InvalidVolume.NotFound", "", nil),
+			expErr:   errors.New("DeleteVolume generic error"),
 		},
 	}
 
@@ -241,17 +218,12 @@ func TestDeleteDisk(t *testing.T) {
 			mockOscInterface.EXPECT().DeleteVolume(gomock.Eq(ctx), gomock.Any()).Return(osc.DeleteVolumeResponse{}, nil, tc.expErr)
 
 			ok, err := c.DeleteDisk(ctx, tc.volumeID)
-			if err != nil && tc.expErr == nil {
-				t.Fatalf("DeleteDisk() failed: expected no error, got: %v", err)
+			if tc.expErr != nil {
+				require.Error(t, err)
+			} else {
+				require.NoError(t, err)
 			}
-
-			if err == nil && tc.expErr != nil {
-				t.Fatal("DeleteDisk() failed: expected error, got nothing")
-			}
-
-			if tc.expResp != ok {
-				t.Fatalf("DeleteDisk() failed: expected return %v, got %v", tc.expResp, ok)
-			}
+			assert.Equal(t, tc.expResp, ok)
 
 			mockCtrl.Finish()
 		})
@@ -275,7 +247,7 @@ func TestAttachDisk(t *testing.T) {
 			name:     "fail: AttachVolume returned generic error",
 			volumeID: "vol-test-1234",
 			nodeID:   "node-1234",
-			expErr:   fmt.Errorf(""),
+			expErr:   errors.New(""),
 		},
 	}
 
@@ -299,17 +271,11 @@ func TestAttachDisk(t *testing.T) {
 			mockOscInterface.EXPECT().LinkVolume(gomock.Eq(ctx), gomock.Any()).Return(osc.LinkVolumeResponse{}, nil, tc.expErr)
 
 			devicePath, err := c.AttachDisk(ctx, tc.volumeID, tc.nodeID)
-			if err != nil {
-				if tc.expErr == nil {
-					t.Fatalf("AttachDisk() failed: expected no error, got: %v", err)
-				}
+			if tc.expErr != nil {
+				require.Error(t, err)
 			} else {
-				if tc.expErr != nil {
-					t.Fatal("AttachDisk() failed: expected error, got nothing")
-				}
-				if !strings.HasPrefix(devicePath, "/dev/") {
-					t.Fatal("AttachDisk() failed: expected valid device path, got empty string")
-				}
+				require.NoError(t, err)
+				assert.True(t, strings.HasPrefix(devicePath, "/dev/"))
 			}
 
 			mockCtrl.Finish()
@@ -334,7 +300,7 @@ func TestDetachDisk(t *testing.T) {
 			name:     "fail: DetachVolume returned generic error",
 			volumeID: "vol-test-1234",
 			nodeID:   "node-1234",
-			expErr:   fmt.Errorf("DetachVolume generic error"),
+			expErr:   errors.New("DetachVolume generic error"),
 		},
 	}
 
@@ -366,14 +332,10 @@ func TestDetachDisk(t *testing.T) {
 			mockOscInterface.EXPECT().UnlinkVolume(gomock.Eq(ctx), gomock.Any()).Return(osc.UnlinkVolumeResponse{}, nil, tc.expErr)
 
 			err := c.DetachDisk(ctx, tc.volumeID, tc.nodeID)
-			if err != nil {
-				if tc.expErr == nil {
-					t.Fatalf("DetachDisk() failed: expected no error, got: %v", err)
-				}
+			if tc.expErr != nil {
+				require.Error(t, err)
 			} else {
-				if tc.expErr != nil {
-					t.Fatal("DetachDisk() failed: expected error, got nothing")
-				}
+				require.NoError(t, err)
 			}
 
 			mockCtrl.Finish()
@@ -411,7 +373,7 @@ func TestGetDiskByName(t *testing.T) {
 			volumeName:     "vol-test-1234",
 			volumeCapacity: util.GiBToBytes(1),
 			snapshotId:     nil,
-			expErr:         fmt.Errorf("DescribeVolumes generic error"),
+			expErr:         errors.New("DescribeVolumes generic error"),
 		},
 	}
 
@@ -432,22 +394,16 @@ func TestGetDiskByName(t *testing.T) {
 			mockOscInterface.EXPECT().ReadVolumes(gomock.Eq(ctx), gomock.Any()).Return(osc.ReadVolumesResponse{Volumes: &[]osc.Volume{vol}}, nil, tc.expErr)
 
 			disk, err := c.GetDiskByName(ctx, tc.volumeName, tc.volumeCapacity)
-			if err != nil {
-				if tc.expErr == nil {
-					t.Fatalf("GetDiskByName() failed: expected no error, got: %v", err)
-				}
+			if tc.expErr != nil {
+				require.Error(t, err)
 			} else {
-				if tc.expErr != nil {
-					t.Fatal("GetDiskByName() failed: expected error, got nothing")
-				}
-				if disk.CapacityGiB != util.BytesToGiB(tc.volumeCapacity) {
-					t.Fatalf("GetDiskByName() failed: expected capacity %d, got %d", util.BytesToGiB(tc.volumeCapacity), disk.CapacityGiB)
-				}
-				if tc.availabilityZone != disk.AvailabilityZone {
-					t.Fatalf("GetDiskByName() failed: expected availabilityZone %q, got %q", tc.availabilityZone, disk.AvailabilityZone)
-				}
-				if tc.snapshotId != nil && *tc.snapshotId != disk.SnapshotID {
-					t.Fatalf("GetDiskByName() failed: expected snapshotId %q, got %q", *tc.snapshotId, disk.SnapshotID)
+				require.NoError(t, err)
+				assert.Equal(t, tc.volumeName, disk.VolumeID)
+				assert.Equal(t, util.BytesToGiB(tc.volumeCapacity), disk.CapacityGiB)
+				if tc.snapshotId != nil {
+					assert.Equal(t, *tc.snapshotId, disk.SnapshotID)
+				} else {
+					assert.Equal(t, "", disk.SnapshotID)
 				}
 			}
 
@@ -483,7 +439,7 @@ func TestGetDiskByID(t *testing.T) {
 			name:       "fail: DescribeVolumes returned generic error",
 			volumeID:   "vol-test-1234",
 			snapshotId: nil,
-			expErr:     fmt.Errorf("DescribeVolumes generic error"),
+			expErr:     errors.New("DescribeVolumes generic error"),
 		},
 	}
 
@@ -509,22 +465,16 @@ func TestGetDiskByID(t *testing.T) {
 			)
 
 			disk, err := c.GetDiskByID(ctx, tc.volumeID)
-			if err != nil {
-				if tc.expErr == nil {
-					t.Fatalf("GetDiskByID() failed: expected no error, got: %v", err)
-				}
+			if tc.expErr != nil {
+				require.Error(t, err)
 			} else {
-				if tc.expErr != nil {
-					t.Fatal("GetDiskByID() failed: expected error, got nothing")
-				}
-				if disk.VolumeID != tc.volumeID {
-					t.Fatalf("GetDiskByID() failed: expected ID %q, got %q", tc.volumeID, disk.VolumeID)
-				}
-				if tc.availabilityZone != disk.AvailabilityZone {
-					t.Fatalf("GetDiskByID() failed: expected availabilityZone %q, got %q", tc.availabilityZone, disk.AvailabilityZone)
-				}
-				if tc.snapshotId != nil && *tc.snapshotId != disk.SnapshotID {
-					t.Fatalf("GetDiskByID() failed: expected snapshotId %q, got %q", *tc.snapshotId, disk.SnapshotID)
+				require.NoError(t, err)
+				assert.Equal(t, tc.volumeID, disk.VolumeID)
+				assert.Equal(t, tc.availabilityZone, disk.AvailabilityZone)
+				if tc.snapshotId != nil {
+					assert.Equal(t, *tc.snapshotId, disk.SnapshotID)
+				} else {
+					assert.Equal(t, "", disk.SnapshotID)
 				}
 			}
 
@@ -576,18 +526,11 @@ func TestCreateSnapshot(t *testing.T) {
 			mockOscInterface.EXPECT().ReadSnapshots(gomock.Eq(ctx), gomock.Any()).Return(osc.ReadSnapshotsResponse{Snapshots: &[]osc.Snapshot{oscsnapshot.GetSnapshot()}}, nil, nil).AnyTimes()
 
 			snapshot, err := c.CreateSnapshot(ctx, tc.expSnapshot.SourceVolumeID, tc.snapshotOptions)
-			if err != nil {
-				if tc.expErr == nil {
-					t.Fatalf("CreateSnapshot() failed: expected no error, got: %v", err)
-				}
+			if tc.expErr != nil {
+				require.Error(t, err)
 			} else {
-				if tc.expErr != nil {
-					t.Fatal("CreateSnapshot() failed: expected error, got nothing")
-				} else {
-					if snapshot.SourceVolumeID != tc.expSnapshot.SourceVolumeID {
-						t.Fatalf("CreateSnapshot() failed: expected source volume ID %s, got %v", tc.expSnapshot.SourceVolumeID, snapshot.SourceVolumeID)
-					}
-				}
+				require.NoError(t, err)
+				assert.Equal(t, tc.expSnapshot.SourceVolumeID, snapshot.SourceVolumeID)
 			}
 
 			mockCtrl.Finish()
@@ -609,12 +552,7 @@ func TestDeleteSnapshot(t *testing.T) {
 		{
 			name:         "fail: delete snapshot return generic error",
 			snapshotName: "snap-test-name",
-			expErr:       fmt.Errorf("DeleteSnapshot generic error"),
-		},
-		{
-			name:         "fail: delete snapshot return not found error",
-			snapshotName: "snap-test-name",
-			expErr:       awserr.New("InvalidSnapshot.NotFound", "", nil),
+			expErr:       errors.New("DeleteSnapshot generic error"),
 		},
 	}
 
@@ -628,14 +566,10 @@ func TestDeleteSnapshot(t *testing.T) {
 			mockOscInterface.EXPECT().DeleteSnapshot(gomock.Eq(ctx), gomock.Any()).Return(osc.DeleteSnapshotResponse{}, nil, tc.expErr)
 
 			_, err := c.DeleteSnapshot(ctx, tc.snapshotName)
-			if err != nil {
-				if tc.expErr == nil {
-					t.Fatalf("DeleteSnapshot() failed: expected no error, got: %v", err)
-				}
+			if tc.expErr != nil {
+				require.Error(t, err)
 			} else {
-				if tc.expErr != nil {
-					t.Fatal("DeleteSnapshot() failed: expected error, got nothing")
-				}
+				require.NoError(t, err)
 			}
 
 			mockCtrl.Finish()
@@ -681,14 +615,10 @@ func TestGetSnapshotByName(t *testing.T) {
 			mockOscInterface.EXPECT().ReadSnapshots(gomock.Eq(ctx), gomock.Any()).Return(osc.ReadSnapshotsResponse{Snapshots: &[]osc.Snapshot{oscsnapshot}}, nil, nil)
 
 			_, err := c.GetSnapshotByName(ctx, tc.snapshotOptions.Tags[SnapshotNameTagKey])
-			if err != nil {
-				if tc.expErr == nil {
-					t.Fatalf("GetSnapshotByName() failed: expected no error, got: %v", err)
-				}
+			if tc.expErr != nil {
+				require.Error(t, err)
 			} else {
-				if tc.expErr != nil {
-					t.Fatal("GetSnapshotByName() failed: expected error, got nothing")
-				}
+				require.NoError(t, err)
 			}
 
 			mockCtrl.Finish()
@@ -734,14 +664,10 @@ func TestGetSnapshotByID(t *testing.T) {
 			mockOscInterface.EXPECT().ReadSnapshots(gomock.Eq(ctx), gomock.Any()).Return(osc.ReadSnapshotsResponse{Snapshots: &[]osc.Snapshot{oscsnapshot}}, nil, nil)
 
 			_, err := c.GetSnapshotByID(ctx, tc.snapshotOptions.Tags[SnapshotNameTagKey])
-			if err != nil {
-				if tc.expErr == nil {
-					t.Fatalf("GetSnapshotByName() failed: expected no error, got: %v", err)
-				}
+			if tc.expErr != nil {
+				require.Error(t, err)
 			} else {
-				if tc.expErr != nil {
-					t.Fatal("GetSnapshotByName() failed: expected error, got nothing")
-				}
+				require.NoError(t, err)
 			}
 
 			mockCtrl.Finish()
@@ -791,13 +717,9 @@ func TestListSnapshots(t *testing.T) {
 				c := newCloud(mockOscInterface)
 
 				ctx := context.Background()
-				fmt.Printf("Read snapshot :\n")
 				mockOscInterface.EXPECT().ReadSnapshots(gomock.Eq(ctx), gomock.Any()).Return(osc.ReadSnapshotsResponse{Snapshots: &oscsnapshot}, nil, nil)
-				fmt.Printf("End Read snapshot :\n")
 				_, err := c.ListSnapshots(ctx, "", 0, "")
-				if err != nil {
-					t.Fatalf("ListSnapshots() failed: expected no error, got: %v", err)
-				}
+				require.NoError(t, err)
 			},
 		},
 		{
@@ -838,18 +760,10 @@ func TestListSnapshots(t *testing.T) {
 				mockOscInterface.EXPECT().ReadSnapshots(gomock.Eq(ctx), gomock.Any()).Return(osc.ReadSnapshotsResponse{Snapshots: &oscsnapshot}, nil, nil)
 
 				resp, err := c.ListSnapshots(ctx, sourceVolumeID, 0, "")
-				if err != nil {
-					t.Fatalf("ListSnapshots() failed: expected no error, got: %v", err)
-				}
-
-				if len(resp.Snapshots) != len(expSnapshots) {
-					t.Fatalf("Expected %d snapshots, got %d", len(expSnapshots), len(resp.Snapshots))
-				}
-
+				require.NoError(t, err)
+				require.Len(t, resp.Snapshots, len(expSnapshots))
 				for _, snap := range resp.Snapshots {
-					if snap.SourceVolumeID != sourceVolumeID {
-						t.Fatalf("Unexpected source volume.  Expected %s, got %s", sourceVolumeID, snap.SourceVolumeID)
-					}
+					assert.Equal(t, sourceVolumeID, snap.SourceVolumeID)
 				}
 			},
 		},
@@ -865,9 +779,8 @@ func TestListSnapshots(t *testing.T) {
 
 				mockOscInterface.EXPECT().ReadSnapshots(gomock.Eq(ctx), gomock.Any()).Return(osc.ReadSnapshotsResponse{}, nil, errors.New("test error"))
 
-				if _, err := c.ListSnapshots(ctx, "", 0, ""); err == nil {
-					t.Fatalf("ListSnapshots() failed: expected an error, got none")
-				}
+				_, err := c.ListSnapshots(ctx, "", 0, "")
+				require.Error(t, err)
 			},
 		},
 		{
@@ -882,13 +795,8 @@ func TestListSnapshots(t *testing.T) {
 
 				mockOscInterface.EXPECT().ReadSnapshots(gomock.Eq(ctx), gomock.Any()).Return(osc.ReadSnapshotsResponse{}, nil, nil)
 
-				if _, err := c.ListSnapshots(ctx, "", 0, ""); err != nil {
-					if err != ErrNotFound {
-						t.Fatalf("Expected error %v, got %v", ErrNotFound, err)
-					}
-				} else {
-					t.Fatalf("Expected error, got none")
-				}
+				_, err := c.ListSnapshots(ctx, "", 0, "")
+				require.ErrorIs(t, err, ErrNotFound)
 			},
 		},
 	}
@@ -900,9 +808,10 @@ func TestListSnapshots(t *testing.T) {
 
 func newCloud(mockOscInterface OscInterface) *cloud {
 	return &cloud{
-		region: defaultRegion,
-		dm:     dm.NewDeviceManager(),
-		client: mockOscInterface,
+		region:  defaultRegion,
+		dm:      dm.NewDeviceManager(),
+		client:  mockOscInterface,
+		backoff: DefaultBackoffPolicy,
 	}
 }
 
@@ -964,9 +873,9 @@ func TestResizeDisk(t *testing.T) {
 		{
 			name:                "fail: volume doesn't exist",
 			volumeID:            "vol-test",
-			existingVolumeError: fmt.Errorf("InvalidVolume.NotFound"),
+			existingVolumeError: errors.New("InvalidVolume.NotFound"),
 			reqSizeGiB:          2,
-			expErr:              fmt.Errorf("ResizeDisk generic error"),
+			expErr:              errors.New("ResizeDisk generic error"),
 		},
 		{
 			name:     "failure: volume in modifying state",
@@ -977,7 +886,7 @@ func TestResizeDisk(t *testing.T) {
 				SubregionName: &defaultZoneVar,
 			},
 			reqSizeGiB: 2,
-			expErr:     fmt.Errorf("ResizeDisk generic error"),
+			expErr:     errors.New("ResizeDisk generic error"),
 		},
 	}
 
@@ -999,7 +908,7 @@ func TestResizeDisk(t *testing.T) {
 					tc.existingVolumeError,
 				)
 
-				if tc.expErr == nil && int32(tc.existingVolume.GetSize()) != int32(tc.reqSizeGiB) {
+				if tc.expErr == nil && tc.existingVolume.GetSize() != tc.reqSizeGiB {
 					resizedVolume := osc.Volume{
 						VolumeId:      &volumeId,
 						Size:          &tc.reqSizeGiB,

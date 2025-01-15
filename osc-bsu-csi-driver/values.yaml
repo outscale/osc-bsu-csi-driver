@@ -189,12 +189,19 @@ tolerations:
 # -- Affinity settings
 affinity: {}
 
-# Extra volume tags to attach to each dynamically provisioned volume.
+# Extra volume tags to attach to every dynamically provisioned volume.
 # extraVolumeTags:
 #   key1: value1
 #   key2: value2
-# -- Add extra tags on volume
+# -- Add extra tags on volumes
 extraVolumeTags: {}
+
+# Extra snapshot tags to attach to every created snapshot.
+# extraSnapshotTags:
+#   key1: value1
+#   key2: value2
+# -- Add extra tags on snapshots
+extraSnapshotTags: {}
 
 # -- Add pv/pvc metadata to plugin create requests as parameters
 extraCreateMetadata: false

@@ -1,5 +1,5 @@
 ARG GOLANG_IMAGE_TAG=1.23.4-bookworm
-ARG RUNTIME_IMAGE_TAG=3.13
+ARG RUNTIME_IMAGE_TAG=3.18
 
 # Build image
 FROM golang:${GOLANG_IMAGE_TAG} AS builder
@@ -22,13 +22,13 @@ RUN make build
 # Final IMAGE
 FROM alpine:${RUNTIME_IMAGE_TAG}
 RUN apk add --no-cache \
-            ca-certificates=20220614-r0 \
-            e2fsprogs=1.45.7-r0 \
-            xfsprogs=5.10.0-r0 \
-            xfsprogs-extra=5.10.0-r0 \
-            blkid=2.37.4-r0 \
-            e2fsprogs-extra=1.45.7-r0 \
-            cryptsetup=2.3.7-r0
+            ca-certificates=20241121-r1 \
+            e2fsprogs=1.47.0-r2 \
+            e2fsprogs-extra=1.47.0-r2 \
+            xfsprogs=6.2.0-r2 \
+            xfsprogs-extra=6.2.0-r2 \
+            blkid=2.38.1-r8 \
+            cryptsetup=2.6.1-r3
 COPY  --from=builder /build/bin/osc-bsu-csi-driver /bin/osc-bsu-csi-driver
 
 ENTRYPOINT ["/bin/osc-bsu-csi-driver"]

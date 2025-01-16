@@ -275,12 +275,12 @@ func newOscCloud(region string) (Cloud, error) {
 	if err != nil {
 		return nil, err
 	}
-	klog.V(1).Info("Region: " + region)
+	klog.V(1).InfoS("Region: " + region)
 	if configEnv.OutscaleApiEndpoint != nil {
-		klog.V(1).Infof("API endpoint: %s", *configEnv.OutscaleApiEndpoint)
+		klog.V(1).InfoS("API endpoint: " + *configEnv.OutscaleApiEndpoint)
 	}
 	if configEnv.ProfileName != nil {
-		klog.V(1).Infof("Profile: %s", *configEnv.ProfileName)
+		klog.V(1).InfoS("Profile: " + *configEnv.ProfileName)
 	}
 	client.config = config
 	client.config.Debug = false

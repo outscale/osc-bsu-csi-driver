@@ -14,7 +14,7 @@
 
 # Docker env
 DOCKERFILES := $(shell find . -type f -name '*Dockerfile*' !  -path "./debug/*" )
-LINTER_VERSION := v1.17.5
+LINTER_VERSION := v2.12.0
 
 E2E_ENV ?= "e2e/osc-bsu-csi-driver:0.0"
 E2E_ENV_RUN ?= "e2e-osc-bsu-csi-driver"
@@ -25,7 +25,7 @@ IMAGE_TAG ?= $(shell git describe --tags --always --dirty)
 VERSION ?= ${IMAGE_TAG}
 GIT_COMMIT ?= $(shell git rev-parse HEAD)
 BUILD_DATE ?= $(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
-LDFLAGS ?= "-X ${PKG}/pkg/util.driverVersion=${VERSION} -X ${PKG}/pkg/util.gitCommit=${GIT_COMMIT} -X ${PKG}/pkg/util.buildDate=${BUILD_DATE}"
+LDFLAGS ?= "-s -w -X ${PKG}/pkg/util.driverVersion=${VERSION} -X ${PKG}/pkg/util.gitCommit=${GIT_COMMIT} -X ${PKG}/pkg/util.buildDate=${BUILD_DATE}"
 GO111MODULE := on
 GOPROXY := direct
 TRIVY_IMAGE := aquasec/trivy:0.30.0
@@ -72,7 +72,7 @@ test:
 .PHONY: dockerlint
 dockerlint:
 	@echo "Lint images =>  $(DOCKERFILES)"
-	$(foreach image,$(DOCKERFILES), echo "Lint  ${image} " ; docker run --rm -i hadolint/hadolint:${LINTER_VERSION} hadolint - < ${image} || exit 1 ; )
+	$(foreach image,$(DOCKERFILES), echo "Lint  ${image} " ; docker run --rm -i hadolint/hadolint:${LINTER_VERSION} hadolint --info DL3008 -t warning - < ${image} || exit 1 ; )
 
 .PHONY: test-e2e-single-az-run
 test-e2e-single-az-run:

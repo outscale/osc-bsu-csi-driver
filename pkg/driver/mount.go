@@ -99,7 +99,7 @@ func (m *NodeMounter) LuksFormat(devicePath string, passphrase string, context l
 	return LuksFormat(m, devicePath, passphrase, context)
 }
 
-func (m *NodeMounter) CheckLuksPassphrase(devicePath string, passphrase string) bool {
+func (m *NodeMounter) CheckLuksPassphrase(devicePath string, passphrase string) error {
 	return CheckLuksPassphrase(m, devicePath, passphrase)
 }
 

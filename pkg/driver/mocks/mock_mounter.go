@@ -38,10 +38,10 @@ func (m *MockMounter) EXPECT() *MockMounterMockRecorder {
 }
 
 // CheckLuksPassphrase mocks base method.
-func (m *MockMounter) CheckLuksPassphrase(arg0, arg1 string) bool {
+func (m *MockMounter) CheckLuksPassphrase(arg0, arg1 string) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CheckLuksPassphrase", arg0, arg1)
-	ret0, _ := ret[0].(bool)
+	ret0, _ := ret[0].(error)
 	return ret0
 }
 

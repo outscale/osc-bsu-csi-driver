@@ -542,7 +542,7 @@ func TestNodeStageVolume(t *testing.T) {
 				// Check Luks
 				mockMounter.EXPECT().IsLuks(gomock.Eq(devicePath)).Return(false)
 				mockMounter.EXPECT().LuksFormat(gomock.Eq(devicePath), gomock.Eq(passphrase), gomock.Eq(luks.LuksContext{Cipher: "", Hash: "", KeySize: ""})).Return(nil)
-				mockMounter.EXPECT().CheckLuksPassphrase(gomock.Eq(devicePath), gomock.Eq(passphrase)).Return(true)
+				mockMounter.EXPECT().CheckLuksPassphrase(gomock.Eq(devicePath), gomock.Eq(passphrase)).Return(nil)
 				mockMounter.EXPECT().LuksOpen(gomock.Eq(devicePath), gomock.Eq(encryptedDeviceName), gomock.Eq(passphrase))
 
 				// Format opened luks device
@@ -602,7 +602,7 @@ func TestNodeStageVolume(t *testing.T) {
 				// Check Luks
 				mockMounter.EXPECT().IsLuks(gomock.Eq(devicePath)).Return(false)
 				mockMounter.EXPECT().LuksFormat(gomock.Eq(devicePath), gomock.Eq(passphrase), gomock.Eq(luks.LuksContext{Cipher: req.PublishContext[LuksCipherKey], Hash: req.PublishContext[LuksHashKey], KeySize: req.PublishContext[LuksKeySizeKey]})).Return(nil)
-				mockMounter.EXPECT().CheckLuksPassphrase(gomock.Eq(devicePath), gomock.Eq(passphrase)).Return(true)
+				mockMounter.EXPECT().CheckLuksPassphrase(gomock.Eq(devicePath), gomock.Eq(passphrase)).Return(nil)
 				mockMounter.EXPECT().LuksOpen(gomock.Eq(devicePath), gomock.Eq(encryptedDeviceName), gomock.Eq(passphrase))
 
 				// Format opened luks device
@@ -705,7 +705,7 @@ func TestNodeStageVolume(t *testing.T) {
 				mockMounter.EXPECT().GetDeviceName(targetPath).Return("", 1, nil)
 				// Check Luks (it is already format)
 				mockMounter.EXPECT().IsLuks(gomock.Eq(devicePath)).Return(true)
-				mockMounter.EXPECT().CheckLuksPassphrase(gomock.Eq(devicePath), gomock.Eq(passphrase)).Return(true)
+				mockMounter.EXPECT().CheckLuksPassphrase(gomock.Eq(devicePath), gomock.Eq(passphrase)).Return(nil)
 				mockMounter.EXPECT().LuksOpen(gomock.Eq(devicePath), gomock.Eq(encryptedDeviceName), gomock.Eq(passphrase))
 
 				// Format opened luks device

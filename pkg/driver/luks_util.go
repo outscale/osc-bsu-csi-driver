@@ -32,21 +32,21 @@ func LuksFormat(exec k8sExec.Interface, devicePath string, passphrase string, co
 	formatCmd.SetStdin(passwordReader)
 
 	if out, err := formatCmd.CombinedOutput(); err != nil {
-		return fmt.Errorf("unable to format LUKS volume: %w, output: %s", err, string(out))
+		return fmt.Errorf("cryptsetup luksFormat: %w, output: %s", err, string(out))
 	}
 
 	return nil
 }
 
-func CheckLuksPassphrase(exec k8sExec.Interface, devicePath string, passphrase string) bool {
+func CheckLuksPassphrase(exec k8sExec.Interface, devicePath string, passphrase string) error {
 	checkPassphraseCmd := exec.Command("cryptsetup", "-v", "--type=luks2", "--batch-mode", "--test-passphrase", "luksOpen", devicePath)
 	passwordReader := strings.NewReader(passphrase)
 	checkPassphraseCmd.SetStdin(passwordReader)
-	if _, err := checkPassphraseCmd.CombinedOutput(); err != nil {
-		return false
+	if out, err := checkPassphraseCmd.CombinedOutput(); err != nil {
+		return fmt.Errorf("cryptsetup luksOpen: %w, output: %s", err, string(out))
 	}
 
-	return true
+	return nil
 }
 
 func LuksOpen(exec Mounter, devicePath string, encryptedDeviceName string, passphrase string) (bool, error) {
@@ -57,7 +57,7 @@ func LuksOpen(exec Mounter, devicePath string, encryptedDeviceName string, passp
 	passwordReader := strings.NewReader(passphrase)
 	openCmd.SetStdin(passwordReader)
 	if out, err := openCmd.CombinedOutput(); err != nil {
-		return false, fmt.Errorf("unable to open LUKS volume: %w, output: %s", err, string(out))
+		return false, fmt.Errorf("cryptsetup luksOpen: %w, output: %s", err, string(out))
 	}
 
 	return true, nil
@@ -89,7 +89,7 @@ func LuksResize(exec k8sExec.Interface, deviceName string, passphrase string) er
 	resizeCmd.SetStdin(passwordReader)
 
 	if out, err := resizeCmd.CombinedOutput(); err != nil {
-		return fmt.Errorf("unable to resize LUKS volume: %w, output: %s", err, string(out))
+		return fmt.Errorf("cryptsetup resize: %w, output: %s", err, string(out))
 	}
 
 	return nil
@@ -105,7 +105,7 @@ func LuksClose(mounter Mounter, encryptedDeviceName string) error {
 	}
 
 	if err = mounter.Command("cryptsetup", "-v", "luksClose", encryptedDeviceName).Run(); err != nil {
-		return fmt.Errorf("unable to close LUKS volume: %w", err)
+		return fmt.Errorf("cryptsetup luksClose: %w", err)
 	}
 
 	return nil

@@ -207,21 +207,21 @@ func (d *nodeService) NodeStageVolume(ctx context.Context, req *csi.NodeStageVol
 			luksHash := req.PublishContext[LuksHashKey]
 			luksKeySize := req.PublishContext[LuksKeySizeKey]
 
-			if d.mounter.LuksFormat(source, passphrase, luks.LuksContext{Cipher: luksCipher, KeySize: luksKeySize, Hash: luksHash}) != nil {
-				msg := fmt.Sprintf("error while formating luks partition to %v, err: %v", volumeID, err)
+			if err := d.mounter.LuksFormat(source, passphrase, luks.LuksContext{Cipher: luksCipher, KeySize: luksKeySize, Hash: luksHash}); err != nil {
+				msg := fmt.Sprintf("error while formating luks partition on %v, err: %v", volumeID, err)
 				return nil, status.Error(codes.Internal, msg)
 			}
 		}
 
 		// Check passphrase
-		if ok := d.mounter.CheckLuksPassphrase(source, passphrase); !ok {
-			msg := fmt.Sprintf("error while checking passphrase to %v, err: %v", volumeID, err)
+		if err := d.mounter.CheckLuksPassphrase(source, passphrase); err != nil {
+			msg := fmt.Sprintf("error while checking passphrase for %v, err: %v", volumeID, err)
 			return nil, status.Error(codes.Internal, msg)
 		}
 
 		// Open disk
 		if _, err := d.mounter.LuksOpen(source, encryptedDeviceName, passphrase); err != nil {
-			msg := fmt.Sprintf("error while opening luks device to %v, err: %v", volumeID, err)
+			msg := fmt.Sprintf("error while opening luks device on %v, err: %v", volumeID, err)
 			return nil, status.Error(codes.Internal, msg)
 		}
 

@@ -146,7 +146,7 @@ func TestCheckLuksPassphrase(t *testing.T) {
 		gomock.Eq(devicePath),
 	).Return(mockRun)
 
-	assert.True(t, CheckLuksPassphrase(mockCommand, devicePath, passphrase))
+	require.NoError(t, CheckLuksPassphrase(mockCommand, devicePath, passphrase))
 
 	// Check when it is luks device
 	mockCommand = mocks.NewMockInterface(mockCtl)
@@ -163,7 +163,7 @@ func TestCheckLuksPassphrase(t *testing.T) {
 		gomock.Eq(devicePath),
 	).Return(mockRun)
 
-	assert.False(t, CheckLuksPassphrase(mockCommand, devicePath, passphrase))
+	require.Error(t, CheckLuksPassphrase(mockCommand, devicePath, passphrase))
 }
 
 func TestLuksOpen(t *testing.T) {

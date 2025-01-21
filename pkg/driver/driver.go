@@ -19,6 +19,7 @@ package driver
 import (
 	"fmt"
 	"net"
+	"strings"
 
 	csi "github.com/container-storage-interface/spec/lib/go/csi"
 	"github.com/outscale/osc-bsu-csi-driver/pkg/util"
@@ -68,7 +69,7 @@ func NewDriver(options ...func(*DriverOptions)) (*Driver, error) {
 	}
 
 	if err := ValidateDriverOptions(&driverOptions); err != nil {
-		return nil, fmt.Errorf("Invalid driver options: %v", err)
+		return nil, fmt.Errorf("Invalid driver options: %w", err)
 	}
 
 	driver := Driver{
@@ -90,9 +91,38 @@ func NewDriver(options ...func(*DriverOptions)) (*Driver, error) {
 	return &driver, nil
 }
 
+func (d *Driver) checkTools() error {
+	if d.mounter == nil {
+		return nil
+	}
+
+	out, err := d.mounter.Command("mkfs.ext4", "-V").CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("mkfs.ext4 issue: %s", strings.TrimSpace(string(out)))
+	}
+	klog.V(3).InfoS(string(out))
+
+	out, err = d.mounter.Command("mkfs.xfs", "-V").CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("mkfs.xfs issue: %s", strings.TrimSpace(string(out)))
+	}
+	klog.V(3).InfoS(string(out))
+
+	out, err = d.mounter.Command("cryptsetup", "-V").CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("cryptsetup issue: %s", strings.TrimSpace(string(out)))
+	}
+	klog.V(3).InfoS(string(out))
+
+	return nil
+}
 func (d *Driver) Run() error {
 	version := util.GetVersion().DriverVersion
-	klog.V(1).Infof("Driver: %v Version: %v", DriverName, version)
+	klog.V(1).InfoS(fmt.Sprintf("Driver: %v Version: %v", DriverName, version))
+	if err := d.checkTools(); err != nil {
+		return err
+	}
+
 	scheme, addr, err := util.ParseEndpoint(d.options.endpoint)
 	if err != nil {
 		return err
@@ -121,12 +151,13 @@ func (d *Driver) Run() error {
 		return fmt.Errorf("unknown mode: %s", d.options.mode)
 	}
 
-	klog.V(1).Infof("Listening for connections on address: %v", listener.Addr())
+	klog.V(1).InfoS("Running in mode: " + string(d.options.mode))
+	klog.V(1).InfoS("Listening for connections on: " + listener.Addr().String())
 	return d.srv.Serve(listener)
 }
 
 func (d *Driver) Stop() {
-	klog.V(0).Infof("Stopping server")
+	klog.V(0).InfoS("Stopping server")
 	d.srv.Stop()
 }
 

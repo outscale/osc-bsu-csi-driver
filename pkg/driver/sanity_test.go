@@ -376,8 +376,8 @@ func (m *fakeMounter) LuksFormat(devicePath string, passphrase string, context l
 	return nil
 }
 
-func (m *fakeMounter) CheckLuksPassphrase(devicePath string, passphrase string) bool {
-	return true
+func (m *fakeMounter) CheckLuksPassphrase(devicePath string, passphrase string) error {
+	return nil
 }
 
 func (m *fakeMounter) LuksOpen(devicePath string, encryptedDeviceName string, passphrase string) (bool, error) {

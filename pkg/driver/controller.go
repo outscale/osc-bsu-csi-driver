@@ -125,7 +125,7 @@ func (d *controllerService) CreateVolume(ctx context.Context, req *csi.CreateVol
 
 	var (
 		volumeType         string
-		iopsPerGB          int
+		iopsPerGB          int64
 		isEncrypted        bool
 		kmsKeyID           string
 		luksCipher         string
@@ -141,7 +141,7 @@ func (d *controllerService) CreateVolume(ctx context.Context, req *csi.CreateVol
 		case VolumeTypeKey:
 			volumeType = value
 		case IopsPerGBKey:
-			iopsPerGB, err = strconv.Atoi(value)
+			iopsPerGB, err = strconv.ParseInt(value, 10, 32)
 			if err != nil {
 				return nil, status.Errorf(codes.InvalidArgument, "Could not parse invalid iopsPerGB: %v", err)
 			}
@@ -317,7 +317,7 @@ func (d *controllerService) ControllerUnpublishVolume(ctx context.Context, req *
 }
 
 func (d *controllerService) ControllerGetCapabilities(ctx context.Context, req *csi.ControllerGetCapabilitiesRequest) (*csi.ControllerGetCapabilitiesResponse, error) {
-	var caps []*csi.ControllerServiceCapability
+	caps := make([]*csi.ControllerServiceCapability, 0, len(controllerCaps))
 	for _, cap := range controllerCaps {
 		c := &csi.ControllerServiceCapability{
 			Type: &csi.ControllerServiceCapability_Rpc{
@@ -572,7 +572,7 @@ func newCreateSnapshotResponse(snapshot cloud.Snapshot) (*csi.CreateSnapshotResp
 		Snapshot: &csi.Snapshot{
 			SnapshotId:     snapshot.SnapshotID,
 			SourceVolumeId: snapshot.SourceVolumeID,
-			SizeBytes:      int64(snapshot.Size),
+			SizeBytes:      snapshot.Size,
 			CreationTime:   ts,
 			ReadyToUse:     snapshot.IsReadyToUse(),
 		},
@@ -580,7 +580,7 @@ func newCreateSnapshotResponse(snapshot cloud.Snapshot) (*csi.CreateSnapshotResp
 }
 
 func newListSnapshotsResponse(cloudResponse cloud.ListSnapshotsResponse) (*csi.ListSnapshotsResponse, error) {
-	var entries []*csi.ListSnapshotsResponse_Entry
+	entries := make([]*csi.ListSnapshotsResponse_Entry, 0, len(cloudResponse.Snapshots))
 	for _, snapshot := range cloudResponse.Snapshots {
 		snapshotResponseEntry, err := newListSnapshotsResponseEntry(snapshot)
 		if err != nil {
@@ -600,7 +600,7 @@ func newListSnapshotsResponseEntry(snapshot cloud.Snapshot) (*csi.ListSnapshotsR
 		Snapshot: &csi.Snapshot{
 			SnapshotId:     snapshot.SnapshotID,
 			SourceVolumeId: snapshot.SourceVolumeID,
-			SizeBytes:      int64(snapshot.Size),
+			SizeBytes:      snapshot.Size,
 			CreationTime:   ts,
 			ReadyToUse:     snapshot.IsReadyToUse(),
 		},

@@ -140,7 +140,6 @@ func TestGetDevice(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, tc.testFunc)
 	}
-
 }
 
 func TestReleaseDevice(t *testing.T) {

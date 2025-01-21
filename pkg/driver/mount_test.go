@@ -17,7 +17,6 @@ limitations under the License.
 package driver
 
 import (
-	"os"
 	"path/filepath"
 	"testing"
 
@@ -26,15 +25,13 @@ import (
 )
 
 func TestMakeDir(t *testing.T) {
-	// Setup the full driver and its environment
-	dir, err := os.MkdirTemp(t.TempDir(), "mount-bsu-csi")
-	require.NoError(t, err)
+	dir := t.TempDir()
 
 	targetPath := filepath.Join(dir, "targetdir")
 
 	mountObj := newNodeMounter()
 
-	err = mountObj.MakeDir(targetPath)
+	err := mountObj.MakeDir(targetPath)
 	require.NoError(t, err)
 
 	err = mountObj.MakeDir(targetPath)
@@ -46,15 +43,13 @@ func TestMakeDir(t *testing.T) {
 }
 
 func TestMakeFile(t *testing.T) {
-	// Setup the full driver and its environment
-	dir, err := os.MkdirTemp(t.TempDir(), "mount-bsu-csi")
-	require.NoError(t, err)
+	dir := t.TempDir()
 
 	targetPath := filepath.Join(dir, "targetfile")
 
 	mountObj := newNodeMounter()
 
-	err = mountObj.MakeFile(targetPath)
+	err := mountObj.MakeFile(targetPath)
 	require.NoError(t, err)
 
 	err = mountObj.MakeFile(targetPath)
@@ -66,9 +61,7 @@ func TestMakeFile(t *testing.T) {
 }
 
 func TestExistsPath(t *testing.T) {
-	// Setup the full driver and its environment
-	dir, err := os.MkdirTemp(t.TempDir(), "mount-bsu-csi")
-	require.NoError(t, err)
+	dir := t.TempDir()
 
 	targetPath := filepath.Join(dir, "notafile")
 
@@ -80,14 +73,12 @@ func TestExistsPath(t *testing.T) {
 }
 
 func TestGetDeviceName(t *testing.T) {
-	// Setup the full driver and its environment
-	dir, err := os.MkdirTemp(t.TempDir(), "mount-bsu-csi")
-	require.NoError(t, err)
+	dir := t.TempDir()
 
 	targetPath := filepath.Join(dir, "notafile")
 
 	mountObj := newNodeMounter()
 
-	_, _, err = mountObj.GetDeviceName(targetPath)
+	_, _, err := mountObj.GetDeviceName(targetPath)
 	require.NoError(t, err)
 }

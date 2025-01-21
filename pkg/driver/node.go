@@ -794,7 +794,7 @@ func (d *nodeService) checkMountTarget(ctx context.Context, target string) (bool
 		// Checking if the path exists and error is related to Corrupted Mount, in that case, the system could unmount and mount.
 		_, pathErr := d.mounter.ExistsPath(target)
 		if pathErr != nil && d.mounter.IsCorruptedMnt(pathErr) {
-			logger.V(4).Info("Target path is corrupted. Trying to unmount.", target)
+			logger.V(4).Info("Target path is corrupted. Trying to unmount.")
 			if mntErr := d.mounter.Unmount(target); mntErr != nil {
 				return false, status.Errorf(codes.Internal, "Unable to unmount the target %q : %v", target, mntErr)
 			}

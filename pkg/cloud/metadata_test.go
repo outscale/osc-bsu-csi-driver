@@ -23,6 +23,8 @@ import (
 	"github.com/aws/aws-sdk-go/aws/ec2metadata"
 	"github.com/golang/mock/gomock"
 	"github.com/outscale/osc-bsu-csi-driver/pkg/cloud/mocks"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 var (
@@ -123,29 +125,13 @@ func TestNewMetadataService(t *testing.T) {
 
 			m, err := NewMetadataService(mockEC2Metadata)
 			if tc.isAvailable && tc.err == nil {
-				if err != nil {
-					t.Fatalf("NewMetadataService() failed: expected no error, got %v", err)
-				}
-
-				if m.GetInstanceID() != tc.identityDocument.InstanceID {
-					t.Fatalf("GetInstanceID() failed: expected %v, got %v", tc.identityDocument.InstanceID, m.GetInstanceID())
-				}
-
-				if m.GetInstanceType() != tc.identityDocument.InstanceType {
-					t.Fatalf("GetInstanceType() failed: expected %v, got %v", tc.identityDocument.InstanceType, m.GetInstanceType())
-				}
-
-				if m.GetRegion() != tc.identityDocument.Region {
-					t.Fatalf("GetRegion() failed: expected %v, got %v", tc.identityDocument.Region, m.GetRegion())
-				}
-
-				if m.GetAvailabilityZone() != tc.identityDocument.AvailabilityZone {
-					t.Fatalf("GetAvailabilityZone() failed: expected %v, got %v", tc.identityDocument.AvailabilityZone, m.GetAvailabilityZone())
-				}
+				require.NoError(t, err)
+				assert.Equal(t, tc.identityDocument.InstanceID, m.GetInstanceID())
+				assert.Equal(t, tc.identityDocument.InstanceType, m.GetInstanceType())
+				assert.Equal(t, tc.identityDocument.Region, m.GetRegion())
+				assert.Equal(t, tc.identityDocument.AvailabilityZone, m.GetAvailabilityZone())
 			} else {
-				if err == nil {
-					t.Fatal("NewMetadataService() failed: expected error when GetInstanceIdentityDocument returns partial data, got nothing")
-				}
+				require.Error(t, err)
 			}
 
 			mockCtrl.Finish()

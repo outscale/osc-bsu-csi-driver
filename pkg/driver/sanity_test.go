@@ -14,16 +14,13 @@ import (
 	"github.com/outscale/osc-bsu-csi-driver/pkg/driver/internal"
 	"github.com/outscale/osc-bsu-csi-driver/pkg/driver/luks"
 	"github.com/outscale/osc-bsu-csi-driver/pkg/util"
-	"github.com/stretchr/testify/require"
 	"k8s.io/utils/exec"
 	exectesting "k8s.io/utils/exec/testing"
 	"k8s.io/utils/mount"
 )
 
 func TestSanity(t *testing.T) {
-	// Setup the full driver and its environment
-	dir, err := os.MkdirTemp(t.TempDir(), "sanity-bsu-csi")
-	require.NoError(t, err)
+	dir := t.TempDir()
 
 	targetPath := filepath.Join(dir, "target")
 	stagingPath := filepath.Join(dir, "staging")
@@ -232,7 +229,6 @@ func (c *fakeCloudProvider) CreateSnapshot(ctx context.Context, volumeID string,
 func (c *fakeCloudProvider) DeleteSnapshot(ctx context.Context, snapshotID string) (success bool, err error) {
 	delete(c.snapshots, snapshotID)
 	return true, nil
-
 }
 
 func (c *fakeCloudProvider) GetSnapshotByName(ctx context.Context, name string) (snapshot cloud.Snapshot, err error) {
@@ -284,7 +280,6 @@ func (c *fakeCloudProvider) ListSnapshots(ctx context.Context, volumeID string, 
 		Snapshots: snapshots,
 		NextToken: retToken,
 	}, nil
-
 }
 
 func (c *fakeCloudProvider) ResizeDisk(ctx context.Context, volumeID string, newSize int64) (int64, error) {

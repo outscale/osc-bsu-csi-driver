@@ -76,7 +76,6 @@ func (t *DynamicallyProvisionedResizeVolumeTest) Run(client clientset.Interface,
 	tpod.WaitForSuccess()
 
 	defer tpod.Cleanup()
-
 }
 
 // WaitForPvToResize waiting for pvc size to be resized to desired size

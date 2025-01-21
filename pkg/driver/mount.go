@@ -62,22 +62,21 @@ func (m NodeMounter) IsCorruptedMnt(err error) bool {
 }
 
 func (m *NodeMounter) MakeFile(pathname string) error {
-	f, err := os.OpenFile(pathname, os.O_CREATE, os.FileMode(0644))
-	if err != nil {
-		if !os.IsExist(err) {
-			return err
-		}
+	f, err := os.OpenFile(pathname, os.O_CREATE, 0644) //nolint: gosec
+	switch {
+	case os.IsExist(err):
+		return nil
+	case err != nil:
+		return err
+	default:
+		return f.Close()
 	}
-	defer f.Close()
-	return nil
 }
 
 func (m *NodeMounter) MakeDir(pathname string) error {
-	err := os.MkdirAll(pathname, os.FileMode(0755))
-	if err != nil {
-		if !os.IsExist(err) {
-			return err
-		}
+	err := os.MkdirAll(pathname, 0755) //nolint: gosec
+	if err != nil && !os.IsExist(err) {
+		return err
 	}
 	return nil
 }

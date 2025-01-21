@@ -16,9 +16,7 @@ limitations under the License.
 
 package devicemanager
 
-import (
-	"fmt"
-)
+import "errors"
 
 // ExistingNames is a map of assigned device names. Presence of a key with a device
 // name in the map means that the device is allocated. Value is irrelevant and
@@ -58,5 +56,5 @@ func (d *nameAllocator) GetNext(existingNames ExistingNames) (string, error) {
 			return name, nil
 		}
 	}
-	return "", fmt.Errorf("there are no names available")
+	return "", errors.New("there are no names available")
 }

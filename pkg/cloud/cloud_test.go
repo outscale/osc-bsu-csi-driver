@@ -388,7 +388,7 @@ func TestGetDiskByName(t *testing.T) {
 				SubregionName: &tc.availabilityZone,
 				SnapshotId:    tc.snapshotId,
 			}
-			vol.SetSize(int32(util.BytesToGiB(tc.volumeCapacity)))
+			vol.SetSize(util.BytesToGiB(tc.volumeCapacity))
 
 			ctx := context.Background()
 			mockOscInterface.EXPECT().ReadVolumes(gomock.Eq(ctx), gomock.Any()).Return(osc.ReadVolumesResponse{Volumes: &[]osc.Volume{vol}}, nil, tc.expErr)

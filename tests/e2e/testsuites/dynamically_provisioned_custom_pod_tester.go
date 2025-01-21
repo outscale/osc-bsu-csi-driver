@@ -93,6 +93,6 @@ func (t *DynamicallyProvisionedCustomPodTest) Run(client clientset.Interface, na
 			panic(err.Error())
 		}
 		omega.Expect(singleSpacePattern.ReplaceAllString(stdout, " ")).To(omega.Equal(podCmd.ExpectedString), "Value should match the expected string")
-		//framework.ExpectEqual(singleSpacePattern.ReplaceAllString(stdout, " "), podCmd.ExpectedString)
+		// framework.ExpectEqual(singleSpacePattern.ReplaceAllString(stdout, " "), podCmd.ExpectedString)
 	}
 }

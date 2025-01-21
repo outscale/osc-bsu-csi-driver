@@ -41,7 +41,7 @@ var stdVolCap = []*csi.VolumeCapability{
 }
 
 var (
-	stdVolSize  = int64(5 * util.GiB)
+	stdVolSize  = 5 * util.GiB
 	stdCapRange = &csi.CapacityRange{RequiredBytes: stdVolSize}
 	stdParams   = map[string]string{
 		"key1": "value1",
@@ -209,6 +209,5 @@ func TestInFlight(t *testing.T) {
 				}
 			}
 		})
-
 	}
 }

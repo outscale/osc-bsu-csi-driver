@@ -129,7 +129,7 @@ func (t *TestVolumeSnapshotClass) ReadyToUse(snapshot *volumesnapshotv1.VolumeSn
 	err := wait.Poll(15*time.Second, 5*time.Minute, func() (bool, error) {
 		vs, err := snapshotclientset.New(t.client).SnapshotV1().VolumeSnapshots(t.namespace.Name).Get(context.Background(), snapshot.Name, metav1.GetOptions{})
 		if err != nil {
-			return false, fmt.Errorf("did not see ReadyToUse: %v", err)
+			return false, fmt.Errorf("did not see ReadyToUse: %w", err)
 		}
 
 		if vs.Status == nil || vs.Status.ReadyToUse == nil {
@@ -255,11 +255,11 @@ func (t *TestPersistentVolumeClaim) ValidateProvisionedPersistentVolume() {
 	framework.ExpectNoError(err)
 
 	// Check sizes
-	expectedCapacity := t.requestedPersistentVolumeClaim.Spec.Resources.Requests[v1.ResourceName(v1.ResourceStorage)]
-	claimCapacity := t.persistentVolumeClaim.Spec.Resources.Requests[v1.ResourceName(v1.ResourceStorage)]
+	expectedCapacity := t.requestedPersistentVolumeClaim.Spec.Resources.Requests[v1.ResourceStorage]
+	claimCapacity := t.persistentVolumeClaim.Spec.Resources.Requests[v1.ResourceStorage]
 	Expect(claimCapacity.Value()).To(Equal(expectedCapacity.Value()), "claimCapacity is not equal to requestedCapacity")
 
-	pvCapacity := t.persistentVolume.Spec.Capacity[v1.ResourceName(v1.ResourceStorage)]
+	pvCapacity := t.persistentVolume.Spec.Capacity[v1.ResourceStorage]
 	Expect(pvCapacity.Value()).To(Equal(expectedCapacity.Value()), "pvCapacity is not equal to requestedCapacity")
 
 	// Check PV properties
@@ -282,7 +282,6 @@ func (t *TestPersistentVolumeClaim) ValidateProvisionedPersistentVolume() {
 			for _, v := range t.persistentVolume.Spec.NodeAffinity.Required.NodeSelectorTerms[0].MatchExpressions[0].Values {
 				Expect(t.storageClass.AllowedTopologies[0].MatchLabelExpressions[0].Values).To(ContainElement(v))
 			}
-
 		}
 	}
 }
@@ -315,7 +314,7 @@ func generatePVC(namespace, storageClassName, claimSize string, volumeMode v1.Pe
 			},
 			Resources: v1.VolumeResourceRequirements{
 				Requests: v1.ResourceList{
-					v1.ResourceName(v1.ResourceStorage): resource.MustParse(claimSize),
+					v1.ResourceStorage: resource.MustParse(claimSize),
 				},
 			},
 			VolumeMode: &volumeMode,
@@ -354,7 +353,6 @@ func (t *TestPersistentVolumeClaim) WaitForPersistentVolumePhase(phase v1.Persis
 }
 
 func (t *TestPersistentVolumeClaim) DeleteBoundPersistentVolume() {
-
 	By(fmt.Sprintf("deleting PV %q", t.persistentVolume.Name))
 	err := e2epv.DeletePersistentVolume(context.Background(), t.client, t.persistentVolume.Name)
 	framework.ExpectNoError(err)
@@ -389,7 +387,7 @@ func NewTestDeployment(c clientset.Interface, ns *v1.Namespace, command string, 
 		imageName = customImage[0]
 	}
 	generateName := "bsu-volume-tester-"
-	selectorValue := fmt.Sprintf("%s%d", generateName, rand.Int())
+	selectorValue := fmt.Sprintf("%s%d", generateName, rand.Int()) //nolint: gosec
 	replicas := int32(1)
 	return &TestDeployment{
 		client:    c,
@@ -473,7 +471,7 @@ func (t *TestDeployment) DeletePodAndWait() {
 	err := t.client.CoreV1().Pods(t.namespace.Name).Delete(context.Background(), t.podName, metav1.DeleteOptions{})
 	if err != nil {
 		if !apierrs.IsNotFound(err) {
-			framework.ExpectNoError(fmt.Errorf("pod %q Delete API error: %v", t.podName, err))
+			framework.ExpectNoError(fmt.Errorf("pod %q Delete API error: %w", t.podName, err))
 		}
 		return
 	}
@@ -481,7 +479,7 @@ func (t *TestDeployment) DeletePodAndWait() {
 	err = e2epod.WaitForPodNotFoundInNamespace(context.Background(), t.client, t.podName, t.namespace.Name, 3*time.Minute)
 	if err != nil {
 		if !apierrs.IsNotFound(err) {
-			framework.ExpectNoError(fmt.Errorf("pod %q error waiting for delete: %v", t.podName, err))
+			framework.ExpectNoError(fmt.Errorf("pod %q error waiting for delete: %w", t.podName, err))
 		}
 	}
 }
@@ -503,16 +501,16 @@ func (t *TestDeployment) Logs() ([]byte, error) {
 }
 
 // waitForPersistentVolumeClaimDeleted waits for a PersistentVolumeClaim to be removed from the system until timeout occurs, whichever comes first.
-func waitForPersistentVolumeClaimDeleted(c clientset.Interface, ns string, pvcName string, Poll, timeout time.Duration) error {
+func waitForPersistentVolumeClaimDeleted(c clientset.Interface, ns string, pvcName string, poll, timeout time.Duration) error {
 	framework.Logf("Waiting up to %v for PersistentVolumeClaim %s to be removed", timeout, pvcName)
-	for start := time.Now(); time.Since(start) < timeout; time.Sleep(Poll) {
+	for start := time.Now(); time.Since(start) < timeout; time.Sleep(poll) {
 		_, err := c.CoreV1().PersistentVolumeClaims(ns).Get(context.Background(), pvcName, metav1.GetOptions{})
 		if err != nil {
 			if apierrs.IsNotFound(err) {
 				framework.Logf("Claim %q in namespace %q doesn't exist in the system", pvcName, ns)
 				return nil
 			}
-			framework.Logf("Failed to get claim %q in namespace %q, retrying in %v. Error: %v", pvcName, ns, Poll, err)
+			framework.Logf("Failed to get claim %q in namespace %q, retrying in %v. Error: %v", pvcName, ns, poll, err)
 		}
 	}
 	return fmt.Errorf("PersistentVolumeClaim %s is not removed from the system within %v", pvcName, timeout)

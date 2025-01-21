@@ -35,7 +35,7 @@ import (
 )
 
 func getDf(data string) string {
-	scanner := bufio.NewScanner(strings.NewReader(string(data)))
+	scanner := bufio.NewScanner(strings.NewReader(data))
 	stop := 0
 	for scanner.Scan() {
 		text := scanner.Text()
@@ -49,14 +49,14 @@ func getDf(data string) string {
 }
 
 func getMetrics(data string, ns string, pvc string) string {
-	scanner := bufio.NewScanner(strings.NewReader(string(data)))
+	scanner := bufio.NewScanner(strings.NewReader(data))
 	// The target is to find and get data from following lines
-	//kubelet_volume_stats_available_bytes{namespace="dynamic-p",persistentvolumeclaim="ebs-claim"} 4.12649472e+09
-	//kubelet_volume_stats_capacity_bytes{namespace="dynamic-p",persistentvolumeclaim="ebs-claim"} 4.160421888e+09
-	//kubelet_volume_stats_used_bytes{namespace="dynamic-p",persistentvolumeclaim="ebs-claim"} 1.7149952e+07
-	//kubelet_volume_stats_inodes{namespace="dynamic-p",persistentvolumeclaim="ebs-claim"} 262144
-	//kubelet_volume_stats_inodes_free{namespace="dynamic-p",persistentvolumeclaim="ebs-claim"} 262132
-	//kubelet_volume_stats_inodes_used{namespace="dynamic-p",persistentvolumeclaim="ebs-claim"} 12
+	// kubelet_volume_stats_available_bytes{namespace="dynamic-p",persistentvolumeclaim="ebs-claim"} 4.12649472e+09
+	// kubelet_volume_stats_capacity_bytes{namespace="dynamic-p",persistentvolumeclaim="ebs-claim"} 4.160421888e+09
+	// kubelet_volume_stats_used_bytes{namespace="dynamic-p",persistentvolumeclaim="ebs-claim"} 1.7149952e+07
+	// kubelet_volume_stats_inodes{namespace="dynamic-p",persistentvolumeclaim="ebs-claim"} 262144
+	// kubelet_volume_stats_inodes_free{namespace="dynamic-p",persistentvolumeclaim="ebs-claim"} 262132
+	// kubelet_volume_stats_inodes_used{namespace="dynamic-p",persistentvolumeclaim="ebs-claim"} 12
 	KUBELET_VOLUME_PREFIX := "kubelet_volume_stats_"
 	var kubelet_volume_stats_available_bytes,
 		kubelet_volume_stats_capacity_bytes,
@@ -87,26 +87,25 @@ func getMetrics(data string, ns string, pvc string) string {
 					panic(err)
 				}
 
-				value := new(big.Int)
-				value, _ = flt.Int(value)
+				value, _ := flt.Int(nil)
 
-				fmt.Printf("value : %v ; %v\n", value, text)
-				if strings.Contains(text, "kubelet_volume_stats_available_bytes") {
+				switch {
+				case strings.Contains(text, "kubelet_volume_stats_available_bytes"):
 					kubelet_volume_stats_available_bytes = fmt.Sprintf("%d", value)
 					stop++
-				} else if strings.Contains(text, "kubelet_volume_stats_capacity_bytes") {
+				case strings.Contains(text, "kubelet_volume_stats_capacity_bytes"):
 					kubelet_volume_stats_capacity_bytes = fmt.Sprintf("%d", value)
 					stop++
-				} else if strings.Contains(text, "kubelet_volume_stats_used_bytes") {
+				case strings.Contains(text, "kubelet_volume_stats_used_bytes"):
 					kubelet_volume_stats_used_bytes = fmt.Sprintf("%d", value)
 					stop++
-				} else if strings.Contains(text, "kubelet_volume_stats_inodes_free") {
+				case strings.Contains(text, "kubelet_volume_stats_inodes_free"):
 					kubelet_volume_stats_inodes_free = fmt.Sprintf("%d", value)
 					stop++
-				} else if strings.Contains(text, "kubelet_volume_stats_inodes_used") {
+				case strings.Contains(text, "kubelet_volume_stats_inodes_used"):
 					kubelet_volume_stats_inodes_used = fmt.Sprintf("%d", value)
 					stop++
-				} else if strings.Contains(text, "kubelet_volume_stats_inodes") {
+				case strings.Contains(text, "kubelet_volume_stats_inodes"):
 					kubelet_volume_stats_inodes = fmt.Sprintf("%d", value)
 					stop++
 				}
@@ -146,7 +145,6 @@ func (t *DynamicallyProvisionedStatsPodTest) Run(client clientset.Interface, nam
 	metrics_kubelet_volume_stats := ""
 	df_stats := ""
 	for i := 0; i < 20; i++ {
-
 		// Retrieve stats using /metrics
 		cmd := []string{
 			"curl",
@@ -183,9 +181,7 @@ func (t *DynamicallyProvisionedStatsPodTest) Run(client clientset.Interface, nam
 		}
 
 		time.Sleep(10 * time.Second)
-
 	}
 
 	panic("Timeout, did not got the same stats")
-
 }

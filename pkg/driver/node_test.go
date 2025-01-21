@@ -36,7 +36,6 @@ import (
 )
 
 func TestNodeStageVolume(t *testing.T) {
-
 	var (
 		targetPath          = "/test/path"
 		devicePath          = "/dev/fake"
@@ -1591,7 +1590,6 @@ func TestNodeGetVolumeStats(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, tc.testFunc)
 	}
-
 }
 
 func TestNodeGetCapabilities(t *testing.T) {

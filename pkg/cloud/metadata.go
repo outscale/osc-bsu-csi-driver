@@ -17,11 +17,10 @@ limitations under the License.
 package cloud
 
 import (
-	"fmt"
+	"errors"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/ec2metadata"
-	"github.com/aws/aws-sdk-go/aws/endpoints"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/outscale/osc-bsu-csi-driver/pkg/util"
 )
@@ -71,7 +70,7 @@ func (m *Metadata) GetAvailabilityZone() string {
 
 func NewMetadata() (MetadataService, error) {
 	sess := session.Must(session.NewSession(&aws.Config{
-		EndpointResolver: endpoints.ResolverFunc(util.OscSetupMetadataResolver()),
+		EndpointResolver: util.OscSetupMetadataResolver(),
 	}))
 	svc := ec2metadata.New(sess)
 	return NewMetadataService(svc)
@@ -80,25 +79,25 @@ func NewMetadata() (MetadataService, error) {
 // NewMetadataService returns a new MetadataServiceImplementation.
 func NewMetadataService(svc EC2Metadata) (MetadataService, error) {
 	if !svc.Available() {
-		return nil, fmt.Errorf("EC2 instance metadata is not available")
+		return nil, errors.New("EC2 instance metadata is not available")
 	}
 
 	instanceID, err := svc.GetMetadata("instance-id")
 	if err != nil || len(instanceID) == 0 {
-		return nil, fmt.Errorf("could not get valid EC2 instance ID")
+		return nil, errors.New("could not get valid EC2 instance ID")
 	}
 	instanceType, err := svc.GetMetadata("instance-type")
 	if err != nil || len(instanceType) == 0 {
-		return nil, fmt.Errorf("could not get valid EC2 instance type")
+		return nil, errors.New("could not get valid EC2 instance type")
 	}
 
 	availabilityZone, err := svc.GetMetadata("placement/availability-zone")
 	if err != nil || len(availabilityZone) == 0 {
-		return nil, fmt.Errorf("could not get valid EC2 availavility zone")
+		return nil, errors.New("could not get valid EC2 availavility zone")
 	}
 	region := availabilityZone[0 : len(availabilityZone)-1]
 	if len(region) == 0 {
-		return nil, fmt.Errorf("could not get valid EC2 region")
+		return nil, errors.New("could not get valid EC2 region")
 	}
 
 	return &Metadata{

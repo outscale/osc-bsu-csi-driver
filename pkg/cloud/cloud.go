@@ -785,18 +785,17 @@ func (c *cloud) ListSnapshots(ctx context.Context, volumeID string, maxResults i
 	if maxResults > maxResultsLimit {
 		maxResults = maxResultsLimit
 	}
-	req := osc.ReadSnapshotsRequest{
-		Filters: &osc.FiltersSnapshot{
-			VolumeIds: &[]string{},
-		},
-		ResultsPerPage: &maxResults,
-	}
 
+	req := osc.ReadSnapshotsRequest{}
+	if maxResults > 0 {
+		req.ResultsPerPage = &maxResults
+	}
+	if nextToken != "" {
+		req.NextPageToken = &nextToken
+	}
 	if len(volumeID) != 0 {
-		req = osc.ReadSnapshotsRequest{
-			Filters: &osc.FiltersSnapshot{
-				VolumeIds: &[]string{volumeID},
-			},
+		req.Filters = &osc.FiltersSnapshot{
+			VolumeIds: &[]string{volumeID},
 		}
 	}
 

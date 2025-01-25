@@ -22,12 +22,9 @@ import (
 	"os"
 	"path"
 	"path/filepath"
-	"strconv"
 	"strings"
-	"time"
 
 	"github.com/aws/aws-sdk-go/aws/endpoints"
-	"k8s.io/apimachinery/pkg/util/wait"
 )
 
 const (
@@ -119,36 +116,10 @@ func OscSetupServiceResolver(region string) endpoints.ResolverFunc {
 	}
 }
 
-func getEnv(key string, defaultValue string) string {
+func GetEnv(key string, defaultValue string) string {
 	value := os.Getenv(key)
 	if value == "" {
 		return defaultValue
 	}
 	return value
-}
-
-func EnvBackoff() wait.Backoff {
-	// BACKOFF_DURATION integer in second The initial duration.
-	duration, err := strconv.Atoi(getEnv("BACKOFF_DURATION", "1"))
-	if err != nil {
-		duration = 1
-	}
-
-	// BACKOFF_FACTOR float Duration is multiplied by factor each iteration
-	factor, err := strconv.ParseFloat(getEnv("BACKOFF_FACTOR", "2.0"), 32)
-	if err != nil {
-		factor = 1.8
-	}
-
-	// BACKOFF_STEPS integer : The remaining number of iterations in which
-	// the duration parameter may change
-	steps, err := strconv.Atoi(getEnv("BACKOFF_STEPS", "20"))
-	if err != nil {
-		steps = 13
-	}
-	return wait.Backoff{
-		Duration: time.Duration(duration) * time.Second,
-		Factor:   factor,
-		Steps:    steps,
-	}
 }

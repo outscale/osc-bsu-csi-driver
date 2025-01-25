@@ -27,7 +27,6 @@ import (
 	dm "github.com/outscale/osc-bsu-csi-driver/pkg/cloud/devicemanager"
 	"github.com/outscale/osc-bsu-csi-driver/pkg/util"
 	osc "github.com/outscale/osc-sdk-go/v2"
-	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/klog/v2"
 )
 
@@ -260,7 +259,7 @@ type cloud struct {
 	region  string
 	dm      dm.DeviceManager
 	client  OscInterface
-	backoff BackoffPolicy
+	backoff BackoffPolicyer
 }
 
 var _ Cloud = &cloud{}
@@ -279,7 +278,7 @@ func WithoutMetadata() CloudOption {
 }
 
 // WithBackoffPolicy is a CloudOption that replaces the default backoff policy (DefaultBackoffPolicy).
-func WithBackoffPolicy(p BackoffPolicy) CloudOption {
+func WithBackoffPolicy(p BackoffPolicyer) CloudOption {
 	return func(c *cloud) error {
 		c.backoff = p
 		return nil
@@ -317,16 +316,18 @@ func NewCloud(region string, opts ...CloudOption) (Cloud, error) {
 	client.auth = context.WithValue(client.auth, osc.ContextServerVariables, map[string]string{"region": region})
 
 	c := &cloud{
-		region:  region,
-		dm:      dm.NewDeviceManager(),
-		client:  client,
-		backoff: DefaultBackoffPolicy,
+		region: region,
+		dm:     dm.NewDeviceManager(),
+		client: client,
 	}
 	for _, opt := range opts {
 		err := opt(c)
 		if err != nil {
 			return nil, err
 		}
+	}
+	if c.backoff == nil {
+		c.backoff = NewBackoffPolicy()
 	}
 	return c, nil
 }
@@ -401,16 +402,15 @@ func (c *cloud) CreateDisk(ctx context.Context, volumeName string, diskOptions *
 	}
 
 	var creation osc.CreateVolumeResponse
-	createVolumeCallBack := func() (bool, error) {
+	createVolumeCallBack := func(ctx context.Context) (bool, error) {
 		var httpRes *http.Response
 		var err error
 		creation, httpRes, err = c.client.CreateVolume(ctx, request)
 		logAPICall(ctx, "CreateVolume", request, creation, httpRes, err)
-		return c.backoff(ctx, httpRes, err)
+		return c.backoff.OAPIResponseBackoff(ctx, httpRes, err)
 	}
 
-	backoff := util.EnvBackoff()
-	waitErr := wait.ExponentialBackoff(backoff, createVolumeCallBack)
+	waitErr := c.backoff.ExponentialBackoff(ctx, createVolumeCallBack)
 	if waitErr != nil {
 		return Disk{}, fmt.Errorf("could not create volume: %w", waitErr)
 	}
@@ -434,14 +434,13 @@ func (c *cloud) CreateDisk(ctx context.Context, volumeName string, diskOptions *
 		Tags:        resourceTag,
 	}
 
-	createTagsCallBack := func() (bool, error) {
+	createTagsCallBack := func(ctx context.Context) (bool, error) {
 		resTag, httpRes, err := c.client.CreateTags(ctx, requestTag)
 		logAPICall(ctx, "CreateTags", requestTag, resTag, httpRes, err)
-		return c.backoff(ctx, httpRes, err)
+		return c.backoff.OAPIResponseBackoff(ctx, httpRes, err)
 	}
 
-	backoff = util.EnvBackoff()
-	waitErr = wait.ExponentialBackoff(backoff, createTagsCallBack)
+	waitErr = c.backoff.ExponentialBackoff(ctx, createTagsCallBack)
 	if waitErr != nil {
 		return Disk{}, fmt.Errorf("unable to add tags: %w", waitErr)
 	}
@@ -458,14 +457,13 @@ func (c *cloud) DeleteDisk(ctx context.Context, volumeID string) (bool, error) {
 		VolumeId: volumeID,
 	}
 
-	deleteVolumeCallBack := func() (bool, error) {
+	deleteVolumeCallBack := func(ctx context.Context) (bool, error) {
 		response, httpRes, err := c.client.DeleteVolume(ctx, request)
 		logAPICall(ctx, "DeleteVolume", request, response, httpRes, err)
-		return c.backoff(ctx, httpRes, err)
+		return c.backoff.OAPIResponseBackoff(ctx, httpRes, err)
 	}
 
-	backoff := util.EnvBackoff()
-	err := wait.ExponentialBackoff(backoff, deleteVolumeCallBack)
+	err := c.backoff.ExponentialBackoff(ctx, deleteVolumeCallBack)
 	switch {
 	case isVolumeNotFoundError(err):
 		return false, ErrNotFound
@@ -494,16 +492,13 @@ func (c *cloud) AttachDisk(ctx context.Context, volumeID, nodeID string) (string
 			VmId:       nodeID,
 			VolumeId:   volumeID,
 		}
-		var resp osc.LinkVolumeResponse
-		var httpRes *http.Response
-		linkVolumeCallBack := func() (bool, error) {
-			resp, httpRes, err = c.client.LinkVolume(ctx, request)
+		linkVolumeCallBack := func(ctx context.Context) (bool, error) {
+			resp, httpRes, err := c.client.LinkVolume(ctx, request)
 			logAPICall(ctx, "LinkVolume", request, resp, httpRes, err)
-			return c.backoff(ctx, httpRes, err)
+			return c.backoff.OAPIResponseBackoff(ctx, httpRes, err)
 		}
 
-		backoff := util.EnvBackoff()
-		waitErr := wait.ExponentialBackoff(backoff, linkVolumeCallBack)
+		waitErr := c.backoff.ExponentialBackoff(ctx, linkVolumeCallBack)
 		if waitErr != nil {
 			return "", fmt.Errorf("could not attach volume: %w", waitErr)
 		}
@@ -556,14 +551,13 @@ func (c *cloud) DetachDisk(ctx context.Context, volumeID, nodeID string) error {
 		VolumeId: volumeID,
 	}
 
-	unlinkVolumeCallBack := func() (bool, error) {
+	unlinkVolumeCallBack := func(ctx context.Context) (bool, error) {
 		resp, httpRes, err := c.client.UnlinkVolume(ctx, request)
 		logAPICall(ctx, "UnlinkVolume", request, resp, httpRes, err)
-		return c.backoff(ctx, httpRes, err)
+		return c.backoff.OAPIResponseBackoff(ctx, httpRes, err)
 	}
 
-	backoff := util.EnvBackoff()
-	waitErr := wait.ExponentialBackoff(backoff, unlinkVolumeCallBack)
+	waitErr := c.backoff.ExponentialBackoff(ctx, unlinkVolumeCallBack)
 	if waitErr != nil {
 		return fmt.Errorf("could not detach volume: %w", waitErr)
 	}
@@ -584,13 +578,12 @@ func (c *cloud) WaitForAttachmentState(ctx context.Context, volumeID, state stri
 	// By using 1 second starting interval with a backoff of 1.8,
 	// we get [1, 1.8, 3.24, 5.832000000000001, 10.4976].
 	// In total we wait for 2601 seconds.
-	verifyVolumeFunc := func() (bool, error) {
-		request := osc.ReadVolumesRequest{
-			Filters: &osc.FiltersVolume{
-				VolumeIds: &[]string{volumeID},
-			},
-		}
-
+	request := osc.ReadVolumesRequest{
+		Filters: &osc.FiltersVolume{
+			VolumeIds: &[]string{volumeID},
+		},
+	}
+	verifyVolumeFunc := func(ctx context.Context) (bool, error) {
 		volume, err := c.getVolume(ctx, request)
 		if err != nil {
 			return false, err
@@ -614,8 +607,7 @@ func (c *cloud) WaitForAttachmentState(ctx context.Context, volumeID, state stri
 		return false, nil
 	}
 
-	backoff := util.EnvBackoff()
-	waitErr := wait.ExponentialBackoff(backoff, verifyVolumeFunc)
+	waitErr := c.backoff.ExponentialBackoff(ctx, verifyVolumeFunc)
 	logger.V(4).Info("End of wait", "success", waitErr == nil, "duration", time.Since(start))
 	if waitErr != nil {
 		return fmt.Errorf("could not check attachment state: %w", waitErr)
@@ -689,15 +681,14 @@ func (c *cloud) CreateSnapshot(ctx context.Context, volumeID string, snapshotOpt
 	}
 
 	var res osc.CreateSnapshotResponse
-	createSnapshotCallBack := func() (bool, error) {
+	createSnapshotCallBack := func(ctx context.Context) (bool, error) {
 		var httpRes *http.Response
 		res, httpRes, err = c.client.CreateSnapshot(ctx, request)
 		logAPICall(ctx, "CreateSnapshot", request, res, httpRes, err)
-		return c.backoff(ctx, httpRes, err)
+		return c.backoff.OAPIResponseBackoff(ctx, httpRes, err)
 	}
 
-	backoff := util.EnvBackoff()
-	waitErr := wait.ExponentialBackoff(backoff, createSnapshotCallBack)
+	waitErr := c.backoff.ExponentialBackoff(ctx, createSnapshotCallBack)
 	if waitErr != nil {
 		return Snapshot{}, fmt.Errorf("unable to create snapshot: %w", waitErr)
 	}
@@ -712,16 +703,15 @@ func (c *cloud) CreateSnapshot(ctx context.Context, volumeID string, snapshotOpt
 	}
 
 	var resTag osc.CreateTagsResponse
-	createTagCallback := func() (bool, error) {
+	createTagCallback := func(ctx context.Context) (bool, error) {
 		var httpRes *http.Response
 		var err error
 		resTag, httpRes, err = c.client.CreateTags(ctx, requestTag)
 		logAPICall(ctx, "CreateTags", requestTag, resTag, httpRes, err)
-		return c.backoff(ctx, httpRes, err)
+		return c.backoff.OAPIResponseBackoff(ctx, httpRes, err)
 	}
 
-	backoff = util.EnvBackoff()
-	waitErr = wait.ExponentialBackoff(backoff, createTagCallback)
+	waitErr = c.backoff.ExponentialBackoff(ctx, createTagCallback)
 	if waitErr != nil {
 		return Snapshot{}, fmt.Errorf("unable to add tags: %w", waitErr)
 	}
@@ -734,14 +724,13 @@ func (c *cloud) DeleteSnapshot(ctx context.Context, snapshotID string) (success 
 		SnapshotId: snapshotID,
 	}
 
-	deleteSnapshotCallBack := func() (bool, error) {
+	deleteSnapshotCallBack := func(ctx context.Context) (bool, error) {
 		response, httpRes, err := c.client.DeleteSnapshot(ctx, request)
 		logAPICall(ctx, "DeleteSnapshot", request, response, httpRes, err)
-		return c.backoff(ctx, httpRes, err)
+		return c.backoff.OAPIResponseBackoff(ctx, httpRes, err)
 	}
 
-	backoff := util.EnvBackoff()
-	waitErr := wait.ExponentialBackoff(backoff, deleteSnapshotCallBack)
+	waitErr := c.backoff.ExponentialBackoff(ctx, deleteSnapshotCallBack)
 	if waitErr != nil {
 		return false, fmt.Errorf("cound not delete snapshot: %w", waitErr)
 	}
@@ -840,17 +829,16 @@ func (c *cloud) oscSnapshotResponseToStruct(oscSnapshot osc.Snapshot) Snapshot {
 // Pagination not supported
 func (c *cloud) getVolume(ctx context.Context, request osc.ReadVolumesRequest) (*osc.Volume, error) {
 	var response osc.ReadVolumesResponse
-	getVolumeCallback := func() (bool, error) {
+	getVolumeCallback := func(ctx context.Context) (bool, error) {
 		var httpRes *http.Response
 		var err error
 
 		response, httpRes, err = c.client.ReadVolumes(ctx, request)
 		logAPICall(ctx, "ReadVolumes", request, response, httpRes, err)
-		return c.backoff(ctx, httpRes, err)
+		return c.backoff.OAPIResponseBackoff(ctx, httpRes, err)
 	}
 
-	backoff := util.EnvBackoff()
-	waitErr := wait.ExponentialBackoff(backoff, getVolumeCallback)
+	waitErr := c.backoff.ExponentialBackoff(ctx, getVolumeCallback)
 
 	if waitErr != nil {
 		return nil, fmt.Errorf("unable to read volume: %w", waitErr)
@@ -876,16 +864,15 @@ func (c *cloud) getInstance(ctx context.Context, vmID string) (*osc.Vm, error) {
 	}
 	var response osc.ReadVmsResponse
 
-	getInstanceCallback := func() (bool, error) {
+	getInstanceCallback := func(ctx context.Context) (bool, error) {
 		var httpRes *http.Response
 		var err error
 		response, httpRes, err = c.client.ReadVms(ctx, request)
 		logAPICall(ctx, "ReadVms", request, response, httpRes, err)
-		return c.backoff(ctx, httpRes, err)
+		return c.backoff.OAPIResponseBackoff(ctx, httpRes, err)
 	}
 
-	backoff := util.EnvBackoff()
-	waitErr := wait.ExponentialBackoff(backoff, getInstanceCallback)
+	waitErr := c.backoff.ExponentialBackoff(ctx, getInstanceCallback)
 	if waitErr != nil {
 		return nil, fmt.Errorf("error listing instances: %w", waitErr)
 	}
@@ -905,16 +892,15 @@ func (c *cloud) getInstance(ctx context.Context, vmID string) (*osc.Vm, error) {
 func (c *cloud) getSnapshot(ctx context.Context, request osc.ReadSnapshotsRequest) (osc.Snapshot, error) {
 	var snapshots []osc.Snapshot
 	var response osc.ReadSnapshotsResponse
-	getSnapshotsCallback := func() (bool, error) {
+	getSnapshotsCallback := func(ctx context.Context) (bool, error) {
 		var httpRes *http.Response
 		var err error
 		response, httpRes, err = c.client.ReadSnapshots(ctx, request)
 		logAPICall(ctx, "ReadSnapshots", request, response, httpRes, err)
-		return c.backoff(ctx, httpRes, err)
+		return c.backoff.OAPIResponseBackoff(ctx, httpRes, err)
 	}
 
-	backoff := util.EnvBackoff()
-	waitErr := wait.ExponentialBackoff(backoff, getSnapshotsCallback)
+	waitErr := c.backoff.ExponentialBackoff(ctx, getSnapshotsCallback)
 	if waitErr != nil {
 		return osc.Snapshot{}, fmt.Errorf("error listing snapshots: %w", waitErr)
 	}
@@ -935,15 +921,14 @@ func (c *cloud) listSnapshots(ctx context.Context, request osc.ReadSnapshotsRequ
 	logger := klog.FromContext(ctx)
 	logger.V(4).Info(fmt.Sprintf("getSnapshot: %+v", request))
 	var response osc.ReadSnapshotsResponse
-	listSnapshotsCallBack := func() (bool, error) {
+	listSnapshotsCallBack := func(ctx context.Context) (bool, error) {
 		var httpRes *http.Response
 		var err error
 		response, httpRes, err = c.client.ReadSnapshots(ctx, request)
 		logAPICall(ctx, "ReadSnapshots", request, response, httpRes, err)
-		return c.backoff(ctx, httpRes, err)
+		return c.backoff.OAPIResponseBackoff(ctx, httpRes, err)
 	}
-	backoff := util.EnvBackoff()
-	waitErr := wait.ExponentialBackoff(backoff, listSnapshotsCallBack)
+	waitErr := c.backoff.ExponentialBackoff(ctx, listSnapshotsCallBack)
 
 	if waitErr != nil {
 		return oscListSnapshotsResponse{}, fmt.Errorf("error listing snapshots: %w", waitErr)
@@ -966,7 +951,7 @@ func (c *cloud) waitForVolume(ctx context.Context, volumeID string) error {
 			VolumeIds: &[]string{volumeID},
 		},
 	}
-	testVolume := func() (done bool, err error) {
+	testVolume := func(ctx context.Context) (done bool, err error) {
 		vol, err := c.getVolume(ctx, request)
 		if err != nil {
 			return true, err
@@ -976,8 +961,7 @@ func (c *cloud) waitForVolume(ctx context.Context, volumeID string) error {
 		}
 		return false, nil
 	}
-	backoff := util.EnvBackoff()
-	err := wait.ExponentialBackoff(backoff, testVolume)
+	err := c.backoff.ExponentialBackoff(ctx, testVolume)
 	logger.V(4).Info("End of wait", "success", err == nil, "duration", time.Since(start))
 
 	if err != nil {
@@ -1023,14 +1007,13 @@ func (c *cloud) ResizeDisk(ctx context.Context, volumeID string, newSizeBytes in
 		VolumeId: volumeID,
 	}
 
-	updateVolumeCallBack := func() (bool, error) {
+	updateVolumeCallBack := func(ctx context.Context) (bool, error) {
 		response, httpRes, err := c.client.UpdateVolume(ctx, req)
 		logAPICall(ctx, "UpdateVolume", req, response, httpRes, err)
-		return c.backoff(ctx, httpRes, err)
+		return c.backoff.OAPIResponseBackoff(ctx, httpRes, err)
 	}
 
-	backoff := util.EnvBackoff()
-	waitErr := wait.ExponentialBackoff(backoff, updateVolumeCallBack)
+	waitErr := c.backoff.ExponentialBackoff(ctx, updateVolumeCallBack)
 	if waitErr != nil {
 		return 0, fmt.Errorf("could not modify volume: %w", waitErr)
 	}

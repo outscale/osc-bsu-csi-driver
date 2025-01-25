@@ -148,6 +148,10 @@ func (s *Snapshot) IsReadyToUse() bool {
 	return s.State == "completed"
 }
 
+func (s *Snapshot) IsError() bool {
+	return s.State == "error"
+}
+
 // ListSnapshotsResponse is the container for our snapshots along with a pagination token to pass back to the caller
 type ListSnapshotsResponse struct {
 	Snapshots []Snapshot

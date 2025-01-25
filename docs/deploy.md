@@ -26,7 +26,7 @@ kubectl delete -f osc-secret.yaml --namespace=kube-system
 kubectl apply -f osc-secret.yaml --namespace=kube-system
 
 ## deploy the pod
-git clone git@github.com:outscale-dev/osc-bsu-csi-driver.git -b v1.1.1
+git clone git@github.com:outscale-dev/osc-bsu-csi-driver.git -b v1.4.1
 cd osc-bsu-csi-driver
 helm uninstall osc-bsu-csi-driver --namespace kube-system
 helm install osc-bsu-csi-driver ./osc-bsu-csi-driver \

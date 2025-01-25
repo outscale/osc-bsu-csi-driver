@@ -944,7 +944,7 @@ func newCloud(mockOscInterface OscInterface) *cloud {
 		region:  defaultRegion,
 		dm:      dm.NewDeviceManager(),
 		client:  mockOscInterface,
-		backoff: DefaultBackoffPolicy,
+		backoff: NewBackoffPolicy(),
 	}
 }
 

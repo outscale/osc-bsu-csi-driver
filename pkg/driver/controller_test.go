@@ -32,6 +32,7 @@ import (
 	"github.com/outscale/osc-bsu-csi-driver/pkg/driver/mocks"
 	"github.com/outscale/osc-bsu-csi-driver/pkg/util"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -1305,9 +1306,7 @@ func TestPickAvailabilityZone(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			actual := pickAvailabilityZone(tc.requirement)
-			if actual != tc.expZone {
-				t.Fatalf("Expected zone %v, got zone: %v", tc.expZone, actual)
-			}
+			assert.Equal(t, tc.expZone, actual)
 		})
 	}
 }
@@ -1325,9 +1324,6 @@ func TestCreateSnapshot(t *testing.T) {
 					Parameters:     nil,
 					SourceVolumeId: "vol-test",
 				}
-				expSnapshot := &csi.Snapshot{
-					ReadyToUse: true,
-				}
 
 				ctx := context.Background()
 				mockSnapshot := cloud.Snapshot{
@@ -1335,26 +1331,25 @@ func TestCreateSnapshot(t *testing.T) {
 					SourceVolumeID: req.SourceVolumeId,
 					Size:           1,
 					CreationTime:   time.Now(),
+					State:          "completed",
 				}
 				mockCtl := gomock.NewController(t)
 				defer mockCtl.Finish()
 
 				mockCloud := mocks.NewMockCloud(mockCtl)
-				mockCloud.EXPECT().CreateSnapshot(gomock.Eq(ctx), gomock.Eq(req.SourceVolumeId), gomock.Any()).Return(mockSnapshot, nil)
 				mockCloud.EXPECT().GetSnapshotByName(gomock.Eq(ctx), gomock.Eq(req.GetName())).Return(cloud.Snapshot{}, cloud.ErrNotFound)
+				mockCloud.EXPECT().CreateSnapshot(gomock.Eq(ctx), gomock.Eq(req.SourceVolumeId), gomock.Any()).Return(mockSnapshot, nil)
 
 				oscDriver := controllerService{
 					cloud:         mockCloud,
 					driverOptions: &DriverOptions{},
 				}
 				resp, err := oscDriver.CreateSnapshot(context.Background(), req)
-				if err != nil {
-					t.Fatalf("Unexpected error: %v", err)
-				}
+				require.NoError(t, err)
 
-				if snap := resp.GetSnapshot(); snap == nil {
-					t.Fatalf("Expected snapshot %v, got nil", expSnapshot)
-				}
+				snap := resp.GetSnapshot()
+				require.NotNil(t, snap)
+				assert.True(t, snap.ReadyToUse)
 			},
 		},
 		{
@@ -1374,17 +1369,11 @@ func TestCreateSnapshot(t *testing.T) {
 					cloud:         mockCloud,
 					driverOptions: &DriverOptions{},
 				}
-				if _, err := oscDriver.CreateSnapshot(context.Background(), req); err != nil {
-					srvErr, ok := status.FromError(err)
-					if !ok {
-						t.Fatalf("Could not get error status code from error: %v", srvErr)
-					}
-					if srvErr.Code() != codes.InvalidArgument {
-						t.Fatalf("Expected error code %d, got %d message %s", codes.InvalidArgument, srvErr.Code(), srvErr.Message())
-					}
-				} else {
-					t.Fatalf("Expected error %v, got no error", codes.InvalidArgument)
-				}
+				_, err := oscDriver.CreateSnapshot(context.Background(), req)
+				require.Error(t, err)
+				srvErr, ok := status.FromError(err)
+				assert.True(t, ok, "Should get an error status code")
+				assert.Equal(t, codes.InvalidArgument, srvErr.Code())
 			},
 		},
 		{
@@ -1400,9 +1389,6 @@ func TestCreateSnapshot(t *testing.T) {
 					Parameters:     nil,
 					SourceVolumeId: "vol-xxx",
 				}
-				expSnapshot := &csi.Snapshot{
-					ReadyToUse: true,
-				}
 
 				ctx := context.Background()
 				mockSnapshot := cloud.Snapshot{
@@ -1410,6 +1396,7 @@ func TestCreateSnapshot(t *testing.T) {
 					SourceVolumeID: req.SourceVolumeId,
 					Size:           1,
 					CreationTime:   time.Now(),
+					State:          "completed",
 				}
 				mockCtl := gomock.NewController(t)
 				defer mockCtl.Finish()
@@ -1434,9 +1421,8 @@ func TestCreateSnapshot(t *testing.T) {
 					t.Fatalf("Unexpected error: %v", err)
 				}
 				snap := resp.GetSnapshot()
-				if snap == nil {
-					t.Fatalf("Expected snapshot %v, got nil", expSnapshot)
-				}
+				require.NotNil(t, snap)
+				assert.True(t, snap.ReadyToUse)
 
 				mockCloud.EXPECT().GetSnapshotByName(gomock.Eq(ctx), gomock.Eq(extraReq.GetName())).Return(mockSnapshot, nil)
 				_, err = oscDriver.CreateSnapshot(ctx, extraReq)
@@ -1466,9 +1452,6 @@ func TestCreateSnapshot(t *testing.T) {
 					Parameters:     nil,
 					SourceVolumeId: "vol-test",
 				}
-				expSnapshot := &csi.Snapshot{
-					ReadyToUse: true,
-				}
 
 				ctx := context.Background()
 				mockSnapshot := cloud.Snapshot{
@@ -1476,6 +1459,7 @@ func TestCreateSnapshot(t *testing.T) {
 					SourceVolumeID: req.SourceVolumeId,
 					Size:           1,
 					CreationTime:   time.Now(),
+					State:          "completed",
 				}
 				mockCtl := gomock.NewController(t)
 				defer mockCtl.Finish()
@@ -1489,19 +1473,14 @@ func TestCreateSnapshot(t *testing.T) {
 					driverOptions: &DriverOptions{},
 				}
 				resp, err := oscDriver.CreateSnapshot(context.Background(), req)
-				if err != nil {
-					t.Fatalf("Unexpected error: %v", err)
-				}
+				require.NoError(t, err)
 				snap := resp.GetSnapshot()
-				if snap == nil {
-					t.Fatalf("Expected snapshot %v, got nil", expSnapshot)
-				}
+				require.NotNil(t, snap)
+				assert.True(t, snap.ReadyToUse)
 
 				mockCloud.EXPECT().GetSnapshotByName(gomock.Eq(ctx), gomock.Eq(extraReq.GetName())).Return(mockSnapshot, nil)
 				_, err = oscDriver.CreateSnapshot(ctx, extraReq)
-				if err != nil {
-					t.Fatalf("Unexpected error: %v", err)
-				}
+				require.NoError(t, err)
 			},
 		},
 		{
@@ -1516,9 +1495,6 @@ func TestCreateSnapshot(t *testing.T) {
 					Name:           "test-snapshot",
 					Parameters:     nil,
 					SourceVolumeId: "vol-test",
-				}
-				expSnapshot := &csi.Snapshot{
-					ReadyToUse: true,
 				}
 				extraSnapshotTagKey := "foo"
 				extraSnapshotTagValue := "bar"
@@ -1535,6 +1511,7 @@ func TestCreateSnapshot(t *testing.T) {
 					SourceVolumeID: req.SourceVolumeId,
 					Size:           1,
 					CreationTime:   time.Now(),
+					State:          "completed",
 				}
 				mockCtl := gomock.NewController(t)
 				defer mockCtl.Finish()
@@ -1552,19 +1529,62 @@ func TestCreateSnapshot(t *testing.T) {
 					},
 				}
 				resp, err := oscDriver.CreateSnapshot(context.Background(), req)
-				if err != nil {
-					t.Fatalf("Unexpected error: %v", err)
-				}
+				require.NoError(t, err)
 				snap := resp.GetSnapshot()
-				if snap == nil {
-					t.Fatalf("Expected snapshot %v, got nil", expSnapshot)
-				}
+				require.NotNil(t, snap)
+				assert.True(t, snap.ReadyToUse)
 
 				mockCloud.EXPECT().GetSnapshotByName(gomock.Eq(ctx), gomock.Eq(extraReq.GetName())).Return(mockSnapshot, nil)
 				_, err = oscDriver.CreateSnapshot(ctx, extraReq)
-				if err != nil {
-					t.Fatalf("Unexpected error: %v", err)
+				require.NoError(t, err)
+			},
+		},
+		{
+			name: "snapshot in error are recreated",
+			testFunc: func(t *testing.T) {
+				req := &csi.CreateSnapshotRequest{
+					Name:           "test-snapshot",
+					Parameters:     nil,
+					SourceVolumeId: "vol-test",
 				}
+				extraSnapshotTagKey := "foo"
+				extraSnapshotTagValue := "bar"
+				snapshotOptions := &cloud.SnapshotOptions{
+					Tags: map[string]string{
+						cloud.SnapshotNameTagKey: req.Name,
+						extraSnapshotTagKey:      extraSnapshotTagValue,
+					},
+				}
+
+				ctx := context.Background()
+				mockSnapshot := cloud.Snapshot{
+					SnapshotID:     fmt.Sprintf("snapshot-%d", rand.New(rand.NewSource(time.Now().UnixNano())).Uint64()),
+					SourceVolumeID: req.SourceVolumeId,
+					Size:           1,
+					CreationTime:   time.Now(),
+					State:          "completed",
+				}
+				mockCtl := gomock.NewController(t)
+				defer mockCtl.Finish()
+
+				mockCloud := mocks.NewMockCloud(mockCtl)
+				mockCloud.EXPECT().GetSnapshotByName(gomock.Eq(ctx), gomock.Eq(req.GetName())).
+					Return(cloud.Snapshot{SnapshotID: "snap_foo", State: "error"}, nil)
+				mockCloud.EXPECT().DeleteSnapshot(gomock.Eq(ctx), gomock.Eq("snap_foo")).Return(true, nil)
+				mockCloud.EXPECT().CreateSnapshot(gomock.Eq(ctx), gomock.Eq(req.SourceVolumeId), gomock.Eq(snapshotOptions)).Return(mockSnapshot, nil)
+
+				oscDriver := controllerService{
+					cloud: mockCloud,
+					driverOptions: &DriverOptions{
+						extraSnapshotTags: map[string]string{
+							extraSnapshotTagKey: extraSnapshotTagValue,
+						},
+					},
+				}
+				resp, err := oscDriver.CreateSnapshot(context.Background(), req)
+				require.NoError(t, err)
+				snap := resp.GetSnapshot()
+				require.NotNil(t, snap)
 			},
 		},
 	}
@@ -1674,9 +1694,7 @@ func TestListSnapshots(t *testing.T) {
 				}
 
 				resp, err := oscDriver.ListSnapshots(context.Background(), req)
-				if err != nil {
-					t.Fatalf("Unexpected error: %v", err)
-				}
+				require.NoError(t, err)
 
 				if len(resp.GetEntries()) != len(mockCloudSnapshotsResponse.Snapshots) {
 					t.Fatalf("Expected %d entries, got %d", len(mockCloudSnapshotsResponse.Snapshots), len(resp.GetEntries()))
@@ -1700,9 +1718,7 @@ func TestListSnapshots(t *testing.T) {
 				}
 
 				resp, err := oscDriver.ListSnapshots(context.Background(), req)
-				if err != nil {
-					t.Fatalf("Unexpected error: %v", err)
-				}
+				require.NoError(t, err)
 
 				if !reflect.DeepEqual(resp, &csi.ListSnapshotsResponse{}) {
 					t.Fatalf("Expected empty response, got %+v", resp)
@@ -1735,9 +1751,7 @@ func TestListSnapshots(t *testing.T) {
 				}
 
 				resp, err := oscDriver.ListSnapshots(context.Background(), req)
-				if err != nil {
-					t.Fatalf("Unexpected error: %v", err)
-				}
+				require.NoError(t, err)
 
 				if len(resp.GetEntries()) != 1 {
 					t.Fatalf("Expected %d entry, got %d", 1, len(resp.GetEntries()))
@@ -1764,9 +1778,7 @@ func TestListSnapshots(t *testing.T) {
 				}
 
 				resp, err := oscDriver.ListSnapshots(context.Background(), req)
-				if err != nil {
-					t.Fatalf("Unexpected error: %v", err)
-				}
+				require.NoError(t, err)
 
 				if !reflect.DeepEqual(resp, &csi.ListSnapshotsResponse{}) {
 					t.Fatalf("Expected empty response, got %+v", resp)
@@ -1886,9 +1898,7 @@ func TestControllerPublishVolume(t *testing.T) {
 				}
 
 				resp, err := oscDriver.ControllerPublishVolume(ctx, req)
-				if err != nil {
-					t.Fatalf("Unexpected error: %v", err)
-				}
+				require.NoError(t, err)
 
 				if !reflect.DeepEqual(resp, expResp) {
 					t.Fatalf("Expected resp to be %+v, got: %+v", expResp, resp)
@@ -1914,9 +1924,7 @@ func TestControllerPublishVolume(t *testing.T) {
 
 				oscDriver := controllerService{cloud: mockCloud}
 				resp, err := oscDriver.ControllerUnpublishVolume(ctx, req)
-				if err != nil {
-					t.Fatalf("Unexpected error: %v", err)
-				}
+				require.NoError(t, err)
 
 				if !reflect.DeepEqual(resp, expResp) {
 					t.Fatalf("Expected resp to be %+v, got: %+v", expResp, resp)
@@ -2204,9 +2212,7 @@ func TestControllerPublishVolume(t *testing.T) {
 				}
 
 				resp, err := oscDriver.ControllerPublishVolume(ctx, req)
-				if err != nil {
-					t.Fatalf("Unexpected error: %v", err)
-				}
+				require.NoError(t, err)
 
 				if !reflect.DeepEqual(resp, expResp) {
 					t.Fatalf("Expected resp to be %+v, got: %+v", expResp, resp)
@@ -2248,9 +2254,7 @@ func TestControllerUnpublishVolume(t *testing.T) {
 				}
 
 				resp, err := oscDriver.ControllerUnpublishVolume(ctx, req)
-				if err != nil {
-					t.Fatalf("Unexpected error: %v", err)
-				}
+				require.NoError(t, err)
 
 				if !reflect.DeepEqual(resp, expResp) {
 					t.Fatalf("Expected resp to be %+v, got: %+v", expResp, resp)

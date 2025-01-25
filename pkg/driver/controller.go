@@ -424,13 +424,20 @@ func (d *controllerService) CreateSnapshot(ctx context.Context, req *csi.CreateS
 		return nil, status.Error(codes.InvalidArgument, "Snapshot volume source ID not provided")
 	}
 	snapshot, err := d.cloud.GetSnapshotByName(ctx, snapshotName)
-	if err != nil && !errors.Is(err, cloud.ErrNotFound) {
+	switch {
+	case errors.Is(err, cloud.ErrNotFound):
+		// No snapshot found, continue with creation.
+	case err != nil:
 		return nil, err
-	}
-	if !cloud.IsNilSnapshot(snapshot) {
-		if snapshot.SourceVolumeID != volumeID {
-			return nil, status.Errorf(codes.AlreadyExists, "Snapshot %s already exists for different volume (%s)", snapshotName, snapshot.SourceVolumeID)
+	case snapshot.IsError():
+		// A previously created snapshot is in error, delete it.
+		klog.FromContext(ctx).V(3).Info("Deleting previous snapshot in error")
+		if _, err := d.cloud.DeleteSnapshot(ctx, snapshot.SnapshotID); err != nil && !errors.Is(err, cloud.ErrNotFound) {
+			return nil, status.Errorf(codes.Internal, "Could not delete existing snapshot in error %q: %v", snapshot.SnapshotID, err)
 		}
+	case snapshot.SourceVolumeID != volumeID:
+		return nil, status.Errorf(codes.AlreadyExists, "Snapshot %s already exists for different volume (%s)", snapshotName, snapshot.SourceVolumeID)
+	default:
 		klog.FromContext(ctx).V(3).Info("Snapshot already exists")
 		return newCreateSnapshotResponse(snapshot)
 	}

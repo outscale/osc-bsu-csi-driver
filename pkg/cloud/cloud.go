@@ -716,6 +716,10 @@ func (c *cloud) CreateSnapshot(ctx context.Context, volumeID string, snapshotOpt
 		return Snapshot{}, fmt.Errorf("unable to add tags: %w", waitErr)
 	}
 
+	if err := c.waitForSnapshot(ctx, res.Snapshot.GetSnapshotId()); err != nil {
+		return Snapshot{}, fmt.Errorf("unable to fetch newly created snapshot: %w", err)
+	}
+
 	return c.oscSnapshotResponseToStruct(res.GetSnapshot()), nil
 }
 
@@ -966,6 +970,31 @@ func (c *cloud) waitForVolume(ctx context.Context, volumeID string) error {
 
 	if err != nil {
 		return fmt.Errorf("unable to wait for volume: %w", err)
+	}
+	return nil
+}
+
+// waitForSnapshot waits for a snapshot to be cut (= in the "completed" state).
+func (c *cloud) waitForSnapshot(ctx context.Context, snapshotID string) error {
+	logger := klog.FromContext(ctx)
+	logger.V(4).Info("Waiting for snapshot to be cut")
+	start := time.Now()
+
+	testSnapshot := func(ctx context.Context) (done bool, err error) {
+		snap, err := c.GetSnapshotByID(ctx, snapshotID)
+		if err != nil {
+			return true, err
+		}
+		if snap.IsError() {
+			return true, errors.New("snapshot is in error")
+		}
+		return snap.IsReadyToUse(), nil
+	}
+	err := c.backoff.ExponentialBackoff(ctx, testSnapshot)
+	logger.V(4).Info("End of wait", "success", err == nil, "duration", time.Since(start))
+
+	if err != nil {
+		return fmt.Errorf("unable to wait for snapshot: %w", err)
 	}
 	return nil
 }

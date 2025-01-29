@@ -26,12 +26,12 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/golang/mock/gomock"
-
-	osc "github.com/outscale/osc-sdk-go/v2"
-
 	dm "github.com/outscale-dev/osc-bsu-csi-driver/pkg/cloud/devicemanager"
 	"github.com/outscale-dev/osc-bsu-csi-driver/pkg/cloud/mocks"
 	"github.com/outscale-dev/osc-bsu-csi-driver/pkg/util"
+	osc "github.com/outscale/osc-sdk-go/v2"
+	"github.com/stretchr/testify/require"
+	"k8s.io/utils/ptr"
 )
 
 const (
@@ -764,7 +764,7 @@ func TestListSnapshots(t *testing.T) {
 		testFunc func(t *testing.T)
 	}{
 		{
-			name: "success: normal",
+			name: "success without token and maxitems",
 			testFunc: func(t *testing.T) {
 				expSnapshots := []Snapshot{
 					{
@@ -800,13 +800,273 @@ func TestListSnapshots(t *testing.T) {
 				c := newCloud(mockOscInterface)
 
 				ctx := context.Background()
-				fmt.Printf("Read snapshot :\n")
-				mockOscInterface.EXPECT().ReadSnapshots(gomock.Eq(ctx), gomock.Any()).Return(osc.ReadSnapshotsResponse{Snapshots: &oscsnapshot}, nil, nil)
-				fmt.Printf("End Read snapshot :\n")
+				mockOscInterface.EXPECT().ReadSnapshots(gomock.Eq(ctx), gomock.Eq(osc.ReadSnapshotsRequest{})).Return(osc.ReadSnapshotsResponse{Snapshots: &oscsnapshot}, nil, nil)
 				_, err := c.ListSnapshots(ctx, "", 0, "")
-				if err != nil {
-					t.Fatalf("ListSnapshots() failed: expected no error, got: %v", err)
+				require.NoError(t, err)
+			},
+		},
+		{
+			name: "success with max entries",
+			testFunc: func(t *testing.T) {
+				expSnapshots := []Snapshot{
+					{
+						SourceVolumeID: "snap-test-volume1",
+						SnapshotID:     "snap-test-name1",
+					},
+					{
+						SourceVolumeID: "snap-test-volume2",
+						SnapshotID:     "snap-test-name2",
+					},
 				}
+				state := "completed"
+				volumeIds := []string{
+					"snap-test-volume1",
+					"snap-test-volume2",
+				}
+				oscsnapshot := []osc.Snapshot{
+					{
+						SnapshotId: &expSnapshots[0].SnapshotID,
+						VolumeId:   &volumeIds[0],
+						State:      &state,
+					},
+					{
+						SnapshotId: &expSnapshots[1].SnapshotID,
+						VolumeId:   &volumeIds[1],
+						State:      &state,
+					},
+				}
+
+				mockCtrl := gomock.NewController(t)
+				defer mockCtrl.Finish()
+				mockOscInterface := mocks.NewMockOscInterface(mockCtrl)
+				c := newCloud(mockOscInterface)
+
+				ctx := context.Background()
+				mockOscInterface.EXPECT().ReadSnapshots(gomock.Eq(ctx), gomock.Eq(osc.ReadSnapshotsRequest{
+					ResultsPerPage: ptr.To(int32(10)),
+				})).Return(osc.ReadSnapshotsResponse{Snapshots: &oscsnapshot}, nil, nil)
+				_, err := c.ListSnapshots(ctx, "", 10, "")
+				require.NoError(t, err)
+			},
+		},
+		{
+			name: "success with max entries over OAPI max (1000)",
+			testFunc: func(t *testing.T) {
+				expSnapshots := []Snapshot{
+					{
+						SourceVolumeID: "snap-test-volume1",
+						SnapshotID:     "snap-test-name1",
+					},
+					{
+						SourceVolumeID: "snap-test-volume2",
+						SnapshotID:     "snap-test-name2",
+					},
+				}
+				state := "completed"
+				volumeIds := []string{
+					"snap-test-volume1",
+					"snap-test-volume2",
+				}
+				oscsnapshot := []osc.Snapshot{
+					{
+						SnapshotId: &expSnapshots[0].SnapshotID,
+						VolumeId:   &volumeIds[0],
+						State:      &state,
+					},
+					{
+						SnapshotId: &expSnapshots[1].SnapshotID,
+						VolumeId:   &volumeIds[1],
+						State:      &state,
+					},
+				}
+
+				mockCtrl := gomock.NewController(t)
+				defer mockCtrl.Finish()
+				mockOscInterface := mocks.NewMockOscInterface(mockCtrl)
+				c := newCloud(mockOscInterface)
+
+				ctx := context.Background()
+				mockOscInterface.EXPECT().ReadSnapshots(gomock.Eq(ctx), gomock.Eq(osc.ReadSnapshotsRequest{
+					ResultsPerPage: ptr.To(int32(1000)),
+				})).Return(osc.ReadSnapshotsResponse{Snapshots: &oscsnapshot}, nil, nil)
+				_, err := c.ListSnapshots(ctx, "", 2000, "")
+				require.NoError(t, err)
+			},
+		},
+		{
+			name: "success with next token",
+			testFunc: func(t *testing.T) {
+				expSnapshots := []Snapshot{
+					{
+						SourceVolumeID: "snap-test-volume1",
+						SnapshotID:     "snap-test-name1",
+					},
+					{
+						SourceVolumeID: "snap-test-volume2",
+						SnapshotID:     "snap-test-name2",
+					},
+				}
+				state := "completed"
+				volumeIds := []string{
+					"snap-test-volume1",
+					"snap-test-volume2",
+				}
+				oscsnapshot := []osc.Snapshot{
+					{
+						SnapshotId: &expSnapshots[0].SnapshotID,
+						VolumeId:   &volumeIds[0],
+						State:      &state,
+					},
+					{
+						SnapshotId: &expSnapshots[1].SnapshotID,
+						VolumeId:   &volumeIds[1],
+						State:      &state,
+					},
+				}
+
+				mockCtrl := gomock.NewController(t)
+				defer mockCtrl.Finish()
+				mockOscInterface := mocks.NewMockOscInterface(mockCtrl)
+				c := newCloud(mockOscInterface)
+
+				ctx := context.Background()
+				mockOscInterface.EXPECT().ReadSnapshots(gomock.Eq(ctx), gomock.Eq(osc.ReadSnapshotsRequest{
+					NextPageToken: ptr.To("foo"),
+				})).Return(osc.ReadSnapshotsResponse{Snapshots: &oscsnapshot}, nil, nil)
+				_, err := c.ListSnapshots(ctx, "", 0, "foo")
+				require.NoError(t, err)
+			},
+		},
+		{
+			name: "success with max entries",
+			testFunc: func(t *testing.T) {
+				expSnapshots := []Snapshot{
+					{
+						SourceVolumeID: "snap-test-volume1",
+						SnapshotID:     "snap-test-name1",
+					},
+					{
+						SourceVolumeID: "snap-test-volume2",
+						SnapshotID:     "snap-test-name2",
+					},
+				}
+				state := "completed"
+				volumeIds := []string{
+					"snap-test-volume1",
+					"snap-test-volume2",
+				}
+				oscsnapshot := []osc.Snapshot{
+					{
+						SnapshotId: &expSnapshots[0].SnapshotID,
+						VolumeId:   &volumeIds[0],
+						State:      &state,
+					},
+					{
+						SnapshotId: &expSnapshots[1].SnapshotID,
+						VolumeId:   &volumeIds[1],
+						State:      &state,
+					},
+				}
+
+				mockCtrl := gomock.NewController(t)
+				defer mockCtrl.Finish()
+				mockOscInterface := mocks.NewMockOscInterface(mockCtrl)
+				c := newCloud(mockOscInterface)
+
+				ctx := context.Background()
+				mockOscInterface.EXPECT().ReadSnapshots(gomock.Eq(ctx), gomock.Eq(osc.ReadSnapshotsRequest{
+					ResultsPerPage: ptr.To(int32(10)),
+				})).Return(osc.ReadSnapshotsResponse{Snapshots: &oscsnapshot}, nil, nil)
+				_, err := c.ListSnapshots(ctx, "", 10, "")
+				require.NoError(t, err)
+			},
+		},
+		{
+			name: "success with max entries over OAPI max (1000)",
+			testFunc: func(t *testing.T) {
+				expSnapshots := []Snapshot{
+					{
+						SourceVolumeID: "snap-test-volume1",
+						SnapshotID:     "snap-test-name1",
+					},
+					{
+						SourceVolumeID: "snap-test-volume2",
+						SnapshotID:     "snap-test-name2",
+					},
+				}
+				state := "completed"
+				volumeIds := []string{
+					"snap-test-volume1",
+					"snap-test-volume2",
+				}
+				oscsnapshot := []osc.Snapshot{
+					{
+						SnapshotId: &expSnapshots[0].SnapshotID,
+						VolumeId:   &volumeIds[0],
+						State:      &state,
+					},
+					{
+						SnapshotId: &expSnapshots[1].SnapshotID,
+						VolumeId:   &volumeIds[1],
+						State:      &state,
+					},
+				}
+
+				mockCtrl := gomock.NewController(t)
+				defer mockCtrl.Finish()
+				mockOscInterface := mocks.NewMockOscInterface(mockCtrl)
+				c := newCloud(mockOscInterface)
+
+				ctx := context.Background()
+				mockOscInterface.EXPECT().ReadSnapshots(gomock.Eq(ctx), gomock.Eq(osc.ReadSnapshotsRequest{
+					ResultsPerPage: ptr.To(int32(1000)),
+				})).Return(osc.ReadSnapshotsResponse{Snapshots: &oscsnapshot}, nil, nil)
+				_, err := c.ListSnapshots(ctx, "", 2000, "")
+				require.NoError(t, err)
+			},
+		},
+		{
+			name: "success with next token",
+			testFunc: func(t *testing.T) {
+				expSnapshots := []Snapshot{
+					{
+						SourceVolumeID: "snap-test-volume1",
+						SnapshotID:     "snap-test-name1",
+					},
+					{
+						SourceVolumeID: "snap-test-volume2",
+						SnapshotID:     "snap-test-name2",
+					},
+				}
+				state := "completed"
+				volumeIds := []string{
+					"snap-test-volume1",
+					"snap-test-volume2",
+				}
+				oscsnapshot := []osc.Snapshot{
+					{
+						SnapshotId: &expSnapshots[0].SnapshotID,
+						VolumeId:   &volumeIds[0],
+						State:      &state,
+					},
+					{
+						SnapshotId: &expSnapshots[1].SnapshotID,
+						VolumeId:   &volumeIds[1],
+						State:      &state,
+					},
+				}
+
+				mockCtrl := gomock.NewController(t)
+				defer mockCtrl.Finish()
+				mockOscInterface := mocks.NewMockOscInterface(mockCtrl)
+				c := newCloud(mockOscInterface)
+
+				ctx := context.Background()
+				mockOscInterface.EXPECT().ReadSnapshots(gomock.Eq(ctx), gomock.Eq(osc.ReadSnapshotsRequest{
+					NextPageToken: ptr.To("foo"),
+				})).Return(osc.ReadSnapshotsResponse{Snapshots: &oscsnapshot}, nil, nil)
+				_, err := c.ListSnapshots(ctx, "", 0, "foo")
+				require.NoError(t, err)
 			},
 		},
 		{

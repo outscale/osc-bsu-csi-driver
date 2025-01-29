@@ -31,6 +31,7 @@ import (
 	"github.com/outscale-dev/osc-bsu-csi-driver/pkg/util"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/klog/v2"
+	"k8s.io/utils/ptr"
 )
 
 // AWS volume types
@@ -864,28 +865,32 @@ func (c *cloud) GetSnapshotByID(ctx context.Context, snapshotID string) (snapsho
 	return c.oscSnapshotResponseToStruct(oscsnapshot), nil
 }
 
+const maxResultsLimit = 1000
+
 // ListSnapshots retrieves AWS EBS snapshots for an optionally specified volume ID.  If maxResults is set, it will return up to maxResults snapshots.  If there are more snapshots than maxResults,
 // a next token value will be returned to the client as well.  They can use this token with subsequent calls to retrieve the next page of results.  If maxResults is not set (0),
 // there will be no restriction up to 1000 results (https://docs.aws.amazon.com/sdk-for-go/api/service/ec2/#DescribeSnapshotsInput).
 // Pagination not supported
 func (c *cloud) ListSnapshots(ctx context.Context, volumeID string, maxResults int64, nextToken string) (listSnapshotsResponse ListSnapshotsResponse, err error) {
 	klog.Infof("Debug ListSnapshots : %+v, %+v, %+v\n", volumeID, maxResults, nextToken)
-
-	request := osc.ReadSnapshotsRequest{
-		Filters: &osc.FiltersSnapshot{
-			VolumeIds: &[]string{},
-		},
+	if maxResults > maxResultsLimit {
+		maxResults = maxResultsLimit
 	}
 
+	req := osc.ReadSnapshotsRequest{}
+	if maxResults > 0 {
+		req.ResultsPerPage = ptr.To(int32(maxResults))
+	}
+	if nextToken != "" {
+		req.NextPageToken = &nextToken
+	}
 	if len(volumeID) != 0 {
-		request = osc.ReadSnapshotsRequest{
-			Filters: &osc.FiltersSnapshot{
-				VolumeIds: &[]string{volumeID},
-			},
+		req.Filters = &osc.FiltersSnapshot{
+			VolumeIds: &[]string{volumeID},
 		}
 	}
 
-	oscSnapshotsResponse, err := c.listSnapshots(ctx, request)
+	oscSnapshotsResponse, err := c.listSnapshots(ctx, req)
 	if err != nil {
 		return ListSnapshotsResponse{}, err
 	}

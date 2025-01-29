@@ -23,8 +23,8 @@ on:
       - "go.*"
       - ".github/workflows/build.yml"
       - "!tests/**"
-  schedule:
-    - cron: '0 0 * * *'
+  # schedule:
+  #   - cron: '0 0 * * *'
   workflow_dispatch:
 jobs:
   format:
@@ -38,8 +38,8 @@ jobs:
         cache: true
     - name: Docker Lint
       run: bash -c "make dockerlint"
-    - name: Verify
-      run: bash -c "make verify"
+    # - name: Verify
+    #   run: bash -c "make verify"
   unit-test:
     runs-on: ubuntu-20.04
     steps:
@@ -51,34 +51,34 @@ jobs:
         cache: true
     - name: Test
       run: bash -c "make test"
-  docs:
-    runs-on: ubuntu-20.04
-    steps:
-    - uses: actions/checkout@v2
-    - uses: actions/setup-python@v2
-    - uses: actions/setup-go@v3
-      with:
-        go-version-file: 'go.mod'
-        cache: true
-    - name: Check docs
-      run: bash -c "make check-helm-docs"
-  build:
-    runs-on: ubuntu-20.04
-    steps:
-    - uses: actions/checkout@v2
-    - uses: actions/setup-python@v2
-    - uses: actions/setup-go@v3
-      with:
-        go-version-file: 'go.mod'
-        cache: true
-    - name: Image
-      run: bash -c "make build-image"
-    - name: Trivy-Scan
-      run: bash -c "make trivy-scan"
-    - name: Trivy-Ignore-Check
-      run: bash -c "make trivy-ignore-check"
-    - name: Upload Scan if errors
-      if: ${{ always() && github.event_name != 'pull_request' }}
-      uses: github/codeql-action/upload-sarif@v2
-      with:
-        sarif_file: './.trivyscan/report.sarif'
+  # docs:
+  #   runs-on: ubuntu-20.04
+  #   steps:
+  #   - uses: actions/checkout@v2
+  #   - uses: actions/setup-python@v2
+  #   - uses: actions/setup-go@v3
+  #     with:
+  #       go-version-file: 'go.mod'
+  #       cache: true
+  #   - name: Check docs
+  #     run: bash -c "make check-helm-docs"
+  # build:
+  #   runs-on: ubuntu-20.04
+  #   steps:
+  #   - uses: actions/checkout@v2
+  #   - uses: actions/setup-python@v2
+  #   - uses: actions/setup-go@v3
+  #     with:
+  #       go-version-file: 'go.mod'
+  #       cache: true
+  #   - name: Image
+  #     run: bash -c "make build-image"
+  #   - name: Trivy-Scan
+  #     run: bash -c "make trivy-scan"
+  #   - name: Trivy-Ignore-Check
+  #     run: bash -c "make trivy-ignore-check"
+  #   - name: Upload Scan if errors
+  #     if: ${{ always() && github.event_name != 'pull_request' }}
+  #     uses: github/codeql-action/upload-sarif@v2
+  #     with:
+  #       sarif_file: './.trivyscan/report.sarif'

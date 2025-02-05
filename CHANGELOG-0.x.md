@@ -1,5 +1,9 @@
 # Changelog
 
+## [v0.4.1] - 2025-02-05
+### 🐛 Fixed
+* 🐛 Fix ListSnapshot pagination infinite loop ([#889](https://github.com/outscale/osc-bsu-csi-driver/pull/889))
+
 ## [v0.4.0]
 ### Features
 * Add support for multiple feature-gates arguments for the csi-provisioner

@@ -28,7 +28,7 @@ on:
   workflow_dispatch:
 jobs:
   format:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
     - uses: actions/setup-python@v2
@@ -41,7 +41,7 @@ jobs:
     # - name: Verify
     #   run: bash -c "make verify"
   unit-test:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
     - uses: actions/setup-python@v2
@@ -52,7 +52,7 @@ jobs:
     - name: Test
       run: bash -c "make test"
   # docs:
-  #   runs-on: ubuntu-20.04
+  #   runs-on: ubuntu-latest
   #   steps:
   #   - uses: actions/checkout@v2
   #   - uses: actions/setup-python@v2
@@ -63,7 +63,7 @@ jobs:
   #   - name: Check docs
   #     run: bash -c "make check-helm-docs"
   # build:
-  #   runs-on: ubuntu-20.04
+  #   runs-on: ubuntu-latest
   #   steps:
   #   - uses: actions/checkout@v2
   #   - uses: actions/setup-python@v2

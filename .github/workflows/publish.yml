@@ -5,7 +5,7 @@ on:
     types: [published]
 jobs:
   push-docker-image:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
       - name: Check the repo
         uses: actions/checkout@v2
@@ -19,7 +19,7 @@ jobs:
       - name : push to Docker Hub
         run: make build-image image-push
   push-artifact-hub:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
       - name: Check the repo
         uses: actions/checkout@v2

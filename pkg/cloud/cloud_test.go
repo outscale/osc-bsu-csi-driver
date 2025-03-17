@@ -513,18 +513,32 @@ func TestCreateSnapshot(t *testing.T) {
 			mockOscInterface := mocks.NewMockOscInterface(mockCtrl)
 			c := newCloud(mockOscInterface)
 
-			oscsnapshot := osc.CreateSnapshotResponse{
-				Snapshot: &osc.Snapshot{},
-			}
-			oscsnapshot.Snapshot.SetSnapshotId(tc.snapshotOptions.Tags[SnapshotNameTagKey])
-			oscsnapshot.Snapshot.SetVolumeId("snap-test-volume")
-			oscsnapshot.Snapshot.SetState("completed")
+			created := &osc.Snapshot{}
+			created.SetSnapshotId(tc.snapshotOptions.Tags[SnapshotNameTagKey])
+			created.SetVolumeId("snap-test-volume")
+			created.SetState("in-queue")
+
+			pending := &osc.Snapshot{}
+			pending.SetSnapshotId(tc.snapshotOptions.Tags[SnapshotNameTagKey])
+			pending.SetVolumeId("snap-test-volume")
+			pending.SetState("pending")
+
+			completed := &osc.Snapshot{}
+			completed.SetSnapshotId(tc.snapshotOptions.Tags[SnapshotNameTagKey])
+			completed.SetVolumeId("snap-test-volume")
+			completed.SetState("completed")
 
 			tag := osc.CreateTagsResponse{}
 			ctx := context.Background()
-			mockOscInterface.EXPECT().CreateSnapshot(gomock.Eq(ctx), gomock.Any()).Return(oscsnapshot, nil, tc.expErr)
-			mockOscInterface.EXPECT().CreateTags(gomock.Eq(ctx), gomock.Any()).Return(tag, nil, nil).AnyTimes()
-			mockOscInterface.EXPECT().ReadSnapshots(gomock.Eq(ctx), gomock.Any()).Return(osc.ReadSnapshotsResponse{Snapshots: &[]osc.Snapshot{oscsnapshot.GetSnapshot()}}, nil, nil).AnyTimes()
+			mockOscInterface.EXPECT().CreateSnapshot(gomock.Eq(ctx), gomock.Any()).Return(osc.CreateSnapshotResponse{
+				Snapshot: created,
+			}, nil, tc.expErr)
+			mockOscInterface.EXPECT().CreateTags(gomock.Eq(ctx), gomock.Any()).Return(tag, nil, nil)
+			mockOscInterface.EXPECT().ReadSnapshots(gomock.Eq(ctx), gomock.Any()).Return(osc.ReadSnapshotsResponse{Snapshots: &[]osc.Snapshot{*completed}}, nil, nil).After(
+				mockOscInterface.EXPECT().ReadSnapshots(gomock.Eq(ctx), gomock.Any()).Return(osc.ReadSnapshotsResponse{Snapshots: &[]osc.Snapshot{*pending}}, nil, nil).After(
+					mockOscInterface.EXPECT().ReadSnapshots(gomock.Eq(ctx), gomock.Any()).Return(osc.ReadSnapshotsResponse{Snapshots: &[]osc.Snapshot{*created}}, nil, nil),
+				),
+			)
 
 			snapshot, err := c.CreateSnapshot(ctx, tc.expSnapshot.SourceVolumeID, tc.snapshotOptions)
 			if tc.expErr != nil {

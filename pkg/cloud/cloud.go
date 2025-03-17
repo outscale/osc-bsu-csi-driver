@@ -27,6 +27,7 @@ import (
 	dm "github.com/outscale/osc-bsu-csi-driver/pkg/cloud/devicemanager"
 	"github.com/outscale/osc-bsu-csi-driver/pkg/util"
 	osc "github.com/outscale/osc-sdk-go/v2"
+	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/klog/v2"
 )
 
@@ -527,7 +528,7 @@ func (c *cloud) DetachDisk(ctx context.Context, volumeID, nodeID string) error {
 			},
 		}
 
-		volume, err := c.getVolume(ctx, request)
+		volume, err := c.getVolume(ctx, request, true)
 		if err == nil && volume.HasState() && volume.GetState() == "available" {
 			logger.V(4).Info("Volume is already available")
 			return nil
@@ -574,32 +575,23 @@ func (c *cloud) WaitForAttachmentState(ctx context.Context, volumeID, state stri
 	logger := klog.FromContext(ctx)
 	logger.V(4).Info("Waiting till attachment state is " + state)
 	start := time.Now()
-	// Most attach/detach operations on Outscale finish within 1-4 seconds.
-	// By using 1 second starting interval with a backoff of 1.8,
-	// we get [1, 1.8, 3.24, 5.832000000000001, 10.4976].
-	// In total we wait for 2601 seconds.
 	request := osc.ReadVolumesRequest{
 		Filters: &osc.FiltersVolume{
 			VolumeIds: &[]string{volumeID},
 		},
 	}
 	verifyVolumeFunc := func(ctx context.Context) (bool, error) {
-		volume, err := c.getVolume(ctx, request)
+		volume, err := c.getVolume(ctx, request, false)
 		if err != nil {
-			return false, err
+			logger.V(4).Error(err, "cannot check state")
+			return false, nil
 		}
 
-		if len(volume.GetLinkedVolumes()) == 0 {
-			if state == "detached" {
-				return true, nil
-			}
+		if len(volume.GetLinkedVolumes()) == 0 && state == "detached" {
+			return true, nil
 		}
 
 		for _, a := range volume.GetLinkedVolumes() {
-			if a.GetState() == "" {
-				logger.V(4).Info(fmt.Sprintf("Ignoring nil attachment state for volume: %v", a))
-				continue
-			}
 			if a.GetState() == state {
 				return true, nil
 			}
@@ -607,7 +599,7 @@ func (c *cloud) WaitForAttachmentState(ctx context.Context, volumeID, state stri
 		return false, nil
 	}
 
-	waitErr := c.backoff.ExponentialBackoff(ctx, verifyVolumeFunc)
+	waitErr := wait.PollUntilContextCancel(ctx, 1500*time.Millisecond, false, verifyVolumeFunc)
 	logger.V(4).Info("End of wait", "success", waitErr == nil, "duration", time.Since(start))
 	if waitErr != nil {
 		return fmt.Errorf("could not check attachment state: %w", waitErr)
@@ -624,7 +616,7 @@ func (c *cloud) GetDiskByName(ctx context.Context, name string, capacityBytes in
 		},
 	}
 
-	volume, err := c.getVolume(ctx, request)
+	volume, err := c.getVolume(ctx, request, true)
 	if err != nil {
 		return Disk{}, err
 	}
@@ -648,7 +640,7 @@ func (c *cloud) GetDiskByID(ctx context.Context, volumeID string) (Disk, error) 
 		},
 	}
 
-	volume, err := c.getVolume(ctx, request)
+	volume, err := c.getVolume(ctx, request, true)
 	if err != nil {
 		return Disk{}, err
 	}
@@ -716,6 +708,11 @@ func (c *cloud) CreateSnapshot(ctx context.Context, volumeID string, snapshotOpt
 		return Snapshot{}, fmt.Errorf("unable to add tags: %w", waitErr)
 	}
 
+	err = c.waitForSnapshot(ctx, *res.GetSnapshot().SnapshotId)
+	if err != nil {
+		return Snapshot{}, fmt.Errorf("wait error: %w", err)
+	}
+
 	return c.oscSnapshotResponseToStruct(res.GetSnapshot()), nil
 }
 
@@ -738,6 +735,40 @@ func (c *cloud) DeleteSnapshot(ctx context.Context, snapshotID string) (success 
 	return true, nil
 }
 
+// waitForSnapshot waits for a snapshot to be in the "completed" state.
+func (c *cloud) waitForSnapshot(ctx context.Context, snapshotID string) error {
+	logger := klog.FromContext(ctx)
+	logger.V(4).Info("Waiting for snapshot to be completed")
+	start := time.Now()
+
+	request := osc.ReadSnapshotsRequest{
+		Filters: &osc.FiltersSnapshot{
+			SnapshotIds: &[]string{snapshotID},
+		},
+	}
+	testVolume := func(ctx context.Context) (done bool, err error) {
+		snap, err := c.getSnapshot(ctx, request, false)
+		if err != nil {
+			logger.V(4).Error(err, "cannot check state")
+			return true, nil
+		}
+		switch snap.GetState() {
+		case "error", "deleting":
+			return false, fmt.Errorf("snapshot is in %q state", snap.GetState())
+		case "completed":
+			return true, nil
+		default: // "in-queue", "pending"
+			return false, nil
+		}
+	}
+	err := wait.PollUntilContextCancel(ctx, 1500*time.Millisecond, false, testVolume)
+	logger.V(4).Info("End of wait", "success", err == nil, "duration", time.Since(start))
+	if err != nil {
+		return fmt.Errorf("unable to wait for snapshot: %w", err)
+	}
+	return nil
+}
+
 func (c *cloud) GetSnapshotByName(ctx context.Context, name string) (snapshot Snapshot, err error) {
 	request := osc.ReadSnapshotsRequest{
 		Filters: &osc.FiltersSnapshot{
@@ -746,7 +777,7 @@ func (c *cloud) GetSnapshotByName(ctx context.Context, name string) (snapshot Sn
 		},
 	}
 
-	oscsnapshot, err := c.getSnapshot(ctx, request)
+	oscsnapshot, err := c.getSnapshot(ctx, request, true)
 	if err != nil {
 		return Snapshot{}, err
 	}
@@ -761,7 +792,7 @@ func (c *cloud) GetSnapshotByID(ctx context.Context, snapshotID string) (snapsho
 		},
 	}
 
-	oscsnapshot, err := c.getSnapshot(ctx, request)
+	oscsnapshot, err := c.getSnapshot(ctx, request, true)
 	if err != nil {
 		return Snapshot{}, err
 	}
@@ -827,7 +858,7 @@ func (c *cloud) oscSnapshotResponseToStruct(oscSnapshot osc.Snapshot) Snapshot {
 }
 
 // Pagination not supported
-func (c *cloud) getVolume(ctx context.Context, request osc.ReadVolumesRequest) (*osc.Volume, error) {
+func (c *cloud) getVolume(ctx context.Context, request osc.ReadVolumesRequest, backoff bool) (*osc.Volume, error) {
 	var response osc.ReadVolumesResponse
 	getVolumeCallback := func(ctx context.Context) (bool, error) {
 		var httpRes *http.Response
@@ -838,10 +869,15 @@ func (c *cloud) getVolume(ctx context.Context, request osc.ReadVolumesRequest) (
 		return c.backoff.OAPIResponseBackoff(ctx, httpRes, err)
 	}
 
-	waitErr := c.backoff.ExponentialBackoff(ctx, getVolumeCallback)
+	var err error
+	if backoff {
+		err = c.backoff.ExponentialBackoff(ctx, getVolumeCallback)
+	} else {
+		_, err = getVolumeCallback(ctx)
+	}
 
-	if waitErr != nil {
-		return nil, fmt.Errorf("unable to read volume: %w", waitErr)
+	if err != nil {
+		return nil, fmt.Errorf("unable to read volume: %w", err)
 	}
 
 	volumes := response.GetVolumes()
@@ -889,7 +925,7 @@ func (c *cloud) getInstance(ctx context.Context, vmID string) (*osc.Vm, error) {
 }
 
 // Pagination not supported
-func (c *cloud) getSnapshot(ctx context.Context, request osc.ReadSnapshotsRequest) (osc.Snapshot, error) {
+func (c *cloud) getSnapshot(ctx context.Context, request osc.ReadSnapshotsRequest, backoff bool) (osc.Snapshot, error) {
 	var snapshots []osc.Snapshot
 	var response osc.ReadSnapshotsResponse
 	getSnapshotsCallback := func(ctx context.Context) (bool, error) {
@@ -900,9 +936,15 @@ func (c *cloud) getSnapshot(ctx context.Context, request osc.ReadSnapshotsReques
 		return c.backoff.OAPIResponseBackoff(ctx, httpRes, err)
 	}
 
-	waitErr := c.backoff.ExponentialBackoff(ctx, getSnapshotsCallback)
-	if waitErr != nil {
-		return osc.Snapshot{}, fmt.Errorf("error listing snapshots: %w", waitErr)
+	var err error
+	if backoff {
+		err = c.backoff.ExponentialBackoff(ctx, getSnapshotsCallback)
+	} else {
+		_, err = getSnapshotsCallback(ctx)
+	}
+
+	if err != nil {
+		return osc.Snapshot{}, fmt.Errorf("error listing snapshots: %w", err)
 	}
 	snapshots = response.GetSnapshots()
 	switch len(snapshots) {
@@ -952,18 +994,22 @@ func (c *cloud) waitForVolume(ctx context.Context, volumeID string) error {
 		},
 	}
 	testVolume := func(ctx context.Context) (done bool, err error) {
-		vol, err := c.getVolume(ctx, request)
+		vol, err := c.getVolume(ctx, request, false)
 		if err != nil {
-			return true, err
+			logger.V(4).Error(err, "cannot check state")
+			return true, nil
 		}
-		if vol.GetState() != "" {
-			return vol.GetState() == "available", nil
+		switch vol.GetState() {
+		case "error", "deleting":
+			return false, fmt.Errorf("volume is in %q state", vol.GetState())
+		case "available":
+			return true, nil
+		default:
+			return false, nil
 		}
-		return false, nil
 	}
-	err := c.backoff.ExponentialBackoff(ctx, testVolume)
+	err := wait.PollUntilContextCancel(ctx, 1500*time.Millisecond, false, testVolume)
 	logger.V(4).Info("End of wait", "success", err == nil, "duration", time.Since(start))
-
 	if err != nil {
 		return fmt.Errorf("unable to wait for volume: %w", err)
 	}
@@ -980,7 +1026,7 @@ func (c *cloud) ResizeDisk(ctx context.Context, volumeID string, newSizeBytes in
 		},
 	}
 	logger.V(4).Info("Check Volume state.")
-	volume, err := c.getVolume(ctx, request)
+	volume, err := c.getVolume(ctx, request, true)
 	if err != nil {
 		return 0, err
 	}
@@ -1032,7 +1078,7 @@ func (c *cloud) checkDesiredSize(ctx context.Context, volumeID string, newSizeGi
 			VolumeIds: &[]string{volumeID},
 		},
 	}
-	volume, err := c.getVolume(ctx, request)
+	volume, err := c.getVolume(ctx, request, true)
 	if err != nil {
 		return 0, err
 	}

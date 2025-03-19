@@ -441,7 +441,8 @@ func (c *cloud) CreateDisk(ctx context.Context, volumeName string, diskOptions *
 		return c.backoff.OAPIResponseBackoff(ctx, httpRes, err)
 	}
 
-	waitErr = c.backoff.ExponentialBackoff(ctx, createTagsCallBack)
+	// If this fails, a duplicate volume is created, we need to try harder/longer, especially on TCP errors.
+	waitErr = c.backoff.With(RetryOnErrors(), Steps(20)).ExponentialBackoff(ctx, createTagsCallBack)
 	if waitErr != nil {
 		return Disk{}, fmt.Errorf("unable to add tags: %w", waitErr)
 	}
@@ -599,7 +600,7 @@ func (c *cloud) WaitForAttachmentState(ctx context.Context, volumeID, state stri
 		return false, nil
 	}
 
-	waitErr := wait.PollUntilContextCancel(ctx, 1500*time.Millisecond, false, verifyVolumeFunc)
+	waitErr := wait.PollUntilContextCancel(ctx, 2*time.Second, false, verifyVolumeFunc)
 	logger.V(4).Info("End of wait", "success", waitErr == nil, "duration", time.Since(start))
 	if waitErr != nil {
 		return fmt.Errorf("could not check attachment state: %w", waitErr)
@@ -662,11 +663,6 @@ func (c *cloud) IsExistInstance(ctx context.Context, nodeID string) bool {
 func (c *cloud) CreateSnapshot(ctx context.Context, volumeID string, snapshotOptions *SnapshotOptions) (snapshot Snapshot, err error) {
 	descriptions := "Created by Outscale BSU CSI driver for volume " + volumeID
 
-	resourceTag := make([]osc.ResourceTag, 0, len(snapshotOptions.Tags))
-	for key, value := range snapshotOptions.Tags {
-		resourceTag = append(resourceTag, osc.ResourceTag{Key: key, Value: value})
-	}
-
 	request := osc.CreateSnapshotRequest{
 		VolumeId:    &volumeID,
 		Description: &descriptions,
@@ -689,6 +685,10 @@ func (c *cloud) CreateSnapshot(ctx context.Context, volumeID string, snapshotOpt
 		return Snapshot{}, errors.New("nil CreateSnapshotResponse")
 	}
 
+	resourceTag := make([]osc.ResourceTag, 0, len(snapshotOptions.Tags))
+	for key, value := range snapshotOptions.Tags {
+		resourceTag = append(resourceTag, osc.ResourceTag{Key: key, Value: value})
+	}
 	requestTag := osc.CreateTagsRequest{
 		ResourceIds: []string{res.Snapshot.GetSnapshotId()},
 		Tags:        resourceTag,
@@ -703,7 +703,8 @@ func (c *cloud) CreateSnapshot(ctx context.Context, volumeID string, snapshotOpt
 		return c.backoff.OAPIResponseBackoff(ctx, httpRes, err)
 	}
 
-	waitErr = c.backoff.ExponentialBackoff(ctx, createTagCallback)
+	// If this fails, a duplicate snapshot is created, we need to try harder/longer, especially on TCP errors.
+	waitErr = c.backoff.With(RetryOnErrors(), Steps(20)).ExponentialBackoff(ctx, createTagCallback)
 	if waitErr != nil {
 		return Snapshot{}, fmt.Errorf("unable to add tags: %w", waitErr)
 	}
@@ -761,7 +762,7 @@ func (c *cloud) waitForSnapshot(ctx context.Context, snapshotID string) error {
 			return false, nil
 		}
 	}
-	err := wait.PollUntilContextCancel(ctx, 1500*time.Millisecond, false, testVolume)
+	err := wait.PollUntilContextCancel(ctx, 2*time.Second, false, testVolume)
 	logger.V(4).Info("End of wait", "success", err == nil, "duration", time.Since(start))
 	if err != nil {
 		return fmt.Errorf("unable to wait for snapshot: %w", err)
@@ -1008,7 +1009,7 @@ func (c *cloud) waitForVolume(ctx context.Context, volumeID string) error {
 			return false, nil
 		}
 	}
-	err := wait.PollUntilContextCancel(ctx, 1500*time.Millisecond, false, testVolume)
+	err := wait.PollUntilContextCancel(ctx, 2*time.Second, false, testVolume)
 	logger.V(4).Info("End of wait", "success", err == nil, "duration", time.Since(start))
 	if err != nil {
 		return fmt.Errorf("unable to wait for volume: %w", err)

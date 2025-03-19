@@ -29,7 +29,14 @@ func WithBackoff(bo wait.Backoff) BackoffOpt {
 	}
 }
 
+func Steps(s int) BackoffOpt {
+	return func(bp *BackoffPolicy) {
+		bp.backoff.Steps = s
+	}
+}
+
 type BackoffPolicyer interface {
+	With(opts ...BackoffOpt) BackoffPolicyer
 	ExponentialBackoff(ctx context.Context, fn func(ctx context.Context) (bool, error)) error
 	OAPIResponseBackoff(ctx context.Context, resp *http.Response, err error) (bool, error)
 }
@@ -47,6 +54,15 @@ func NewBackoffPolicy(opts ...BackoffOpt) *BackoffPolicy {
 		opt(bp)
 	}
 	return bp
+}
+
+// With creates a new BackoffPolicy with different options.
+func (bp *BackoffPolicy) With(opts ...BackoffOpt) BackoffPolicyer {
+	nbp := *bp
+	for _, opt := range opts {
+		opt(&nbp)
+	}
+	return &nbp
 }
 
 // ExponentialBackoffWithContext repeats a condition check with exponential backoff.
@@ -78,7 +94,7 @@ var _ BackoffPolicyer = (*BackoffPolicy)(nil)
 func EnvBackoff() wait.Backoff {
 	// BACKOFF_DURATION duration The initial duration.
 	// Fallback as int/duration in seconds.
-	dur := util.GetEnv("BACKOFF_DURATION", "1s")
+	dur := util.GetEnv("BACKOFF_DURATION", "750ms")
 	duration, err := time.ParseDuration(dur)
 	if err != nil {
 		d, derr := strconv.Atoi(dur)
@@ -86,20 +102,20 @@ func EnvBackoff() wait.Backoff {
 		err = derr
 	}
 	if err != nil {
-		duration = time.Second
+		duration = 750 * time.Millisecond
 	}
 
 	// BACKOFF_FACTOR float Duration is multiplied by factor each iteration
-	factor, err := strconv.ParseFloat(util.GetEnv("BACKOFF_FACTOR", "1.6"), 32)
+	factor, err := strconv.ParseFloat(util.GetEnv("BACKOFF_FACTOR", "1.4"), 32)
 	if err != nil {
-		factor = 1.6
+		factor = 1.4
 	}
 
 	// BACKOFF_STEPS integer : The remaining number of iterations in which
 	// the duration parameter may change
-	steps, err := strconv.Atoi(util.GetEnv("BACKOFF_STEPS", "7"))
+	steps, err := strconv.Atoi(util.GetEnv("BACKOFF_STEPS", "3"))
 	if err != nil {
-		steps = 7
+		steps = 3
 	}
 	return wait.Backoff{
 		Duration: duration,

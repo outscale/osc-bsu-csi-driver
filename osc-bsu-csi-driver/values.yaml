@@ -23,13 +23,13 @@ timeout: 60s
 backoff:
   # integer in second defining initial duration
   # -- Initial duraction of backoff
-  duration: "1"
+  duration: "750ms"
   # float define the factor multiplied by Duration each iteration
   # -- Factor multiplied by Duration for each iteration
-  factor: "1.9"
+  factor: "1.4"
   # integer defining the remaining number of iterations in which the duration parameter may change
   # -- Remaining number of iterations in which the duration parameter may change
-  steps: "20"
+  steps: "3"
 
 sidecars:
   provisionerImage:

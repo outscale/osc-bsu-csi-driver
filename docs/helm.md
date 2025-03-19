@@ -25,9 +25,9 @@ Kubernetes: `>=1.20`
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
 | affinity | object | `{}` | Affinity settings |
-| backoff.duration | string | `"1"` | Initial duraction of backoff |
-| backoff.factor | string | `"1.9"` | Factor multiplied by Duration for each iteration |
-| backoff.steps | string | `"20"` | Remaining number of iterations in which the duration parameter may change |
+| backoff.duration | string | `"750ms"` | Initial duraction of backoff |
+| backoff.factor | string | `"1.4"` | Factor multiplied by Duration for each iteration |
+| backoff.steps | string | `"3"` | Remaining number of iterations in which the duration parameter may change |
 | caBundle.key | string | `""` | Entry key in secret used to store additional certificates authorities |
 | caBundle.name | string | `""` | Secret name containing additional certificates authorities |
 | credentials.accessKey | string | `nil` | If creating a secret, put this AK inside. |

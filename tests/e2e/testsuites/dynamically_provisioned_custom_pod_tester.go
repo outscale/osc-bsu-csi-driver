@@ -45,15 +45,12 @@ func customizePod(customizePod []string, deployment *TestDeployment) *TestDeploy
 	podSc := v1.PodSecurityContext{}
 	sc := v1.SecurityContext{}
 	for _, custom := range customizePod {
-		fmt.Printf("custom: %+v\n", custom)
 		err := podSc.Unmarshal([]byte(custom))
 		if err == nil {
-			fmt.Printf("add PodSecurityContext\n")
 			deployment.deployment.Spec.Template.Spec.SecurityContext = &podSc
 		} else {
 			err := sc.Unmarshal([]byte(custom))
 			if err == nil {
-				fmt.Printf("add SecurityContext\n")
 				deployment.deployment.Spec.Template.Spec.Containers[0].SecurityContext = &sc
 			} else {
 				fmt.Printf("ignore custom: %+v\n", custom)
@@ -72,9 +69,7 @@ func (t *DynamicallyProvisionedCustomPodTest) Run(client clientset.Interface, na
 	}
 
 	By("customize Pod Deployment")
-	fmt.Printf("Before tDeployment: %+v\n", tDeployment)
 	customizePod(t.Pod.CustomizedPod, tDeployment)
-	fmt.Printf("After tDeployment: %+v\n", tDeployment)
 
 	By("deploying the deployment")
 	tDeployment.Create()

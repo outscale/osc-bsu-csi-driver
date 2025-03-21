@@ -187,15 +187,11 @@ func (volume *VolumeDetails) SetupPreProvisionedPersistentVolumeClaim(client cli
 	fmt.Printf("Debug pv := csiDriver.GetPersistentVolume:::: %+v\n", pv)
 
 	tpv := NewTestPreProvisionedPersistentVolume(client, pv)
-	fmt.Printf("Debug tpv := NewTestPreProvisionedPersistentVolume:::: %+v\n", tpv)
 	tpv.Create()
-	fmt.Printf("Debug tpv.Create() %+v\n", tpv)
 
 	By("setting up the PVC")
 	tpvc := NewTestPersistentVolumeClaim(client, namespace, volume.ClaimSize, volume.VolumeMode, nil)
-	fmt.Printf("Debug tpvc := NewTestPersistentVolumeClaim %+v\n", tpvc)
 	tpvc.Create()
-	fmt.Printf("Debug tpvc.Create() %+v\n", tpvc)
 
 	cleanupFuncs = append(cleanupFuncs, tpvc.DeleteBoundPersistentVolume)
 	cleanupFuncs = append(cleanupFuncs, tpvc.Cleanup)

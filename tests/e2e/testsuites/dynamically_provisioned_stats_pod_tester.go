@@ -34,18 +34,19 @@ import (
 	e2edeployment "k8s.io/kubernetes/test/e2e/framework/deployment"
 )
 
+var reDf = regexp.MustCompile(`[^\s]+\s+([0-9]+)\s+([0-9]+)\s+([0-9]+)`)
+
 func getDf(data string) string {
 	scanner := bufio.NewScanner(strings.NewReader(data))
-	stop := 0
-	for scanner.Scan() {
-		text := scanner.Text()
-		stop++
-		if stop == 2 {
-			singleSpacePattern := regexp.MustCompile(`\s+`)
-			return singleSpacePattern.ReplaceAllString(text, " ")
-		}
+	scanner.Scan()
+	if !scanner.Scan() {
+		return ""
 	}
-	return ""
+	subm := reDf.FindStringSubmatch(scanner.Text())
+	if len(subm) == 0 {
+		return ""
+	}
+	return strings.Join(subm[1:], " ")
 }
 
 func getMetrics(data string, ns string, pvc string) string {
@@ -60,21 +61,15 @@ func getMetrics(data string, ns string, pvc string) string {
 	KUBELET_VOLUME_PREFIX := "kubelet_volume_stats_"
 	var kubelet_volume_stats_available_bytes,
 		kubelet_volume_stats_capacity_bytes,
-		kubelet_volume_stats_inodes,
-		kubelet_volume_stats_inodes_free,
-		kubelet_volume_stats_inodes_used,
 		kubelet_volume_stats_used_bytes string
 	stop := 0
 	for scanner.Scan() {
 		text := scanner.Text()
-		if stop == 6 {
-			return fmt.Sprintf("%s %s %s %s %s %s",
-				kubelet_volume_stats_available_bytes,
+		if stop == 3 {
+			return fmt.Sprintf("%s %s %s",
 				kubelet_volume_stats_capacity_bytes,
-				kubelet_volume_stats_inodes,
-				kubelet_volume_stats_inodes_free,
-				kubelet_volume_stats_inodes_used,
-				kubelet_volume_stats_used_bytes)
+				kubelet_volume_stats_used_bytes,
+				kubelet_volume_stats_available_bytes)
 		}
 		if strings.HasPrefix(text, KUBELET_VOLUME_PREFIX) &&
 			strings.Contains(text, "namespace=\""+ns+"\"") &&
@@ -99,15 +94,6 @@ func getMetrics(data string, ns string, pvc string) string {
 				case strings.Contains(text, "kubelet_volume_stats_used_bytes"):
 					kubelet_volume_stats_used_bytes = fmt.Sprintf("%d", value)
 					stop++
-				case strings.Contains(text, "kubelet_volume_stats_inodes_free"):
-					kubelet_volume_stats_inodes_free = fmt.Sprintf("%d", value)
-					stop++
-				case strings.Contains(text, "kubelet_volume_stats_inodes_used"):
-					kubelet_volume_stats_inodes_used = fmt.Sprintf("%d", value)
-					stop++
-				case strings.Contains(text, "kubelet_volume_stats_inodes"):
-					kubelet_volume_stats_inodes = fmt.Sprintf("%d", value)
-					stop++
 				}
 			}
 		}
@@ -121,7 +107,7 @@ type DynamicallyProvisionedStatsPodTest struct {
 }
 
 func (t *DynamicallyProvisionedStatsPodTest) Run(client clientset.Interface, namespace *v1.Namespace, f *framework.Framework) {
-	customImage := "centos"
+	customImage := "busybox"
 	tDeployment, cleanup := t.Pod.SetupDeployment(client, namespace, t.CSIDriver, customImage)
 	// defer must be called here for resources not get removed before using them
 	for i := range cleanup {
@@ -147,8 +133,8 @@ func (t *DynamicallyProvisionedStatsPodTest) Run(client clientset.Interface, nam
 	for i := 0; i < 20; i++ {
 		// Retrieve stats using /metrics
 		cmd := []string{
-			"curl",
-			"-s",
+			"wget",
+			"-qO-",
 			fmt.Sprintf("http://%s:10255/metrics", pod_host_ip),
 		}
 		metricsStdout, metricsStderr, metricsErr := e2epod.ExecCommandInContainerWithFullOutput(f, tDeployment.podName, pods.Items[0].Spec.Containers[0].Name, cmd...)
@@ -157,8 +143,7 @@ func (t *DynamicallyProvisionedStatsPodTest) Run(client clientset.Interface, nam
 		// Retrieve stats using df
 		dfCmd := []string{
 			"df",
-			"--output=avail,size,itotal,iavail,iused,used",
-			"--block-size=1",
+			"-B1",
 			"/mnt/test-1",
 		}
 		dfStdout, dfStderr, dfErr := e2epod.ExecCommandInContainerWithFullOutput(f, tDeployment.podName, pods.Items[0].Spec.Containers[0].Name, dfCmd...)
@@ -172,8 +157,8 @@ func (t *DynamicallyProvisionedStatsPodTest) Run(client clientset.Interface, nam
 		df_stats = getDf(dfStdout)
 		metrics_kubelet_volume_stats = getMetrics(metricsStdout, pvc_ns, pvc_name)
 
-		fmt.Printf("df_stats %v\n", df_stats)
-		fmt.Printf("metrics_kubelet_volume_stats  %v\n", metrics_kubelet_volume_stats)
+		fmt.Printf("df_stats %q\n", df_stats)
+		fmt.Printf("metrics_kubelet_volume_stats %q\n", metrics_kubelet_volume_stats)
 
 		// Check equality
 		if df_stats == metrics_kubelet_volume_stats {

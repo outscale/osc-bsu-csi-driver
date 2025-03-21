@@ -1,0 +1,22 @@
+changelog:
+  categories:
+    - title: ✨ Added
+      labels:
+        - kind/feature
+    - title: 🛠️ Changed
+      labels:
+        - kind/refactoring
+        - kind/other
+        - kind/documentation
+    - title: 🛠️ Deprecated
+      labels:
+        - kind/deprecation
+    - title: 🗑️ Removed
+      labels:
+        - kind/cleanup
+    - title: 🐛 Fixed
+      labels:
+        - kind/bug
+    - title: 🌱 Others
+      labels:
+        - "*"

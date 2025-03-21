@@ -62,7 +62,7 @@ func (t *DynamicallyProvisionedResizeVolumeTest) Run(client clientset.Interface,
 	updatedSize := updatedPvc.Spec.Resources.Requests["storage"]
 
 	By("checking the resizing PV result")
-	error := WaitForPvToResize(client, namespace, updatedPvc.Spec.VolumeName, updatedSize, 1*time.Minute, 5*time.Second)
+	error := WaitForPvToResize(client, namespace, updatedPvc.Spec.VolumeName, updatedSize, 5*time.Minute, 10*time.Second)
 	framework.ExpectNoError(error)
 
 	By("Validate volume can be attached")

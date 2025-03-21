@@ -18,6 +18,7 @@ LINTER_VERSION := v2.12.0
 
 E2E_ENV ?= "e2e/osc-bsu-csi-driver:0.0"
 E2E_ENV_RUN ?= "e2e-osc-bsu-csi-driver"
+E2E_FOCUS ?= "single-az"
 
 PKG := github.com/outscale/osc-bsu-csi-driver
 IMAGE := outscale/osc-bsu-csi-driver
@@ -73,6 +74,10 @@ test:
 dockerlint:
 	@echo "Lint images =>  $(DOCKERFILES)"
 	$(foreach image,$(DOCKERFILES), echo "Lint  ${image} " ; docker run --rm -i hadolint/hadolint:${LINTER_VERSION} hadolint --info DL3008 -t warning - < ${image} || exit 1 ; )
+
+.PHONY: test-e2e
+test-e2e:
+	go test -v ./tests/e2e -test.timeout 180m -ginkgo.timeout 180m -ginkgo.focus="${E2E_FOCUS}" -ginkgo.v -ginkgo.show-node-events -test.v
 
 .PHONY: test-e2e-single-az-run
 test-e2e-single-az-run:

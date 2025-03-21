@@ -1,4 +1,4 @@
-ARG GOLANG_IMAGE_TAG=1.23.4-bookworm
+ARG GOLANG_IMAGE_TAG=1.23.7-bookworm
 # Tools are taken from Debian 12
 ARG TOOLS_IMAGE_TAG=12
 # Distroless debug is used to get a busybox shell

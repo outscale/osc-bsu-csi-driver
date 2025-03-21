@@ -149,7 +149,7 @@ spec:
           image: {{ printf "%s:%s" .Values.sidecars.provisionerImage.repository .Values.sidecars.provisionerImage.tag }}
           args:
             {{- if not (regexMatch "(-retry-interval-max)" (join " " .Values.sidecars.provisionerImage.additionalArgs)) }}
-            - --retry-interval-max=30m
+            - --retry-interval-max=5m
             {{- end }}
             - --csi-address=$(ADDRESS)
             - --v={{ .Values.verbosity }}
@@ -213,7 +213,7 @@ spec:
           image: {{ printf "%s:%s" .Values.sidecars.attacherImage.repository .Values.sidecars.attacherImage.tag }}
           args:
             {{- if not (regexMatch "(-retry-interval-max)" (join " " .Values.sidecars.attacherImage.additionalArgs)) }}
-            - --retry-interval-max=30m
+            - --retry-interval-max=5m
             {{- end }}
             - --csi-address=$(ADDRESS)
             - --v={{ .Values.verbosity }}
@@ -271,7 +271,7 @@ spec:
           image: {{ printf "%s:%s" .Values.sidecars.snapshotterImage.repository .Values.sidecars.snapshotterImage.tag }}
           args:
             {{- if not (regexMatch "(-retry-interval-max)" (join " " .Values.sidecars.snapshotterImage.additionalArgs)) }}
-            - --retry-interval-max=30m
+            - --retry-interval-max=5m
             {{- end }}
             - --csi-address=$(ADDRESS)
             # Dynamically adding additionalArgs from values.yaml
@@ -324,7 +324,7 @@ spec:
           imagePullPolicy: Always
           args:
             {{- if not (regexMatch "(-retry-interval-max)" (join " " .Values.sidecars.resizerImage.additionalArgs)) }}
-            - --retry-interval-max=30m
+            - --retry-interval-max=5m
             {{- end }}
             - --csi-address=$(ADDRESS)
             - --v={{ .Values.verbosity }}

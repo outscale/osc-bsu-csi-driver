@@ -1,4 +1,41 @@
 # Changelog
+
+## [v1.5.0]
+### ✨ Added
+* ✨ feat: custom extra tags on snapshots by @jfbus in https://github.com/outscale/osc-bsu-csi-driver/pull/875
+### 🛠️ Changed
+* 🚨 Gofmt fixes by @jfbus in https://github.com/outscale/osc-bsu-csi-driver/pull/846
+* ✅ Pkg: test fixes & cleanup by @jfbus in https://github.com/outscale/osc-bsu-csi-driver/pull/845
+* 📝 doc: fix version in release doc by @jfbus in https://github.com/outscale/osc-bsu-csi-driver/pull/848
+* 👷 ci: bump versions in e2e action, only trigger on pr by @jfbus in https://github.com/outscale/osc-bsu-csi-driver/pull/859
+* 👷 ci: bump rke & k8s versions by @jfbus in https://github.com/outscale/osc-bsu-csi-driver/pull/863
+* 👷 ci: disable dependabot on OSC-MIGRATION by @jfbus in https://github.com/outscale/osc-bsu-csi-driver/pull/864
+* 🔊 logs: migrate to structured/contextual logging by @jfbus in https://github.com/outscale/osc-bsu-csi-driver/pull/847
+* 👷 ci: switch to official golangci-lint action by @jfbus in https://github.com/outscale/osc-bsu-csi-driver/pull/867
+* ♻️ refacto: use github.com/outscale instead of github.com/outscale-dev by @jfbus in https://github.com/outscale/osc-bsu-csi-driver/pull/869
+* ⬆️  go.mod: bump k8s to 1.30.7 & Go to 1.23.4 by @jfbus in https://github.com/outscale/osc-bsu-csi-driver/pull/865
+* 💚 fix: use backoff in waitForVolume to fix e2e test failures by @jfbus in https://github.com/outscale/osc-bsu-csi-driver/pull/872
+* 🔊 logs: more structured logging by @jfbus in https://github.com/outscale/osc-bsu-csi-driver/pull/871
+* 💚 e2e tests: no need to wait for a 'deleting' snapshot to be really deleted by @jfbus in https://github.com/outscale/osc-bsu-csi-driver/pull/876
+* ♻️ refacto: use int32 for GiB sizes and iops by @jfbus in https://github.com/outscale/osc-bsu-csi-driver/pull/874
+* 🥅 errors: better error reporting in luks layer by @jfbus in https://github.com/outscale/osc-bsu-csi-driver/pull/880
+* ✨ feat: support custom backoff policies by @jfbus in https://github.com/outscale/osc-bsu-csi-driver/pull/873
+* ⬆️ deploy: switch to distroless image, strip binary by @jfbus in https://github.com/outscale/osc-bsu-csi-driver/pull/881
+* 🚨 linter fixes by @jfbus in https://github.com/outscale/osc-bsu-csi-driver/pull/882
+* 👷 ci: enable trivy by @jfbus in https://github.com/outscale/osc-bsu-csi-driver/pull/890
+* update documentation for volumesnapshot handle by @outscale-hmi in https://github.com/outscale/osc-bsu-csi-driver/pull/888
+* 👷 ci: bump ubuntu versions by @jfbus in https://github.com/outscale/osc-bsu-csi-driver/pull/895
+* ♻️ refacto: use wait.PollUntilContextCancel for wait loops, sync snaphot creation by @jfbus in https://github.com/outscale/osc-bsu-csi-driver/pull/902
+* 🔧 go.mod: fix go version by @jfbus in https://github.com/outscale/osc-bsu-csi-driver/pull/906
+* 👷 ci: add release notes template by @jfbus in https://github.com/outscale/osc-bsu-csi-driver/pull/908
+* 👷 ci: multiple runner support by @jfbus in https://github.com/outscale/osc-bsu-csi-driver/pull/907
+* ⚡️ perfs: backoff & readiness loop tuning by @jfbus in https://github.com/outscale/osc-bsu-csi-driver/pull/903
+### 🐛 Fixed
+* ✨ feat: honor maxEntries in ListSnapshots by @jfbus in https://github.com/outscale/osc-bsu-csi-driver/pull/870
+* 🐛 fix: fix pagination on ListSnapshots by @jfbus in https://github.com/outscale/osc-bsu-csi-driver/pull/884
+* 🐛 fix: recreate errored snapshots by @jfbus in https://github.com/outscale/osc-bsu-csi-driver/pull/886
+* 🐛 fix: stop backoff when context is cancelled by @jfbus in https://github.com/outscale/osc-bsu-csi-driver/pull/883
+
 ## [v1.4.1]
 ### Bugfixes
 * Fix PV will be encrypted failing due to restictive securityContext ([#835](https://github.com/outscale/osc-bsu-csi-driver/pull/835))

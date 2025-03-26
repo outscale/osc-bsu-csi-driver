@@ -4,11 +4,11 @@
 3. Update `docs/README.md`
  - Update the version of the plugin
  - Update the CSI spec version
- - Update the kubernetes mininmal and recommended version
+ - Update the kubernetes minimal and recommended version
 4. Generate helm doc `make helm-docs`
 5. Tag the release
 ```shell
-git tag -a vX.X.X -m "Release vX.X.X"
+git tag -a vX.X.X -m "🔖 Release vX.X.X"
 ```
 6. Generate the docker image with `make build-image`
 7. Push the docker image to the registry

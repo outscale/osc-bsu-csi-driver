@@ -70,7 +70,10 @@ var (
 // newControllerService creates a new controller service
 // it panics if failed to create the service
 func newControllerService(driverOptions *DriverOptions) controllerService {
-	region := os.Getenv("AWS_REGION")
+	region := os.Getenv("OSC_REGION")
+	if region == "" {
+		region = os.Getenv("AWS_REGION")
+	}
 	if region == "" {
 		metadata, err := NewMetadataFunc()
 		if err != nil {

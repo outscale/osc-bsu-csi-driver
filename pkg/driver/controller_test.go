@@ -21,7 +21,6 @@ import (
 	"errors"
 	"fmt"
 	"math/rand"
-	"os"
 	"reflect"
 	"testing"
 	"time"
@@ -60,30 +59,35 @@ func TestNewControllerService(t *testing.T) {
 
 	testCases := []struct {
 		name                  string
-		region                string
+		awsRegion, oscRegion  string
 		newCloudFunc          func(string, ...cloud.CloudOption) (cloud.Cloud, error)
 		newMetadataFuncErrors bool
 		expectPanic           bool
 	}{
 		{
 			name:         "AWS_REGION variable set, newCloud does not error",
-			region:       "foo",
+			awsRegion:    "foo",
 			newCloudFunc: getNewCloudFunc("foo"),
 		},
 		{
-			name:   "AWS_REGION variable set, newCloud errors",
-			region: "foo",
+			name:         "OSC_REGION variable set, newCloud does not error",
+			oscRegion:    "foo",
+			newCloudFunc: getNewCloudFunc("foo"),
+		},
+		{
+			name:      "OSC_REGION variable set, newCloud errors",
+			oscRegion: "foo",
 			newCloudFunc: func(region string, opts ...cloud.CloudOption) (cloud.Cloud, error) {
 				return nil, testErr
 			},
 			expectPanic: true,
 		},
 		{
-			name:         "AWS_REGION variable not set, newMetadata does not error",
+			name:         "AWS_REGION/OSC_REGION variable not set, newMetadata does not error",
 			newCloudFunc: getNewCloudFunc(testRegion),
 		},
 		{
-			name:                  "AWS_REGION variable not set, newMetadata errors",
+			name:                  "AWS_REGION/OSC_REGION variable not set, newMetadata errors",
 			newCloudFunc:          getNewCloudFunc(testRegion),
 			newMetadataFuncErrors: true,
 			expectPanic:           true,
@@ -100,7 +104,9 @@ func TestNewControllerService(t *testing.T) {
 			defer func() { NewCloudFunc = oldNewCloudFunc }()
 			NewCloudFunc = tc.newCloudFunc
 
-			if tc.region == "" {
+			t.Setenv("AWS_REGION", tc.awsRegion)
+			t.Setenv("OSC_REGION", tc.oscRegion)
+			if tc.awsRegion == "" && tc.oscRegion == "" {
 				mockCtl := gomock.NewController(t)
 				defer mockCtl.Finish()
 				mockMetadataService := mocks.NewMockMetadataService(mockCtl)
@@ -117,9 +123,6 @@ func TestNewControllerService(t *testing.T) {
 				if !tc.newMetadataFuncErrors {
 					mockMetadataService.EXPECT().GetRegion().Return(testRegion)
 				}
-			} else {
-				os.Setenv("AWS_REGION", tc.region)
-				defer os.Unsetenv("AWS_REGION")
 			}
 
 			if tc.expectPanic {

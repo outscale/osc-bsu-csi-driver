@@ -91,7 +91,7 @@ spec:
               value: {{ .Values.customEndpoint }}
             {{- end }}
             {{- if .Values.region }}
-            - name: AWS_REGION
+            - name: OSC_REGION
               value: {{ .Values.region }}
             {{- end }}
             {{- if .Values.maxBsuVolumes }}

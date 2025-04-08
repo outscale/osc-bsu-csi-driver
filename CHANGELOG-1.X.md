@@ -1,5 +1,11 @@
 # Changelog
 
+## [v1.5.1]
+### 🛠️ Changed
+* ♻️ env: allow using OSC_REGION instead of AWS_REGION by @jfbus in https://github.com/outscale/osc-bsu-csi-driver/pull/917
+* 🔧 helm: allow fine-grained resource configuration by @jfbus in https://github.com/outscale/osc-bsu-csi-driver/pull/918
+* 🔧 helm: add updateStrategy=RollingUpdate to node DaemonSet by @jfbus in https://github.com/outscale/osc-bsu-csi-driver/pull/919
+
 ## [v1.5.0]
 ### ✨ Added
 * ✨ feat: custom extra tags on snapshots by @jfbus in https://github.com/outscale/osc-bsu-csi-driver/pull/875

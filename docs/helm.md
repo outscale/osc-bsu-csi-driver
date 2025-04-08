@@ -57,28 +57,31 @@ Kubernetes: `>=1.20`
 | node.containerSecurityContext.seccompProfile.type | string | `"Unconfined"` |  |
 | node.podAnnotations | object | `{}` | Annotations for controller pod |
 | node.podLabels | object | `{}` | Labels for controller pod |
+| node.resources | object | `{}` | Node controller (DaemonSet) resources. If not set, the top-level resources will be used. |
 | node.tolerations | list | `[]` | Pod tolerations |
 | nodeSelector | object | `{}` |  |
 | podAnnotations | object | `{}` | Annotations for controller pod |
 | podLabels | object | `{}` | Labels for controller pod |
 | region | string | `""` | Region to use, otherwise it will be looked up via metadata. By providing this parameter, the controller will not require to access the metadata. |
 | replicaCount | int | `2` | Number of replicas to deploy |
-| resources | object | `{}` | Specify limits of resources used by the pod |
+| resources | object | `{}` | Specify limits of resources used by the pod containers |
 | serviceAccount.controller.annotations | object | `{}` |  |
 | serviceAccount.snapshot.annotations | object | `{}` |  |
 | sidecars.attacherImage.additionalArgs | list | `[]` |  |
-| sidecars.attacherImage.additionalClusterRoleRules | string | `nil` |  |
+| sidecars.attacherImage.additionalClusterRoleRules | string | `nil` | Grant additional permissions to csi-attacher |
 | sidecars.attacherImage.enableHttpEndpoint | bool | `false` | Enable http endpoint to get metrics of the container |
 | sidecars.attacherImage.enableLivenessProbe | bool | `false` | Enable liveness probe for the container |
 | sidecars.attacherImage.httpEndpointPort | string | `"8090"` | Port of the http endpoint |
 | sidecars.attacherImage.leaderElection | object | `{}` | Customize leaderElection, you can specify `leaseDuration`, `renewDeadline` and/or `retryPeriod`. Each value must be in an acceptable time.ParseDuration format.(Ref: https://pkg.go.dev/flag#Duration) |
 | sidecars.attacherImage.repository | string | `"registry.k8s.io/sig-storage/csi-attacher"` |  |
+| sidecars.attacherImage.resources | object | `{}` | Sidecar resources. If not set, the top-level resources will be used. |
 | sidecars.attacherImage.securityContext.allowPrivilegeEscalation | bool | `false` |  |
 | sidecars.attacherImage.securityContext.readOnlyRootFilesystem | bool | `true` |  |
 | sidecars.attacherImage.securityContext.seccompProfile.type | string | `"RuntimeDefault"` |  |
 | sidecars.attacherImage.tag | string | `"v4.6.1"` |  |
 | sidecars.livenessProbeImage.port | string | `"9808"` | Port of the liveness of the main container |
 | sidecars.livenessProbeImage.repository | string | `"registry.k8s.io/sig-storage/livenessprobe"` |  |
+| sidecars.livenessProbeImage.resources | object | `{}` | Sidecar resources. If not set, the node or top-level resources will be used. |
 | sidecars.livenessProbeImage.securityContext.allowPrivilegeEscalation | bool | `false` |  |
 | sidecars.livenessProbeImage.securityContext.readOnlyRootFilesystem | bool | `true` |  |
 | sidecars.livenessProbeImage.securityContext.seccompProfile.type | string | `"RuntimeDefault"` |  |
@@ -87,6 +90,7 @@ Kubernetes: `>=1.20`
 | sidecars.nodeDriverRegistrarImage.enableLivenessProbe | bool | `false` | Enable liveness probe for the container |
 | sidecars.nodeDriverRegistrarImage.httpEndpointPort | string | `"8093"` | Port of the http endpoint |
 | sidecars.nodeDriverRegistrarImage.repository | string | `"registry.k8s.io/sig-storage/csi-node-driver-registrar"` |  |
+| sidecars.nodeDriverRegistrarImage.resources | object | `{}` | Sidecar resources. If not set, the node or top-level resources will be used. |
 | sidecars.nodeDriverRegistrarImage.securityContext.allowPrivilegeEscalation | bool | `false` |  |
 | sidecars.nodeDriverRegistrarImage.securityContext.readOnlyRootFilesystem | bool | `true` |  |
 | sidecars.nodeDriverRegistrarImage.securityContext.seccompProfile.type | string | `"RuntimeDefault"` |  |
@@ -98,28 +102,31 @@ Kubernetes: `>=1.20`
 | sidecars.provisionerImage.httpEndpointPort | string | `"8089"` | Port of the http endpoint |
 | sidecars.provisionerImage.leaderElection | object | `{}` | Customize leaderElection, you can specify `leaseDuration`, `renewDeadline` and/or `retryPeriod`. Each value must be in an acceptable time.ParseDuration format.(Ref: https://pkg.go.dev/flag#Duration) |
 | sidecars.provisionerImage.repository | string | `"registry.k8s.io/sig-storage/csi-provisioner"` |  |
+| sidecars.provisionerImage.resources | object | `{}` |  |
 | sidecars.provisionerImage.securityContext.allowPrivilegeEscalation | bool | `false` |  |
 | sidecars.provisionerImage.securityContext.readOnlyRootFilesystem | bool | `true` |  |
 | sidecars.provisionerImage.securityContext.seccompProfile.type | string | `"RuntimeDefault"` |  |
 | sidecars.provisionerImage.tag | string | `"v5.0.2"` |  |
 | sidecars.resizerImage.additionalArgs | list | `[]` |  |
-| sidecars.resizerImage.additionalClusterRoleRules | string | `nil` |  |
+| sidecars.resizerImage.additionalClusterRoleRules | string | `nil` | Grant additional permissions to csi-resizer |
 | sidecars.resizerImage.enableHttpEndpoint | bool | `false` | Enable http endpoint to get metrics of the container |
 | sidecars.resizerImage.enableLivenessProbe | bool | `false` | Enable liveness probe for the container |
 | sidecars.resizerImage.httpEndpointPort | string | `"8092"` | Port of the http endpoint |
 | sidecars.resizerImage.leaderElection | object | `{}` | Customize leaderElection, you can specify `leaseDuration`, `renewDeadline` and/or `retryPeriod`. Each value must be in an acceptable time.ParseDuration format.(Ref: https://pkg.go.dev/flag#Duration) |
 | sidecars.resizerImage.repository | string | `"registry.k8s.io/sig-storage/csi-resizer"` |  |
+| sidecars.resizerImage.resources | object | `{}` | Sidecar resources. If not set, the top-level resources will be used. |
 | sidecars.resizerImage.securityContext.allowPrivilegeEscalation | bool | `false` |  |
 | sidecars.resizerImage.securityContext.readOnlyRootFilesystem | bool | `true` |  |
 | sidecars.resizerImage.securityContext.seccompProfile.type | string | `"RuntimeDefault"` |  |
 | sidecars.resizerImage.tag | string | `"v1.11.2"` |  |
 | sidecars.snapshotterImage.additionalArgs | list | `[]` |  |
-| sidecars.snapshotterImage.additionalClusterRoleRules | string | `nil` |  |
+| sidecars.snapshotterImage.additionalClusterRoleRules | string | `nil` | Grant additional permissions to csi-snapshotter |
 | sidecars.snapshotterImage.enableHttpEndpoint | bool | `false` | Enable http endpoint to get metrics of the container |
 | sidecars.snapshotterImage.enableLivenessProbe | bool | `false` | Enable liveness probe for the container |
 | sidecars.snapshotterImage.httpEndpointPort | string | `"8091"` | Port of the http endpoint |
 | sidecars.snapshotterImage.leaderElection | object | `{}` | Customize leaderElection, you can specify `leaseDuration`, `renewDeadline` and/or `retryPeriod`. Each value must be in an acceptable time.ParseDuration format.(Ref: https://pkg.go.dev/flag#Duration) |
 | sidecars.snapshotterImage.repository | string | `"registry.k8s.io/sig-storage/csi-snapshotter"` |  |
+| sidecars.snapshotterImage.resources | object | `{}` | Sidecar resources. If not set, the top-level resources will be used. |
 | sidecars.snapshotterImage.securityContext.allowPrivilegeEscalation | bool | `false` |  |
 | sidecars.snapshotterImage.securityContext.readOnlyRootFilesystem | bool | `true` |  |
 | sidecars.snapshotterImage.securityContext.seccompProfile.type | string | `"RuntimeDefault"` |  |

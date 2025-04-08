@@ -42,7 +42,7 @@ spec:
           tolerationSeconds: 300
         {{- end }}
         {{- with .Values.node.tolerations }}
-{{ toYaml . | indent 8 }}
+          {{- toYaml . | indent 8 }}
         {{- end }}
       {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
@@ -94,8 +94,14 @@ spec:
             timeoutSeconds: 3
             periodSeconds: 10
             failureThreshold: 5
-          {{- with .Values.resources }}
+          {{- if .Values.node.resources }}
+            {{- with .Values.node.resources }}
           resources: {{ toYaml . | nindent 12 }}
+            {{- end }}
+          {{- else }}
+            {{- with .Values.resources }}
+          resources: {{ toYaml . | nindent 12 }}
+            {{- end }}
           {{- end }}
           {{- with .Values.node.containerSecurityContext }}
           securityContext:  
@@ -134,8 +140,18 @@ spec:
               mountPath: /csi
             - name: registration-dir
               mountPath: /registration
-          {{- with .Values.resources }}
+          {{- if .Values.sidecars.nodeDriverRegistrarImage.resources }}
+            {{- with .Values.sidecars.nodeDriverRegistrarImage.resources }}
           resources: {{ toYaml . | nindent 12 }}
+            {{- end }}
+          {{- else if .Values.node.resources }}
+            {{- with .Values.node.resources }}
+          resources: {{ toYaml . | nindent 12 }}
+            {{- end }}
+          {{- else }}
+            {{- with .Values.resources }}
+          resources: {{ toYaml . | nindent 12 }}
+            {{- end }}
           {{- end }}
           {{- with .Values.sidecars.nodeDriverRegistrarImage.securityContext }}
           securityContext:  
@@ -149,8 +165,18 @@ spec:
           volumeMounts:
             - name: plugin-dir
               mountPath: /csi
-          {{- with .Values.resources }}
+          {{- if .Values.sidecars.livenessProbeImage.resources }}
+            {{- with .Values.sidecars.livenessProbeImage.resources }}
           resources: {{ toYaml . | nindent 12 }}
+            {{- end }}
+          {{- else if .Values.node.resources }}
+            {{- with .Values.node.resources }}
+          resources: {{ toYaml . | nindent 12 }}
+            {{- end }}
+          {{- else }}
+            {{- with .Values.resources }}
+          resources: {{ toYaml . | nindent 12 }}
+            {{- end }}
           {{- end }}
           {{- with .Values.sidecars.livenessProbeImage.securityContext }}
           securityContext:  

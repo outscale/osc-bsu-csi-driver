@@ -202,8 +202,14 @@ spec:
           volumeMounts:
             - name: socket-dir
               mountPath: /var/lib/csi/sockets/pluginproxy/
-          {{- with .Values.resources }}
+          {{- if .Values.sidecars.provisionerImage.resources }}
+            {{- with .Values.sidecars.provisionerImage.resources }}
           resources: {{ toYaml . | nindent 12 }}
+            {{- end }}
+          {{- else }}
+            {{- with .Values.resources }}
+          resources: {{ toYaml . | nindent 12 }}
+            {{- end }}
           {{- end }}
           {{- with .Values.sidecars.provisionerImage.securityContext }}
           securityContext:
@@ -259,8 +265,14 @@ spec:
           volumeMounts:
             - name: socket-dir
               mountPath: /var/lib/csi/sockets/pluginproxy/
-          {{- with .Values.resources }}
+          {{- if .Values.sidecars.attacherImage.resources }}
+            {{- with .Values.sidecars.attacherImage.resources }}
           resources: {{ toYaml . | nindent 12 }}
+            {{- end }}
+          {{- else }}
+            {{- with .Values.resources }}
+          resources: {{ toYaml . | nindent 12 }}
+            {{- end }}
           {{- end }}
           {{- with .Values.sidecars.attacherImage.securityContext }}
           securityContext:
@@ -310,8 +322,14 @@ spec:
           volumeMounts:
             - name: socket-dir
               mountPath: /var/lib/csi/sockets/pluginproxy/
-          {{- with .Values.resources }}
+          {{- if .Values.sidecars.snapshotterImage.resources }}
+            {{- with .Values.sidecars.snapshotterImage.resources }}
           resources: {{ toYaml . | nindent 12 }}
+            {{- end }}
+          {{- else }}
+            {{- with .Values.resources }}
+          resources: {{ toYaml . | nindent 12 }}
+            {{- end }}
           {{- end }}
           {{- with .Values.sidecars.snapshotterImage.securityContext }}
           securityContext:
@@ -370,8 +388,14 @@ spec:
           volumeMounts:
             - name: socket-dir
               mountPath: /var/lib/csi/sockets/pluginproxy/
-          {{- with .Values.resources }}
+          {{- if .Values.sidecars.resizerImage.resources }}
+            {{- with .Values.sidecars.resizerImage.resources }}
           resources: {{ toYaml . | nindent 12 }}
+            {{- end }}
+          {{- else }}
+            {{- with .Values.resources }}
+          resources: {{ toYaml . | nindent 12 }}
+            {{- end }}
           {{- end }}
           {{- with .Values.sidecars.resizerImage.securityContext }}
           securityContext:  
@@ -386,8 +410,14 @@ spec:
           volumeMounts:
             - name: socket-dir
               mountPath: /csi
-          {{- with .Values.resources }}
+          {{- if .Values.sidecars.livenessProbeImage.resources }}
+            {{- with .Values.sidecars.livenessProbeImage.resources }}
           resources: {{ toYaml . | nindent 12 }}
+            {{- end }}
+          {{- else }}
+            {{- with .Values.resources }}
+          resources: {{ toYaml . | nindent 12 }}
+            {{- end }}
           {{- end }}
           {{- with .Values.sidecars.livenessProbeImage.securityContext }}
           securityContext:  

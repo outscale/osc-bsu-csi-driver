@@ -49,8 +49,10 @@ sidecars:
       readOnlyRootFilesystem: true
       allowPrivilegeEscalation: false
     additionalArgs: []
-    # Grant additional permissions to external-provisioner
+    # Grant additional permissions to csi-provisioner
     additionalClusterRoleRules:
+    # Sidecar resources. If not set, the top-level resources will be used.
+    resources: {}
   attacherImage:
     repository: registry.k8s.io/sig-storage/csi-attacher
     tag: "v4.6.1"
@@ -68,8 +70,10 @@ sidecars:
       readOnlyRootFilesystem: true
       allowPrivilegeEscalation: false
     additionalArgs: []
-    # Grant additional permissions to external-provisioner
+    # -- Grant additional permissions to csi-attacher
     additionalClusterRoleRules:
+    # -- Sidecar resources. If not set, the top-level resources will be used.
+    resources: {}
   snapshotterImage:
     repository: registry.k8s.io/sig-storage/csi-snapshotter
     tag: "v8.0.1"
@@ -87,8 +91,10 @@ sidecars:
       readOnlyRootFilesystem: true
       allowPrivilegeEscalation: false
     additionalArgs: []
-    # Grant additional permissions to external-provisioner
+    # -- Grant additional permissions to csi-snapshotter
     additionalClusterRoleRules:
+    # -- Sidecar resources. If not set, the top-level resources will be used.
+    resources: {}
   livenessProbeImage:
     repository: registry.k8s.io/sig-storage/livenessprobe
     tag: "v2.13.1"
@@ -99,6 +105,8 @@ sidecars:
         type: RuntimeDefault
       readOnlyRootFilesystem: true
       allowPrivilegeEscalation: false
+    # -- Sidecar resources. If not set, the node or top-level resources will be used.
+    resources: {}
   resizerImage:
     repository: registry.k8s.io/sig-storage/csi-resizer
     tag: "v1.11.2"
@@ -116,8 +124,10 @@ sidecars:
       readOnlyRootFilesystem: true
       allowPrivilegeEscalation: false
     additionalArgs: []
-    # Grant additional permissions to external-provisioner
+    # -- Grant additional permissions to csi-resizer
     additionalClusterRoleRules:
+    # -- Sidecar resources. If not set, the top-level resources will be used.
+    resources: {}
   nodeDriverRegistrarImage:
     repository: registry.k8s.io/sig-storage/csi-node-driver-registrar
     tag: "v2.11.1"
@@ -132,7 +142,9 @@ sidecars:
         type: RuntimeDefault
       readOnlyRootFilesystem: true
       allowPrivilegeEscalation: false
-  
+    # -- Sidecar resources. If not set, the node or top-level resources will be used.
+    resources: {}
+
 
 # -- Specify image pull secrets
 imagePullSecrets: []
@@ -160,9 +172,8 @@ enableVolumeResizing: false
 # True if enable volume snapshot
 enableVolumeSnapshot: false
 
-# -- Specify limits of resources used by the pod
-resources:
-  {}
+# -- Specify limits of resources used by the pod containers
+resources: {}
   # We usually recommend not to specify default resources and to leave this as a conscious
   # choice for the user. This also increases chances charts run on environments with little
   # resources, such as Minikube. If you do want to specify resources, uncomment the following
@@ -231,6 +242,9 @@ node:
     allowPrivilegeEscalation: true  # Ensure privileges can be escalated for volume management if needed
     seccompProfile:
       type: Unconfined     # temporarily disable seccomp restrictions to allow necessary system calls for LUKS volumes
+  # -- Node controller (DaemonSet) resources. If not set, the top-level resources will be used.
+  resources: {}
+
 serviceAccount:
   controller:
     annotations: {}

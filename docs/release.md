@@ -10,6 +10,8 @@
 ```shell
 git tag -a vX.X.X -m "🔖 Release vX.X.X"
 ```
-6. Generate the docker image with `make build-image`
-7. Push the docker image to the registry
-8. Make the release on Github 
+6. Push the tag
+```shell
+git push origin vX.X.X
+```
+7. Publish the Github release

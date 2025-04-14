@@ -1,22 +1,68 @@
 package cloud
 
-import osc "github.com/outscale/osc-sdk-go/v2"
+import (
+	"errors"
+	"fmt"
+	"net/http"
 
-func extractError(err error) (bool, *osc.ErrorResponse) {
-	genericError, ok := err.(osc.GenericOpenAPIError)
-	if ok {
+	osc "github.com/outscale/osc-sdk-go/v2"
+)
+
+type OAPIError struct {
+	errors []osc.Errors
+}
+
+func (err OAPIError) Error() string {
+	if len(err.errors) == 0 {
+		return "unknown error"
+	}
+	oe := err.errors[0]
+	str := oe.GetCode() + "/" + oe.GetType()
+	details := oe.GetDetails()
+	if details != "" {
+		str += " (" + details + ")"
+	}
+	return str
+}
+
+func extractOAPIError(err error, httpRes *http.Response) error {
+	var genericError osc.GenericOpenAPIError
+	if errors.As(err, &genericError) {
+		errorsResponse, ok := genericError.Model().(osc.ErrorResponse)
+		if ok && len(*errorsResponse.Errors) > 0 {
+			return OAPIError{errors: *errorsResponse.Errors}
+		}
+	}
+	if httpRes != nil {
+		return fmt.Errorf("http error %w", err)
+	}
+	return err
+}
+
+func extractErrors(err error) (*osc.Errors, bool) {
+	var (
+		errs         []osc.Errors
+		genericError osc.GenericOpenAPIError
+		oapiError    OAPIError
+	)
+	switch {
+	case errors.As(err, &genericError):
 		errorsResponse, ok := genericError.Model().(osc.ErrorResponse)
 		if ok {
-			return true, &errorsResponse
+			errs = errorsResponse.GetErrors()
 		}
-		return false, nil
+	case errors.As(err, &oapiError):
+		errs = oapiError.errors
 	}
-	return false, nil
+	if len(errs) > 0 {
+		return &errs[0], true
+	}
+	return nil, false
 }
 
 func isVolumeNotFoundError(err error) bool {
-	if ok, apirErr := extractError(err); ok {
-		if apirErr.GetErrors()[0].GetType() == "InvalidResource" && apirErr.GetErrors()[0].GetCode() == "5064" {
+	if apiErr, ok := extractErrors(err); ok {
+		if apiErr.GetType() == "InvalidResource" && apiErr.GetCode() == "5064" {
 			return true
 		}
 	}
@@ -24,8 +70,8 @@ func isVolumeNotFoundError(err error) bool {
 }
 
 func isSnapshotNotFoundError(err error) bool {
-	if ok, apirErr := extractError(err); ok {
-		if apirErr.GetErrors()[0].GetType() == "InvalidResource" && apirErr.GetErrors()[0].GetCode() == "5054" {
+	if apiErr, ok := extractErrors(err); ok {
+		if apiErr.GetType() == "InvalidResource" && apiErr.GetCode() == "5054" {
 			return true
 		}
 	}

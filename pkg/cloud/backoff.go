@@ -83,7 +83,7 @@ func (bp *BackoffPolicy) OAPIResponseBackoff(ctx context.Context, resp *http.Res
 		klog.FromContext(ctx).V(5).Error(err, "Retrying...")
 		return false, nil
 	case err != nil:
-		return false, err
+		return false, extractOAPIError(err, resp)
 	default:
 		return true, nil
 	}

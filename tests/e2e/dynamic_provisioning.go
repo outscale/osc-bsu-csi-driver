@@ -64,7 +64,7 @@ var _ = Describe("[bsu-csi-e2e] [single-az] Dynamic Provisioning", func() {
 		for _, fs := range bsucsidriver.ValidFSTypes {
 			volumeType := t
 			fsType := fs
-			It(fmt.Sprintf("should create a volume on demand with volume type %q and fs type %q", volumeType, fsType), func() {
+			It(fmt.Sprintf("should create an on demand volume with volume type %q and fs type %q", volumeType, fsType), func() {
 				pods := []testsuites.PodDetails{
 					{
 						Cmd: "echo 'hello world' > /mnt/test-1/data && grep 'hello world' /mnt/test-1/data",
@@ -90,35 +90,7 @@ var _ = Describe("[bsu-csi-e2e] [single-az] Dynamic Provisioning", func() {
 		}
 	}
 
-	for _, t := range osccloud.ValidVolumeTypes {
-		volumeType := t
-		It(fmt.Sprintf("should create a volume on demand with volumeType %q and encryption", volumeType), func() {
-			Skip("Volume encryption is not supported for volume")
-			pods := []testsuites.PodDetails{
-				{
-					Cmd: "echo 'hello world' > /mnt/test-1/data && grep 'hello world' /mnt/test-1/data",
-					Volumes: []testsuites.VolumeDetails{
-						{
-							VolumeType: volumeType,
-							FSType:     bsucsidriver.FSTypeExt4,
-							ClaimSize:  driver.MinimumSizeForVolumeType(volumeType),
-							VolumeMount: testsuites.VolumeMountDetails{
-								NameGenerate:      "test-volume-",
-								MountPathGenerate: "/mnt/test-",
-							},
-						},
-					},
-				},
-			}
-			test := testsuites.DynamicallyProvisionedCmdVolumeTest{
-				CSIDriver: bsuDriver,
-				Pods:      pods,
-			}
-			test.Run(cs, ns)
-		})
-	}
-
-	It("should create a volume on demand with provided mountOptions", func() {
+	It("should create an on demand volume with provided mountOptions", func() {
 		pods := []testsuites.PodDetails{
 			{
 				Cmd: "echo 'hello world' > /mnt/test-1/data && grep 'hello world' /mnt/test-1/data",
@@ -214,7 +186,7 @@ var _ = Describe("[bsu-csi-e2e] [single-az] Dynamic Provisioning", func() {
 		test.Run(cs, ns)
 	})
 
-	It("should create a raw block volume on demand", func() {
+	It("should create a raw block on demand volume", func() {
 		pods := []testsuites.PodDetails{
 			{
 				Cmd: "dd if=/dev/zero of=/dev/xvda bs=1024k count=100",
@@ -239,7 +211,7 @@ var _ = Describe("[bsu-csi-e2e] [single-az] Dynamic Provisioning", func() {
 		test.Run(cs, ns)
 	})
 
-	It("should create a raw block volume and a filesystem volume on demand and bind to the same pod", func() {
+	It("should create a raw block volume and a filesystem on demand volume and bind to the same pod", func() {
 		pods := []testsuites.PodDetails{
 			{
 				Cmd: "dd if=/dev/zero of=/dev/xvda bs=1024k count=100 && echo 'hello world' > /mnt/test-1/data && grep 'hello world' /mnt/test-1/data",
@@ -314,7 +286,7 @@ var _ = Describe("[bsu-csi-e2e] [single-az] Dynamic Provisioning", func() {
 	})
 
 	// Track issue https://github.com/kubernetes/kubernetes/issues/70505
-	It("should create a volume on demand and mount it as readOnly in a pod", func() {
+	It("should create an on demand volume and mount it as readOnly in a pod", func() {
 		pods := []testsuites.PodDetails{
 			{
 				Cmd: "touch /mnt/test-1/data",
@@ -462,7 +434,7 @@ var _ = Describe("[bsu-csi-e2e] [single-az] Dynamic Provisioning", func() {
 		}
 		test.Run(cs, ns)
 	})
-	It("should create a volume on demand and resize it", func() {
+	It("should create an EXT4 on demand volume and resize it", func() {
 		allowVolumeExpansion := true
 		pod := testsuites.PodDetails{
 			Cmd: "echo 'hello world' >> /mnt/test-1/data && grep 'hello world' /mnt/test-1/data && sync",
@@ -470,6 +442,29 @@ var _ = Describe("[bsu-csi-e2e] [single-az] Dynamic Provisioning", func() {
 				{
 					VolumeType: osccloud.VolumeTypeGP2,
 					FSType:     bsucsidriver.FSTypeExt4,
+					ClaimSize:  driver.MinimumSizeForVolumeType(osccloud.VolumeTypeGP2),
+					VolumeMount: testsuites.VolumeMountDetails{
+						NameGenerate:      "test-volume-",
+						MountPathGenerate: "/mnt/test-",
+					},
+					AllowVolumeExpansion: &allowVolumeExpansion,
+				},
+			},
+		}
+		test := testsuites.DynamicallyProvisionedResizeVolumeTest{
+			CSIDriver: bsuDriver,
+			Pod:       pod,
+		}
+		test.Run(cs, ns)
+	})
+	It("should create a XFS on demand volume and resize it", func() {
+		allowVolumeExpansion := true
+		pod := testsuites.PodDetails{
+			Cmd: "echo 'hello world' >> /mnt/test-1/data && grep 'hello world' /mnt/test-1/data && sync",
+			Volumes: []testsuites.VolumeDetails{
+				{
+					VolumeType: osccloud.VolumeTypeGP2,
+					FSType:     bsucsidriver.FSTypeXfs,
 					ClaimSize:  driver.MinimumSizeForVolumeType(osccloud.VolumeTypeGP2),
 					VolumeMount: testsuites.VolumeMountDetails{
 						NameGenerate:      "test-volume-",

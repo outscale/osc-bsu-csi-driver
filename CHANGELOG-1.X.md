@@ -1,5 +1,12 @@
 # Changelog
 
+## [v1.5.2]
+### 🛠️ Changed
+* 🔊 errors: better OAPI error reporting by @jfbus in https://github.com/outscale/osc-bsu-csi-driver/pull/926
+* 📝 doc: updated deploy & release docs by @jfbus in https://github.com/outscale/osc-bsu-csi-driver/pull/922
+### 🛠️ Fixed
+* 🐛 fix: missing xfs_growfs binary by @jfbus in https://github.com/outscale/osc-bsu-csi-driver/pull/925
+
 ## [v1.5.1]
 ### 🛠️ Changed
 * ♻️ env: allow using OSC_REGION instead of AWS_REGION by @jfbus in https://github.com/outscale/osc-bsu-csi-driver/pull/917

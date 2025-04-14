@@ -55,6 +55,9 @@ COPY --from=debian /sbin/blkid \
         /sbin/mkfs.ext4 \
         /sbin/mkfs.xfs \
         /sbin/resize2fs \
+        /sbin/xfs_growfs \
+        /sbin/xfs_info \
+        /sbin/xfs_admin /sbin/xfs_db \
         /sbin/xfs_repair /sbin/
 COPY --from=debian /lib/x86_64-linux-gnu/libargon2.so.1 \
         /lib/x86_64-linux-gnu/libblkid.so.1 \

@@ -138,7 +138,8 @@ func (t *DynamicallyProvisionedStatsPodTest) Run(client clientset.Interface, nam
 			fmt.Sprintf("http://%s:10255/metrics", pod_host_ip),
 		}
 		metricsStdout, metricsStderr, metricsErr := e2epod.ExecCommandInContainerWithFullOutput(f, tDeployment.podName, pods.Items[0].Spec.Containers[0].Name, cmd...)
-		fmt.Printf("Metrics: stdout %v, stderr %v, err %v\n", metricsStdout, metricsStderr, metricsErr)
+		// fmt.Printf("Metrics: stdout %v, stderr %v, err %v\n", metricsStdout, metricsStderr, metricsErr)
+		fmt.Printf("Metrics: stderr %v, err %v\n", metricsStderr, metricsErr)
 
 		// Retrieve stats using df
 		dfCmd := []string{
@@ -147,7 +148,7 @@ func (t *DynamicallyProvisionedStatsPodTest) Run(client clientset.Interface, nam
 			"/mnt/test-1",
 		}
 		dfStdout, dfStderr, dfErr := e2epod.ExecCommandInContainerWithFullOutput(f, tDeployment.podName, pods.Items[0].Spec.Containers[0].Name, dfCmd...)
-		fmt.Printf("DfStats stdout %v, stderr %v, err %v\n", dfStdout, dfStderr, dfErr)
+		fmt.Printf("df: stderr %v, err %v\n", dfStderr, dfErr)
 
 		if dfErr != nil || metricsErr != nil {
 			panic("Unable to retrieve the metrics")

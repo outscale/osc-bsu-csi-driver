@@ -18,7 +18,7 @@ LINTER_VERSION := v2.12.0
 
 E2E_ENV ?= "e2e/osc-bsu-csi-driver:0.0"
 E2E_ENV_RUN ?= "e2e-osc-bsu-csi-driver"
-E2E_FOCUS ?= "single-az"
+E2E_FOCUS ?= single-az
 
 PKG := github.com/outscale/osc-bsu-csi-driver
 IMAGE := outscale/osc-bsu-csi-driver

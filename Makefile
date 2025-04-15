@@ -68,7 +68,7 @@ verify:
 
 .PHONY: test
 test:
-	go test -v -race ./pkg/...
+	go test -v -race ./pkg/... ./osc-bsu-csi-driver/...
 
 .PHONY: dockerlint
 dockerlint:

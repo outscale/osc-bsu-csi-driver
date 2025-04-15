@@ -227,9 +227,9 @@ maxBsuVolumes: "39"
 defaultFsType: "ext4"
 
 node:
-  # -- Annotations for controller pod
+  # -- Annotations for node controller pod
   podAnnotations: {}
-  # -- Labels for controller pod
+  # -- Labels for node controller pod
   podLabels: {}
   # @ignored
   tolerateAllTaints: true
@@ -244,6 +244,8 @@ node:
       type: Unconfined     # temporarily disable seccomp restrictions to allow necessary system calls for LUKS volumes
   # -- Node controller (DaemonSet) resources. If not set, the top-level resources will be used.
   resources: {}
+  # -- Node controller command line additional args
+  args: []
 
 serviceAccount:
   controller:

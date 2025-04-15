@@ -21,10 +21,10 @@ import (
 	"testing"
 
 	"github.com/aws/aws-sdk-go/aws/ec2metadata"
-	"github.com/golang/mock/gomock"
 	"github.com/outscale/osc-bsu-csi-driver/pkg/cloud/mocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/mock/gomock"
 )
 
 var (

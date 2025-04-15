@@ -40,8 +40,10 @@ func (err OAPIError) GRPCCode() codes.Code {
 		return codes.Internal
 	}
 	switch {
-	case code >= 10000 && code < 11000:
-		return codes.ResourceExhausted
+	case code >= 10000 && code < 11000: // InsufficientCapacity, TooManyResources (QuotaExceeded)
+		return codes.ResourceExhausted // https://github.com/container-storage-interface/spec/blob/master/spec.md#createvolume-errors
+	case code == 4116 || code < 4117: // ErrorNextPageTokenExpired, ErrorInvalidNextPageTokenValue
+		return codes.Aborted // https://github.com/container-storage-interface/spec/blob/master/spec.md#listsnapshots-errors
 	default:
 		return codes.Internal
 	}

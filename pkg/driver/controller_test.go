@@ -1446,264 +1446,220 @@ func TestCreateSnapshot(t *testing.T) {
 }
 
 func TestDeleteSnapshot(t *testing.T) {
-	testCases := []struct {
-		name     string
-		testFunc func(t *testing.T)
-	}{
-		{
-			name: "success normal",
-			testFunc: func(t *testing.T) {
-				ctx := context.Background()
+	t.Run("success normal", func(t *testing.T) {
+		ctx := context.Background()
 
-				mockCtl := gomock.NewController(t)
-				defer mockCtl.Finish()
-				mockCloud := mocks.NewMockCloud(mockCtl)
+		mockCtl := gomock.NewController(t)
+		defer mockCtl.Finish()
+		mockCloud := mocks.NewMockCloud(mockCtl)
 
-				oscDriver := controllerService{
-					cloud:         mockCloud,
-					driverOptions: &DriverOptions{},
-				}
+		oscDriver := controllerService{
+			cloud:         mockCloud,
+			driverOptions: &DriverOptions{},
+		}
 
-				req := &csi.DeleteSnapshotRequest{
-					SnapshotId: "xxx",
-				}
+		req := &csi.DeleteSnapshotRequest{
+			SnapshotId: "xxx",
+		}
 
-				mockCloud.EXPECT().DeleteSnapshot(gomock.Eq(ctx), gomock.Eq("xxx")).Return(true, nil)
-				if _, err := oscDriver.DeleteSnapshot(ctx, req); err != nil {
-					t.Fatalf("Unexpected error: %v", err)
-				}
-			},
-		},
-		{
-			name: "success not found",
-			testFunc: func(t *testing.T) {
-				ctx := context.Background()
+		mockCloud.EXPECT().DeleteSnapshot(gomock.Eq(ctx), gomock.Eq("xxx")).Return(true, nil)
+		_, err := oscDriver.DeleteSnapshot(ctx, req)
+		require.NoError(t, err)
+	})
+	t.Run("success not found", func(t *testing.T) {
+		ctx := context.Background()
 
-				mockCtl := gomock.NewController(t)
-				defer mockCtl.Finish()
-				mockCloud := mocks.NewMockCloud(mockCtl)
+		mockCtl := gomock.NewController(t)
+		defer mockCtl.Finish()
+		mockCloud := mocks.NewMockCloud(mockCtl)
 
-				oscDriver := controllerService{
-					cloud:         mockCloud,
-					driverOptions: &DriverOptions{},
-				}
+		oscDriver := controllerService{
+			cloud:         mockCloud,
+			driverOptions: &DriverOptions{},
+		}
 
-				req := &csi.DeleteSnapshotRequest{
-					SnapshotId: "xxx",
-				}
+		req := &csi.DeleteSnapshotRequest{
+			SnapshotId: "xxx",
+		}
 
-				mockCloud.EXPECT().DeleteSnapshot(gomock.Eq(ctx), gomock.Eq("xxx")).Return(false, cloud.ErrNotFound)
-				if _, err := oscDriver.DeleteSnapshot(ctx, req); err != nil {
-					t.Fatalf("Unexpected error: %v", err)
-				}
-			},
-		},
-	}
-
-	for _, tc := range testCases {
-		t.Run(tc.name, tc.testFunc)
-	}
+		mockCloud.EXPECT().DeleteSnapshot(gomock.Eq(ctx), gomock.Eq("xxx")).Return(false, cloud.ErrNotFound)
+		_, err := oscDriver.DeleteSnapshot(ctx, req)
+		require.NoError(t, err)
+	})
 }
 
 func TestListSnapshots(t *testing.T) {
-	testCases := []struct {
-		name     string
-		testFunc func(t *testing.T)
-	}{
-		{
-			name: "success normal",
-			testFunc: func(t *testing.T) {
-				req := &csi.ListSnapshotsRequest{}
-				mockCloudSnapshotsResponse := cloud.ListSnapshotsResponse{
-					Snapshots: []cloud.Snapshot{
-						{
-							SnapshotID:     "snapshot-1",
-							SourceVolumeID: "test-vol",
-							Size:           1,
-							CreationTime:   time.Now(),
-						},
-						{
-							SnapshotID:     "snapshot-2",
-							SourceVolumeID: "test-vol",
-							Size:           1,
-							CreationTime:   time.Now(),
-						},
-					},
-					NextToken: "",
-				}
-
-				ctx := context.Background()
-				mockCtl := gomock.NewController(t)
-				defer mockCtl.Finish()
-
-				mockCloud := mocks.NewMockCloud(mockCtl)
-				mockCloud.EXPECT().ListSnapshots(gomock.Eq(ctx), gomock.Eq(""), gomock.Eq(int32(0)), gomock.Eq("")).Return(mockCloudSnapshotsResponse, nil)
-
-				oscDriver := controllerService{
-					cloud:         mockCloud,
-					driverOptions: &DriverOptions{},
-				}
-
-				resp, err := oscDriver.ListSnapshots(context.Background(), req)
-				require.NoError(t, err)
-
-				if len(resp.GetEntries()) != len(mockCloudSnapshotsResponse.Snapshots) {
-					t.Fatalf("Expected %d entries, got %d", len(mockCloudSnapshotsResponse.Snapshots), len(resp.GetEntries()))
-				}
-			},
-		},
-		{
-			name: "success no snapshots",
-			testFunc: func(t *testing.T) {
-				req := &csi.ListSnapshotsRequest{}
-				ctx := context.Background()
-				mockCtl := gomock.NewController(t)
-				defer mockCtl.Finish()
-
-				mockCloud := mocks.NewMockCloud(mockCtl)
-				mockCloud.EXPECT().ListSnapshots(gomock.Eq(ctx), gomock.Eq(""), gomock.Eq(int32(0)), gomock.Eq("")).Return(cloud.ListSnapshotsResponse{}, cloud.ErrNotFound)
-
-				oscDriver := controllerService{
-					cloud:         mockCloud,
-					driverOptions: &DriverOptions{},
-				}
-
-				resp, err := oscDriver.ListSnapshots(context.Background(), req)
-				require.NoError(t, err)
-
-				if !reflect.DeepEqual(resp, &csi.ListSnapshotsResponse{}) {
-					t.Fatalf("Expected empty response, got %+v", resp)
-				}
-			},
-		},
-		{
-			name: "success snapshot ID",
-			testFunc: func(t *testing.T) {
-				req := &csi.ListSnapshotsRequest{
-					SnapshotId: "snapshot-1",
-				}
-				mockCloudSnapshotsResponse := cloud.Snapshot{
+	t.Run("success normal", func(t *testing.T) {
+		req := &csi.ListSnapshotsRequest{}
+		mockCloudSnapshotsResponse := cloud.ListSnapshotsResponse{
+			Snapshots: []cloud.Snapshot{
+				{
 					SnapshotID:     "snapshot-1",
 					SourceVolumeID: "test-vol",
 					Size:           1,
 					CreationTime:   time.Now(),
-				}
-
-				ctx := context.Background()
-				mockCtl := gomock.NewController(t)
-				defer mockCtl.Finish()
-
-				mockCloud := mocks.NewMockCloud(mockCtl)
-				mockCloud.EXPECT().GetSnapshotByID(gomock.Eq(ctx), gomock.Eq("snapshot-1")).Return(mockCloudSnapshotsResponse, nil)
-
-				oscDriver := controllerService{
-					cloud:         mockCloud,
-					driverOptions: &DriverOptions{},
-				}
-
-				resp, err := oscDriver.ListSnapshots(context.Background(), req)
-				require.NoError(t, err)
-
-				if len(resp.GetEntries()) != 1 {
-					t.Fatalf("Expected %d entry, got %d", 1, len(resp.GetEntries()))
-				}
+				},
+				{
+					SnapshotID:     "snapshot-2",
+					SourceVolumeID: "test-vol",
+					Size:           1,
+					CreationTime:   time.Now(),
+				},
 			},
-		},
-		{
-			name: "success snapshot ID not found",
-			testFunc: func(t *testing.T) {
-				req := &csi.ListSnapshotsRequest{
-					SnapshotId: "snapshot-1",
-				}
+			NextToken: "",
+		}
 
-				ctx := context.Background()
-				mockCtl := gomock.NewController(t)
-				defer mockCtl.Finish()
+		ctx := context.Background()
+		mockCtl := gomock.NewController(t)
+		defer mockCtl.Finish()
 
-				mockCloud := mocks.NewMockCloud(mockCtl)
-				mockCloud.EXPECT().GetSnapshotByID(gomock.Eq(ctx), gomock.Eq("snapshot-1")).Return(cloud.Snapshot{}, cloud.ErrNotFound)
+		mockCloud := mocks.NewMockCloud(mockCtl)
+		mockCloud.EXPECT().ListSnapshots(gomock.Eq(ctx), gomock.Eq(""), gomock.Eq(int32(0)), gomock.Eq("")).Return(mockCloudSnapshotsResponse, nil)
 
-				oscDriver := controllerService{
-					cloud:         mockCloud,
-					driverOptions: &DriverOptions{},
-				}
+		oscDriver := controllerService{
+			cloud:         mockCloud,
+			driverOptions: &DriverOptions{},
+		}
 
-				resp, err := oscDriver.ListSnapshots(context.Background(), req)
-				require.NoError(t, err)
+		resp, err := oscDriver.ListSnapshots(context.Background(), req)
+		require.NoError(t, err)
+		assert.Len(t, resp.GetEntries(), len(mockCloudSnapshotsResponse.Snapshots))
+	})
+	t.Run("success no snapshots", func(t *testing.T) {
+		req := &csi.ListSnapshotsRequest{}
+		ctx := context.Background()
+		mockCtl := gomock.NewController(t)
+		defer mockCtl.Finish()
 
-				if !reflect.DeepEqual(resp, &csi.ListSnapshotsResponse{}) {
-					t.Fatalf("Expected empty response, got %+v", resp)
-				}
-			},
-		},
-		{
-			name: "fail snapshot ID multiple found",
-			testFunc: func(t *testing.T) {
-				req := &csi.ListSnapshotsRequest{
-					SnapshotId: "snapshot-1",
-				}
+		mockCloud := mocks.NewMockCloud(mockCtl)
+		mockCloud.EXPECT().ListSnapshots(gomock.Eq(ctx), gomock.Eq(""), gomock.Eq(int32(0)), gomock.Eq("")).Return(cloud.ListSnapshotsResponse{}, nil)
 
-				ctx := context.Background()
-				mockCtl := gomock.NewController(t)
-				defer mockCtl.Finish()
+		oscDriver := controllerService{
+			cloud:         mockCloud,
+			driverOptions: &DriverOptions{},
+		}
 
-				mockCloud := mocks.NewMockCloud(mockCtl)
-				mockCloud.EXPECT().GetSnapshotByID(gomock.Eq(ctx), gomock.Eq("snapshot-1")).Return(cloud.Snapshot{}, cloud.ErrMultiSnapshots)
+		resp, err := oscDriver.ListSnapshots(context.Background(), req)
+		require.NoError(t, err)
+		assert.Empty(t, resp.Entries)
+	})
+	t.Run("success with nextToken", func(t *testing.T) {
+		req := &csi.ListSnapshotsRequest{
+			StartingToken: "foo",
+		}
+		ctx := context.Background()
+		mockCtl := gomock.NewController(t)
+		defer mockCtl.Finish()
 
-				oscDriver := controllerService{
-					cloud:         mockCloud,
-					driverOptions: &DriverOptions{},
-				}
+		mockCloud := mocks.NewMockCloud(mockCtl)
+		mockCloud.EXPECT().ListSnapshots(gomock.Eq(ctx), gomock.Eq(""), gomock.Eq(int32(0)), gomock.Eq("foo")).Return(cloud.ListSnapshotsResponse{
+			Snapshots: []cloud.Snapshot{{}},
+			NextToken: "bar",
+		}, nil)
 
-				if _, err := oscDriver.ListSnapshots(context.Background(), req); err != nil {
-					srvErr, ok := status.FromError(err)
-					if !ok {
-						t.Fatalf("Could not get error status code from error: %v", srvErr)
-					}
-					if srvErr.Code() != codes.Internal {
-						t.Fatalf("Expected error code %d, got %d message %s", codes.Internal, srvErr.Code(), srvErr.Message())
-					}
-				} else {
-					t.Fatalf("Expected error code %d, got no error", codes.Internal)
-				}
-			},
-		},
-		{
-			name: "fail 0 < MaxEntries < 5",
-			testFunc: func(t *testing.T) {
-				req := &csi.ListSnapshotsRequest{
-					MaxEntries: 4,
-				}
+		oscDriver := controllerService{
+			cloud:         mockCloud,
+			driverOptions: &DriverOptions{},
+		}
 
-				ctx := context.Background()
-				mockCtl := gomock.NewController(t)
-				defer mockCtl.Finish()
-				mockCloud := mocks.NewMockCloud(mockCtl)
-				mockCloud.EXPECT().ListSnapshots(gomock.Eq(ctx), gomock.Eq(""), gomock.Eq(int32(4)), gomock.Eq("")).Return(cloud.ListSnapshotsResponse{}, cloud.ErrInvalidMaxResults)
+		resp, err := oscDriver.ListSnapshots(context.Background(), req)
+		require.NoError(t, err)
+		assert.Equal(t, "bar", resp.NextToken)
+	})
+	t.Run("invalid nextToken", func(t *testing.T) {
+		req := &csi.ListSnapshotsRequest{
+			StartingToken: "foo",
+		}
+		ctx := context.Background()
+		mockCtl := gomock.NewController(t)
+		defer mockCtl.Finish()
 
-				oscDriver := controllerService{
-					cloud:         mockCloud,
-					driverOptions: &DriverOptions{},
-				}
+		mockCloud := mocks.NewMockCloud(mockCtl)
+		mockCloud.EXPECT().ListSnapshots(gomock.Eq(ctx), gomock.Eq(""), gomock.Eq(int32(0)), gomock.Eq("foo")).
+			Return(cloud.ListSnapshotsResponse{}, cloud.NewOAPIError(osc.Errors{Code: ptr.To("4116")}))
 
-				if _, err := oscDriver.ListSnapshots(context.Background(), req); err != nil {
-					srvErr, ok := status.FromError(err)
-					if !ok {
-						t.Fatalf("Could not get error status code from error: %v", srvErr)
-					}
-					if srvErr.Code() != codes.InvalidArgument {
-						t.Fatalf("Expected error code %d, got %d message %s", codes.InvalidArgument, srvErr.Code(), srvErr.Message())
-					}
-				} else {
-					t.Fatalf("Expected error code %d, got no error", codes.InvalidArgument)
-				}
-			},
-		},
-	}
+		oscDriver := controllerService{
+			cloud:         mockCloud,
+			driverOptions: &DriverOptions{},
+		}
 
-	for _, tc := range testCases {
-		t.Run(tc.name, tc.testFunc)
-	}
+		_, err := oscDriver.ListSnapshots(context.Background(), req)
+		require.Error(t, err)
+		status, _ := status.FromError(err)
+		require.NotNil(t, status)
+		assert.Equal(t, codes.Aborted, status.Code())
+	})
+	t.Run("success snapshot ID", func(t *testing.T) {
+		req := &csi.ListSnapshotsRequest{
+			SnapshotId: "snapshot-1",
+		}
+		mockCloudSnapshotsResponse := cloud.Snapshot{
+			SnapshotID:     "snapshot-1",
+			SourceVolumeID: "test-vol",
+			Size:           1,
+			CreationTime:   time.Now(),
+		}
+
+		ctx := context.Background()
+		mockCtl := gomock.NewController(t)
+		defer mockCtl.Finish()
+
+		mockCloud := mocks.NewMockCloud(mockCtl)
+		mockCloud.EXPECT().GetSnapshotByID(gomock.Eq(ctx), gomock.Eq("snapshot-1")).Return(mockCloudSnapshotsResponse, nil)
+
+		oscDriver := controllerService{
+			cloud:         mockCloud,
+			driverOptions: &DriverOptions{},
+		}
+
+		resp, err := oscDriver.ListSnapshots(context.Background(), req)
+		require.NoError(t, err)
+		assert.Len(t, resp.GetEntries(), 1)
+	})
+	t.Run("success snapshot ID not found", func(t *testing.T) {
+		req := &csi.ListSnapshotsRequest{
+			SnapshotId: "snapshot-1",
+		}
+
+		ctx := context.Background()
+		mockCtl := gomock.NewController(t)
+		defer mockCtl.Finish()
+
+		mockCloud := mocks.NewMockCloud(mockCtl)
+		mockCloud.EXPECT().GetSnapshotByID(gomock.Eq(ctx), gomock.Eq("snapshot-1")).Return(cloud.Snapshot{}, cloud.ErrNotFound)
+
+		oscDriver := controllerService{
+			cloud:         mockCloud,
+			driverOptions: &DriverOptions{},
+		}
+
+		resp, err := oscDriver.ListSnapshots(context.Background(), req)
+		require.NoError(t, err)
+		assert.Empty(t, resp.GetEntries())
+	})
+	t.Run("fail snapshot ID multiple found", func(t *testing.T) {
+		req := &csi.ListSnapshotsRequest{
+			SnapshotId: "snapshot-1",
+		}
+
+		ctx := context.Background()
+		mockCtl := gomock.NewController(t)
+		defer mockCtl.Finish()
+
+		mockCloud := mocks.NewMockCloud(mockCtl)
+		mockCloud.EXPECT().GetSnapshotByID(gomock.Eq(ctx), gomock.Eq("snapshot-1")).Return(cloud.Snapshot{}, cloud.ErrMultiSnapshots)
+
+		oscDriver := controllerService{
+			cloud:         mockCloud,
+			driverOptions: &DriverOptions{},
+		}
+
+		_, err := oscDriver.ListSnapshots(context.Background(), req)
+		require.Error(t, err)
+		st, _ := status.FromError(err)
+		require.NotNil(t, st)
+		assert.Equal(t, codes.Internal, st.Code())
+	})
 }
 
 func TestControllerPublishVolume(t *testing.T) {

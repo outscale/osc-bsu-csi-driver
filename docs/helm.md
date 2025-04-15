@@ -51,12 +51,13 @@ Kubernetes: `>=1.20`
 | maxBsuVolumes | string | `"39"` | Maximum volume to attach to a node (see [Docs](https://docs.outscale.com/en/userguide/About-Volumes.html)) |
 | nameOverride | string | `""` | Override name of the app (instead of `osc-bsu-csi-driver`) |
 | noProxy | string | `""` | Value used to create environment variable NO_PROXY |
+| node.args | list | `[]` | Node controller command line additional args |
 | node.containerSecurityContext.allowPrivilegeEscalation | bool | `true` |  |
 | node.containerSecurityContext.privileged | bool | `true` |  |
 | node.containerSecurityContext.readOnlyRootFilesystem | bool | `false` |  |
 | node.containerSecurityContext.seccompProfile.type | string | `"Unconfined"` |  |
-| node.podAnnotations | object | `{}` | Annotations for controller pod |
-| node.podLabels | object | `{}` | Labels for controller pod |
+| node.podAnnotations | object | `{}` | Annotations for node controller pod |
+| node.podLabels | object | `{}` | Labels for node controller pod |
 | node.resources | object | `{}` | Node controller (DaemonSet) resources. If not set, the top-level resources will be used. |
 | node.tolerations | list | `[]` | Pod tolerations |
 | nodeSelector | object | `{}` |  |

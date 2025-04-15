@@ -18,9 +18,17 @@ package options
 
 import (
 	"flag"
+
+	cliflag "k8s.io/component-base/cli/flag"
 )
 
 // NodeOptions contains options and configuration settings for the node service.
-type NodeOptions struct{}
+type NodeOptions struct {
+	// LuksOpenFlags is a list of flags to add to cryptsetup luksOpen.
+	// It is a comma separated list of strings '--perf-no_read_workqueue,--perf-no_write_workqueue'.
+	LuksOpenFlags []string
+}
 
-func (s *NodeOptions) AddFlags(fs *flag.FlagSet) {}
+func (s *NodeOptions) AddFlags(fs *flag.FlagSet) {
+	fs.Var(cliflag.NewStringSlice(&s.LuksOpenFlags), "luks-open-flags", "Flag to add to cryptsetup luksOpen. It may be specified multiple times to add multiple flags, for example: '--luks-open-flags=--perf-no_read_workqueue --luks-open-flags=--perf-no_write_workqueue'")
+}

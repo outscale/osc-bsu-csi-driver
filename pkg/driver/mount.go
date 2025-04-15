@@ -94,23 +94,23 @@ func (m *NodeMounter) IsLuks(devicePath string) bool {
 	return IsLuks(m, devicePath)
 }
 
-func (m *NodeMounter) LuksFormat(devicePath string, passphrase string, context luks.LuksContext) error {
+func (m *NodeMounter) LuksFormat(devicePath, passphrase string, context luks.LuksContext) error {
 	return LuksFormat(m, devicePath, passphrase, context)
 }
 
-func (m *NodeMounter) CheckLuksPassphrase(devicePath string, passphrase string) error {
+func (m *NodeMounter) CheckLuksPassphrase(devicePath, passphrase string) error {
 	return CheckLuksPassphrase(m, devicePath, passphrase)
 }
 
-func (m *NodeMounter) LuksOpen(devicePath string, encryptedDeviceName string, passphrase string) (bool, error) {
-	return LuksOpen(m, devicePath, encryptedDeviceName, passphrase)
+func (m *NodeMounter) LuksOpen(devicePath, encryptedDeviceName, passphrase string, luksOpenFlags ...string) (bool, error) {
+	return LuksOpen(m, devicePath, encryptedDeviceName, passphrase, luksOpenFlags...)
 }
 
 func (m *NodeMounter) IsLuksMapping(devicePath string) (bool, string, error) {
 	return IsLuksMapping(m, devicePath)
 }
 
-func (m *NodeMounter) LuksResize(deviceName string, passphrase string) error {
+func (m *NodeMounter) LuksResize(deviceName, passphrase string) error {
 	return LuksResize(m, deviceName, passphrase)
 }
 

@@ -49,11 +49,13 @@ func CheckLuksPassphrase(exec k8sExec.Interface, devicePath string, passphrase s
 	return nil
 }
 
-func LuksOpen(exec Mounter, devicePath string, encryptedDeviceName string, passphrase string) (bool, error) {
+func LuksOpen(exec Mounter, devicePath, encryptedDeviceName, passphrase string, luksOpenFlags ...string) (bool, error) {
 	if ok, err := exec.ExistsPath("/dev/mapper/" + encryptedDeviceName); err == nil && ok {
 		return true, nil
 	}
-	openCmd := exec.Command("cryptsetup", "-v", "--type=luks2", "--batch-mode", "luksOpen", devicePath, encryptedDeviceName)
+	cmdOpts := append([]string{"-v", "--type=luks2", "--batch-mode"}, luksOpenFlags...)
+	cmdOpts = append(cmdOpts, "luksOpen", devicePath, encryptedDeviceName)
+	openCmd := exec.Command("cryptsetup", cmdOpts...)
 	passwordReader := strings.NewReader(passphrase)
 	openCmd.SetStdin(passwordReader)
 	if out, err := openCmd.CombinedOutput(); err != nil {

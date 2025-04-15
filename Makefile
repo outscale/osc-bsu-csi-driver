@@ -106,7 +106,8 @@ test-e2e-single-az-buildx:
 bin/mockgen:
 	go install github.com/golang/mock/mockgen@latest
 
-mockgen:
+.PHONY: mock-generate
+mock-generate:
 	./hack/update-gomock
 
 .PHONY: trivy-scan

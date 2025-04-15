@@ -8,10 +8,10 @@ type LuksContext struct {
 
 type LuksService interface {
 	IsLuks(devicePath string) bool
-	LuksFormat(devicePath string, passphrase string, context LuksContext) error
-	CheckLuksPassphrase(devicePath string, passphrase string) error
-	LuksOpen(devicePath string, encryptedDeviceName string, passphrase string) (bool, error)
+	LuksFormat(devicePath, passphrase string, context LuksContext) error
+	CheckLuksPassphrase(devicePath, passphrase string) error
+	LuksOpen(devicePath, encryptedDeviceName, passphrase string, luksOpenFlags ...string) (bool, error)
 	IsLuksMapping(devicePath string) (bool, string, error)
-	LuksResize(deviceName string, passphrase string) error
+	LuksResize(deviceName, passphrase string) error
 	LuksClose(deviceName string) error
 }

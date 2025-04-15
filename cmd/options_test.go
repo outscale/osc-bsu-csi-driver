@@ -22,6 +22,7 @@ import (
 	"testing"
 
 	"github.com/outscale/osc-bsu-csi-driver/pkg/driver"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -89,78 +90,47 @@ func TestGetOptions(t *testing.T) {
 		return options
 	}
 
-	testCases := []struct {
-		name     string
-		testFunc func(t *testing.T)
-	}{
-		{
-			name: "no controller mode given - expect all mode",
-			testFunc: func(t *testing.T) {
-				options := testFunc(t, nil, true, true, true)
+	t.Run("no controller mode given - expect all mode", func(t *testing.T) {
+		options := testFunc(t, nil, true, true, true)
+		assert.Equal(t, driver.AllMode, options.DriverMode)
+	})
+	t.Run("all mode given - expect all mode", func(t *testing.T) {
+		options := testFunc(t, []string{"all"}, true, true, true)
+		assert.Equal(t, driver.AllMode, options.DriverMode)
 
-				if options.DriverMode != driver.AllMode {
-					t.Fatalf("expected driver mode to be %q but it is %q", driver.AllMode, options.DriverMode)
-				}
-			},
-		},
-		{
-			name: "all mode given - expect all mode",
-			testFunc: func(t *testing.T) {
-				options := testFunc(t, []string{"all"}, true, true, true)
+	})
+	t.Run("controller mode given - expect controller mode", func(t *testing.T) {
+		options := testFunc(t, []string{"controller"}, true, true, false)
+		assert.Equal(t, driver.ControllerMode, options.DriverMode)
+	})
+	t.Run("node mode given - expect node mode", func(t *testing.T) {
+		options := testFunc(t, []string{"node"}, true, false, true)
+		assert.Equal(t, driver.NodeMode, options.DriverMode)
+	})
+	t.Run("luks open flags", func(t *testing.T) {
+		options := testFunc(t, []string{"node", "--luks-open-flags=--perf-no_read_workqueue", "--luks-open-flags=--perf-no_write_workqueue"}, true, false, true)
+		assert.Equal(t, []string{"--perf-no_read_workqueue", "--perf-no_write_workqueue"}, options.NodeOptions.LuksOpenFlags)
+	})
+	t.Run("version flag specified", func(t *testing.T) {
+		oldOSExit := osExit
+		defer func() { osExit = oldOSExit }()
 
-				if options.DriverMode != driver.AllMode {
-					t.Fatalf("expected driver mode to be %q but it is %q", driver.AllMode, options.DriverMode)
-				}
-			},
-		},
-		{
-			name: "controller mode given - expect controller mode",
-			testFunc: func(t *testing.T) {
-				options := testFunc(t, []string{"controller"}, true, true, false)
+		var exitCode int
+		testExit := func(code int) {
+			exitCode = code
+		}
+		osExit = testExit
 
-				if options.DriverMode != driver.ControllerMode {
-					t.Fatalf("expected driver mode to be %q but it is %q", driver.ControllerMode, options.DriverMode)
-				}
-			},
-		},
-		{
-			name: "node mode given - expect node mode",
-			testFunc: func(t *testing.T) {
-				options := testFunc(t, []string{"node"}, true, false, true)
+		oldArgs := os.Args
+		defer func() { os.Args = oldArgs }()
+		os.Args = []string{
+			"osc-bsu-csi-driver",
+			"-version",
+		}
 
-				if options.DriverMode != driver.NodeMode {
-					t.Fatalf("expected driver mode to be %q but it is %q", driver.NodeMode, options.DriverMode)
-				}
-			},
-		},
-		{
-			name: "version flag specified",
-			testFunc: func(t *testing.T) {
-				oldOSExit := osExit
-				defer func() { osExit = oldOSExit }()
+		flagSet := flag.NewFlagSet("test-flagset", flag.ContinueOnError)
+		_ = GetOptions(flagSet)
 
-				var exitCode int
-				testExit := func(code int) {
-					exitCode = code
-				}
-				osExit = testExit
-
-				oldArgs := os.Args
-				defer func() { os.Args = oldArgs }()
-				os.Args = []string{
-					"osc-bsu-csi-driver",
-					"-version",
-				}
-
-				flagSet := flag.NewFlagSet("test-flagset", flag.ContinueOnError)
-				_ = GetOptions(flagSet)
-
-				require.Zero(t, exitCode)
-			},
-		},
-	}
-
-	for _, tc := range testCases {
-		t.Run(tc.name, tc.testFunc)
-	}
+		require.Zero(t, exitCode)
+	})
 }

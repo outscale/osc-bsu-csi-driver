@@ -24,12 +24,12 @@ import (
 	"testing"
 
 	"github.com/container-storage-interface/spec/lib/go/csi"
-	"github.com/golang/mock/gomock"
 	"github.com/outscale/osc-bsu-csi-driver/pkg/driver/internal"
 	"github.com/outscale/osc-bsu-csi-driver/pkg/driver/luks"
 	"github.com/outscale/osc-bsu-csi-driver/pkg/driver/mocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/mock/gomock"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	exec "k8s.io/utils/exec"
@@ -67,9 +67,10 @@ func TestNodeStageVolume(t *testing.T) {
 				mockMounter := mocks.NewMockMounter(mockCtl)
 
 				oscDriver := &nodeService{
-					metadata: mockMetadata,
-					mounter:  mockMounter,
-					inFlight: internal.NewInFlight(),
+					driverOptions: &DriverOptions{},
+					metadata:      mockMetadata,
+					mounter:       mockMounter,
+					inFlight:      internal.NewInFlight(),
 				}
 
 				req := &csi.NodeStageVolumeRequest{
@@ -102,9 +103,10 @@ func TestNodeStageVolume(t *testing.T) {
 				mockMounter := mocks.NewMockMounter(mockCtl)
 
 				oscDriver := nodeService{
-					metadata: mockMetadata,
-					mounter:  mockMounter,
-					inFlight: internal.NewInFlight(),
+					driverOptions: &DriverOptions{},
+					metadata:      mockMetadata,
+					mounter:       mockMounter,
+					inFlight:      internal.NewInFlight(),
 				}
 
 				req := &csi.NodeStageVolumeRequest{
@@ -135,9 +137,10 @@ func TestNodeStageVolume(t *testing.T) {
 				mockMounter := mocks.NewMockMounter(mockCtl)
 
 				oscDriver := nodeService{
-					metadata: mockMetadata,
-					mounter:  mockMounter,
-					inFlight: internal.NewInFlight(),
+					driverOptions: &DriverOptions{},
+					metadata:      mockMetadata,
+					mounter:       mockMounter,
+					inFlight:      internal.NewInFlight(),
 				}
 
 				req := &csi.NodeStageVolumeRequest{
@@ -180,9 +183,10 @@ func TestNodeStageVolume(t *testing.T) {
 				mockMounter := mocks.NewMockMounter(mockCtl)
 
 				oscDriver := nodeService{
-					metadata: mockMetadata,
-					mounter:  mockMounter,
-					inFlight: internal.NewInFlight(),
+					driverOptions: &DriverOptions{},
+					metadata:      mockMetadata,
+					mounter:       mockMounter,
+					inFlight:      internal.NewInFlight(),
 				}
 
 				req := &csi.NodeStageVolumeRequest{
@@ -224,9 +228,10 @@ func TestNodeStageVolume(t *testing.T) {
 				mockMounter := mocks.NewMockMounter(mockCtl)
 
 				oscDriver := nodeService{
-					metadata: mockMetadata,
-					mounter:  mockMounter,
-					inFlight: internal.NewInFlight(),
+					driverOptions: &DriverOptions{},
+					metadata:      mockMetadata,
+					mounter:       mockMounter,
+					inFlight:      internal.NewInFlight(),
 				}
 
 				req := &csi.NodeStageVolumeRequest{
@@ -269,9 +274,10 @@ func TestNodeStageVolume(t *testing.T) {
 				mockMounter := mocks.NewMockMounter(mockCtl)
 
 				oscDriver := nodeService{
-					metadata: mockMetadata,
-					mounter:  mockMounter,
-					inFlight: internal.NewInFlight(),
+					driverOptions: &DriverOptions{},
+					metadata:      mockMetadata,
+					mounter:       mockMounter,
+					inFlight:      internal.NewInFlight(),
 				}
 
 				req := &csi.NodeStageVolumeRequest{
@@ -294,9 +300,10 @@ func TestNodeStageVolume(t *testing.T) {
 				mockMounter := mocks.NewMockMounter(mockCtl)
 
 				oscDriver := nodeService{
-					metadata: mockMetadata,
-					mounter:  mockMounter,
-					inFlight: internal.NewInFlight(),
+					driverOptions: &DriverOptions{},
+					metadata:      mockMetadata,
+					mounter:       mockMounter,
+					inFlight:      internal.NewInFlight(),
 				}
 
 				req := &csi.NodeStageVolumeRequest{
@@ -324,9 +331,10 @@ func TestNodeStageVolume(t *testing.T) {
 				mockMounter := mocks.NewMockMounter(mockCtl)
 
 				oscDriver := nodeService{
-					metadata: mockMetadata,
-					mounter:  mockMounter,
-					inFlight: internal.NewInFlight(),
+					driverOptions: &DriverOptions{},
+					metadata:      mockMetadata,
+					mounter:       mockMounter,
+					inFlight:      internal.NewInFlight(),
 				}
 
 				devicePath := "/dev/fake"
@@ -350,9 +358,10 @@ func TestNodeStageVolume(t *testing.T) {
 				mockMounter := mocks.NewMockMounter(mockCtl)
 
 				oscDriver := nodeService{
-					metadata: mockMetadata,
-					mounter:  mockMounter,
-					inFlight: internal.NewInFlight(),
+					driverOptions: &DriverOptions{},
+					metadata:      mockMetadata,
+					mounter:       mockMounter,
+					inFlight:      internal.NewInFlight(),
 				}
 
 				req := &csi.NodeStageVolumeRequest{
@@ -374,9 +383,10 @@ func TestNodeStageVolume(t *testing.T) {
 				mockMounter := mocks.NewMockMounter(mockCtl)
 
 				oscDriver := nodeService{
-					metadata: mockMetadata,
-					mounter:  mockMounter,
-					inFlight: internal.NewInFlight(),
+					driverOptions: &DriverOptions{},
+					metadata:      mockMetadata,
+					mounter:       mockMounter,
+					inFlight:      internal.NewInFlight(),
 				}
 
 				req := &csi.NodeStageVolumeRequest{
@@ -403,9 +413,10 @@ func TestNodeStageVolume(t *testing.T) {
 				mockMounter := mocks.NewMockMounter(mockCtl)
 
 				oscDriver := nodeService{
-					metadata: mockMetadata,
-					mounter:  mockMounter,
-					inFlight: internal.NewInFlight(),
+					driverOptions: &DriverOptions{},
+					metadata:      mockMetadata,
+					mounter:       mockMounter,
+					inFlight:      internal.NewInFlight(),
 				}
 
 				req := &csi.NodeStageVolumeRequest{
@@ -460,9 +471,10 @@ func TestNodeStageVolume(t *testing.T) {
 				mockMounter := mocks.NewMockMounter(mockCtl)
 
 				oscDriver := nodeService{
-					metadata: mockMetadata,
-					mounter:  mockMounter,
-					inFlight: internal.NewInFlight(),
+					driverOptions: &DriverOptions{},
+					metadata:      mockMetadata,
+					mounter:       mockMounter,
+					inFlight:      internal.NewInFlight(),
 				}
 
 				req := &csi.NodeStageVolumeRequest{
@@ -504,9 +516,10 @@ func TestNodeStageVolume(t *testing.T) {
 				mockMounter := mocks.NewMockMounter(mockCtl)
 
 				oscDriver := nodeService{
-					metadata: mockMetadata,
-					mounter:  mockMounter,
-					inFlight: internal.NewInFlight(),
+					driverOptions: &DriverOptions{},
+					metadata:      mockMetadata,
+					mounter:       mockMounter,
+					inFlight:      internal.NewInFlight(),
 				}
 
 				req := &csi.NodeStageVolumeRequest{
@@ -552,6 +565,66 @@ func TestNodeStageVolume(t *testing.T) {
 			},
 		},
 		{
+			name: "success encryption with additional luksOpen flags",
+			testFunc: func(t *testing.T) {
+				mockCtl := gomock.NewController(t)
+				defer mockCtl.Finish()
+
+				mockMetadata := mocks.NewMockMetadataService(mockCtl)
+				mockMounter := mocks.NewMockMounter(mockCtl)
+
+				oscDriver := nodeService{
+					driverOptions: &DriverOptions{
+						luksOpenFlags: []string{"--foo", "--bar"},
+					},
+					metadata: mockMetadata,
+					mounter:  mockMounter,
+					inFlight: internal.NewInFlight(),
+				}
+
+				req := &csi.NodeStageVolumeRequest{
+					PublishContext: map[string]string{
+						DevicePathKey: devicePath,
+						EncryptedKey:  "true",
+					},
+					StagingTargetPath: targetPath,
+					VolumeCapability: &csi.VolumeCapability{
+						AccessType: &csi.VolumeCapability_Mount{
+							Mount: &csi.VolumeCapability_MountVolume{
+								FsType: "",
+							},
+						},
+						AccessMode: &csi.VolumeCapability_AccessMode{
+							Mode: csi.VolumeCapability_AccessMode_SINGLE_NODE_WRITER,
+						},
+					},
+					VolumeId: "vol-test",
+					Secrets: map[string]string{
+						LuksPassphraseKey: passphrase,
+					},
+				}
+
+				gomock.InOrder(
+					mockMounter.EXPECT().ExistsPath(gomock.Eq(devicePath)).Return(true, nil),
+					mockMounter.EXPECT().ExistsPath(gomock.Eq(targetPath)).Return(false, nil),
+				)
+
+				mockMounter.EXPECT().MakeDir(targetPath).Return(nil)
+				mockMounter.EXPECT().GetDeviceName(targetPath).Return("", 1, nil)
+				// Check Luks
+				mockMounter.EXPECT().IsLuks(gomock.Eq(devicePath)).Return(false)
+				mockMounter.EXPECT().LuksFormat(gomock.Eq(devicePath), gomock.Eq(passphrase), gomock.Eq(luks.LuksContext{Cipher: "", Hash: "", KeySize: ""})).Return(nil)
+				mockMounter.EXPECT().CheckLuksPassphrase(gomock.Eq(devicePath), gomock.Eq(passphrase)).Return(nil)
+				mockMounter.EXPECT().LuksOpen(gomock.Eq(devicePath), gomock.Eq(encryptedDeviceName), gomock.Eq(passphrase), gomock.Eq([]string{"--foo", "--bar"}))
+
+				// Format opened luks device
+				mockMounter.EXPECT().GetDiskFormat(gomock.Eq(encryptedDevicePath)).Return(defaultFsType, nil)
+				mockMounter.EXPECT().FormatAndMount(gomock.Eq(encryptedDevicePath), gomock.Eq(targetPath), gomock.Eq(defaultFsType), gomock.Any())
+				_, err := oscDriver.NodeStageVolume(context.TODO(), req)
+				require.NoError(t, err)
+			},
+		},
+		{
 			name: "success encryption with parameters",
 			testFunc: func(t *testing.T) {
 				mockCtl := gomock.NewController(t)
@@ -561,9 +634,10 @@ func TestNodeStageVolume(t *testing.T) {
 				mockMounter := mocks.NewMockMounter(mockCtl)
 
 				oscDriver := nodeService{
-					metadata: mockMetadata,
-					mounter:  mockMounter,
-					inFlight: internal.NewInFlight(),
+					driverOptions: &DriverOptions{},
+					metadata:      mockMetadata,
+					mounter:       mockMounter,
+					inFlight:      internal.NewInFlight(),
 				}
 
 				req := &csi.NodeStageVolumeRequest{
@@ -621,9 +695,10 @@ func TestNodeStageVolume(t *testing.T) {
 				mockMounter := mocks.NewMockMounter(mockCtl)
 
 				oscDriver := nodeService{
-					metadata: mockMetadata,
-					mounter:  mockMounter,
-					inFlight: internal.NewInFlight(),
+					driverOptions: &DriverOptions{},
+					metadata:      mockMetadata,
+					mounter:       mockMounter,
+					inFlight:      internal.NewInFlight(),
 				}
 
 				req := &csi.NodeStageVolumeRequest{
@@ -668,9 +743,10 @@ func TestNodeStageVolume(t *testing.T) {
 				mockMounter := mocks.NewMockMounter(mockCtl)
 
 				oscDriver := nodeService{
-					metadata: mockMetadata,
-					mounter:  mockMounter,
-					inFlight: internal.NewInFlight(),
+					driverOptions: &DriverOptions{},
+					metadata:      mockMetadata,
+					mounter:       mockMounter,
+					inFlight:      internal.NewInFlight(),
 				}
 
 				req := &csi.NodeStageVolumeRequest{
@@ -1494,9 +1570,10 @@ func TestNodeGetVolumeStats(t *testing.T) {
 				mockMounter.EXPECT().ExistsPath(VolumePath).Return(true, nil)
 
 				oscDriver := nodeService{
-					metadata: mockMetadata,
-					mounter:  mockMounter,
-					inFlight: internal.NewInFlight(),
+					driverOptions: &DriverOptions{},
+					metadata:      mockMetadata,
+					mounter:       mockMounter,
+					inFlight:      internal.NewInFlight(),
 				}
 
 				req := &csi.NodeGetVolumeStatsRequest{
@@ -1520,9 +1597,10 @@ func TestNodeGetVolumeStats(t *testing.T) {
 				mockMounter.EXPECT().ExistsPath(VolumePath).Return(false, nil)
 
 				oscDriver := nodeService{
-					metadata: mockMetadata,
-					mounter:  mockMounter,
-					inFlight: internal.NewInFlight(),
+					driverOptions: &DriverOptions{},
+					metadata:      mockMetadata,
+					mounter:       mockMounter,
+					inFlight:      internal.NewInFlight(),
 				}
 
 				req := &csi.NodeGetVolumeStatsRequest{
@@ -1546,9 +1624,10 @@ func TestNodeGetVolumeStats(t *testing.T) {
 				mockMounter.EXPECT().ExistsPath(VolumePath).Return(true, nil)
 
 				oscDriver := nodeService{
-					metadata: mockMetadata,
-					mounter:  mockMounter,
-					inFlight: internal.NewInFlight(),
+					driverOptions: &DriverOptions{},
+					metadata:      mockMetadata,
+					mounter:       mockMounter,
+					inFlight:      internal.NewInFlight(),
 				}
 
 				req := &csi.NodeGetVolumeStatsRequest{
@@ -1572,9 +1651,10 @@ func TestNodeGetVolumeStats(t *testing.T) {
 				mockMounter.EXPECT().ExistsPath(VolumePath).Return(false, errors.New("get existsPath call fail"))
 
 				oscDriver := nodeService{
-					metadata: mockMetadata,
-					mounter:  mockMounter,
-					inFlight: internal.NewInFlight(),
+					driverOptions: &DriverOptions{},
+					metadata:      mockMetadata,
+					mounter:       mockMounter,
+					inFlight:      internal.NewInFlight(),
 				}
 
 				req := &csi.NodeGetVolumeStatsRequest{

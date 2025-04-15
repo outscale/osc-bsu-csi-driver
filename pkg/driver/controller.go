@@ -223,11 +223,7 @@ func (d *controllerService) CreateVolume(ctx context.Context, req *csi.CreateVol
 
 	disk, err = d.cloud.CreateDisk(ctx, volName, opts)
 	if err != nil {
-		errCode := codes.Internal
-		if errors.Is(err, cloud.ErrNotFound) {
-			errCode = codes.NotFound
-		}
-		return nil, status.Errorf(errCode, "Could not create volume %q: %v", volName, err)
+		return nil, status.Errorf(cloud.GRPCCode(err), "Could not create volume %q: %v", volName, err)
 	}
 	return newCreateVolumeResponse(disk, volumeContextExtra), nil
 }
@@ -243,7 +239,7 @@ func (d *controllerService) DeleteVolume(ctx context.Context, req *csi.DeleteVol
 			klog.FromContext(ctx).V(3).Info("Volume already deleted")
 			return &csi.DeleteVolumeResponse{}, nil
 		}
-		return nil, status.Errorf(codes.Internal, "Could not delete volume ID %q: %v", volumeID, err)
+		return nil, status.Errorf(cloud.GRPCCode(err), "Could not delete volume ID %q: %v", volumeID, err)
 	}
 
 	return &csi.DeleteVolumeResponse{}, nil
@@ -275,18 +271,12 @@ func (d *controllerService) ControllerPublishVolume(ctx context.Context, req *cs
 	}
 
 	if _, err := d.cloud.GetDiskByID(ctx, volumeID); err != nil {
-		if errors.Is(err, cloud.ErrNotFound) {
-			return nil, status.Error(codes.NotFound, "Volume not found")
-		}
-		return nil, status.Errorf(codes.Internal, "Could not get volume with ID %q: %v", volumeID, err)
+		return nil, status.Errorf(cloud.GRPCCode(err), "Could not get volume with ID %q: %v", volumeID, err)
 	}
 
 	devicePath, err := d.cloud.AttachDisk(ctx, volumeID, nodeID)
 	if err != nil {
-		if errors.Is(err, cloud.ErrAlreadyExists) {
-			return nil, status.Error(codes.AlreadyExists, err.Error())
-		}
-		return nil, status.Errorf(codes.Internal, "Could not attach volume %q to node %q: %v", volumeID, nodeID, err)
+		return nil, status.Errorf(cloud.GRPCCode(err), "Could not attach volume %q to node %q: %v", volumeID, nodeID, err)
 	}
 	klog.FromContext(ctx).V(3).Info("Volume attached", "device", devicePath)
 
@@ -313,7 +303,7 @@ func (d *controllerService) ControllerUnpublishVolume(ctx context.Context, req *
 		if errors.Is(err, cloud.ErrNotFound) {
 			return &csi.ControllerUnpublishVolumeResponse{}, nil
 		}
-		return nil, status.Errorf(codes.Internal, "Could not detach volume %q from node %q: %v", volumeID, nodeID, err)
+		return nil, status.Errorf(cloud.GRPCCode(err), "Could not detach volume %q from node %q: %v", volumeID, nodeID, err)
 	}
 
 	return &csi.ControllerUnpublishVolumeResponse{}, nil
@@ -354,10 +344,7 @@ func (d *controllerService) ValidateVolumeCapabilities(ctx context.Context, req 
 	}
 
 	if _, err := d.cloud.GetDiskByID(ctx, volumeID); err != nil {
-		if errors.Is(err, cloud.ErrNotFound) {
-			return nil, status.Error(codes.NotFound, "Volume not found")
-		}
-		return nil, status.Errorf(codes.Internal, "Could not get volume with ID %q: %v", volumeID, err)
+		return nil, status.Errorf(cloud.GRPCCode(err), "Could not get volume with ID %q: %v", volumeID, err)
 	}
 
 	var confirmed *csi.ValidateVolumeCapabilitiesResponse_Confirmed
@@ -388,7 +375,7 @@ func (d *controllerService) ControllerExpandVolume(ctx context.Context, req *csi
 
 	actualSize, err := d.cloud.ResizeDisk(ctx, volumeID, newSize)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "Could not resize volume %q: %v", volumeID, err)
+		return nil, status.Errorf(cloud.GRPCCode(err), "Could not resize volume %q: %v", volumeID, err)
 	}
 
 	return &csi.ControllerExpandVolumeResponse{
@@ -433,16 +420,12 @@ func (d *controllerService) CreateSnapshot(ctx context.Context, req *csi.CreateS
 	case err != nil:
 		return nil, err
 	case snapshot.IsError():
-		// A previously created snapshot is in error, delete it.
-		klog.FromContext(ctx).V(3).Info("Deleting previous snapshot in error")
-		if _, err := d.cloud.DeleteSnapshot(ctx, snapshot.SnapshotID); err != nil && !errors.Is(err, cloud.ErrNotFound) {
-			return nil, status.Errorf(codes.Internal, "Could not delete existing snapshot in error %q: %v", snapshot.SnapshotID, err)
-		}
+		return nil, status.Errorf(codes.ResourceExhausted, "Snapshot %q is in error", snapshot.SnapshotID)
 	case snapshot.SourceVolumeID != volumeID:
 		return nil, status.Errorf(codes.AlreadyExists, "Snapshot %s already exists for different volume (%s)", snapshotName, snapshot.SourceVolumeID)
 	default:
 		klog.FromContext(ctx).V(3).Info("Snapshot already exists")
-		return newCreateSnapshotResponse(snapshot)
+		return newCreateSnapshotResponse(snapshot), nil
 	}
 
 	tags := map[string]string{cloud.SnapshotNameTagKey: snapshotName}
@@ -453,11 +436,14 @@ func (d *controllerService) CreateSnapshot(ctx context.Context, req *csi.CreateS
 		Tags: tags,
 	}
 	snapshot, err = d.cloud.CreateSnapshot(ctx, volumeID, opts)
-
-	if err != nil {
-		return nil, status.Errorf(codes.Internal, "Could not create snapshot %q: %v", snapshotName, err)
+	switch {
+	case err != nil:
+		return nil, status.Errorf(cloud.GRPCCode(err), "Could not create snapshot %q: %v", snapshotName, err)
+	case snapshot.IsError():
+		return nil, status.Errorf(codes.ResourceExhausted, "Snapshot %q is in error", snapshot.SnapshotID)
+	default:
+		return newCreateSnapshotResponse(snapshot), nil
 	}
-	return newCreateSnapshotResponse(snapshot)
 }
 
 func (d *controllerService) DeleteSnapshot(ctx context.Context, req *csi.DeleteSnapshotRequest) (*csi.DeleteSnapshotResponse, error) {
@@ -471,7 +457,7 @@ func (d *controllerService) DeleteSnapshot(ctx context.Context, req *csi.DeleteS
 			klog.FromContext(ctx).V(3).Info("Snapshot already deleted")
 			return &csi.DeleteSnapshotResponse{}, nil
 		}
-		return nil, status.Errorf(codes.Internal, "Could not delete snapshot ID %q: %v", snapshotID, err)
+		return nil, status.Errorf(cloud.GRPCCode(err), "Could not delete snapshot ID %q: %v", snapshotID, err)
 	}
 
 	return &csi.DeleteSnapshotResponse{}, nil
@@ -486,15 +472,12 @@ func (d *controllerService) ListSnapshots(ctx context.Context, req *csi.ListSnap
 				klog.FromContext(ctx).V(4).Info("Snapshot does not exist")
 				return &csi.ListSnapshotsResponse{}, nil
 			}
-			return nil, status.Errorf(codes.Internal, "Could not get snapshot ID %q: %v", snapshotID, err)
+			return nil, status.Errorf(cloud.GRPCCode(err), "Could not get snapshot ID %q: %v", snapshotID, err)
 		}
-		if response, err := newListSnapshotsResponse(cloud.ListSnapshotsResponse{
+		response := newListSnapshotsResponse(cloud.ListSnapshotsResponse{
 			Snapshots: []cloud.Snapshot{snapshot},
-		}); err != nil {
-			return nil, status.Errorf(codes.Internal, "Could not build ListSnapshotsResponse: %v", err)
-		} else {
-			return response, nil
-		}
+		})
+		return response, nil
 	}
 
 	volumeID := req.GetSourceVolumeId()
@@ -510,14 +493,10 @@ func (d *controllerService) ListSnapshots(ctx context.Context, req *csi.ListSnap
 		if errors.Is(err, cloud.ErrInvalidMaxResults) {
 			return nil, status.Errorf(codes.InvalidArgument, "Error mapping MaxEntries to OSC MaxResults: %v", err)
 		}
-		return nil, status.Errorf(codes.Internal, "Could not list snapshots: %v", err)
+		return nil, status.Errorf(cloud.GRPCCode(err), "Could not list snapshots: %v", err)
 	}
 
-	response, err := newListSnapshotsResponse(cloudSnapshots)
-	if err != nil {
-		return nil, status.Errorf(codes.Internal, "Could not build ListSnapshotsResponse: %v", err)
-	}
-	return response, nil
+	return newListSnapshotsResponse(cloudSnapshots), nil
 }
 
 // pickAvailabilityZone selects 1 zone given topology requirement.
@@ -576,7 +555,7 @@ func newCreateVolumeResponse(disk cloud.Disk, volumeContextExtra map[string]stri
 	}
 }
 
-func newCreateSnapshotResponse(snapshot cloud.Snapshot) (*csi.CreateSnapshotResponse, error) {
+func newCreateSnapshotResponse(snapshot cloud.Snapshot) *csi.CreateSnapshotResponse {
 	ts := timestamppb.New(snapshot.CreationTime)
 	return &csi.CreateSnapshotResponse{
 		Snapshot: &csi.Snapshot{
@@ -586,25 +565,22 @@ func newCreateSnapshotResponse(snapshot cloud.Snapshot) (*csi.CreateSnapshotResp
 			CreationTime:   ts,
 			ReadyToUse:     snapshot.IsReadyToUse(),
 		},
-	}, nil
+	}
 }
 
-func newListSnapshotsResponse(cloudResponse cloud.ListSnapshotsResponse) (*csi.ListSnapshotsResponse, error) {
+func newListSnapshotsResponse(cloudResponse cloud.ListSnapshotsResponse) *csi.ListSnapshotsResponse {
 	entries := make([]*csi.ListSnapshotsResponse_Entry, 0, len(cloudResponse.Snapshots))
 	for _, snapshot := range cloudResponse.Snapshots {
-		snapshotResponseEntry, err := newListSnapshotsResponseEntry(snapshot)
-		if err != nil {
-			return nil, err
-		}
+		snapshotResponseEntry := newListSnapshotsResponseEntry(snapshot)
 		entries = append(entries, snapshotResponseEntry)
 	}
 	return &csi.ListSnapshotsResponse{
 		Entries:   entries,
 		NextToken: cloudResponse.NextToken,
-	}, nil
+	}
 }
 
-func newListSnapshotsResponseEntry(snapshot cloud.Snapshot) (*csi.ListSnapshotsResponse_Entry, error) {
+func newListSnapshotsResponseEntry(snapshot cloud.Snapshot) *csi.ListSnapshotsResponse_Entry {
 	ts := timestamppb.New(snapshot.CreationTime)
 	return &csi.ListSnapshotsResponse_Entry{
 		Snapshot: &csi.Snapshot{
@@ -614,7 +590,7 @@ func newListSnapshotsResponseEntry(snapshot cloud.Snapshot) (*csi.ListSnapshotsR
 			CreationTime:   ts,
 			ReadyToUse:     snapshot.IsReadyToUse(),
 		},
-	}, nil
+	}
 }
 
 func getVolSizeBytes(req *csi.CreateVolumeRequest) (int64, error) {

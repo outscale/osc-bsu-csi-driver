@@ -54,16 +54,21 @@ type Driver struct {
 }
 
 type DriverOptions struct {
+	mode Mode
+
+	// Controller options
 	endpoint          string
 	extraVolumeTags   map[string]string
 	extraSnapshotTags map[string]string
-	mode              Mode
+
+	// Node options
+	luksOpenFlags []string
 }
 
 func NewDriver(options ...func(*DriverOptions)) (*Driver, error) {
 	driverOptions := DriverOptions{
-		endpoint: DefaultCSIEndpoint,
 		mode:     AllMode,
+		endpoint: DefaultCSIEndpoint,
 	}
 	for _, option := range options {
 		option(&driverOptions)
@@ -81,10 +86,10 @@ func NewDriver(options ...func(*DriverOptions)) (*Driver, error) {
 	case ControllerMode:
 		driver.controllerService = newControllerService(&driverOptions)
 	case NodeMode:
-		driver.nodeService = newNodeService()
+		driver.nodeService = newNodeService(&driverOptions)
 	case AllMode:
 		driver.controllerService = newControllerService(&driverOptions)
-		driver.nodeService = newNodeService()
+		driver.nodeService = newNodeService(&driverOptions)
 	default:
 		return nil, fmt.Errorf("unknown mode: %s", driverOptions.mode)
 	}
@@ -177,6 +182,12 @@ func WithExtraVolumeTags(tags map[string]string) func(*DriverOptions) {
 func WithExtraSnapshotTags(tags map[string]string) func(*DriverOptions) {
 	return func(o *DriverOptions) {
 		o.extraSnapshotTags = tags
+	}
+}
+
+func WithLuksOpenFlags(flags []string) func(*DriverOptions) {
+	return func(o *DriverOptions) {
+		o.luksOpenFlags = flags
 	}
 }
 

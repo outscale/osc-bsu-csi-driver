@@ -32,6 +32,7 @@ func main() {
 		driver.WithEndpoint(options.ServerOptions.Endpoint),
 		driver.WithExtraVolumeTags(options.ControllerOptions.ExtraVolumeTags),
 		driver.WithExtraSnapshotTags(options.ControllerOptions.ExtraSnapshotTags),
+		driver.WithLuksOpenFlags(options.NodeOptions.LuksOpenFlags),
 		driver.WithMode(options.DriverMode),
 	)
 	if err != nil {

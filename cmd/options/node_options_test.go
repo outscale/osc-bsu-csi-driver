@@ -28,6 +28,11 @@ func TestNodeOptions(t *testing.T) {
 		found bool
 	}{
 		{
+			name:  "lookup desired flag",
+			flag:  "luks-open-flags",
+			found: true,
+		},
+		{
 			name:  "fail for non-desired flag",
 			flag:  "some-flag",
 			found: false,

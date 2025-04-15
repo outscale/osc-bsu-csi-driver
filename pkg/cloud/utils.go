@@ -4,9 +4,15 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strconv"
 
 	osc "github.com/outscale/osc-sdk-go/v2"
+	"google.golang.org/grpc/codes"
 )
+
+type GRPCCodeEr interface {
+	GRPCCode() codes.Code
+}
 
 type OAPIError struct {
 	errors []osc.Errors
@@ -23,6 +29,38 @@ func (err OAPIError) Error() string {
 		str += " (" + details + ")"
 	}
 	return str
+}
+
+func (err OAPIError) GRPCCode() codes.Code {
+	if len(err.errors) == 0 {
+		return codes.Internal
+	}
+	code, ierr := strconv.Atoi(err.errors[0].GetCode())
+	if ierr != nil {
+		return codes.Internal
+	}
+	switch {
+	case code >= 10000 && code < 11000:
+		return codes.ResourceExhausted
+	default:
+		return codes.Internal
+	}
+}
+
+var _ GRPCCodeEr = OAPIError{}
+
+func GRPCCode(err error) codes.Code {
+	if grpcErr, ok := err.(GRPCCodeEr); ok {
+		return grpcErr.GRPCCode()
+	}
+	if errors.Is(err, ErrNotFound) {
+		return codes.NotFound
+	}
+	if errors.Is(err, ErrAlreadyExists) {
+		return codes.AlreadyExists
+	}
+
+	return codes.Internal
 }
 
 func extractOAPIError(err error, httpRes *http.Response) error {
@@ -76,4 +114,10 @@ func isSnapshotNotFoundError(err error) bool {
 		}
 	}
 	return false
+}
+
+func NewOAPIError(err osc.Errors) OAPIError {
+	return OAPIError{
+		errors: []osc.Errors{err},
+	}
 }

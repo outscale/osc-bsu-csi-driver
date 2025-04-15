@@ -30,10 +30,12 @@ import (
 	"github.com/outscale/osc-bsu-csi-driver/pkg/cloud"
 	"github.com/outscale/osc-bsu-csi-driver/pkg/driver/mocks"
 	"github.com/outscale/osc-bsu-csi-driver/pkg/util"
+	"github.com/outscale/osc-sdk-go/v2"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"k8s.io/utils/ptr"
 )
 
 const (
@@ -160,971 +162,774 @@ func TestCreateVolume(t *testing.T) {
 	stdCapRange := &csi.CapacityRange{RequiredBytes: stdVolSize}
 	stdParams := map[string]string{}
 
-	testCases := []struct {
-		name     string
-		testFunc func(t *testing.T)
-	}{
-		{
-			name: "success normal",
-			testFunc: func(t *testing.T) {
-				req := &csi.CreateVolumeRequest{
-					Name:               "random-vol-name",
-					CapacityRange:      stdCapRange,
-					VolumeCapabilities: stdVolCap,
-					Parameters:         nil,
-				}
+	t.Run("success normal", func(t *testing.T) {
+		req := &csi.CreateVolumeRequest{
+			Name:               "random-vol-name",
+			CapacityRange:      stdCapRange,
+			VolumeCapabilities: stdVolCap,
+			Parameters:         nil,
+		}
 
-				ctx := context.Background()
+		ctx := context.Background()
 
-				mockDisk := cloud.Disk{
-					VolumeID:         req.Name,
-					AvailabilityZone: expZone,
-					CapacityGiB:      util.BytesToGiB(stdVolSize),
-				}
+		mockDisk := cloud.Disk{
+			VolumeID:         req.Name,
+			AvailabilityZone: expZone,
+			CapacityGiB:      util.BytesToGiB(stdVolSize),
+		}
 
-				mockCtl := gomock.NewController(t)
-				defer mockCtl.Finish()
+		mockCtl := gomock.NewController(t)
+		defer mockCtl.Finish()
 
-				mockCloud := mocks.NewMockCloud(mockCtl)
-				mockCloud.EXPECT().GetDiskByName(gomock.Eq(ctx), gomock.Eq(req.Name), gomock.Eq(stdVolSize)).Return(cloud.Disk{}, cloud.ErrNotFound)
-				mockCloud.EXPECT().CreateDisk(gomock.Eq(ctx), gomock.Eq(req.Name), gomock.Any()).Return(mockDisk, nil)
+		mockCloud := mocks.NewMockCloud(mockCtl)
+		mockCloud.EXPECT().GetDiskByName(gomock.Eq(ctx), gomock.Eq(req.Name), gomock.Eq(stdVolSize)).Return(cloud.Disk{}, cloud.ErrNotFound)
+		mockCloud.EXPECT().CreateDisk(gomock.Eq(ctx), gomock.Eq(req.Name), gomock.Any()).Return(mockDisk, nil)
 
-				oscDriver := controllerService{
-					cloud:         mockCloud,
-					driverOptions: &DriverOptions{},
-				}
+		oscDriver := controllerService{
+			cloud:         mockCloud,
+			driverOptions: &DriverOptions{},
+		}
 
-				if _, err := oscDriver.CreateVolume(ctx, req); err != nil {
-					srvErr, ok := status.FromError(err)
-					if !ok {
-						t.Fatalf("Could not get error status code from error: %v", srvErr)
-					}
-					t.Fatalf("Unexpected error: %v", srvErr.Code())
-				}
-			},
-		},
-		{
-			name: "restore snapshot",
-			testFunc: func(t *testing.T) {
-				req := &csi.CreateVolumeRequest{
-					Name:               "random-vol-name",
-					CapacityRange:      stdCapRange,
-					VolumeCapabilities: stdVolCap,
-					Parameters:         nil,
-					VolumeContentSource: &csi.VolumeContentSource{
-						Type: &csi.VolumeContentSource_Snapshot{
-							Snapshot: &csi.VolumeContentSource_SnapshotSource{
-								SnapshotId: "snapshot-id",
-							},
-						},
+		_, err := oscDriver.CreateVolume(ctx, req)
+		require.NoError(t, err)
+	})
+	t.Run("restore snapshot", func(t *testing.T) {
+		req := &csi.CreateVolumeRequest{
+			Name:               "random-vol-name",
+			CapacityRange:      stdCapRange,
+			VolumeCapabilities: stdVolCap,
+			Parameters:         nil,
+			VolumeContentSource: &csi.VolumeContentSource{
+				Type: &csi.VolumeContentSource_Snapshot{
+					Snapshot: &csi.VolumeContentSource_SnapshotSource{
+						SnapshotId: "snapshot-id",
 					},
-				}
-
-				ctx := context.Background()
-
-				mockDisk := cloud.Disk{
-					VolumeID:         req.Name,
-					AvailabilityZone: expZone,
-					CapacityGiB:      util.BytesToGiB(stdVolSize),
-					SnapshotID:       "snapshot-id",
-				}
-
-				mockCtl := gomock.NewController(t)
-				defer mockCtl.Finish()
-
-				mockCloud := mocks.NewMockCloud(mockCtl)
-				mockCloud.EXPECT().GetDiskByName(gomock.Eq(ctx), gomock.Eq(req.Name), gomock.Eq(stdVolSize)).Return(cloud.Disk{}, cloud.ErrNotFound)
-				mockCloud.EXPECT().CreateDisk(gomock.Eq(ctx), gomock.Eq(req.Name), gomock.Any()).Return(mockDisk, nil)
-
-				oscDriver := controllerService{
-					cloud:         mockCloud,
-					driverOptions: &DriverOptions{},
-				}
-
-				rsp, err := oscDriver.CreateVolume(ctx, req)
-				if err != nil {
-					srvErr, ok := status.FromError(err)
-					if !ok {
-						t.Fatalf("Could not get error status code from error: %v", srvErr)
-					}
-					t.Fatalf("Unexpected error: %v", srvErr.Code())
-				}
-
-				snapshotID := ""
-				if rsp.Volume != nil && rsp.Volume.ContentSource != nil && rsp.Volume.ContentSource.GetSnapshot() != nil {
-					snapshotID = rsp.Volume.ContentSource.GetSnapshot().SnapshotId
-				}
-				if rsp.Volume.ContentSource.GetSnapshot().SnapshotId != "snapshot-id" {
-					t.Errorf("Unexpected snapshot ID: %q", snapshotID)
-				}
+				},
 			},
-		},
-		{
-			name: "restore snapshot, volume already exists",
-			testFunc: func(t *testing.T) {
-				req := &csi.CreateVolumeRequest{
-					Name:               "random-vol-name",
-					CapacityRange:      stdCapRange,
-					VolumeCapabilities: stdVolCap,
-					Parameters:         nil,
-					VolumeContentSource: &csi.VolumeContentSource{
-						Type: &csi.VolumeContentSource_Snapshot{
-							Snapshot: &csi.VolumeContentSource_SnapshotSource{
-								SnapshotId: "snapshot-id",
-							},
-						},
+		}
+
+		ctx := context.Background()
+
+		mockDisk := cloud.Disk{
+			VolumeID:         req.Name,
+			AvailabilityZone: expZone,
+			CapacityGiB:      util.BytesToGiB(stdVolSize),
+			SnapshotID:       "snapshot-id",
+		}
+
+		mockCtl := gomock.NewController(t)
+		defer mockCtl.Finish()
+
+		mockCloud := mocks.NewMockCloud(mockCtl)
+		mockCloud.EXPECT().GetDiskByName(gomock.Eq(ctx), gomock.Eq(req.Name), gomock.Eq(stdVolSize)).Return(cloud.Disk{}, cloud.ErrNotFound)
+		mockCloud.EXPECT().CreateDisk(gomock.Eq(ctx), gomock.Eq(req.Name), gomock.Any()).Return(mockDisk, nil)
+
+		oscDriver := controllerService{
+			cloud:         mockCloud,
+			driverOptions: &DriverOptions{},
+		}
+
+		rsp, err := oscDriver.CreateVolume(ctx, req)
+		require.NoError(t, err)
+		snapshotID := ""
+		if rsp.Volume != nil && rsp.Volume.ContentSource != nil && rsp.Volume.ContentSource.GetSnapshot() != nil {
+			snapshotID = rsp.Volume.ContentSource.GetSnapshot().SnapshotId
+		}
+		if rsp.Volume.ContentSource.GetSnapshot().SnapshotId != "snapshot-id" {
+			t.Errorf("Unexpected snapshot ID: %q", snapshotID)
+		}
+	})
+	t.Run("restore snapshot, volume already exists", func(t *testing.T) {
+		req := &csi.CreateVolumeRequest{
+			Name:               "random-vol-name",
+			CapacityRange:      stdCapRange,
+			VolumeCapabilities: stdVolCap,
+			Parameters:         nil,
+			VolumeContentSource: &csi.VolumeContentSource{
+				Type: &csi.VolumeContentSource_Snapshot{
+					Snapshot: &csi.VolumeContentSource_SnapshotSource{
+						SnapshotId: "snapshot-id",
 					},
-				}
-
-				ctx := context.Background()
-
-				mockDisk := cloud.Disk{
-					VolumeID:         req.Name,
-					AvailabilityZone: expZone,
-					CapacityGiB:      util.BytesToGiB(stdVolSize),
-					SnapshotID:       "snapshot-id",
-				}
-
-				mockCtl := gomock.NewController(t)
-				defer mockCtl.Finish()
-
-				mockCloud := mocks.NewMockCloud(mockCtl)
-				mockCloud.EXPECT().GetDiskByName(gomock.Eq(ctx), gomock.Eq(req.Name), gomock.Eq(stdVolSize)).Return(mockDisk, nil)
-
-				oscDriver := controllerService{
-					cloud:         mockCloud,
-					driverOptions: &DriverOptions{},
-				}
-
-				rsp, err := oscDriver.CreateVolume(ctx, req)
-				if err != nil {
-					srvErr, ok := status.FromError(err)
-					if !ok {
-						t.Fatalf("Could not get error status code from error: %v", srvErr)
-					}
-					t.Fatalf("Unexpected error: %v", srvErr.Code())
-				}
-
-				snapshotID := ""
-				if rsp.Volume != nil && rsp.Volume.ContentSource != nil && rsp.Volume.ContentSource.GetSnapshot() != nil {
-					snapshotID = rsp.Volume.ContentSource.GetSnapshot().SnapshotId
-				}
-				if rsp.Volume.ContentSource.GetSnapshot().SnapshotId != "snapshot-id" {
-					t.Errorf("Unexpected snapshot ID: %q", snapshotID)
-				}
+				},
 			},
-		},
-		{
-			name: "restore snapshot, volume already exists with different snapshot ID",
-			testFunc: func(t *testing.T) {
-				req := &csi.CreateVolumeRequest{
-					Name:               "random-vol-name",
-					CapacityRange:      stdCapRange,
-					VolumeCapabilities: stdVolCap,
-					Parameters:         nil,
-					VolumeContentSource: &csi.VolumeContentSource{
-						Type: &csi.VolumeContentSource_Snapshot{
-							Snapshot: &csi.VolumeContentSource_SnapshotSource{
-								SnapshotId: "snapshot-id",
-							},
-						},
+		}
+
+		ctx := context.Background()
+
+		mockDisk := cloud.Disk{
+			VolumeID:         req.Name,
+			AvailabilityZone: expZone,
+			CapacityGiB:      util.BytesToGiB(stdVolSize),
+			SnapshotID:       "snapshot-id",
+		}
+
+		mockCtl := gomock.NewController(t)
+		defer mockCtl.Finish()
+
+		mockCloud := mocks.NewMockCloud(mockCtl)
+		mockCloud.EXPECT().GetDiskByName(gomock.Eq(ctx), gomock.Eq(req.Name), gomock.Eq(stdVolSize)).Return(mockDisk, nil)
+
+		oscDriver := controllerService{
+			cloud:         mockCloud,
+			driverOptions: &DriverOptions{},
+		}
+
+		rsp, err := oscDriver.CreateVolume(ctx, req)
+		require.NoError(t, err)
+		snapshotID := ""
+		if rsp.Volume != nil && rsp.Volume.ContentSource != nil && rsp.Volume.ContentSource.GetSnapshot() != nil {
+			snapshotID = rsp.Volume.ContentSource.GetSnapshot().SnapshotId
+		}
+		if rsp.Volume.ContentSource.GetSnapshot().SnapshotId != "snapshot-id" {
+			t.Errorf("Unexpected snapshot ID: %q", snapshotID)
+		}
+	})
+	t.Run("restore snapshot, volume already exists with different snapshot ID", func(t *testing.T) {
+		req := &csi.CreateVolumeRequest{
+			Name:               "random-vol-name",
+			CapacityRange:      stdCapRange,
+			VolumeCapabilities: stdVolCap,
+			Parameters:         nil,
+			VolumeContentSource: &csi.VolumeContentSource{
+				Type: &csi.VolumeContentSource_Snapshot{
+					Snapshot: &csi.VolumeContentSource_SnapshotSource{
+						SnapshotId: "snapshot-id",
 					},
-				}
-
-				ctx := context.Background()
-
-				mockDisk := cloud.Disk{
-					VolumeID:         req.Name,
-					AvailabilityZone: expZone,
-					CapacityGiB:      util.BytesToGiB(stdVolSize),
-					SnapshotID:       "another-snapshot-id",
-				}
-
-				mockCtl := gomock.NewController(t)
-				defer mockCtl.Finish()
-
-				mockCloud := mocks.NewMockCloud(mockCtl)
-				mockCloud.EXPECT().GetDiskByName(gomock.Eq(ctx), gomock.Eq(req.Name), gomock.Eq(stdVolSize)).Return(mockDisk, nil)
-
-				oscDriver := controllerService{
-					cloud:         mockCloud,
-					driverOptions: &DriverOptions{},
-				}
-
-				if _, err := oscDriver.CreateVolume(ctx, req); err == nil {
-					t.Error("CreateVolume with invalid SnapshotID unexpectedly succeeded")
-				}
+				},
 			},
-		},
-		{
-			name: "fail no name",
-			testFunc: func(t *testing.T) {
-				req := &csi.CreateVolumeRequest{
-					Name:               "",
-					CapacityRange:      stdCapRange,
-					VolumeCapabilities: stdVolCap,
-					Parameters:         stdParams,
-				}
+		}
 
-				ctx := context.Background()
+		ctx := context.Background()
 
-				mockCtl := gomock.NewController(t)
-				defer mockCtl.Finish()
+		mockDisk := cloud.Disk{
+			VolumeID:         req.Name,
+			AvailabilityZone: expZone,
+			CapacityGiB:      util.BytesToGiB(stdVolSize),
+			SnapshotID:       "another-snapshot-id",
+		}
 
-				mockCloud := mocks.NewMockCloud(mockCtl)
+		mockCtl := gomock.NewController(t)
+		defer mockCtl.Finish()
 
-				oscDriver := controllerService{
-					cloud:         mockCloud,
-					driverOptions: &DriverOptions{},
-				}
+		mockCloud := mocks.NewMockCloud(mockCtl)
+		mockCloud.EXPECT().GetDiskByName(gomock.Eq(ctx), gomock.Eq(req.Name), gomock.Eq(stdVolSize)).Return(mockDisk, nil)
 
-				if _, err := oscDriver.CreateVolume(ctx, req); err != nil {
-					srvErr, ok := status.FromError(err)
-					if !ok {
-						t.Fatalf("Could not get error status code from error: %v", srvErr)
-					}
-					if srvErr.Code() != codes.InvalidArgument {
-						t.Fatalf("Expected error code %d, got %d message %s", codes.InvalidArgument, srvErr.Code(), srvErr.Message())
-					}
-				} else {
-					t.Fatalf("Expected error %v, got no error", codes.InvalidArgument)
-				}
+		oscDriver := controllerService{
+			cloud:         mockCloud,
+			driverOptions: &DriverOptions{},
+		}
+
+		_, err := oscDriver.CreateVolume(ctx, req)
+		require.Error(t, err)
+		status, _ := status.FromError(err)
+		require.NotNil(t, status)
+		assert.Equal(t, codes.AlreadyExists, status.Code())
+	})
+	t.Run("fail no name", func(t *testing.T) {
+		req := &csi.CreateVolumeRequest{
+			Name:               "",
+			CapacityRange:      stdCapRange,
+			VolumeCapabilities: stdVolCap,
+			Parameters:         stdParams,
+		}
+
+		ctx := context.Background()
+
+		mockCtl := gomock.NewController(t)
+		defer mockCtl.Finish()
+
+		mockCloud := mocks.NewMockCloud(mockCtl)
+
+		oscDriver := controllerService{
+			cloud:         mockCloud,
+			driverOptions: &DriverOptions{},
+		}
+
+		_, err := oscDriver.CreateVolume(ctx, req)
+		require.Error(t, err)
+		status, _ := status.FromError(err)
+		assert.Equal(t, codes.InvalidArgument, status.Code())
+	})
+	t.Run("success same name and same capacity", func(t *testing.T) {
+		req := &csi.CreateVolumeRequest{
+			Name:               "test-vol",
+			CapacityRange:      stdCapRange,
+			VolumeCapabilities: stdVolCap,
+			Parameters:         stdParams,
+		}
+		extraReq := &csi.CreateVolumeRequest{
+			Name:               "test-vol",
+			CapacityRange:      stdCapRange,
+			VolumeCapabilities: stdVolCap,
+			Parameters:         stdParams,
+		}
+		expVol := &csi.Volume{
+			CapacityBytes: stdVolSize,
+			VolumeId:      "test-vol",
+			VolumeContext: map[string]string{},
+		}
+
+		ctx := context.Background()
+
+		mockDisk := cloud.Disk{
+			VolumeID:         req.Name,
+			AvailabilityZone: expZone,
+			CapacityGiB:      util.BytesToGiB(stdVolSize),
+		}
+
+		mockCtl := gomock.NewController(t)
+		defer mockCtl.Finish()
+
+		mockCloud := mocks.NewMockCloud(mockCtl)
+		mockCloud.EXPECT().GetDiskByName(gomock.Eq(ctx), gomock.Eq(req.Name), gomock.Eq(stdVolSize)).Return(cloud.Disk{}, cloud.ErrNotFound)
+		mockCloud.EXPECT().CreateDisk(gomock.Eq(ctx), gomock.Eq(req.Name), gomock.Any()).Return(mockDisk, nil)
+
+		oscDriver := controllerService{
+			cloud:         mockCloud,
+			driverOptions: &DriverOptions{},
+		}
+
+		_, err := oscDriver.CreateVolume(ctx, req)
+		require.NoError(t, err)
+
+		// Subsequent call returns the created disk
+		mockCloud.EXPECT().GetDiskByName(gomock.Eq(ctx), gomock.Eq(req.Name), gomock.Eq(stdVolSize)).Return(mockDisk, nil)
+		resp, err := oscDriver.CreateVolume(ctx, extraReq)
+		require.NoError(t, err)
+		vol := resp.GetVolume()
+		require.NotNil(t, vol)
+
+		assert.Equal(t, expVol.GetCapacityBytes(), vol.GetCapacityBytes())
+		assert.Equal(t, expVol.GetVolumeId(), vol.GetVolumeId())
+		assert.Equal(t, expVol.GetVolumeContext(), vol.GetVolumeContext())
+	})
+	t.Run("fail same name and different capacity", func(t *testing.T) {
+		req := &csi.CreateVolumeRequest{
+			Name:               "test-vol",
+			CapacityRange:      stdCapRange,
+			VolumeCapabilities: stdVolCap,
+			Parameters:         stdParams,
+		}
+		extraReq := &csi.CreateVolumeRequest{
+			Name:               "test-vol",
+			CapacityRange:      &csi.CapacityRange{RequiredBytes: 10000},
+			VolumeCapabilities: stdVolCap,
+			Parameters:         stdParams,
+		}
+
+		ctx := context.Background()
+
+		mockDisk := cloud.Disk{
+			VolumeID:         req.Name,
+			AvailabilityZone: expZone,
+		}
+		volSizeBytes, err := getVolSizeBytes(req)
+		require.NoError(t, err)
+		mockDisk.CapacityGiB = util.BytesToGiB(volSizeBytes)
+
+		mockCtl := gomock.NewController(t)
+		defer mockCtl.Finish()
+
+		mockCloud := mocks.NewMockCloud(mockCtl)
+		mockCloud.EXPECT().GetDiskByName(gomock.Eq(ctx), gomock.Eq(req.Name), gomock.Eq(volSizeBytes)).Return(cloud.Disk{}, cloud.ErrNotFound)
+		mockCloud.EXPECT().CreateDisk(gomock.Eq(ctx), gomock.Eq(req.Name), gomock.Any()).Return(mockDisk, nil)
+
+		oscDriver := controllerService{
+			cloud:         mockCloud,
+			driverOptions: &DriverOptions{},
+		}
+
+		_, err = oscDriver.CreateVolume(ctx, req)
+		require.NoError(t, err)
+		extraVolSizeBytes, err := getVolSizeBytes(extraReq)
+		require.NoError(t, err)
+
+		// Subsequent failure
+		mockCloud.EXPECT().GetDiskByName(gomock.Eq(ctx), gomock.Eq(extraReq.Name), gomock.Eq(extraVolSizeBytes)).Return(cloud.Disk{}, cloud.ErrDiskExistsDiffSize)
+		_, err = oscDriver.CreateVolume(ctx, extraReq)
+		require.Error(t, err)
+		status, _ := status.FromError(err)
+		require.NotNil(t, status)
+		assert.Equal(t, codes.AlreadyExists, status.Code())
+	})
+	t.Run("success no capacity range", func(t *testing.T) {
+		req := &csi.CreateVolumeRequest{
+			Name:               "test-vol",
+			VolumeCapabilities: stdVolCap,
+			Parameters:         stdParams,
+		}
+		expVol := &csi.Volume{
+			CapacityBytes: cloud.DefaultVolumeSize,
+			VolumeId:      "vol-test",
+			VolumeContext: map[string]string{},
+		}
+
+		ctx := context.Background()
+
+		mockDisk := cloud.Disk{
+			VolumeID:         req.Name,
+			AvailabilityZone: expZone,
+			CapacityGiB:      util.BytesToGiB(cloud.DefaultVolumeSize),
+		}
+
+		mockCtl := gomock.NewController(t)
+		defer mockCtl.Finish()
+
+		mockCloud := mocks.NewMockCloud(mockCtl)
+		mockCloud.EXPECT().GetDiskByName(gomock.Eq(ctx), gomock.Eq(req.Name), gomock.Eq(cloud.DefaultVolumeSize)).Return(cloud.Disk{}, cloud.ErrNotFound)
+		mockCloud.EXPECT().CreateDisk(gomock.Eq(ctx), gomock.Eq(req.Name), gomock.Any()).Return(mockDisk, nil)
+
+		oscDriver := controllerService{
+			cloud:         mockCloud,
+			driverOptions: &DriverOptions{},
+		}
+
+		resp, err := oscDriver.CreateVolume(ctx, req)
+		require.NoError(t, err)
+		vol := resp.GetVolume()
+		require.NotNil(t, vol)
+		assert.Equal(t, expVol.GetCapacityBytes(), vol.GetCapacityBytes())
+		assert.Equal(t, expVol.GetVolumeContext(), vol.GetVolumeContext())
+	})
+	t.Run("success with correct round up", func(t *testing.T) {
+		req := &csi.CreateVolumeRequest{
+			Name:               "vol-test",
+			CapacityRange:      &csi.CapacityRange{RequiredBytes: 1073741825},
+			VolumeCapabilities: stdVolCap,
+			Parameters:         nil,
+		}
+		expVol := &csi.Volume{
+			CapacityBytes: 2147483648, // 1 GiB + 1 byte = 2 GiB
+			VolumeId:      "vol-test",
+			VolumeContext: map[string]string{},
+		}
+
+		ctx := context.Background()
+
+		mockDisk := cloud.Disk{
+			VolumeID:         req.Name,
+			AvailabilityZone: expZone,
+			CapacityGiB:      util.BytesToGiB(expVol.CapacityBytes),
+		}
+
+		mockCtl := gomock.NewController(t)
+		defer mockCtl.Finish()
+
+		mockCloud := mocks.NewMockCloud(mockCtl)
+		mockCloud.EXPECT().GetDiskByName(gomock.Eq(ctx), gomock.Eq(req.Name), gomock.Eq(expVol.CapacityBytes)).Return(cloud.Disk{}, cloud.ErrNotFound)
+		mockCloud.EXPECT().CreateDisk(gomock.Eq(ctx), gomock.Eq(req.Name), gomock.Any()).Return(mockDisk, nil)
+
+		oscDriver := controllerService{
+			cloud:         mockCloud,
+			driverOptions: &DriverOptions{},
+		}
+
+		resp, err := oscDriver.CreateVolume(ctx, req)
+		require.NoError(t, err)
+		vol := resp.GetVolume()
+		require.NotNil(t, vol)
+
+		if vol.GetCapacityBytes() != expVol.GetCapacityBytes() {
+			t.Fatalf("Expected volume capacity bytes: %v, got: %v", expVol.GetCapacityBytes(), vol.GetCapacityBytes())
+		}
+	})
+	t.Run("success with volume type io1", func(t *testing.T) {
+		req := &csi.CreateVolumeRequest{
+			Name:               "vol-test",
+			CapacityRange:      stdCapRange,
+			VolumeCapabilities: stdVolCap,
+			Parameters: map[string]string{
+				VolumeTypeKey: cloud.VolumeTypeIO1,
+				IopsPerGBKey:  "5",
 			},
-		},
-		{
-			name: "success same name and same capacity",
-			testFunc: func(t *testing.T) {
-				req := &csi.CreateVolumeRequest{
-					Name:               "test-vol",
-					CapacityRange:      stdCapRange,
-					VolumeCapabilities: stdVolCap,
-					Parameters:         stdParams,
-				}
-				extraReq := &csi.CreateVolumeRequest{
-					Name:               "test-vol",
-					CapacityRange:      stdCapRange,
-					VolumeCapabilities: stdVolCap,
-					Parameters:         stdParams,
-				}
-				expVol := &csi.Volume{
-					CapacityBytes: stdVolSize,
-					VolumeId:      "test-vol",
-					VolumeContext: map[string]string{},
-				}
+		}
 
-				ctx := context.Background()
+		ctx := context.Background()
 
-				mockDisk := cloud.Disk{
-					VolumeID:         req.Name,
-					AvailabilityZone: expZone,
-					CapacityGiB:      util.BytesToGiB(stdVolSize),
-				}
+		mockDisk := cloud.Disk{
+			VolumeID:         req.Name,
+			AvailabilityZone: expZone,
+			CapacityGiB:      util.BytesToGiB(stdVolSize),
+		}
 
-				mockCtl := gomock.NewController(t)
-				defer mockCtl.Finish()
+		mockCtl := gomock.NewController(t)
+		defer mockCtl.Finish()
 
-				mockCloud := mocks.NewMockCloud(mockCtl)
-				mockCloud.EXPECT().GetDiskByName(gomock.Eq(ctx), gomock.Eq(req.Name), gomock.Eq(stdVolSize)).Return(cloud.Disk{}, cloud.ErrNotFound)
-				mockCloud.EXPECT().CreateDisk(gomock.Eq(ctx), gomock.Eq(req.Name), gomock.Any()).Return(mockDisk, nil)
+		mockCloud := mocks.NewMockCloud(mockCtl)
+		mockCloud.EXPECT().GetDiskByName(gomock.Eq(ctx), gomock.Eq(req.Name), gomock.Eq(stdVolSize)).Return(cloud.Disk{}, cloud.ErrNotFound)
+		mockCloud.EXPECT().CreateDisk(gomock.Eq(ctx), gomock.Eq(req.Name), gomock.Any()).Return(mockDisk, nil)
 
-				oscDriver := controllerService{
-					cloud:         mockCloud,
-					driverOptions: &DriverOptions{},
-				}
+		oscDriver := controllerService{
+			cloud:         mockCloud,
+			driverOptions: &DriverOptions{},
+		}
 
-				if _, err := oscDriver.CreateVolume(ctx, req); err != nil {
-					srvErr, ok := status.FromError(err)
-					if !ok {
-						t.Fatalf("Could not get error status code from error: %v", srvErr)
-					}
-					t.Fatalf("Unexpected error: %v", srvErr.Code())
-				}
-
-				// Subsequent call returns the created disk
-				mockCloud.EXPECT().GetDiskByName(gomock.Eq(ctx), gomock.Eq(req.Name), gomock.Eq(stdVolSize)).Return(mockDisk, nil)
-				resp, err := oscDriver.CreateVolume(ctx, extraReq)
-				if err != nil {
-					srvErr, ok := status.FromError(err)
-					if !ok {
-						t.Fatalf("Could not get error status code from error: %v", srvErr)
-					}
-					t.Fatalf("Unexpected error: %v", srvErr.Code())
-				}
-
-				vol := resp.GetVolume()
-				if vol == nil {
-					t.Fatalf("Expected volume %v, got nil", expVol)
-				}
-
-				if vol.GetCapacityBytes() != expVol.GetCapacityBytes() {
-					t.Fatalf("Expected volume capacity bytes: %v, got: %v", expVol.GetCapacityBytes(), vol.GetCapacityBytes())
-				}
-
-				if vol.GetVolumeId() != expVol.GetVolumeId() {
-					t.Fatalf("Expected volume id: %v, got: %v", expVol.GetVolumeId(), vol.GetVolumeId())
-				}
-
-				if expVol.GetAccessibleTopology() != nil {
-					if !reflect.DeepEqual(expVol.GetAccessibleTopology(), vol.GetAccessibleTopology()) {
-						t.Fatalf("Expected AccessibleTopology to be %+v, got: %+v", expVol.GetAccessibleTopology(), vol.GetAccessibleTopology())
-					}
-				}
-
-				for expKey, expVal := range expVol.GetVolumeContext() {
-					ctx := vol.GetVolumeContext()
-					if gotVal, ok := ctx[expKey]; !ok || gotVal != expVal {
-						t.Fatalf("Expected volume context for key %v: %v, got: %v", expKey, expVal, gotVal)
-					}
-				}
+		_, err := oscDriver.CreateVolume(ctx, req)
+		require.NoError(t, err)
+	})
+	t.Run("success with volume type sc1", func(t *testing.T) {
+		req := &csi.CreateVolumeRequest{
+			Name:               "vol-test",
+			CapacityRange:      stdCapRange,
+			VolumeCapabilities: stdVolCap,
+			Parameters: map[string]string{
+				VolumeTypeKey: cloud.VolumeTypeIO1,
 			},
-		},
-		{
-			name: "fail same name and different capacity",
-			testFunc: func(t *testing.T) {
-				req := &csi.CreateVolumeRequest{
-					Name:               "test-vol",
-					CapacityRange:      stdCapRange,
-					VolumeCapabilities: stdVolCap,
-					Parameters:         stdParams,
-				}
-				extraReq := &csi.CreateVolumeRequest{
-					Name:               "test-vol",
-					CapacityRange:      &csi.CapacityRange{RequiredBytes: 10000},
-					VolumeCapabilities: stdVolCap,
-					Parameters:         stdParams,
-				}
+		}
 
-				ctx := context.Background()
+		ctx := context.Background()
 
-				mockDisk := cloud.Disk{
-					VolumeID:         req.Name,
-					AvailabilityZone: expZone,
-				}
-				volSizeBytes, err := getVolSizeBytes(req)
-				if err != nil {
-					t.Fatalf("Unable to get volume size bytes for req: %s", err)
-				}
-				mockDisk.CapacityGiB = util.BytesToGiB(volSizeBytes)
+		mockDisk := cloud.Disk{
+			VolumeID:         req.Name,
+			AvailabilityZone: expZone,
+			CapacityGiB:      util.BytesToGiB(stdVolSize),
+		}
 
-				mockCtl := gomock.NewController(t)
-				defer mockCtl.Finish()
+		mockCtl := gomock.NewController(t)
+		defer mockCtl.Finish()
 
-				mockCloud := mocks.NewMockCloud(mockCtl)
-				mockCloud.EXPECT().GetDiskByName(gomock.Eq(ctx), gomock.Eq(req.Name), gomock.Eq(volSizeBytes)).Return(cloud.Disk{}, cloud.ErrNotFound)
-				mockCloud.EXPECT().CreateDisk(gomock.Eq(ctx), gomock.Eq(req.Name), gomock.Any()).Return(mockDisk, nil)
+		mockCloud := mocks.NewMockCloud(mockCtl)
+		mockCloud.EXPECT().GetDiskByName(gomock.Eq(ctx), gomock.Eq(req.Name), gomock.Eq(stdVolSize)).Return(cloud.Disk{}, cloud.ErrNotFound)
+		mockCloud.EXPECT().CreateDisk(gomock.Eq(ctx), gomock.Eq(req.Name), gomock.Any()).Return(mockDisk, nil)
 
-				oscDriver := controllerService{
-					cloud:         mockCloud,
-					driverOptions: &DriverOptions{},
-				}
+		oscDriver := controllerService{
+			cloud:         mockCloud,
+			driverOptions: &DriverOptions{},
+		}
 
-				_, err = oscDriver.CreateVolume(ctx, req)
-				if err != nil {
-					srvErr, ok := status.FromError(err)
-					if !ok {
-						t.Fatalf("Could not get error status code from error: %v", srvErr)
-					}
-					t.Fatalf("Unexpected error: %v", srvErr.Code())
-				}
-
-				extraVolSizeBytes, err := getVolSizeBytes(extraReq)
-				if err != nil {
-					t.Fatalf("Unable to get volume size bytes for req: %s", err)
-				}
-
-				// Subsequent failure
-				mockCloud.EXPECT().GetDiskByName(gomock.Eq(ctx), gomock.Eq(extraReq.Name), gomock.Eq(extraVolSizeBytes)).Return(cloud.Disk{}, cloud.ErrDiskExistsDiffSize)
-				if _, err := oscDriver.CreateVolume(ctx, extraReq); err != nil {
-					srvErr, ok := status.FromError(err)
-					if !ok {
-						t.Fatalf("Could not get error status code from error: %v", srvErr)
-					}
-					if srvErr.Code() != codes.AlreadyExists {
-						t.Fatalf("Expected error code %d, got %d", codes.AlreadyExists, srvErr.Code())
-					}
-				} else {
-					t.Fatalf("Expected error %v, got no error", codes.AlreadyExists)
-				}
+		_, err := oscDriver.CreateVolume(ctx, req)
+		require.NoError(t, err)
+	})
+	t.Run("success with volume type standard", func(t *testing.T) {
+		req := &csi.CreateVolumeRequest{
+			Name:               "vol-test",
+			CapacityRange:      stdCapRange,
+			VolumeCapabilities: stdVolCap,
+			Parameters: map[string]string{
+				VolumeTypeKey: cloud.VolumeTypeSTANDARD,
 			},
-		},
-		{
-			name: "success no capacity range",
-			testFunc: func(t *testing.T) {
-				req := &csi.CreateVolumeRequest{
-					Name:               "test-vol",
-					VolumeCapabilities: stdVolCap,
-					Parameters:         stdParams,
-				}
-				expVol := &csi.Volume{
-					CapacityBytes: cloud.DefaultVolumeSize,
-					VolumeId:      "vol-test",
-					VolumeContext: map[string]string{},
-				}
+		}
 
-				ctx := context.Background()
+		ctx := context.Background()
 
-				mockDisk := cloud.Disk{
-					VolumeID:         req.Name,
-					AvailabilityZone: expZone,
-					CapacityGiB:      util.BytesToGiB(cloud.DefaultVolumeSize),
-				}
+		mockDisk := cloud.Disk{
+			VolumeID:         req.Name,
+			AvailabilityZone: expZone,
+			CapacityGiB:      util.BytesToGiB(stdVolSize),
+		}
 
-				mockCtl := gomock.NewController(t)
-				defer mockCtl.Finish()
+		mockCtl := gomock.NewController(t)
+		defer mockCtl.Finish()
 
-				mockCloud := mocks.NewMockCloud(mockCtl)
-				mockCloud.EXPECT().GetDiskByName(gomock.Eq(ctx), gomock.Eq(req.Name), gomock.Eq(cloud.DefaultVolumeSize)).Return(cloud.Disk{}, cloud.ErrNotFound)
-				mockCloud.EXPECT().CreateDisk(gomock.Eq(ctx), gomock.Eq(req.Name), gomock.Any()).Return(mockDisk, nil)
+		mockCloud := mocks.NewMockCloud(mockCtl)
+		mockCloud.EXPECT().GetDiskByName(gomock.Eq(ctx), gomock.Eq(req.Name), gomock.Eq(stdVolSize)).Return(cloud.Disk{}, cloud.ErrNotFound)
+		mockCloud.EXPECT().CreateDisk(gomock.Eq(ctx), gomock.Eq(req.Name), gomock.Any()).Return(mockDisk, nil)
 
-				oscDriver := controllerService{
-					cloud:         mockCloud,
-					driverOptions: &DriverOptions{},
-				}
+		oscDriver := controllerService{
+			cloud:         mockCloud,
+			driverOptions: &DriverOptions{},
+		}
 
-				resp, err := oscDriver.CreateVolume(ctx, req)
-				if err != nil {
-					srvErr, ok := status.FromError(err)
-					if !ok {
-						t.Fatalf("Could not get error status code from error: %v", srvErr)
-					}
-					t.Fatalf("Unexpected error: %v", srvErr.Code())
-				}
-
-				vol := resp.GetVolume()
-				if vol == nil {
-					t.Fatalf("Expected volume %v, got nil", expVol)
-				}
-
-				if vol.GetCapacityBytes() != expVol.GetCapacityBytes() {
-					t.Fatalf("Expected volume capacity bytes: %v, got: %v", expVol.GetCapacityBytes(), vol.GetCapacityBytes())
-				}
-
-				for expKey, expVal := range expVol.GetVolumeContext() {
-					ctx := vol.GetVolumeContext()
-					if gotVal, ok := ctx[expKey]; !ok || gotVal != expVal {
-						t.Fatalf("Expected volume context for key %v: %v, got: %v", expKey, expVal, gotVal)
-					}
-				}
+		_, err := oscDriver.CreateVolume(ctx, req)
+		require.NoError(t, err)
+	})
+	t.Run("success with volume encryption", func(t *testing.T) {
+		req := &csi.CreateVolumeRequest{
+			Name:               "vol-test",
+			CapacityRange:      stdCapRange,
+			VolumeCapabilities: stdVolCap,
+			Parameters: map[string]string{
+				EncryptedKey: "true",
 			},
-		},
-		{
-			name: "success with correct round up",
-			testFunc: func(t *testing.T) {
-				req := &csi.CreateVolumeRequest{
-					Name:               "vol-test",
-					CapacityRange:      &csi.CapacityRange{RequiredBytes: 1073741825},
-					VolumeCapabilities: stdVolCap,
-					Parameters:         nil,
-				}
-				expVol := &csi.Volume{
-					CapacityBytes: 2147483648, // 1 GiB + 1 byte = 2 GiB
-					VolumeId:      "vol-test",
-					VolumeContext: map[string]string{},
-				}
+		}
 
-				ctx := context.Background()
+		ctx := context.Background()
 
-				mockDisk := cloud.Disk{
-					VolumeID:         req.Name,
-					AvailabilityZone: expZone,
-					CapacityGiB:      util.BytesToGiB(expVol.CapacityBytes),
-				}
+		mockDisk := cloud.Disk{
+			VolumeID:         req.Name,
+			AvailabilityZone: expZone,
+			CapacityGiB:      util.BytesToGiB(stdVolSize),
+		}
 
-				mockCtl := gomock.NewController(t)
-				defer mockCtl.Finish()
+		mockCtl := gomock.NewController(t)
+		defer mockCtl.Finish()
 
-				mockCloud := mocks.NewMockCloud(mockCtl)
-				mockCloud.EXPECT().GetDiskByName(gomock.Eq(ctx), gomock.Eq(req.Name), gomock.Eq(expVol.CapacityBytes)).Return(cloud.Disk{}, cloud.ErrNotFound)
-				mockCloud.EXPECT().CreateDisk(gomock.Eq(ctx), gomock.Eq(req.Name), gomock.Any()).Return(mockDisk, nil)
+		mockCloud := mocks.NewMockCloud(mockCtl)
+		mockCloud.EXPECT().GetDiskByName(gomock.Eq(ctx), gomock.Eq(req.Name), gomock.Eq(stdVolSize)).Return(cloud.Disk{}, cloud.ErrNotFound)
+		mockCloud.EXPECT().CreateDisk(gomock.Eq(ctx), gomock.Eq(req.Name), gomock.Any()).Return(mockDisk, nil)
 
-				oscDriver := controllerService{
-					cloud:         mockCloud,
-					driverOptions: &DriverOptions{},
-				}
+		oscDriver := controllerService{
+			cloud:         mockCloud,
+			driverOptions: &DriverOptions{},
+		}
 
-				resp, err := oscDriver.CreateVolume(ctx, req)
-				if err != nil {
-					srvErr, ok := status.FromError(err)
-					if !ok {
-						t.Fatalf("Could not get error status code from error: %v", srvErr)
-					}
-					t.Fatalf("Unexpected error: %v", srvErr.Code())
-				}
-
-				vol := resp.GetVolume()
-				if vol == nil {
-					t.Fatalf("Expected volume %v, got nil", expVol)
-				}
-
-				if vol.GetCapacityBytes() != expVol.GetCapacityBytes() {
-					t.Fatalf("Expected volume capacity bytes: %v, got: %v", expVol.GetCapacityBytes(), vol.GetCapacityBytes())
-				}
+		volumeResponse, err := oscDriver.CreateVolume(ctx, req)
+		require.NoError(t, err)
+		assert.Equal(t, "true", volumeResponse.GetVolume().VolumeContext[EncryptedKey])
+	})
+	t.Run("success with volume encryption", func(t *testing.T) {
+		req := &csi.CreateVolumeRequest{
+			Name:               "vol-test",
+			CapacityRange:      stdCapRange,
+			VolumeCapabilities: stdVolCap,
+			Parameters: map[string]string{
+				EncryptedKey: "true",
 			},
-		},
-		{
-			name: "success with volume type io1",
-			testFunc: func(t *testing.T) {
-				req := &csi.CreateVolumeRequest{
-					Name:               "vol-test",
-					CapacityRange:      stdCapRange,
-					VolumeCapabilities: stdVolCap,
-					Parameters: map[string]string{
-						VolumeTypeKey: cloud.VolumeTypeIO1,
-						IopsPerGBKey:  "5",
+		}
+
+		ctx := context.Background()
+
+		mockDisk := cloud.Disk{
+			VolumeID:         req.Name,
+			AvailabilityZone: expZone,
+			CapacityGiB:      util.BytesToGiB(stdVolSize),
+		}
+
+		mockCtl := gomock.NewController(t)
+		defer mockCtl.Finish()
+
+		mockCloud := mocks.NewMockCloud(mockCtl)
+		mockCloud.EXPECT().GetDiskByName(gomock.Eq(ctx), gomock.Eq(req.Name), gomock.Eq(stdVolSize)).Return(cloud.Disk{}, cloud.ErrNotFound)
+		mockCloud.EXPECT().CreateDisk(gomock.Eq(ctx), gomock.Eq(req.Name), gomock.Any()).Return(mockDisk, nil)
+
+		oscDriver := controllerService{
+			cloud:         mockCloud,
+			driverOptions: &DriverOptions{},
+		}
+
+		volumeResponse, err := oscDriver.CreateVolume(ctx, req)
+		require.NoError(t, err)
+		assert.Equal(t, "true", volumeResponse.GetVolume().VolumeContext[EncryptedKey])
+		assert.Equal(t, "", volumeResponse.GetVolume().VolumeContext[LuksCipherKey])
+		assert.Equal(t, "", volumeResponse.GetVolume().VolumeContext[LuksHashKey])
+		assert.Equal(t, "", volumeResponse.GetVolume().VolumeContext[LuksKeySizeKey])
+	})
+	t.Run("success with volume encryption with parameters", func(t *testing.T) {
+		req := &csi.CreateVolumeRequest{
+			Name:               "vol-test",
+			CapacityRange:      stdCapRange,
+			VolumeCapabilities: stdVolCap,
+			Parameters: map[string]string{
+				EncryptedKey:   "true",
+				LuksCipherKey:  "cipher",
+				LuksHashKey:    "hash",
+				LuksKeySizeKey: "keysize",
+			},
+		}
+
+		ctx := context.Background()
+
+		mockDisk := cloud.Disk{
+			VolumeID:         req.Name,
+			AvailabilityZone: expZone,
+			CapacityGiB:      util.BytesToGiB(stdVolSize),
+		}
+
+		mockCtl := gomock.NewController(t)
+		defer mockCtl.Finish()
+
+		mockCloud := mocks.NewMockCloud(mockCtl)
+		mockCloud.EXPECT().GetDiskByName(gomock.Eq(ctx), gomock.Eq(req.Name), gomock.Eq(stdVolSize)).Return(cloud.Disk{}, cloud.ErrNotFound)
+		mockCloud.EXPECT().CreateDisk(gomock.Eq(ctx), gomock.Eq(req.Name), gomock.Any()).Return(mockDisk, nil)
+
+		oscDriver := controllerService{
+			cloud:         mockCloud,
+			driverOptions: &DriverOptions{},
+		}
+
+		volumeResponse, err := oscDriver.CreateVolume(ctx, req)
+		require.NoError(t, err)
+		assert.Equal(t, "true", volumeResponse.GetVolume().VolumeContext[EncryptedKey])
+		assert.Equal(t, "cipher", volumeResponse.GetVolume().VolumeContext[LuksCipherKey])
+		assert.Equal(t, "hash", volumeResponse.GetVolume().VolumeContext[LuksHashKey])
+		assert.Equal(t, "keysize", volumeResponse.GetVolume().VolumeContext[LuksKeySizeKey])
+	})
+	t.Run("fail with invalid volume parameter", func(t *testing.T) {
+		req := &csi.CreateVolumeRequest{
+			Name:               "vol-test",
+			CapacityRange:      stdCapRange,
+			VolumeCapabilities: stdVolCap,
+			Parameters: map[string]string{
+				VolumeTypeKey: cloud.VolumeTypeIO1,
+				"unknownKey":  "unknownValue",
+			},
+		}
+
+		ctx := context.Background()
+
+		mockCtl := gomock.NewController(t)
+		defer mockCtl.Finish()
+
+		mockCloud := mocks.NewMockCloud(mockCtl)
+		mockCloud.EXPECT().GetDiskByName(gomock.Eq(ctx), gomock.Eq(req.Name), gomock.Eq(stdVolSize)).Return(cloud.Disk{}, cloud.ErrNotFound)
+
+		oscDriver := controllerService{
+			cloud:         mockCloud,
+			driverOptions: &DriverOptions{},
+		}
+
+		_, err := oscDriver.CreateVolume(ctx, req)
+		require.Error(t, err)
+		status, _ := status.FromError(err)
+		require.NotNil(t, status)
+		assert.Equal(t, codes.InvalidArgument, status.Code())
+	})
+	t.Run("success when volume exists and contains VolumeContext and AccessibleTopology", func(t *testing.T) {
+		req := &csi.CreateVolumeRequest{
+			Name:               "test-vol",
+			CapacityRange:      stdCapRange,
+			VolumeCapabilities: stdVolCap,
+			Parameters:         map[string]string{},
+			AccessibilityRequirements: &csi.TopologyRequirement{
+				Requisite: []*csi.Topology{
+					{
+						Segments: map[string]string{TopologyKey: expZone},
 					},
-				}
-
-				ctx := context.Background()
-
-				mockDisk := cloud.Disk{
-					VolumeID:         req.Name,
-					AvailabilityZone: expZone,
-					CapacityGiB:      util.BytesToGiB(stdVolSize),
-				}
-
-				mockCtl := gomock.NewController(t)
-				defer mockCtl.Finish()
-
-				mockCloud := mocks.NewMockCloud(mockCtl)
-				mockCloud.EXPECT().GetDiskByName(gomock.Eq(ctx), gomock.Eq(req.Name), gomock.Eq(stdVolSize)).Return(cloud.Disk{}, cloud.ErrNotFound)
-				mockCloud.EXPECT().CreateDisk(gomock.Eq(ctx), gomock.Eq(req.Name), gomock.Any()).Return(mockDisk, nil)
-
-				oscDriver := controllerService{
-					cloud:         mockCloud,
-					driverOptions: &DriverOptions{},
-				}
-
-				if _, err := oscDriver.CreateVolume(ctx, req); err != nil {
-					srvErr, ok := status.FromError(err)
-					if !ok {
-						t.Fatalf("Could not get error status code from error: %v", srvErr)
-					}
-					t.Fatalf("Unexpected error: %v", srvErr.Code())
-				}
+				},
 			},
-		},
-		{
-			name: "success with volume type sc1",
-			testFunc: func(t *testing.T) {
-				req := &csi.CreateVolumeRequest{
-					Name:               "vol-test",
-					CapacityRange:      stdCapRange,
-					VolumeCapabilities: stdVolCap,
-					Parameters: map[string]string{
-						VolumeTypeKey: cloud.VolumeTypeIO1,
+		}
+		extraReq := &csi.CreateVolumeRequest{
+			Name:               "test-vol",
+			CapacityRange:      stdCapRange,
+			VolumeCapabilities: stdVolCap,
+			Parameters:         map[string]string{},
+			AccessibilityRequirements: &csi.TopologyRequirement{
+				Requisite: []*csi.Topology{
+					{
+						Segments: map[string]string{TopologyKey: expZone},
 					},
-				}
-
-				ctx := context.Background()
-
-				mockDisk := cloud.Disk{
-					VolumeID:         req.Name,
-					AvailabilityZone: expZone,
-					CapacityGiB:      util.BytesToGiB(stdVolSize),
-				}
-
-				mockCtl := gomock.NewController(t)
-				defer mockCtl.Finish()
-
-				mockCloud := mocks.NewMockCloud(mockCtl)
-				mockCloud.EXPECT().GetDiskByName(gomock.Eq(ctx), gomock.Eq(req.Name), gomock.Eq(stdVolSize)).Return(cloud.Disk{}, cloud.ErrNotFound)
-				mockCloud.EXPECT().CreateDisk(gomock.Eq(ctx), gomock.Eq(req.Name), gomock.Any()).Return(mockDisk, nil)
-
-				oscDriver := controllerService{
-					cloud:         mockCloud,
-					driverOptions: &DriverOptions{},
-				}
-
-				if _, err := oscDriver.CreateVolume(ctx, req); err != nil {
-					srvErr, ok := status.FromError(err)
-					if !ok {
-						t.Fatalf("Could not get error status code from error: %v", srvErr)
-					}
-					t.Fatalf("Unexpected error: %v", srvErr.Code())
-				}
+				},
 			},
-		},
-		{
-			name: "success with volume type standard",
-			testFunc: func(t *testing.T) {
-				req := &csi.CreateVolumeRequest{
-					Name:               "vol-test",
-					CapacityRange:      stdCapRange,
-					VolumeCapabilities: stdVolCap,
-					Parameters: map[string]string{
-						VolumeTypeKey: cloud.VolumeTypeSTANDARD,
-					},
-				}
-
-				ctx := context.Background()
-
-				mockDisk := cloud.Disk{
-					VolumeID:         req.Name,
-					AvailabilityZone: expZone,
-					CapacityGiB:      util.BytesToGiB(stdVolSize),
-				}
-
-				mockCtl := gomock.NewController(t)
-				defer mockCtl.Finish()
-
-				mockCloud := mocks.NewMockCloud(mockCtl)
-				mockCloud.EXPECT().GetDiskByName(gomock.Eq(ctx), gomock.Eq(req.Name), gomock.Eq(stdVolSize)).Return(cloud.Disk{}, cloud.ErrNotFound)
-				mockCloud.EXPECT().CreateDisk(gomock.Eq(ctx), gomock.Eq(req.Name), gomock.Any()).Return(mockDisk, nil)
-
-				oscDriver := controllerService{
-					cloud:         mockCloud,
-					driverOptions: &DriverOptions{},
-				}
-
-				if _, err := oscDriver.CreateVolume(ctx, req); err != nil {
-					srvErr, ok := status.FromError(err)
-					if !ok {
-						t.Fatalf("Could not get error status code from error: %v", srvErr)
-					}
-					t.Fatalf("Unexpected error: %v", srvErr.Code())
-				}
+		}
+		expVol := &csi.Volume{
+			CapacityBytes: stdVolSize,
+			VolumeId:      "vol-test",
+			VolumeContext: map[string]string{},
+			AccessibleTopology: []*csi.Topology{
+				{
+					Segments: map[string]string{TopologyKey: expZone},
+				},
 			},
-		},
-		{
-			name: "success with volume encryption",
-			testFunc: func(t *testing.T) {
-				req := &csi.CreateVolumeRequest{
-					Name:               "vol-test",
-					CapacityRange:      stdCapRange,
-					VolumeCapabilities: stdVolCap,
-					Parameters: map[string]string{
-						EncryptedKey: "true",
-					},
-				}
+		}
 
-				ctx := context.Background()
+		ctx := context.Background()
 
-				mockDisk := cloud.Disk{
-					VolumeID:         req.Name,
-					AvailabilityZone: expZone,
-					CapacityGiB:      util.BytesToGiB(stdVolSize),
-				}
+		mockDisk := cloud.Disk{
+			VolumeID:         req.Name,
+			AvailabilityZone: expZone,
+			CapacityGiB:      util.BytesToGiB(stdVolSize),
+		}
 
-				mockCtl := gomock.NewController(t)
-				defer mockCtl.Finish()
+		mockCtl := gomock.NewController(t)
+		defer mockCtl.Finish()
 
-				mockCloud := mocks.NewMockCloud(mockCtl)
-				mockCloud.EXPECT().GetDiskByName(gomock.Eq(ctx), gomock.Eq(req.Name), gomock.Eq(stdVolSize)).Return(cloud.Disk{}, cloud.ErrNotFound)
-				mockCloud.EXPECT().CreateDisk(gomock.Eq(ctx), gomock.Eq(req.Name), gomock.Any()).Return(mockDisk, nil)
+		mockCloud := mocks.NewMockCloud(mockCtl)
+		mockCloud.EXPECT().GetDiskByName(gomock.Eq(ctx), gomock.Eq(req.Name), gomock.Eq(stdVolSize)).Return(cloud.Disk{}, cloud.ErrNotFound)
+		mockCloud.EXPECT().CreateDisk(gomock.Eq(ctx), gomock.Eq(req.Name), gomock.Any()).Return(mockDisk, nil)
 
-				oscDriver := controllerService{
-					cloud:         mockCloud,
-					driverOptions: &DriverOptions{},
-				}
+		oscDriver := controllerService{
+			cloud:         mockCloud,
+			driverOptions: &DriverOptions{},
+		}
 
-				volumeResponse, err := oscDriver.CreateVolume(ctx, req)
-				if err != nil {
-					srvErr, ok := status.FromError(err)
-					if !ok {
-						t.Fatalf("Could not get error status code from error: %v", srvErr)
-					}
-					t.Fatalf("Unexpected error: %v", srvErr.Code())
-				}
+		_, err := oscDriver.CreateVolume(ctx, req)
+		require.NoError(t, err)
 
-				assert.Equal(t, "true", volumeResponse.GetVolume().VolumeContext[EncryptedKey])
+		mockCloud.EXPECT().GetDiskByName(gomock.Eq(ctx), gomock.Eq(req.Name), gomock.Eq(stdVolSize)).Return(mockDisk, nil)
+		resp, err := oscDriver.CreateVolume(ctx, extraReq)
+		require.NoError(t, err)
+		vol := resp.GetVolume()
+		require.NotNil(t, vol)
+
+		assert.Equal(t, expVol.GetVolumeContext(), vol.GetVolumeContext())
+
+		if expVol.GetAccessibleTopology() != nil {
+			assert.Equal(t, expVol.GetAccessibleTopology(), vol.GetAccessibleTopology())
+		}
+	})
+	t.Run("success with extra tags", func(t *testing.T) {
+		const (
+			volumeName          = "random-vol-name"
+			extraVolumeTagKey   = "extra-tag-key"
+			extraVolumeTagValue = "extra-tag-value"
+		)
+		req := &csi.CreateVolumeRequest{
+			Name:               volumeName,
+			CapacityRange:      stdCapRange,
+			VolumeCapabilities: stdVolCap,
+			Parameters:         nil,
+		}
+
+		ctx := context.Background()
+
+		mockDisk := cloud.Disk{
+			VolumeID:         req.Name,
+			AvailabilityZone: expZone,
+			CapacityGiB:      util.BytesToGiB(stdVolSize),
+		}
+
+		diskOptions := &cloud.DiskOptions{
+			CapacityBytes: stdVolSize,
+			Tags: map[string]string{
+				cloud.VolumeNameTagKey: volumeName,
+				extraVolumeTagKey:      extraVolumeTagValue,
 			},
-		},
-		{
-			name: "success with volume encryption",
-			testFunc: func(t *testing.T) {
-				req := &csi.CreateVolumeRequest{
-					Name:               "vol-test",
-					CapacityRange:      stdCapRange,
-					VolumeCapabilities: stdVolCap,
-					Parameters: map[string]string{
-						EncryptedKey: "true",
-					},
-				}
+		}
 
-				ctx := context.Background()
+		mockCtl := gomock.NewController(t)
+		defer mockCtl.Finish()
 
-				mockDisk := cloud.Disk{
-					VolumeID:         req.Name,
-					AvailabilityZone: expZone,
-					CapacityGiB:      util.BytesToGiB(stdVolSize),
-				}
+		mockCloud := mocks.NewMockCloud(mockCtl)
+		mockCloud.EXPECT().GetDiskByName(gomock.Eq(ctx), gomock.Eq(req.Name), gomock.Eq(stdVolSize)).Return(cloud.Disk{}, cloud.ErrNotFound)
+		mockCloud.EXPECT().CreateDisk(gomock.Eq(ctx), gomock.Eq(req.Name), gomock.Eq(diskOptions)).Return(mockDisk, nil)
 
-				mockCtl := gomock.NewController(t)
-				defer mockCtl.Finish()
-
-				mockCloud := mocks.NewMockCloud(mockCtl)
-				mockCloud.EXPECT().GetDiskByName(gomock.Eq(ctx), gomock.Eq(req.Name), gomock.Eq(stdVolSize)).Return(cloud.Disk{}, cloud.ErrNotFound)
-				mockCloud.EXPECT().CreateDisk(gomock.Eq(ctx), gomock.Eq(req.Name), gomock.Any()).Return(mockDisk, nil)
-
-				oscDriver := controllerService{
-					cloud:         mockCloud,
-					driverOptions: &DriverOptions{},
-				}
-
-				volumeResponse, err := oscDriver.CreateVolume(ctx, req)
-				if err != nil {
-					srvErr, ok := status.FromError(err)
-					if !ok {
-						t.Fatalf("Could not get error status code from error: %v", srvErr)
-					}
-					t.Fatalf("Unexpected error: %v", srvErr.Code())
-				}
-
-				assert.Equal(t, "true", volumeResponse.GetVolume().VolumeContext[EncryptedKey])
-				assert.Equal(t, "", volumeResponse.GetVolume().VolumeContext[LuksCipherKey])
-				assert.Equal(t, "", volumeResponse.GetVolume().VolumeContext[LuksHashKey])
-				assert.Equal(t, "", volumeResponse.GetVolume().VolumeContext[LuksKeySizeKey])
+		oscDriver := controllerService{
+			cloud: mockCloud,
+			driverOptions: &DriverOptions{
+				extraVolumeTags: map[string]string{
+					extraVolumeTagKey: extraVolumeTagValue,
+				},
 			},
-		},
-		{
-			name: "success with volume encryption with parameters",
-			testFunc: func(t *testing.T) {
-				req := &csi.CreateVolumeRequest{
-					Name:               "vol-test",
-					CapacityRange:      stdCapRange,
-					VolumeCapabilities: stdVolCap,
-					Parameters: map[string]string{
-						EncryptedKey:   "true",
-						LuksCipherKey:  "cipher",
-						LuksHashKey:    "hash",
-						LuksKeySizeKey: "keysize",
-					},
-				}
+		}
 
-				ctx := context.Background()
+		_, err := oscDriver.CreateVolume(ctx, req)
+		require.NoError(t, err)
+	})
+	t.Run("out of quota failure", func(t *testing.T) {
+		const (
+			volumeName          = "random-vol-name"
+			extraVolumeTagKey   = "extra-tag-key"
+			extraVolumeTagValue = "extra-tag-value"
+		)
+		req := &csi.CreateVolumeRequest{
+			Name:               volumeName,
+			CapacityRange:      stdCapRange,
+			VolumeCapabilities: stdVolCap,
+			Parameters:         nil,
+		}
 
-				mockDisk := cloud.Disk{
-					VolumeID:         req.Name,
-					AvailabilityZone: expZone,
-					CapacityGiB:      util.BytesToGiB(stdVolSize),
-				}
+		ctx := context.Background()
 
-				mockCtl := gomock.NewController(t)
-				defer mockCtl.Finish()
+		mockCtl := gomock.NewController(t)
+		defer mockCtl.Finish()
 
-				mockCloud := mocks.NewMockCloud(mockCtl)
-				mockCloud.EXPECT().GetDiskByName(gomock.Eq(ctx), gomock.Eq(req.Name), gomock.Eq(stdVolSize)).Return(cloud.Disk{}, cloud.ErrNotFound)
-				mockCloud.EXPECT().CreateDisk(gomock.Eq(ctx), gomock.Eq(req.Name), gomock.Any()).Return(mockDisk, nil)
+		mockCloud := mocks.NewMockCloud(mockCtl)
+		mockCloud.EXPECT().GetDiskByName(gomock.Any(), gomock.Eq(req.Name), gomock.Eq(stdVolSize)).Return(cloud.Disk{}, cloud.ErrNotFound)
+		mockCloud.EXPECT().CreateDisk(gomock.Any(), gomock.Eq(req.Name), gomock.Any()).
+			Return(cloud.Disk{}, cloud.NewOAPIError(osc.Errors{Code: ptr.To("10018"), Type: ptr.To("TooManyResources (QuotaExceeded)")}))
 
-				oscDriver := controllerService{
-					cloud:         mockCloud,
-					driverOptions: &DriverOptions{},
-				}
+		oscDriver := controllerService{
+			cloud:         mockCloud,
+			driverOptions: &DriverOptions{},
+		}
 
-				volumeResponse, err := oscDriver.CreateVolume(ctx, req)
-				if err != nil {
-					srvErr, ok := status.FromError(err)
-					if !ok {
-						t.Fatalf("Could not get error status code from error: %v", srvErr)
-					}
-					t.Fatalf("Unexpected error: %v", srvErr.Code())
-				}
-
-				assert.Equal(t, "true", volumeResponse.GetVolume().VolumeContext[EncryptedKey])
-				assert.Equal(t, "cipher", volumeResponse.GetVolume().VolumeContext[LuksCipherKey])
-				assert.Equal(t, "hash", volumeResponse.GetVolume().VolumeContext[LuksHashKey])
-				assert.Equal(t, "keysize", volumeResponse.GetVolume().VolumeContext[LuksKeySizeKey])
-			},
-		},
-		{
-			name: "fail with invalid volume parameter",
-			testFunc: func(t *testing.T) {
-				req := &csi.CreateVolumeRequest{
-					Name:               "vol-test",
-					CapacityRange:      stdCapRange,
-					VolumeCapabilities: stdVolCap,
-					Parameters: map[string]string{
-						VolumeTypeKey: cloud.VolumeTypeIO1,
-						"unknownKey":  "unknownValue",
-					},
-				}
-
-				ctx := context.Background()
-
-				mockCtl := gomock.NewController(t)
-				defer mockCtl.Finish()
-
-				mockCloud := mocks.NewMockCloud(mockCtl)
-				mockCloud.EXPECT().GetDiskByName(gomock.Eq(ctx), gomock.Eq(req.Name), gomock.Eq(stdVolSize)).Return(cloud.Disk{}, cloud.ErrNotFound)
-
-				oscDriver := controllerService{
-					cloud:         mockCloud,
-					driverOptions: &DriverOptions{},
-				}
-
-				_, err := oscDriver.CreateVolume(ctx, req)
-				if err == nil {
-					t.Fatalf("Expected CreateVolume to fail but got no error")
-				}
-
-				srvErr, ok := status.FromError(err)
-				if !ok {
-					t.Fatalf("Could not get error status code from error: %v", srvErr)
-				}
-				if srvErr.Code() != codes.InvalidArgument {
-					t.Fatalf("Expect InvalidArgument but got: %s", srvErr.Code())
-				}
-			},
-		},
-		{
-			name: "success when volume exists and contains VolumeContext and AccessibleTopology",
-			testFunc: func(t *testing.T) {
-				req := &csi.CreateVolumeRequest{
-					Name:               "test-vol",
-					CapacityRange:      stdCapRange,
-					VolumeCapabilities: stdVolCap,
-					Parameters:         map[string]string{},
-					AccessibilityRequirements: &csi.TopologyRequirement{
-						Requisite: []*csi.Topology{
-							{
-								Segments: map[string]string{TopologyKey: expZone},
-							},
-						},
-					},
-				}
-				extraReq := &csi.CreateVolumeRequest{
-					Name:               "test-vol",
-					CapacityRange:      stdCapRange,
-					VolumeCapabilities: stdVolCap,
-					Parameters:         map[string]string{},
-					AccessibilityRequirements: &csi.TopologyRequirement{
-						Requisite: []*csi.Topology{
-							{
-								Segments: map[string]string{TopologyKey: expZone},
-							},
-						},
-					},
-				}
-				expVol := &csi.Volume{
-					CapacityBytes: stdVolSize,
-					VolumeId:      "vol-test",
-					VolumeContext: map[string]string{},
-					AccessibleTopology: []*csi.Topology{
-						{
-							Segments: map[string]string{TopologyKey: expZone},
-						},
-					},
-				}
-
-				ctx := context.Background()
-
-				mockDisk := cloud.Disk{
-					VolumeID:         req.Name,
-					AvailabilityZone: expZone,
-					CapacityGiB:      util.BytesToGiB(stdVolSize),
-				}
-
-				mockCtl := gomock.NewController(t)
-				defer mockCtl.Finish()
-
-				mockCloud := mocks.NewMockCloud(mockCtl)
-				mockCloud.EXPECT().GetDiskByName(gomock.Eq(ctx), gomock.Eq(req.Name), gomock.Eq(stdVolSize)).Return(cloud.Disk{}, cloud.ErrNotFound)
-				mockCloud.EXPECT().CreateDisk(gomock.Eq(ctx), gomock.Eq(req.Name), gomock.Any()).Return(mockDisk, nil)
-
-				oscDriver := controllerService{
-					cloud:         mockCloud,
-					driverOptions: &DriverOptions{},
-				}
-
-				if _, err := oscDriver.CreateVolume(ctx, req); err != nil {
-					srvErr, ok := status.FromError(err)
-					if !ok {
-						t.Fatalf("Could not get error status code from error: %v", srvErr)
-					}
-					t.Fatalf("Unexpected error: %v", srvErr.Code())
-				}
-
-				mockCloud.EXPECT().GetDiskByName(gomock.Eq(ctx), gomock.Eq(req.Name), gomock.Eq(stdVolSize)).Return(mockDisk, nil)
-				resp, err := oscDriver.CreateVolume(ctx, extraReq)
-				if err != nil {
-					srvErr, ok := status.FromError(err)
-					if !ok {
-						t.Fatalf("Could not get error status code from error: %v", srvErr)
-					}
-					t.Fatalf("Unexpected error: %v", srvErr.Code())
-				}
-
-				vol := resp.GetVolume()
-				if vol == nil {
-					t.Fatalf("Expected volume %v, got nil", expVol)
-				}
-
-				for expKey, expVal := range expVol.GetVolumeContext() {
-					ctx := vol.GetVolumeContext()
-					if gotVal, ok := ctx[expKey]; !ok || gotVal != expVal {
-						t.Fatalf("Expected volume context for key %v: %v, got: %v", expKey, expVal, gotVal)
-					}
-				}
-
-				if expVol.GetAccessibleTopology() != nil {
-					if !reflect.DeepEqual(expVol.GetAccessibleTopology(), vol.GetAccessibleTopology()) {
-						t.Fatalf("Expected AccessibleTopology to be %+v, got: %+v", expVol.GetAccessibleTopology(), vol.GetAccessibleTopology())
-					}
-				}
-			},
-		},
-		{
-			name: "success with extra tags",
-			testFunc: func(t *testing.T) {
-				const (
-					volumeName          = "random-vol-name"
-					extraVolumeTagKey   = "extra-tag-key"
-					extraVolumeTagValue = "extra-tag-value"
-				)
-				req := &csi.CreateVolumeRequest{
-					Name:               volumeName,
-					CapacityRange:      stdCapRange,
-					VolumeCapabilities: stdVolCap,
-					Parameters:         nil,
-				}
-
-				ctx := context.Background()
-
-				mockDisk := cloud.Disk{
-					VolumeID:         req.Name,
-					AvailabilityZone: expZone,
-					CapacityGiB:      util.BytesToGiB(stdVolSize),
-				}
-
-				diskOptions := &cloud.DiskOptions{
-					CapacityBytes: stdVolSize,
-					Tags: map[string]string{
-						cloud.VolumeNameTagKey: volumeName,
-						extraVolumeTagKey:      extraVolumeTagValue,
-					},
-				}
-
-				mockCtl := gomock.NewController(t)
-				defer mockCtl.Finish()
-
-				mockCloud := mocks.NewMockCloud(mockCtl)
-				mockCloud.EXPECT().GetDiskByName(gomock.Eq(ctx), gomock.Eq(req.Name), gomock.Eq(stdVolSize)).Return(cloud.Disk{}, cloud.ErrNotFound)
-				mockCloud.EXPECT().CreateDisk(gomock.Eq(ctx), gomock.Eq(req.Name), gomock.Eq(diskOptions)).Return(mockDisk, nil)
-
-				oscDriver := controllerService{
-					cloud: mockCloud,
-					driverOptions: &DriverOptions{
-						extraVolumeTags: map[string]string{
-							extraVolumeTagKey: extraVolumeTagValue,
-						},
-					},
-				}
-
-				_, err := oscDriver.CreateVolume(ctx, req)
-				if err != nil {
-					srvErr, ok := status.FromError(err)
-					if !ok {
-						t.Fatalf("Could not get error status code from error: %v", srvErr)
-					}
-					t.Fatalf("Unexpected error: %v", srvErr.Code())
-				}
-			},
-		},
-	}
-
-	for _, tc := range testCases {
-		t.Run(tc.name, tc.testFunc)
-	}
+		_, err := oscDriver.CreateVolume(ctx, req)
+		require.Error(t, err)
+		status, ok := status.FromError(err)
+		require.True(t, ok)
+		require.NotNil(t, status)
+		assert.Equal(t, codes.ResourceExhausted, status.Code())
+	})
 }
 
 func TestDeleteVolume(t *testing.T) {
@@ -1315,286 +1120,329 @@ func TestPickAvailabilityZone(t *testing.T) {
 }
 
 func TestCreateSnapshot(t *testing.T) {
-	testCases := []struct {
-		name     string
-		testFunc func(t *testing.T)
-	}{
-		{
-			name: "success normal",
-			testFunc: func(t *testing.T) {
-				req := &csi.CreateSnapshotRequest{
-					Name:           "test-snapshot",
-					Parameters:     nil,
-					SourceVolumeId: "vol-test",
-				}
+	t.Run("success normal", func(t *testing.T) {
+		req := &csi.CreateSnapshotRequest{
+			Name:           "test-snapshot",
+			Parameters:     nil,
+			SourceVolumeId: "vol-test",
+		}
 
-				ctx := context.Background()
-				mockSnapshot := cloud.Snapshot{
-					SnapshotID:     fmt.Sprintf("snapshot-%d", rand.New(rand.NewSource(time.Now().UnixNano())).Uint64()),
-					SourceVolumeID: req.SourceVolumeId,
-					Size:           1,
-					CreationTime:   time.Now(),
-					State:          "completed",
-				}
-				mockCtl := gomock.NewController(t)
-				defer mockCtl.Finish()
+		ctx := context.Background()
+		mockSnapshot := cloud.Snapshot{
+			SnapshotID:     fmt.Sprintf("snapshot-%d", rand.New(rand.NewSource(time.Now().UnixNano())).Uint64()),
+			SourceVolumeID: req.SourceVolumeId,
+			Size:           1,
+			CreationTime:   time.Now(),
+			State:          "completed",
+		}
+		mockCtl := gomock.NewController(t)
+		defer mockCtl.Finish()
 
-				mockCloud := mocks.NewMockCloud(mockCtl)
-				mockCloud.EXPECT().GetSnapshotByName(gomock.Eq(ctx), gomock.Eq(req.GetName())).Return(cloud.Snapshot{}, cloud.ErrNotFound)
-				mockCloud.EXPECT().CreateSnapshot(gomock.Eq(ctx), gomock.Eq(req.SourceVolumeId), gomock.Any()).Return(mockSnapshot, nil)
+		mockCloud := mocks.NewMockCloud(mockCtl)
+		mockCloud.EXPECT().GetSnapshotByName(gomock.Eq(ctx), gomock.Eq(req.GetName())).Return(cloud.Snapshot{}, cloud.ErrNotFound)
+		mockCloud.EXPECT().CreateSnapshot(gomock.Eq(ctx), gomock.Eq(req.SourceVolumeId), gomock.Any()).Return(mockSnapshot, nil)
 
-				oscDriver := controllerService{
-					cloud:         mockCloud,
-					driverOptions: &DriverOptions{},
-				}
-				resp, err := oscDriver.CreateSnapshot(context.Background(), req)
-				require.NoError(t, err)
+		oscDriver := controllerService{
+			cloud:         mockCloud,
+			driverOptions: &DriverOptions{},
+		}
+		resp, err := oscDriver.CreateSnapshot(context.Background(), req)
+		require.NoError(t, err)
 
-				snap := resp.GetSnapshot()
-				require.NotNil(t, snap)
-				assert.True(t, snap.ReadyToUse)
+		snap := resp.GetSnapshot()
+		require.NotNil(t, snap)
+		assert.True(t, snap.ReadyToUse)
+	})
+	t.Run("fail no name", func(t *testing.T) {
+		req := &csi.CreateSnapshotRequest{
+			Parameters:     nil,
+			SourceVolumeId: "vol-test",
+		}
+
+		mockCtl := gomock.NewController(t)
+		defer mockCtl.Finish()
+
+		mockCloud := mocks.NewMockCloud(mockCtl)
+
+		oscDriver := controllerService{
+			cloud:         mockCloud,
+			driverOptions: &DriverOptions{},
+		}
+		_, err := oscDriver.CreateSnapshot(context.Background(), req)
+		require.Error(t, err)
+		srvErr, ok := status.FromError(err)
+		assert.True(t, ok, "Should get an error status code")
+		assert.Equal(t, codes.InvalidArgument, srvErr.Code())
+	})
+	t.Run("fail same name different volume ID", func(t *testing.T) {
+		req := &csi.CreateSnapshotRequest{
+			Name:           "test-snapshot",
+			Parameters:     nil,
+			SourceVolumeId: "vol-test",
+		}
+		extraReq := &csi.CreateSnapshotRequest{
+			Name:           "test-snapshot",
+			Parameters:     nil,
+			SourceVolumeId: "vol-xxx",
+		}
+
+		ctx := context.Background()
+		mockSnapshot := cloud.Snapshot{
+			SnapshotID:     fmt.Sprintf("snapshot-%d", rand.New(rand.NewSource(time.Now().UnixNano())).Uint64()),
+			SourceVolumeID: req.SourceVolumeId,
+			Size:           1,
+			CreationTime:   time.Now(),
+			State:          "completed",
+		}
+		mockCtl := gomock.NewController(t)
+		defer mockCtl.Finish()
+
+		mockCloud := mocks.NewMockCloud(mockCtl)
+		mockCloud.EXPECT().GetSnapshotByName(gomock.Eq(ctx), gomock.Eq(req.GetName())).Return(cloud.Snapshot{}, cloud.ErrNotFound)
+		mockCloud.EXPECT().CreateSnapshot(gomock.Eq(ctx), gomock.Eq(req.SourceVolumeId), gomock.Any()).Return(mockSnapshot, nil)
+
+		oscDriver := controllerService{
+			cloud:         mockCloud,
+			driverOptions: &DriverOptions{},
+		}
+		resp, err := oscDriver.CreateSnapshot(context.Background(), req)
+		if err != nil {
+			srvErr, ok := status.FromError(err)
+			if !ok {
+				t.Fatalf("Could not get error status code from error: %v", srvErr)
+			}
+			if srvErr.Code() != codes.OK {
+				t.Fatalf("Expected error code %d, got %d message %s", codes.OK, srvErr.Code(), srvErr.Message())
+			}
+			t.Fatalf("Unexpected error: %v", err)
+		}
+		snap := resp.GetSnapshot()
+		require.NotNil(t, snap)
+		assert.True(t, snap.ReadyToUse)
+
+		mockCloud.EXPECT().GetSnapshotByName(gomock.Eq(ctx), gomock.Eq(extraReq.GetName())).Return(mockSnapshot, nil)
+		_, err = oscDriver.CreateSnapshot(ctx, extraReq)
+		if err != nil {
+			srvErr, ok := status.FromError(err)
+			if !ok {
+				t.Fatalf("Could not get error status code from error: %v", srvErr)
+			}
+			if srvErr.Code() != codes.AlreadyExists {
+				t.Fatalf("Expected error code %d, got %d message %s", codes.AlreadyExists, srvErr.Code(), srvErr.Message())
+			}
+		} else {
+			t.Fatalf("Expected error %v, got no error", codes.AlreadyExists)
+		}
+	})
+	t.Run("success same name same volume ID", func(t *testing.T) {
+		req := &csi.CreateSnapshotRequest{
+			Name:           "test-snapshot",
+			Parameters:     nil,
+			SourceVolumeId: "vol-test",
+		}
+		extraReq := &csi.CreateSnapshotRequest{
+			Name:           "test-snapshot",
+			Parameters:     nil,
+			SourceVolumeId: "vol-test",
+		}
+
+		ctx := context.Background()
+		mockSnapshot := cloud.Snapshot{
+			SnapshotID:     fmt.Sprintf("snapshot-%d", rand.New(rand.NewSource(time.Now().UnixNano())).Uint64()),
+			SourceVolumeID: req.SourceVolumeId,
+			Size:           1,
+			CreationTime:   time.Now(),
+			State:          "completed",
+		}
+		mockCtl := gomock.NewController(t)
+		defer mockCtl.Finish()
+
+		mockCloud := mocks.NewMockCloud(mockCtl)
+		mockCloud.EXPECT().GetSnapshotByName(gomock.Eq(ctx), gomock.Eq(req.GetName())).Return(cloud.Snapshot{}, cloud.ErrNotFound)
+		mockCloud.EXPECT().CreateSnapshot(gomock.Eq(ctx), gomock.Eq(req.SourceVolumeId), gomock.Any()).Return(mockSnapshot, nil)
+
+		oscDriver := controllerService{
+			cloud:         mockCloud,
+			driverOptions: &DriverOptions{},
+		}
+		resp, err := oscDriver.CreateSnapshot(context.Background(), req)
+		require.NoError(t, err)
+		snap := resp.GetSnapshot()
+		require.NotNil(t, snap)
+		assert.True(t, snap.ReadyToUse)
+
+		mockCloud.EXPECT().GetSnapshotByName(gomock.Eq(ctx), gomock.Eq(extraReq.GetName())).Return(mockSnapshot, nil)
+		_, err = oscDriver.CreateSnapshot(ctx, extraReq)
+		require.NoError(t, err)
+	})
+	t.Run("success with extra tags", func(t *testing.T) {
+		req := &csi.CreateSnapshotRequest{
+			Name:           "test-snapshot",
+			Parameters:     nil,
+			SourceVolumeId: "vol-test",
+		}
+		extraReq := &csi.CreateSnapshotRequest{
+			Name:           "test-snapshot",
+			Parameters:     nil,
+			SourceVolumeId: "vol-test",
+		}
+		extraSnapshotTagKey := "foo"
+		extraSnapshotTagValue := "bar"
+		snapshotOptions := &cloud.SnapshotOptions{
+			Tags: map[string]string{
+				cloud.SnapshotNameTagKey: req.Name,
+				extraSnapshotTagKey:      extraSnapshotTagValue,
 			},
-		},
-		{
-			name: "fail no name",
-			testFunc: func(t *testing.T) {
-				req := &csi.CreateSnapshotRequest{
-					Parameters:     nil,
-					SourceVolumeId: "vol-test",
-				}
+		}
 
-				mockCtl := gomock.NewController(t)
-				defer mockCtl.Finish()
+		ctx := context.Background()
+		mockSnapshot := cloud.Snapshot{
+			SnapshotID:     fmt.Sprintf("snapshot-%d", rand.New(rand.NewSource(time.Now().UnixNano())).Uint64()),
+			SourceVolumeID: req.SourceVolumeId,
+			Size:           1,
+			CreationTime:   time.Now(),
+			State:          "completed",
+		}
+		mockCtl := gomock.NewController(t)
+		defer mockCtl.Finish()
 
-				mockCloud := mocks.NewMockCloud(mockCtl)
+		mockCloud := mocks.NewMockCloud(mockCtl)
+		mockCloud.EXPECT().GetSnapshotByName(gomock.Eq(ctx), gomock.Eq(req.GetName())).Return(cloud.Snapshot{}, cloud.ErrNotFound)
+		mockCloud.EXPECT().CreateSnapshot(gomock.Eq(ctx), gomock.Eq(req.SourceVolumeId), gomock.Eq(snapshotOptions)).Return(mockSnapshot, nil)
 
-				oscDriver := controllerService{
-					cloud:         mockCloud,
-					driverOptions: &DriverOptions{},
-				}
-				_, err := oscDriver.CreateSnapshot(context.Background(), req)
-				require.Error(t, err)
-				srvErr, ok := status.FromError(err)
-				assert.True(t, ok, "Should get an error status code")
-				assert.Equal(t, codes.InvalidArgument, srvErr.Code())
+		oscDriver := controllerService{
+			cloud: mockCloud,
+			driverOptions: &DriverOptions{
+				extraSnapshotTags: map[string]string{
+					extraSnapshotTagKey: extraSnapshotTagValue,
+				},
 			},
-		},
-		{
-			name: "fail same name different volume ID",
-			testFunc: func(t *testing.T) {
-				req := &csi.CreateSnapshotRequest{
-					Name:           "test-snapshot",
-					Parameters:     nil,
-					SourceVolumeId: "vol-test",
-				}
-				extraReq := &csi.CreateSnapshotRequest{
-					Name:           "test-snapshot",
-					Parameters:     nil,
-					SourceVolumeId: "vol-xxx",
-				}
+		}
+		resp, err := oscDriver.CreateSnapshot(context.Background(), req)
+		require.NoError(t, err)
+		snap := resp.GetSnapshot()
+		require.NotNil(t, snap)
+		assert.True(t, snap.ReadyToUse)
 
-				ctx := context.Background()
-				mockSnapshot := cloud.Snapshot{
-					SnapshotID:     fmt.Sprintf("snapshot-%d", rand.New(rand.NewSource(time.Now().UnixNano())).Uint64()),
-					SourceVolumeID: req.SourceVolumeId,
-					Size:           1,
-					CreationTime:   time.Now(),
-					State:          "completed",
-				}
-				mockCtl := gomock.NewController(t)
-				defer mockCtl.Finish()
-
-				mockCloud := mocks.NewMockCloud(mockCtl)
-				mockCloud.EXPECT().GetSnapshotByName(gomock.Eq(ctx), gomock.Eq(req.GetName())).Return(cloud.Snapshot{}, cloud.ErrNotFound)
-				mockCloud.EXPECT().CreateSnapshot(gomock.Eq(ctx), gomock.Eq(req.SourceVolumeId), gomock.Any()).Return(mockSnapshot, nil)
-
-				oscDriver := controllerService{
-					cloud:         mockCloud,
-					driverOptions: &DriverOptions{},
-				}
-				resp, err := oscDriver.CreateSnapshot(context.Background(), req)
-				if err != nil {
-					srvErr, ok := status.FromError(err)
-					if !ok {
-						t.Fatalf("Could not get error status code from error: %v", srvErr)
-					}
-					if srvErr.Code() != codes.OK {
-						t.Fatalf("Expected error code %d, got %d message %s", codes.OK, srvErr.Code(), srvErr.Message())
-					}
-					t.Fatalf("Unexpected error: %v", err)
-				}
-				snap := resp.GetSnapshot()
-				require.NotNil(t, snap)
-				assert.True(t, snap.ReadyToUse)
-
-				mockCloud.EXPECT().GetSnapshotByName(gomock.Eq(ctx), gomock.Eq(extraReq.GetName())).Return(mockSnapshot, nil)
-				_, err = oscDriver.CreateSnapshot(ctx, extraReq)
-				if err != nil {
-					srvErr, ok := status.FromError(err)
-					if !ok {
-						t.Fatalf("Could not get error status code from error: %v", srvErr)
-					}
-					if srvErr.Code() != codes.AlreadyExists {
-						t.Fatalf("Expected error code %d, got %d message %s", codes.AlreadyExists, srvErr.Code(), srvErr.Message())
-					}
-				} else {
-					t.Fatalf("Expected error %v, got no error", codes.AlreadyExists)
-				}
+		mockCloud.EXPECT().GetSnapshotByName(gomock.Eq(ctx), gomock.Eq(extraReq.GetName())).Return(mockSnapshot, nil)
+		_, err = oscDriver.CreateSnapshot(ctx, extraReq)
+		require.NoError(t, err)
+	})
+	t.Run("snapshot in error return Resource exhausted", func(t *testing.T) {
+		req := &csi.CreateSnapshotRequest{
+			Name:           "test-snapshot",
+			Parameters:     nil,
+			SourceVolumeId: "vol-test",
+		}
+		extraSnapshotTagKey := "foo"
+		extraSnapshotTagValue := "bar"
+		snapshotOptions := &cloud.SnapshotOptions{
+			Tags: map[string]string{
+				cloud.SnapshotNameTagKey: req.Name,
+				extraSnapshotTagKey:      extraSnapshotTagValue,
 			},
-		},
-		{
-			name: "success same name same volume ID",
-			testFunc: func(t *testing.T) {
-				req := &csi.CreateSnapshotRequest{
-					Name:           "test-snapshot",
-					Parameters:     nil,
-					SourceVolumeId: "vol-test",
-				}
-				extraReq := &csi.CreateSnapshotRequest{
-					Name:           "test-snapshot",
-					Parameters:     nil,
-					SourceVolumeId: "vol-test",
-				}
+		}
 
-				ctx := context.Background()
-				mockSnapshot := cloud.Snapshot{
-					SnapshotID:     fmt.Sprintf("snapshot-%d", rand.New(rand.NewSource(time.Now().UnixNano())).Uint64()),
-					SourceVolumeID: req.SourceVolumeId,
-					Size:           1,
-					CreationTime:   time.Now(),
-					State:          "completed",
-				}
-				mockCtl := gomock.NewController(t)
-				defer mockCtl.Finish()
+		ctx := context.Background()
+		mockSnapshot := cloud.Snapshot{
+			SnapshotID:     fmt.Sprintf("snapshot-%d", rand.New(rand.NewSource(time.Now().UnixNano())).Uint64()),
+			SourceVolumeID: req.SourceVolumeId,
+			Size:           1,
+			CreationTime:   time.Now(),
+			State:          "error",
+		}
+		mockCtl := gomock.NewController(t)
+		defer mockCtl.Finish()
 
-				mockCloud := mocks.NewMockCloud(mockCtl)
-				mockCloud.EXPECT().GetSnapshotByName(gomock.Eq(ctx), gomock.Eq(req.GetName())).Return(cloud.Snapshot{}, cloud.ErrNotFound)
-				mockCloud.EXPECT().CreateSnapshot(gomock.Eq(ctx), gomock.Eq(req.SourceVolumeId), gomock.Any()).Return(mockSnapshot, nil)
+		mockCloud := mocks.NewMockCloud(mockCtl)
+		mockCloud.EXPECT().GetSnapshotByName(gomock.Eq(ctx), gomock.Eq(req.GetName())).
+			Return(cloud.Snapshot{}, cloud.ErrNotFound)
+		mockCloud.EXPECT().CreateSnapshot(gomock.Eq(ctx), gomock.Eq(req.SourceVolumeId), gomock.Eq(snapshotOptions)).Return(mockSnapshot, nil)
 
-				oscDriver := controllerService{
-					cloud:         mockCloud,
-					driverOptions: &DriverOptions{},
-				}
-				resp, err := oscDriver.CreateSnapshot(context.Background(), req)
-				require.NoError(t, err)
-				snap := resp.GetSnapshot()
-				require.NotNil(t, snap)
-				assert.True(t, snap.ReadyToUse)
-
-				mockCloud.EXPECT().GetSnapshotByName(gomock.Eq(ctx), gomock.Eq(extraReq.GetName())).Return(mockSnapshot, nil)
-				_, err = oscDriver.CreateSnapshot(ctx, extraReq)
-				require.NoError(t, err)
+		oscDriver := controllerService{
+			cloud: mockCloud,
+			driverOptions: &DriverOptions{
+				extraSnapshotTags: map[string]string{
+					extraSnapshotTagKey: extraSnapshotTagValue,
+				},
 			},
-		},
-		{
-			name: "success with extra tags",
-			testFunc: func(t *testing.T) {
-				req := &csi.CreateSnapshotRequest{
-					Name:           "test-snapshot",
-					Parameters:     nil,
-					SourceVolumeId: "vol-test",
-				}
-				extraReq := &csi.CreateSnapshotRequest{
-					Name:           "test-snapshot",
-					Parameters:     nil,
-					SourceVolumeId: "vol-test",
-				}
-				extraSnapshotTagKey := "foo"
-				extraSnapshotTagValue := "bar"
-				snapshotOptions := &cloud.SnapshotOptions{
-					Tags: map[string]string{
-						cloud.SnapshotNameTagKey: req.Name,
-						extraSnapshotTagKey:      extraSnapshotTagValue,
-					},
-				}
-
-				ctx := context.Background()
-				mockSnapshot := cloud.Snapshot{
-					SnapshotID:     fmt.Sprintf("snapshot-%d", rand.New(rand.NewSource(time.Now().UnixNano())).Uint64()),
-					SourceVolumeID: req.SourceVolumeId,
-					Size:           1,
-					CreationTime:   time.Now(),
-					State:          "completed",
-				}
-				mockCtl := gomock.NewController(t)
-				defer mockCtl.Finish()
-
-				mockCloud := mocks.NewMockCloud(mockCtl)
-				mockCloud.EXPECT().GetSnapshotByName(gomock.Eq(ctx), gomock.Eq(req.GetName())).Return(cloud.Snapshot{}, cloud.ErrNotFound)
-				mockCloud.EXPECT().CreateSnapshot(gomock.Eq(ctx), gomock.Eq(req.SourceVolumeId), gomock.Eq(snapshotOptions)).Return(mockSnapshot, nil)
-
-				oscDriver := controllerService{
-					cloud: mockCloud,
-					driverOptions: &DriverOptions{
-						extraSnapshotTags: map[string]string{
-							extraSnapshotTagKey: extraSnapshotTagValue,
-						},
-					},
-				}
-				resp, err := oscDriver.CreateSnapshot(context.Background(), req)
-				require.NoError(t, err)
-				snap := resp.GetSnapshot()
-				require.NotNil(t, snap)
-				assert.True(t, snap.ReadyToUse)
-
-				mockCloud.EXPECT().GetSnapshotByName(gomock.Eq(ctx), gomock.Eq(extraReq.GetName())).Return(mockSnapshot, nil)
-				_, err = oscDriver.CreateSnapshot(ctx, extraReq)
-				require.NoError(t, err)
+		}
+		_, err := oscDriver.CreateSnapshot(context.Background(), req)
+		require.Error(t, err)
+		status, _ := status.FromError(err)
+		require.NotNil(t, status)
+		assert.Equal(t, codes.ResourceExhausted, status.Code())
+	})
+	t.Run("quota errors return Resource exhausted", func(t *testing.T) {
+		req := &csi.CreateSnapshotRequest{
+			Name:           "test-snapshot",
+			Parameters:     nil,
+			SourceVolumeId: "vol-test",
+		}
+		extraSnapshotTagKey := "foo"
+		extraSnapshotTagValue := "bar"
+		snapshotOptions := &cloud.SnapshotOptions{
+			Tags: map[string]string{
+				cloud.SnapshotNameTagKey: req.Name,
+				extraSnapshotTagKey:      extraSnapshotTagValue,
 			},
-		},
-		{
-			name: "snapshot in error are recreated",
-			testFunc: func(t *testing.T) {
-				req := &csi.CreateSnapshotRequest{
-					Name:           "test-snapshot",
-					Parameters:     nil,
-					SourceVolumeId: "vol-test",
-				}
-				extraSnapshotTagKey := "foo"
-				extraSnapshotTagValue := "bar"
-				snapshotOptions := &cloud.SnapshotOptions{
-					Tags: map[string]string{
-						cloud.SnapshotNameTagKey: req.Name,
-						extraSnapshotTagKey:      extraSnapshotTagValue,
-					},
-				}
+		}
 
-				ctx := context.Background()
-				mockSnapshot := cloud.Snapshot{
-					SnapshotID:     fmt.Sprintf("snapshot-%d", rand.New(rand.NewSource(time.Now().UnixNano())).Uint64()),
-					SourceVolumeID: req.SourceVolumeId,
-					Size:           1,
-					CreationTime:   time.Now(),
-					State:          "completed",
-				}
-				mockCtl := gomock.NewController(t)
-				defer mockCtl.Finish()
+		ctx := context.Background()
+		mockCtl := gomock.NewController(t)
+		defer mockCtl.Finish()
 
-				mockCloud := mocks.NewMockCloud(mockCtl)
-				mockCloud.EXPECT().GetSnapshotByName(gomock.Eq(ctx), gomock.Eq(req.GetName())).
-					Return(cloud.Snapshot{SnapshotID: "snap_foo", State: "error"}, nil)
-				mockCloud.EXPECT().DeleteSnapshot(gomock.Eq(ctx), gomock.Eq("snap_foo")).Return(true, nil)
-				mockCloud.EXPECT().CreateSnapshot(gomock.Eq(ctx), gomock.Eq(req.SourceVolumeId), gomock.Eq(snapshotOptions)).Return(mockSnapshot, nil)
+		mockCloud := mocks.NewMockCloud(mockCtl)
+		mockCloud.EXPECT().GetSnapshotByName(gomock.Eq(ctx), gomock.Eq(req.GetName())).
+			Return(cloud.Snapshot{}, cloud.ErrNotFound)
+		mockCloud.EXPECT().CreateSnapshot(gomock.Eq(ctx), gomock.Eq(req.SourceVolumeId), gomock.Eq(snapshotOptions)).
+			Return(cloud.Snapshot{}, cloud.NewOAPIError(osc.Errors{Code: ptr.To("10026"), Type: ptr.To("TooManyResources (QuotaExceeded)")}))
 
-				oscDriver := controllerService{
-					cloud: mockCloud,
-					driverOptions: &DriverOptions{
-						extraSnapshotTags: map[string]string{
-							extraSnapshotTagKey: extraSnapshotTagValue,
-						},
-					},
-				}
-				resp, err := oscDriver.CreateSnapshot(context.Background(), req)
-				require.NoError(t, err)
-				snap := resp.GetSnapshot()
-				require.NotNil(t, snap)
+		oscDriver := controllerService{
+			cloud: mockCloud,
+			driverOptions: &DriverOptions{
+				extraSnapshotTags: map[string]string{
+					extraSnapshotTagKey: extraSnapshotTagValue,
+				},
 			},
-		},
-	}
+		}
+		_, err := oscDriver.CreateSnapshot(context.Background(), req)
+		require.Error(t, err)
+		status, _ := status.FromError(err)
+		require.NotNil(t, status)
+		assert.Equal(t, codes.ResourceExhausted, status.Code())
+	})
+	t.Run("snapshot in error return Resource exhausted (retry)", func(t *testing.T) {
+		req := &csi.CreateSnapshotRequest{
+			Name:           "test-snapshot",
+			Parameters:     nil,
+			SourceVolumeId: "vol-test",
+		}
+		extraSnapshotTagKey := "foo"
+		extraSnapshotTagValue := "bar"
 
-	for _, tc := range testCases {
-		t.Run(tc.name, tc.testFunc)
-	}
+		ctx := context.Background()
+		mockCtl := gomock.NewController(t)
+		defer mockCtl.Finish()
+
+		mockCloud := mocks.NewMockCloud(mockCtl)
+		mockCloud.EXPECT().GetSnapshotByName(gomock.Eq(ctx), gomock.Eq(req.GetName())).
+			Return(cloud.Snapshot{SnapshotID: "snap_foo", State: "error"}, nil)
+
+		oscDriver := controllerService{
+			cloud: mockCloud,
+			driverOptions: &DriverOptions{
+				extraSnapshotTags: map[string]string{
+					extraSnapshotTagKey: extraSnapshotTagValue,
+				},
+			},
+		}
+		_, err := oscDriver.CreateSnapshot(context.Background(), req)
+		require.Error(t, err)
+		status, _ := status.FromError(err)
+		require.NotNil(t, status)
+		assert.Equal(t, codes.ResourceExhausted, status.Code())
+	})
 }
 
 func TestDeleteSnapshot(t *testing.T) {

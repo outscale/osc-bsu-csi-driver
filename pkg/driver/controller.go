@@ -486,13 +486,6 @@ func (d *controllerService) ListSnapshots(ctx context.Context, req *csi.ListSnap
 
 	cloudSnapshots, err := d.cloud.ListSnapshots(ctx, volumeID, maxEntries, nextToken)
 	if err != nil {
-		if errors.Is(err, cloud.ErrNotFound) {
-			klog.FromContext(ctx).V(4).Info("Snapshot does not exist")
-			return &csi.ListSnapshotsResponse{}, nil
-		}
-		if errors.Is(err, cloud.ErrInvalidMaxResults) {
-			return nil, status.Errorf(codes.InvalidArgument, "Error mapping MaxEntries to OSC MaxResults: %v", err)
-		}
 		return nil, status.Errorf(cloud.GRPCCode(err), "Could not list snapshots: %v", err)
 	}
 

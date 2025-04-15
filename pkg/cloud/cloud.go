@@ -106,9 +106,6 @@ var (
 	// with the same ID or name
 	ErrMultiSnapshots = errors.New("Multiple snapshots with the same name/id found")
 
-	// ErrInvalidMaxResults is returned when a MaxResults pagination parameter is between 1 and 4
-	ErrInvalidMaxResults = errors.New("MaxResults parameter must be 0 or greater than or equal to 5")
-
 	// ErrMultiVMs is returned when multiple VMs are found with the same name.
 	ErrMultiVMs = errors.New("Multiple VMs with the same ID found")
 )
@@ -728,12 +725,15 @@ func (c *cloud) DeleteSnapshot(ctx context.Context, snapshotID string) (success 
 		return c.backoff.OAPIResponseBackoff(ctx, httpRes, err)
 	}
 
-	waitErr := c.backoff.ExponentialBackoff(ctx, deleteSnapshotCallBack)
-	if waitErr != nil {
-		return false, fmt.Errorf("cound not delete snapshot: %w", waitErr)
+	err = c.backoff.ExponentialBackoff(ctx, deleteSnapshotCallBack)
+	switch {
+	case isSnapshotNotFoundError(err):
+		return false, ErrNotFound
+	case err != nil:
+		return false, fmt.Errorf("cound not delete snapshot: %w", err)
+	default:
+		return true, nil
 	}
-
-	return true, nil
 }
 
 // waitForSnapshot waits for a snapshot to be in the "completed" state.
@@ -833,10 +833,6 @@ func (c *cloud) ListSnapshots(ctx context.Context, volumeID string, maxResults i
 		snapshots = append(snapshots, c.oscSnapshotResponseToStruct(oscSnapshot))
 	}
 	klog.FromContext(ctx).V(5).Info(fmt.Sprintf("%d snapshots found", len(snapshots)))
-	if len(snapshots) == 0 {
-		return ListSnapshotsResponse{}, ErrNotFound
-	}
-
 	return ListSnapshotsResponse{
 		Snapshots: snapshots,
 		NextToken: nextToken,

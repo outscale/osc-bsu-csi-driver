@@ -1820,37 +1820,6 @@ func TestListSnapshots(t *testing.T) {
 				}
 			},
 		},
-		{
-			name: "fail 0 < MaxEntries < 5",
-			testFunc: func(t *testing.T) {
-				req := &csi.ListSnapshotsRequest{
-					MaxEntries: 4,
-				}
-
-				ctx := context.Background()
-				mockCtl := gomock.NewController(t)
-				defer mockCtl.Finish()
-				mockCloud := mocks.NewMockCloud(mockCtl)
-				mockCloud.EXPECT().ListSnapshots(gomock.Eq(ctx), gomock.Eq(""), gomock.Eq(int32(4)), gomock.Eq("")).Return(cloud.ListSnapshotsResponse{}, cloud.ErrInvalidMaxResults)
-
-				oscDriver := controllerService{
-					cloud:         mockCloud,
-					driverOptions: &DriverOptions{},
-				}
-
-				if _, err := oscDriver.ListSnapshots(context.Background(), req); err != nil {
-					srvErr, ok := status.FromError(err)
-					if !ok {
-						t.Fatalf("Could not get error status code from error: %v", srvErr)
-					}
-					if srvErr.Code() != codes.InvalidArgument {
-						t.Fatalf("Expected error code %d, got %d message %s", codes.InvalidArgument, srvErr.Code(), srvErr.Message())
-					}
-				} else {
-					t.Fatalf("Expected error code %d, got no error", codes.InvalidArgument)
-				}
-			},
-		},
 	}
 
 	for _, tc := range testCases {

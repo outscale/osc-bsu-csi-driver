@@ -6,11 +6,11 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/golang/mock/gomock"
 	"github.com/outscale/osc-bsu-csi-driver/pkg/driver/luks"
 	"github.com/outscale/osc-bsu-csi-driver/pkg/driver/mocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/mock/gomock"
 )
 
 var (
@@ -171,50 +171,75 @@ func TestLuksOpen(t *testing.T) {
 	devicePath := "/dev/fake"
 	passphrase := "ThisIsASecret"
 
-	// Check when normal Open
-	mockStat := mocks.NewMockMounter(mockCtl)
-	mockRun := mocks.NewMockCmd(mockCtl)
-	mockStat.EXPECT().ExistsPath("/dev/mapper/fake_crypt").Return(false, nil)
-	mockStat.EXPECT().Command(
-		gomock.Eq("cryptsetup"),
-		gomock.Eq("-v"),
-		gomock.Eq("--type=luks2"),
-		gomock.Eq("--batch-mode"),
-		gomock.Eq("luksOpen"),
-		gomock.Eq(devicePath),
-		gomock.Eq("fake_crypt"),
-	).Return(mockRun)
-	mockRun.EXPECT().SetStdin(gomock.Any()).Return()
-	mockRun.EXPECT().CombinedOutput().Return([]byte{}, nil)
-	ok, err := LuksOpen(mockStat, devicePath, "fake_crypt", passphrase)
-	require.NoError(t, err)
-	assert.True(t, ok)
+	t.Run("Normal open", func(t *testing.T) {
+		mockStat := mocks.NewMockMounter(mockCtl)
+		mockRun := mocks.NewMockCmd(mockCtl)
+		mockStat.EXPECT().ExistsPath("/dev/mapper/fake_crypt").Return(false, nil)
+		mockStat.EXPECT().Command(
+			gomock.Eq("cryptsetup"),
+			gomock.Eq("-v"),
+			gomock.Eq("--type=luks2"),
+			gomock.Eq("--batch-mode"),
+			gomock.Eq("luksOpen"),
+			gomock.Eq(devicePath),
+			gomock.Eq("fake_crypt"),
+		).Return(mockRun)
+		mockRun.EXPECT().SetStdin(gomock.Any()).Return()
+		mockRun.EXPECT().CombinedOutput().Return([]byte{}, nil)
+		ok, err := LuksOpen(mockStat, devicePath, "fake_crypt", passphrase)
+		require.NoError(t, err)
+		assert.True(t, ok)
+	})
 
-	// Check when already opened (idempotency)
-	mockStat = mocks.NewMockMounter(mockCtl)
-	mockStat.EXPECT().ExistsPath("/dev/mapper/fake_crypt").Return(true, nil)
-	ok, err = LuksOpen(mockStat, devicePath, "fake_crypt", passphrase)
-	require.NoError(t, err)
-	assert.True(t, ok)
+	t.Run("Open with options", func(t *testing.T) {
+		mockStat := mocks.NewMockMounter(mockCtl)
+		mockRun := mocks.NewMockCmd(mockCtl)
+		mockStat.EXPECT().ExistsPath("/dev/mapper/fake_crypt").Return(false, nil)
+		mockStat.EXPECT().Command(
+			gomock.Eq("cryptsetup"),
+			gomock.Eq("-v"),
+			gomock.Eq("--type=luks2"),
+			gomock.Eq("--batch-mode"),
+			gomock.Eq("-option1"),
+			gomock.Eq("-option2"),
+			gomock.Eq("luksOpen"),
+			gomock.Eq(devicePath),
+			gomock.Eq("fake_crypt"),
+		).Return(mockRun)
+		mockRun.EXPECT().SetStdin(gomock.Any()).Return()
+		mockRun.EXPECT().CombinedOutput().Return([]byte{}, nil)
+		ok, err := LuksOpen(mockStat, devicePath, "fake_crypt", passphrase, "-option1", "-option2")
+		require.NoError(t, err)
+		assert.True(t, ok)
+	})
 
-	// Check when open failed
-	mockStat = mocks.NewMockMounter(mockCtl)
-	mockRun = mocks.NewMockCmd(mockCtl)
-	mockStat.EXPECT().ExistsPath("/dev/mapper/fake_crypt").Return(false, nil)
-	mockStat.EXPECT().Command(
-		gomock.Eq("cryptsetup"),
-		gomock.Eq("-v"),
-		gomock.Eq("--type=luks2"),
-		gomock.Eq("--batch-mode"),
-		gomock.Eq("luksOpen"),
-		gomock.Eq(devicePath),
-		gomock.Eq("fake_crypt"),
-	).Return(mockRun)
-	mockRun.EXPECT().SetStdin(gomock.Any()).Return()
-	mockRun.EXPECT().CombinedOutput().Return([]byte{}, fmt.Errorf("error"))
-	ok, err = LuksOpen(mockStat, devicePath, "fake_crypt", passphrase)
-	require.Error(t, err)
-	assert.False(t, ok)
+	t.Run("Opening an already opened volume (idempotency)", func(t *testing.T) {
+		mockStat := mocks.NewMockMounter(mockCtl)
+		mockStat.EXPECT().ExistsPath("/dev/mapper/fake_crypt").Return(true, nil)
+		ok, err := LuksOpen(mockStat, devicePath, "fake_crypt", passphrase)
+		require.NoError(t, err)
+		assert.True(t, ok)
+	})
+
+	t.Run("Failed open", func(t *testing.T) {
+		mockStat := mocks.NewMockMounter(mockCtl)
+		mockRun := mocks.NewMockCmd(mockCtl)
+		mockStat.EXPECT().ExistsPath("/dev/mapper/fake_crypt").Return(false, nil)
+		mockStat.EXPECT().Command(
+			gomock.Eq("cryptsetup"),
+			gomock.Eq("-v"),
+			gomock.Eq("--type=luks2"),
+			gomock.Eq("--batch-mode"),
+			gomock.Eq("luksOpen"),
+			gomock.Eq(devicePath),
+			gomock.Eq("fake_crypt"),
+		).Return(mockRun)
+		mockRun.EXPECT().SetStdin(gomock.Any()).Return()
+		mockRun.EXPECT().CombinedOutput().Return([]byte{}, fmt.Errorf("error"))
+		ok, err := LuksOpen(mockStat, devicePath, "fake_crypt", passphrase)
+		require.Error(t, err)
+		assert.False(t, ok)
+	})
 }
 
 func TestIsLuksMapping(t *testing.T) {

@@ -61,6 +61,9 @@ spec:
             - --endpoint=$(CSI_ENDPOINT)
             - --logtostderr
             - --v={{ .Values.verbosity }}
+          {{- range .Values.node.args }}
+            - {{ . }}
+          {{- end }}
           env:
             - name: CSI_ENDPOINT
               value: unix:/csi/csi.sock

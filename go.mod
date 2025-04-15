@@ -40,7 +40,6 @@ replace (
 require (
 	github.com/aws/aws-sdk-go v1.44.203
 	github.com/container-storage-interface/spec v1.8.0
-	github.com/golang/mock v1.6.0
 	github.com/kubernetes-csi/csi-test/v5 v5.1.0
 	github.com/kubernetes-csi/external-snapshotter/client/v8 v8.0.0
 	github.com/onsi/ginkgo/v2 v2.20.1
@@ -48,6 +47,7 @@ require (
 	github.com/outscale/osc-sdk-go/v2 v2.21.0
 	github.com/rs/xid v1.6.0
 	github.com/stretchr/testify v1.10.0
+	go.uber.org/mock v0.5.1
 	golang.org/x/sys v0.30.0
 	google.golang.org/grpc v1.71.1
 	google.golang.org/protobuf v1.36.4

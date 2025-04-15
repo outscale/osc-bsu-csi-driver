@@ -71,23 +71,25 @@ var (
 
 // nodeService represents the node service of CSI driver
 type nodeService struct {
-	metadata cloud.MetadataService
-	mounter  Mounter
-	inFlight *internal.InFlight
+	driverOptions *DriverOptions
+	metadata      cloud.MetadataService
+	mounter       Mounter
+	inFlight      *internal.InFlight
 }
 
 // newNodeService creates a new node service
 // it panics if failed to create the service
-func newNodeService() nodeService {
+func newNodeService(driverOptions *DriverOptions) nodeService {
 	metadata, err := cloud.NewMetadata()
 	if err != nil {
 		panic(err)
 	}
 
 	return nodeService{
-		metadata: metadata,
-		mounter:  newNodeMounter(),
-		inFlight: internal.NewInFlight(),
+		driverOptions: driverOptions,
+		metadata:      metadata,
+		mounter:       newNodeMounter(),
+		inFlight:      internal.NewInFlight(),
 	}
 }
 
@@ -220,7 +222,7 @@ func (d *nodeService) NodeStageVolume(ctx context.Context, req *csi.NodeStageVol
 		}
 
 		// Open disk
-		if _, err := d.mounter.LuksOpen(source, encryptedDeviceName, passphrase); err != nil {
+		if _, err := d.mounter.LuksOpen(source, encryptedDeviceName, passphrase, d.driverOptions.luksOpenFlags...); err != nil {
 			msg := fmt.Sprintf("error while opening luks device on %v, err: %v", volumeID, err)
 			return nil, status.Error(codes.Internal, msg)
 		}

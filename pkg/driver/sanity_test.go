@@ -367,15 +367,15 @@ func (m *fakeMounter) IsLuks(devicePath string) bool {
 	return false
 }
 
-func (m *fakeMounter) LuksFormat(devicePath string, passphrase string, context luks.LuksContext) error {
+func (m *fakeMounter) LuksFormat(devicePath, passphrase string, context luks.LuksContext) error {
 	return nil
 }
 
-func (m *fakeMounter) CheckLuksPassphrase(devicePath string, passphrase string) error {
+func (m *fakeMounter) CheckLuksPassphrase(devicePath, passphrase string) error {
 	return nil
 }
 
-func (m *fakeMounter) LuksOpen(devicePath string, encryptedDeviceName string, passphrase string) (bool, error) {
+func (m *fakeMounter) LuksOpen(devicePath, encryptedDeviceName, passphrase string, luksOpenFlags ...string) (bool, error) {
 	return true, nil
 }
 

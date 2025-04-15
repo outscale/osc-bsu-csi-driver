@@ -132,6 +132,7 @@ func TestHelmTemplate_Deployment(t *testing.T) {
 			Limits:   nil,
 		}, manager.Resources)
 	})
+
 	t.Run("Resources can be set globally", func(t *testing.T) {
 		dep := getDeployment(t,
 			"enableVolumeResizing=true", "enableVolumeSnapshot=true",
@@ -256,6 +257,7 @@ func TestHelmTemplate_DaemonSet(t *testing.T) {
 			Limits:   nil,
 		}, manager.Resources)
 	})
+
 	t.Run("Resources can be set globally", func(t *testing.T) {
 		dep := getDaemonSet(t,
 			"enableVolumeResizing=true", "enableVolumeSnapshot=true",
@@ -300,4 +302,15 @@ func TestHelmTemplate_DaemonSet(t *testing.T) {
 			}, container.Resources, container.Name)
 		}
 	})
+
+	t.Run("Additional args can be set", func(t *testing.T) {
+		dep := getDaemonSet(t,
+			"node.args={--luks-open-flags=--perf-no_read_workqueue,--luks-open-flags=--perf-no_write_workqueue}",
+		)
+		require.Len(t, dep.Spec.Template.Spec.Containers, 3)
+		assert.Equal(t, []string{
+			"node", "--endpoint=$(CSI_ENDPOINT)", "--logtostderr", "--v=3", "--luks-open-flags=--perf-no_read_workqueue", "--luks-open-flags=--perf-no_write_workqueue"},
+			dep.Spec.Template.Spec.Containers[0].Args)
+	})
+
 }

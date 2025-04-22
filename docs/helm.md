@@ -78,7 +78,7 @@ Kubernetes: `>=1.20`
 | sidecars.attacherImage.securityContext.allowPrivilegeEscalation | bool | `false` |  |
 | sidecars.attacherImage.securityContext.readOnlyRootFilesystem | bool | `true` |  |
 | sidecars.attacherImage.securityContext.seccompProfile.type | string | `"RuntimeDefault"` |  |
-| sidecars.attacherImage.tag | string | `"v4.6.1"` |  |
+| sidecars.attacherImage.tag | string | `"v4.8.1"` |  |
 | sidecars.livenessProbeImage.port | string | `"9808"` | Port of the liveness of the main container |
 | sidecars.livenessProbeImage.repository | string | `"registry.k8s.io/sig-storage/livenessprobe"` |  |
 | sidecars.livenessProbeImage.resources | object | `{}` | Sidecar resources. If not set, the node or top-level resources will be used. |
@@ -94,7 +94,7 @@ Kubernetes: `>=1.20`
 | sidecars.nodeDriverRegistrarImage.securityContext.allowPrivilegeEscalation | bool | `false` |  |
 | sidecars.nodeDriverRegistrarImage.securityContext.readOnlyRootFilesystem | bool | `true` |  |
 | sidecars.nodeDriverRegistrarImage.securityContext.seccompProfile.type | string | `"RuntimeDefault"` |  |
-| sidecars.nodeDriverRegistrarImage.tag | string | `"v2.11.1"` |  |
+| sidecars.nodeDriverRegistrarImage.tag | string | `"v2.12.0"` |  |
 | sidecars.provisionerImage.additionalArgs | list | `[]` |  |
 | sidecars.provisionerImage.additionalClusterRoleRules | string | `nil` |  |
 | sidecars.provisionerImage.enableHttpEndpoint | bool | `false` | Enable http endpoint to get metrics of the container |
@@ -106,7 +106,7 @@ Kubernetes: `>=1.20`
 | sidecars.provisionerImage.securityContext.allowPrivilegeEscalation | bool | `false` |  |
 | sidecars.provisionerImage.securityContext.readOnlyRootFilesystem | bool | `true` |  |
 | sidecars.provisionerImage.securityContext.seccompProfile.type | string | `"RuntimeDefault"` |  |
-| sidecars.provisionerImage.tag | string | `"v5.0.2"` |  |
+| sidecars.provisionerImage.tag | string | `"v5.1.0"` |  |
 | sidecars.resizerImage.additionalArgs | list | `[]` |  |
 | sidecars.resizerImage.additionalClusterRoleRules | string | `nil` | Grant additional permissions to csi-resizer |
 | sidecars.resizerImage.enableHttpEndpoint | bool | `false` | Enable http endpoint to get metrics of the container |
@@ -130,7 +130,7 @@ Kubernetes: `>=1.20`
 | sidecars.snapshotterImage.securityContext.allowPrivilegeEscalation | bool | `false` |  |
 | sidecars.snapshotterImage.securityContext.readOnlyRootFilesystem | bool | `true` |  |
 | sidecars.snapshotterImage.securityContext.seccompProfile.type | string | `"RuntimeDefault"` |  |
-| sidecars.snapshotterImage.tag | string | `"v8.0.1"` |  |
+| sidecars.snapshotterImage.tag | string | `"v8.1.1"` |  |
 | timeout | string | `"60s"` | Timeout for sidecars |
 | tolerations | list | `[{"key":"CriticalAddonsOnly","operator":"Exists"},{"effect":"NoExecute","operator":"Exists","tolerationSeconds":300}]` | Pod tolerations |
 | verbosity | int | `3` | Verbosity level of the plugin |

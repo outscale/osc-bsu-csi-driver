@@ -11,7 +11,7 @@ replace (
 
 require (
 	github.com/aws/aws-sdk-go v1.55.7
-	github.com/container-storage-interface/spec v1.8.0
+	github.com/container-storage-interface/spec v1.11.0
 	github.com/golang/mock v1.6.0
 	github.com/kubernetes-csi/csi-test/v5 v5.1.0
 	github.com/kubernetes-csi/external-snapshotter/client/v8 v8.0.0

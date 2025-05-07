@@ -8,6 +8,8 @@ metadata:
     {{- include "osc-bsu-csi-driver.labels" . | nindent 4 }}
 spec:
   replicas: {{ .Values.replicaCount }}
+  strategy:
+    {{- toYaml .Values.updateStrategy | nindent 4 }}
   selector:
     matchLabels:
       app: osc-csi-controller

@@ -7,3 +7,10 @@ updates:
     target-branch: "master"
     schedule:
       interval: "daily"
+    ignore:
+      - dependency-name: k8s.io/*
+        update-types: [ "version-update:semver-major", "version-update:semver-minor" ]
+      - dependency-name: sigs.k8s.io/*
+        update-types: [ "version-update:semver-major", "version-update:semver-minor" ]
+      - dependency-name: github.com/container-storage-interface/spec
+        update-types: [ "version-update:semver-major", "version-update:semver-minor" ]

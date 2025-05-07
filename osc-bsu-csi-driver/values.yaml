@@ -185,6 +185,11 @@ resources: {}
   #   cpu: 100m
   #   memory: 128Mi
 nodeSelector: {}
+# -- Controller deployment update strategy.
+updateStrategy:
+  type: RollingUpdate
+  rollingUpdate:
+    maxUnavailable: 1
 
 #@ignored
 tolerateAllTaints: true
@@ -196,7 +201,6 @@ tolerations:
     effect: NoExecute
     tolerationSeconds: 300
 
-
 # -- Affinity settings
 affinity: {}
 
@@ -206,7 +210,6 @@ affinity: {}
 #   key2: value2
 # -- Add extra tags on volumes
 extraVolumeTags: {}
-
 # Extra snapshot tags to attach to every created snapshot.
 # extraSnapshotTags:
 #   key1: value1
@@ -242,10 +245,17 @@ node:
     allowPrivilegeEscalation: true  # Ensure privileges can be escalated for volume management if needed
     seccompProfile:
       type: Unconfined     # temporarily disable seccomp restrictions to allow necessary system calls for LUKS volumes
-  # -- Node controller (DaemonSet) resources. If not set, the top-level resources will be used.
+  # -- Node controller DaemonSet resources. If not set, the top-level resources will be used.
   resources: {}
   # -- Node controller command line additional args
   args: []
+  # -- Node controller DaemonSet update strategy
+  updateStrategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 10%
+
 
 serviceAccount:
   controller:

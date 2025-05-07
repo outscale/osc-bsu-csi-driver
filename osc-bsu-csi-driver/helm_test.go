@@ -18,6 +18,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
+	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/apimachinery/pkg/util/yaml"
 	"k8s.io/utils/ptr"
 )
@@ -222,6 +223,22 @@ func TestHelmTemplate_Deployment(t *testing.T) {
 			},
 		}, container.Resources, container.Name)
 	})
+
+	t.Run("strategy can be set", func(t *testing.T) {
+		dep := getDeployment(t,
+			"updateStrategy.type=Recreate",
+			"updateStrategy.rollingUpdate.maxSurge=1",
+			"updateStrategy.rollingUpdate.maxUnavailable=20%",
+		)
+		assert.Equal(t, appsv1.DeploymentStrategy{
+			Type: appsv1.RecreateDeploymentStrategyType,
+			RollingUpdate: &appsv1.RollingUpdateDeployment{
+				MaxSurge:       ptr.To(intstr.FromInt(1)),
+				MaxUnavailable: ptr.To(intstr.FromString("20%")),
+			},
+		},
+			dep.Spec.Strategy)
+	})
 }
 
 func TestHelmTemplate_DaemonSet(t *testing.T) {
@@ -313,4 +330,20 @@ func TestHelmTemplate_DaemonSet(t *testing.T) {
 			dep.Spec.Template.Spec.Containers[0].Args)
 	})
 
+	t.Run("updateStrategy can be set", func(t *testing.T) {
+		dep := getDaemonSet(t,
+			"node.updateStrategy.type=OnDelete",
+			"node.updateStrategy.rollingUpdate.maxSurge=1",
+			"node.updateStrategy.rollingUpdate.maxUnavailable=20%",
+		)
+		require.Len(t, dep.Spec.Template.Spec.Containers, 3)
+		assert.Equal(t, appsv1.DaemonSetUpdateStrategy{
+			Type: appsv1.OnDeleteDaemonSetStrategyType,
+			RollingUpdate: &appsv1.RollingUpdateDaemonSet{
+				MaxSurge:       ptr.To(intstr.FromInt(1)),
+				MaxUnavailable: ptr.To(intstr.FromString("20%")),
+			},
+		},
+			dep.Spec.UpdateStrategy)
+	})
 }

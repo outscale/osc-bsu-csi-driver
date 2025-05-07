@@ -12,9 +12,7 @@ spec:
       app: osc-csi-node
       {{- include "osc-bsu-csi-driver.selectorLabels" . | nindent 6 }}
   updateStrategy:
-    type: RollingUpdate
-    rollingUpdate:
-      maxUnavailable: 1
+    {{- toYaml .Values.node.updateStrategy | nindent 4 }}
   template:
     metadata:
       labels:

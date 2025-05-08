@@ -19,7 +19,7 @@ require (
 	github.com/outscale/osc-sdk-go/v2 v2.26.0
 	github.com/rs/xid v1.6.0
 	github.com/stretchr/testify v1.10.0
-	go.uber.org/mock v0.5.1
+	go.uber.org/mock v0.5.2
 	golang.org/x/sys v0.33.0
 	google.golang.org/grpc v1.71.1
 	google.golang.org/protobuf v1.36.5

@@ -14,55 +14,45 @@ limitations under the License.
 
 package e2e
 
-import (
-	. "github.com/onsi/ginkgo/v2"
-	v1 "k8s.io/api/core/v1"
-	clientset "k8s.io/client-go/kubernetes"
-	"k8s.io/kubernetes/test/e2e/framework"
-	admissionapi "k8s.io/pod-security-admission/api"
+// . "github.com/onsi/ginkgo/v2"
 
-	"github.com/outscale/osc-bsu-csi-driver/tests/e2e/driver"
-	"github.com/outscale/osc-bsu-csi-driver/tests/e2e/testsuites"
+// This test requires kubelet to have the unauthenticated read-only port (tcp/10255) enabled, and it is disabled by default.
+// Activating this test would require to enable the unauthenticated port.
+// var _ = Describe("[bsu-csi-e2e] [single-az] Stats", func() {
+// 	f := framework.NewDefaultFramework("bsu")
+// 	f.NamespacePodSecurityEnforceLevel = admissionapi.LevelPrivileged
 
-	osccloud "github.com/outscale/osc-bsu-csi-driver/pkg/cloud"
-	bsucsidriver "github.com/outscale/osc-bsu-csi-driver/pkg/driver"
-)
+// 	var (
+// 		cs        clientset.Interface
+// 		ns        *v1.Namespace
+// 		bsuDriver driver.PVTestDriver
+// 	)
 
-var _ = Describe("[bsu-csi-e2e] [single-az] Stats", func() {
-	f := framework.NewDefaultFramework("bsu")
-	f.NamespacePodSecurityEnforceLevel = admissionapi.LevelPrivileged
+// 	BeforeEach(func() {
+// 		cs = f.ClientSet
+// 		ns = f.Namespace
+// 		bsuDriver = driver.InitBsuCSIDriver()
+// 	})
 
-	var (
-		cs        clientset.Interface
-		ns        *v1.Namespace
-		bsuDriver driver.PVTestDriver
-	)
-
-	BeforeEach(func() {
-		cs = f.ClientSet
-		ns = f.Namespace
-		bsuDriver = driver.InitBsuCSIDriver()
-	})
-
-	It("Check stats of a volume created from a deployment object, write and read to it", func() {
-		pod := testsuites.PodDetails{
-			Cmd: "truncate -s 10000 /mnt/test-1/data && sleep 10 ; while true; do echo running ; sleep 1; done",
-			Volumes: []testsuites.VolumeDetails{
-				{
-					VolumeType: osccloud.VolumeTypeGP2,
-					FSType:     bsucsidriver.FSTypeExt3,
-					ClaimSize:  driver.MinimumSizeForVolumeType(osccloud.VolumeTypeGP2),
-					VolumeMount: testsuites.VolumeMountDetails{
-						NameGenerate:      "test-volume-",
-						MountPathGenerate: "/mnt/test-",
-					},
-				},
-			},
-		}
-		test := testsuites.DynamicallyProvisionedStatsPodTest{
-			CSIDriver: bsuDriver,
-			Pod:       pod,
-		}
-		test.Run(cs, ns, f)
-	})
-})
+// 	It("Check stats of a volume created from a deployment object, write and read to it", func() {
+// 		pod := testsuites.PodDetails{
+// 			Cmd: "truncate -s 10000 /mnt/test-1/data && sleep 10 ; while true; do echo running ; sleep 1; done",
+// 			Volumes: []testsuites.VolumeDetails{
+// 				{
+// 					VolumeType: osccloud.VolumeTypeGP2,
+// 					FSType:     bsucsidriver.FSTypeExt3,
+// 					ClaimSize:  driver.MinimumSizeForVolumeType(osccloud.VolumeTypeGP2),
+// 					VolumeMount: testsuites.VolumeMountDetails{
+// 						NameGenerate:      "test-volume-",
+// 						MountPathGenerate: "/mnt/test-",
+// 					},
+// 				},
+// 			},
+// 		}
+// 		test := testsuites.DynamicallyProvisionedStatsPodTest{
+// 			CSIDriver: bsuDriver,
+// 			Pod:       pod,
+// 		}
+// 		test.Run(cs, ns, f)
+// 	})
+// })

@@ -20,11 +20,11 @@ jobs:
     steps:
     - name: ⬇️ Checkout repository
       uses: actions/checkout@v4
-    - name: ⬇️ Checkout RKE
+    - name: ⬇️ Checkout CAPOSC
       uses: actions/checkout@v4
       with:
-        repository: 'outscale/osc-k8s-rke-cluster'
-        path: "set-up-rke-cluster"
+        repository: 'outscale/cluster-api-provider-outscale'
+        path: "cluster-api-provider-outscale"
     - name: 🔐 Set ak/sk name based on runner region
       run: .github/scripts/runneraksk.sh
     - name: ⬇️ Install kubectl
@@ -45,63 +45,48 @@ jobs:
         access_key: ${{ secrets[env.OSC_ACCESS_KEY_NAME] }}
         secret_key: ${{ secrets[env.OSC_SECRET_KEY_NAME] }}
         region: ${{ env.OSC_REGION }}
-    - name: 👷 Deploy Cluster
-      uses: outscale/osc-k8s-rke-cluster/github_actions/deploy_cluster@master
+    - name: 👷 Deploy test cluster
+      id: caposc
+      uses: outscale/cluster-api-provider-outscale/github_actions/deploy_cluster@main
       with:
-        repository_folder: "set-up-rke-cluster"
-        osc_access_key: ${{ secrets[env.OSC_ACCESS_KEY_NAME] }}
-        osc_secret_key: ${{ secrets[env.OSC_SECRET_KEY_NAME] }}
-        osc_region: ${{ env.OSC_REGION }}
-        image_id: ${{ vars[env.OMI_ID_NAME] }}
-        rke_version: ${{ vars.RKE_VERSION_E2E }}
-        kubernetes_version: ${{ vars.K8S_VERSION_E2E }}
-    - name: ⏱️ Wait to access the cluster
-      uses: nick-invision/retry@v3
-      with:
-        timeout_seconds: 60
-        max_attempts: 10
-        command: kubectl get nodes
-      env:
-        KUBECONFIG: set-up-rke-cluster/rke/kube_config_cluster.yml
-    - name: 👷 Deploy Docker-registry into cluster
-      run: |
-        ansible-playbook addons/docker-registry/playbook.yaml
-        ./addons/docker-registry/start_port_forwarding.sh &
-      env:
-        KUBECONFIG: rke/kube_config_cluster.yml
-        ANSIBLE_CONFIG: ansible.cfg
-      working-directory: set-up-rke-cluster
+        RUNNER_NAME: ${{ runner.name }}
+        OKS_ACCESS_KEY: ${{ secrets.OKS_ACCESS_KEY }}
+        OKS_SECRET_KEY: ${{ secrets.OKS_SECRET_KEY }}
+        OKS_REGION: ${{ vars.OKS_REGION }}
+        OSC_ACCESS_KEY: ${{ secrets[env.OSC_ACCESS_KEY_NAME] }}
+        OSC_SECRET_KEY: ${{ secrets[env.OSC_SECRET_KEY_NAME] }}
+        OSC_REGION: ${{ env.OSC_REGION }}
+        CLUSTER_NAME: "csi"
+        IMAGE_NAME: ${{ vars[env.IMG_MANAGEMENT_NAME] }}
+        CCM: true
     - name: 📦 Build & Push the Docker image
       run: |
+        docker login ${{ vars.REGISTRY }} -u admin -p ${{ secrets.HARBOR_ADMIN_PASSWORD }}
         make buildx-image image-tag image-push
-        docker image prune -a -f
       env:
-        REGISTRY_IMAGE: localhost:4242/csi
+        REGISTRY_IMAGE: "${{ vars.REGISTRY }}/outscale/csi"
         IMAGE_TAG: ${{ github.sha }}
         REGISTRY_TAG: ${{ github.sha }}
-    - name: 🔎 Retrieve NodePort ip/port
-      run: |
-        echo nodeport_port=$(kubectl get --namespace default -o jsonpath="{.spec.ports[0].nodePort}" services docker-registry) >> $GITHUB_ENV
-        echo nodeport_ip=$(kubectl get nodes --namespace default -o jsonpath="{.items[0].status.addresses[0].address}")  >> $GITHUB_ENV
-      env:
-        KUBECONFIG: set-up-rke-cluster/rke/kube_config_cluster.yml
     - name: 👷 Install CSI
       run: |
-        kubectl apply -f set-up-rke-cluster/addons/csi/secrets.yaml
+        kubectl create secret generic osc-csi-bsu --from-literal=access_key=$OSC_ACCESS_KEY --from-literal=secret_key=$OSC_SECRET_KEY -n kube-system
         kubectl apply -f https://raw.githubusercontent.com/kubernetes-csi/external-snapshotter/release-8.0/client/config/crd/snapshot.storage.k8s.io_volumesnapshotclasses.yaml
         kubectl apply -f https://raw.githubusercontent.com/kubernetes-csi/external-snapshotter/release-8.0/client/config/crd/snapshot.storage.k8s.io_volumesnapshotcontents.yaml
         kubectl apply -f https://raw.githubusercontent.com/kubernetes-csi/external-snapshotter/release-8.0/client/config/crd/snapshot.storage.k8s.io_volumesnapshots.yaml
         kubectl apply -f https://raw.githubusercontent.com/kubernetes-csi/external-snapshotter/release-8.0/deploy/kubernetes/snapshot-controller/rbac-snapshot-controller.yaml
         kubectl apply -f https://raw.githubusercontent.com/kubernetes-csi/external-snapshotter/release-8.0/deploy/kubernetes/snapshot-controller/setup-snapshot-controller.yaml
-        TARGET_IMAGE=${nodeport_ip}:${nodeport_port}/csi TARGET_TAG=$IMAGE_TAG make helm_deploy 
+        make helm_deploy 
       env:
-        KUBECONFIG: set-up-rke-cluster/rke/kube_config_cluster.yml
+        KUBECONFIG: "${{ github.workspace }}/${{ steps.caposc.outputs.KUBECONFIG }}"
+        OSC_ACCESS_KEY: ${{ secrets[env.OSC_ACCESS_KEY_NAME] }}
+        OSC_SECRET_KEY: ${{ secrets[env.OSC_SECRET_KEY_NAME] }}
         OSC_REGION: ${{ env.OSC_REGION}}
-        IMAGE_TAG: ${{ github.sha }}
+        TARGET_IMAGE: "${{ vars.REGISTRY }}/outscale/csi"
+        TARGET_TAG: ${{ github.sha }}
     - name: 🧪 Run e2e tests
       run: make test-e2e
       env:
-        KUBECONFIG: ${{ github.workspace }}/set-up-rke-cluster/rke/kube_config_cluster.yml
+        KUBECONFIG: "${{ github.workspace }}/${{ steps.caposc.outputs.KUBECONFIG }}"
         OSC_ACCESS_KEY: ${{ secrets[env.OSC_ACCESS_KEY_NAME] }}
         OSC_SECRET_KEY: ${{ secrets[env.OSC_SECRET_KEY_NAME] }}
         OSC_REGION: ${{ env.OSC_REGION }}

@@ -52,7 +52,7 @@ func TestE2E(t *testing.T) {
 	// Run tests through the Ginkgo runner with output to console + JUnit for Jenkins
 	var r []Reporter
 	if framework.TestContext.ReportDir != "" {
-		if err := os.MkdirAll(framework.TestContext.ReportDir, 0755); err != nil {
+		if err := os.MkdirAll(framework.TestContext.ReportDir, 0750); err != nil {
 			log.Fatalf("Failed creating report directory: %v", err)
 		}
 	}

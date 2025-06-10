@@ -344,6 +344,11 @@ func (c *cloud) CreateDisk(ctx context.Context, volumeName string, diskOptions *
 		iops       int32
 		request    osc.CreateVolumeRequest
 	)
+
+	if volumeName != "" {
+		request.SetClientToken(volumeName)
+	}
+
 	capacityGiB := util.BytesToGiB(diskOptions.CapacityBytes)
 	request.SetSize(capacityGiB)
 
@@ -377,9 +382,7 @@ func (c *cloud) CreateDisk(ctx context.Context, volumeName string, diskOptions *
 
 	resourceTag := make([]osc.ResourceTag, 0, len(diskOptions.Tags))
 	for key, value := range diskOptions.Tags {
-		copiedKey := key
-		copiedValue := value
-		resourceTag = append(resourceTag, osc.ResourceTag{Key: copiedKey, Value: copiedValue})
+		resourceTag = append(resourceTag, osc.ResourceTag{Key: key, Value: value})
 	}
 
 	zone := diskOptions.AvailabilityZone
@@ -658,11 +661,16 @@ func (c *cloud) IsExistInstance(ctx context.Context, nodeID string) bool {
 }
 
 func (c *cloud) CreateSnapshot(ctx context.Context, volumeID string, snapshotOptions *SnapshotOptions) (snapshot Snapshot, err error) {
-	descriptions := "Created by Outscale BSU CSI driver for volume " + volumeID
+	description := "Created by Outscale BSU CSI driver for volume " + volumeID
 
 	request := osc.CreateSnapshotRequest{
 		VolumeId:    &volumeID,
-		Description: &descriptions,
+		Description: &description,
+	}
+
+	name := snapshotOptions.Tags[SnapshotNameTagKey]
+	if name != "" {
+		request.ClientToken = &name
 	}
 
 	var res osc.CreateSnapshotResponse

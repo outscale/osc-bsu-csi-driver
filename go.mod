@@ -3,9 +3,9 @@ module github.com/outscale/osc-bsu-csi-driver
 go 1.23.7
 
 replace (
-	k8s.io/api => k8s.io/api v0.30.12
-	k8s.io/apimachinery => k8s.io/apimachinery v0.30.12
-	k8s.io/client-go => k8s.io/client-go v0.30.12
+	k8s.io/api => k8s.io/api v0.30.13
+	k8s.io/apimachinery => k8s.io/apimachinery v0.30.13
+	k8s.io/client-go => k8s.io/client-go v0.30.13
 	k8s.io/component-base => k8s.io/component-base v0.31.0-alpha.2 // HACK: Workaround https://github.com/kubernetes/kubernetes/issues/124687 by using alpha tag
 )
 
@@ -16,7 +16,7 @@ require (
 	github.com/kubernetes-csi/external-snapshotter/client/v8 v8.0.0
 	github.com/onsi/ginkgo/v2 v2.23.4
 	github.com/onsi/gomega v1.36.3
-	github.com/outscale/osc-sdk-go/v2 v2.26.0
+	github.com/outscale/osc-sdk-go/v2 v2.27.0
 	github.com/rs/xid v1.6.0
 	github.com/stretchr/testify v1.10.0
 	go.uber.org/mock v0.5.2
@@ -28,7 +28,7 @@ require (
 	k8s.io/client-go v0.31.0-alpha.2
 	k8s.io/component-base v0.30.13
 	k8s.io/klog/v2 v2.130.1
-	k8s.io/kubernetes v1.30.12
+	k8s.io/kubernetes v1.30.13
 	k8s.io/mount-utils v0.30.13
 	k8s.io/pod-security-admission v0.30.13
 	k8s.io/utils v0.0.0-20240711033017-18e509b52bc8
@@ -110,7 +110,7 @@ require (
 	golang.org/x/crypto v0.38.0 // indirect
 	golang.org/x/exp v0.0.0-20240719175910-8a7402abbf56 // indirect
 	golang.org/x/net v0.40.0 // indirect
-	golang.org/x/oauth2 v0.29.0 // indirect
+	golang.org/x/oauth2 v0.30.0 // indirect
 	golang.org/x/sync v0.14.0 // indirect
 	golang.org/x/term v0.32.0 // indirect
 	golang.org/x/text v0.25.0 // indirect

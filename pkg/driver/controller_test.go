@@ -700,9 +700,9 @@ func TestCreateVolume(t *testing.T) {
 		volumeResponse, err := oscDriver.CreateVolume(ctx, req)
 		require.NoError(t, err)
 		assert.Equal(t, "true", volumeResponse.GetVolume().VolumeContext[EncryptedKey])
-		assert.Equal(t, "", volumeResponse.GetVolume().VolumeContext[LuksCipherKey])
-		assert.Equal(t, "", volumeResponse.GetVolume().VolumeContext[LuksHashKey])
-		assert.Equal(t, "", volumeResponse.GetVolume().VolumeContext[LuksKeySizeKey])
+		assert.Empty(t, volumeResponse.GetVolume().VolumeContext[LuksCipherKey])
+		assert.Empty(t, volumeResponse.GetVolume().VolumeContext[LuksHashKey])
+		assert.Empty(t, volumeResponse.GetVolume().VolumeContext[LuksKeySizeKey])
 	})
 	t.Run("success with volume encryption with parameters", func(t *testing.T) {
 		req := &csi.CreateVolumeRequest{

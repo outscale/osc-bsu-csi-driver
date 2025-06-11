@@ -34,7 +34,7 @@ import (
 
 const (
 	defaultDiskSize   = 4
-	defaultVoluemType = osccloud.VolumeTypeGP2
+	defaultVolumeType = osccloud.VolumeTypeGP2
 
 	awsAvailabilityZonesEnv = "AWS_AVAILABILITY_ZONES"
 
@@ -76,7 +76,7 @@ var _ = Describe("[bsu-csi-e2e] [single-az] Pre-Provisioned", func() {
 
 		diskOptions := &osccloud.DiskOptions{
 			CapacityBytes:    defaultDiskSizeBytes,
-			VolumeType:       defaultVoluemType,
+			VolumeType:       defaultVolumeType,
 			AvailabilityZone: availabilityZone,
 			Tags:             map[string]string{osccloud.VolumeNameTagKey: dummyVolumeName},
 		}

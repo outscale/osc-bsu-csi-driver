@@ -404,7 +404,7 @@ func TestGetDiskByName(t *testing.T) {
 				if tc.snapshotId != nil {
 					assert.Equal(t, *tc.snapshotId, disk.SnapshotID)
 				} else {
-					assert.Equal(t, "", disk.SnapshotID)
+					assert.Empty(t, disk.SnapshotID)
 				}
 			}
 
@@ -475,7 +475,7 @@ func TestGetDiskByID(t *testing.T) {
 				if tc.snapshotId != nil {
 					assert.Equal(t, *tc.snapshotId, disk.SnapshotID)
 				} else {
-					assert.Equal(t, "", disk.SnapshotID)
+					assert.Empty(t, disk.SnapshotID)
 				}
 			}
 

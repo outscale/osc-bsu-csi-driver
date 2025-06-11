@@ -308,6 +308,11 @@ func (c *cloud) CreateDisk(ctx context.Context, volumeName string, diskOptions *
 		iops       int64
 		request    osc.CreateVolumeRequest
 	)
+
+	if volumeName != "" {
+		request.SetClientToken(volumeName)
+	}
+
 	capacityGiB := util.BytesToGiB(diskOptions.CapacityBytes)
 	request.SetSize(int32(capacityGiB))
 
@@ -722,6 +727,11 @@ func (c *cloud) CreateSnapshot(ctx context.Context, volumeID string, snapshotOpt
 	request := osc.CreateSnapshotRequest{
 		VolumeId:    &volumeID,
 		Description: &descriptions,
+	}
+
+	name := snapshotOptions.Tags[SnapshotNameTagKey]
+	if name != "" {
+		request.ClientToken = &name
 	}
 
 	klog.Infof("Debug request := CreateSnapshotInput %+v  \n", request)

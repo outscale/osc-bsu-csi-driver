@@ -11,8 +11,8 @@ replace (
 
 require (
 	github.com/aws/aws-sdk-go v1.55.7
-	github.com/container-storage-interface/spec v1.8.0
-	github.com/kubernetes-csi/csi-test/v5 v5.1.0
+	github.com/container-storage-interface/spec v1.10.0
+	github.com/kubernetes-csi/csi-test/v5 v5.3.1
 	github.com/kubernetes-csi/external-snapshotter/client/v8 v8.0.0
 	github.com/onsi/ginkgo/v2 v2.23.4
 	github.com/onsi/gomega v1.36.3
@@ -58,6 +58,7 @@ require (
 	github.com/go-task/slim-sprig/v3 v3.0.0 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
+	github.com/golang/mock v1.6.0 // indirect
 	github.com/golang/protobuf v1.5.4 // indirect
 	github.com/google/cel-go v0.17.8 // indirect
 	github.com/google/gnostic-models v0.6.8 // indirect

@@ -28,7 +28,7 @@ require (
 	k8s.io/client-go v0.31.0-alpha.2
 	k8s.io/component-base v0.30.13
 	k8s.io/klog/v2 v2.130.1
-	k8s.io/kubernetes v1.30.13
+	k8s.io/kubernetes v1.30.14
 	k8s.io/mount-utils v0.30.13
 	k8s.io/pod-security-admission v0.30.13
 	k8s.io/utils v0.0.0-20240711033017-18e509b52bc8

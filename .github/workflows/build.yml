@@ -25,7 +25,7 @@ jobs:
       uses: golangci/golangci-lint-action@v8
       with:
         version: v2.1.6
-        args: --timeout=600s
+        args: --timeout=300s
         only-new-issues: true
   unit-test:
     runs-on: ubuntu-22.04

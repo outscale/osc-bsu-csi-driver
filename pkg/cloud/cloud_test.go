@@ -546,6 +546,7 @@ func TestCreateSnapshot(t *testing.T) {
 			} else {
 				require.NoError(t, err)
 				assert.Equal(t, tc.expSnapshot.SourceVolumeID, snapshot.SourceVolumeID)
+				assert.True(t, snapshot.IsReadyToUse())
 			}
 
 			mockCtrl.Finish()

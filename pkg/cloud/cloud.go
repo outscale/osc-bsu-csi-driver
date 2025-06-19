@@ -713,13 +713,12 @@ func (c *cloud) CreateSnapshot(ctx context.Context, volumeID string, snapshotOpt
 	if waitErr != nil {
 		return Snapshot{}, fmt.Errorf("unable to add tags: %w", waitErr)
 	}
-
-	err = c.waitForSnapshot(ctx, *res.GetSnapshot().SnapshotId)
+	snap, err := c.waitForSnapshot(ctx, *res.GetSnapshot().SnapshotId)
 	if err != nil {
 		return Snapshot{}, fmt.Errorf("wait error: %w", err)
 	}
 
-	return c.oscSnapshotResponseToStruct(res.GetSnapshot()), nil
+	return c.oscSnapshotResponseToStruct(snap), nil
 }
 
 func (c *cloud) DeleteSnapshot(ctx context.Context, snapshotID string) (success bool, err error) {
@@ -745,7 +744,7 @@ func (c *cloud) DeleteSnapshot(ctx context.Context, snapshotID string) (success 
 }
 
 // waitForSnapshot waits for a snapshot to be in the "completed" state.
-func (c *cloud) waitForSnapshot(ctx context.Context, snapshotID string) error {
+func (c *cloud) waitForSnapshot(ctx context.Context, snapshotID string) (osc.Snapshot, error) {
 	logger := klog.FromContext(ctx)
 	logger.V(4).Info("Waiting for snapshot to be completed")
 	start := time.Now()
@@ -755,8 +754,9 @@ func (c *cloud) waitForSnapshot(ctx context.Context, snapshotID string) error {
 			SnapshotIds: &[]string{snapshotID},
 		},
 	}
+	var snap osc.Snapshot
 	testVolume := func(ctx context.Context) (done bool, err error) {
-		snap, err := c.getSnapshot(ctx, request, false)
+		snap, err = c.getSnapshot(ctx, request, false)
 		if err != nil {
 			logger.V(4).Error(err, "cannot check state")
 			return true, nil
@@ -773,9 +773,9 @@ func (c *cloud) waitForSnapshot(ctx context.Context, snapshotID string) error {
 	err := wait.PollUntilContextCancel(ctx, 2*time.Second, false, testVolume)
 	logger.V(4).Info("End of wait", "success", err == nil, "duration", time.Since(start))
 	if err != nil {
-		return fmt.Errorf("unable to wait for snapshot: %w", err)
+		return snap, fmt.Errorf("unable to wait for snapshot: %w", err)
 	}
-	return nil
+	return snap, nil
 }
 
 func (c *cloud) GetSnapshotByName(ctx context.Context, name string) (snapshot Snapshot, err error) {

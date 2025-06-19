@@ -22,10 +22,10 @@ jobs:
     - name: Docker lint
       run: bash -c "make dockerlint"
     - name: golangci-lint
-      uses: golangci/golangci-lint-action@v6
+      uses: golangci/golangci-lint-action@v8
       with:
-        version: v1.63
-        args: --timeout=300s
+        version: v2.1.6
+        args: --timeout=600s
         only-new-issues: true
   unit-test:
     runs-on: ubuntu-22.04

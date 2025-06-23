@@ -51,8 +51,9 @@ func TestSanity(t *testing.T) {
 				Region:           "region",
 				AvailabilityZone: "az",
 			},
-			mounter:  newFakeMounter(),
-			inFlight: internal.NewInFlight(),
+			maxVolumes: 39,
+			mounter:    newFakeMounter(),
+			inFlight:   internal.NewInFlight(),
 		},
 	}
 	defer func() {

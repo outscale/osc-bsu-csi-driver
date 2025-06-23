@@ -22,6 +22,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"slices"
 	"strconv"
 	"strings"
 
@@ -51,9 +52,9 @@ const (
 	// default file system type to be used when it is not provided
 	defaultFsType = FSTypeXfs
 
-	// defaultMaxBSUVolumes is the maximum number of volumes that an OSC instance can have attached.
+	// defaultMaxBSUVolumes is the maximum number of volumes that an OSC instance can have attached, including root volume.
 	// https://docs.outscale.com/en/userguide/About-Volumes.html#_volumes_and_instances
-	defaultMaxBSUVolumes = 39
+	defaultMaxBSUVolumes = 40
 )
 
 var (
@@ -74,6 +75,7 @@ type nodeService struct {
 	driverOptions *DriverOptions
 	metadata      cloud.MetadataService
 	mounter       Mounter
+	maxVolumes    int64
 	inFlight      *internal.InFlight
 
 	csi.UnimplementedNodeServer
@@ -86,13 +88,18 @@ func newNodeService(driverOptions *DriverOptions) nodeService {
 	if err != nil {
 		panic(err)
 	}
-
-	return nodeService{
+	srv := nodeService{
 		driverOptions: driverOptions,
 		metadata:      metadata,
 		mounter:       newNodeMounter(),
 		inFlight:      internal.NewInFlight(),
 	}
+	maxVols, err := srv.getVolumesLimit()
+	if err != nil {
+		panic(err)
+	}
+	srv.maxVolumes = maxVols
+	return srv
 }
 
 func (d *nodeService) NodeStageVolume(ctx context.Context, req *csi.NodeStageVolumeRequest) (*csi.NodeStageVolumeResponse, error) {
@@ -582,10 +589,9 @@ func (d *nodeService) NodeGetInfo(ctx context.Context, req *csi.NodeGetInfoReque
 	topology := &csi.Topology{
 		Segments: map[string]string{TopologyKey: d.metadata.GetAvailabilityZone()},
 	}
-
 	return &csi.NodeGetInfoResponse{
 		NodeId:             d.metadata.GetInstanceID(),
-		MaxVolumesPerNode:  d.getVolumesLimit(),
+		MaxVolumesPerNode:  d.maxVolumes,
 		AccessibleTopology: topology,
 	}, nil
 }
@@ -758,17 +764,38 @@ func findScsiVolume(findName string) (device string, err error) {
 	return resolved, nil
 }
 
-// getVolumesLimit returns the limit of volumes that the node supports
-func (d *nodeService) getVolumesLimit() int64 {
+// getVolumesLimit returns the limit of volumes that the node can mount (40 - OS mounted devices, including root device)
+func (d *nodeService) getVolumesLimit() (int64, error) {
+	maxVolumes := getEnvMaxVolume()
+	if maxVolumes > 0 {
+		return maxVolumes, nil
+	}
+	mounts, err := d.mounter.List()
+	if err != nil {
+		return -1, fmt.Errorf("unable to list mounts: %w", err)
+	}
+	var kvolumes []string
+	for _, m := range mounts {
+		if !strings.HasPrefix(m.Device, "/dev/") || !strings.HasPrefix(m.Path, "/var/lib/kubelet/") {
+			continue
+		}
+		if !slices.Contains(kvolumes, m.Device) {
+			kvolumes = append(kvolumes, m.Device)
+		}
+	}
+	return defaultMaxBSUVolumes - int64(len(d.metadata.GetMountedDevices())-len(kvolumes)), nil
+}
+
+func getEnvMaxVolume() int64 {
 	value := os.Getenv("MAX_BSU_VOLUMES")
 	if value == "" {
-		return defaultMaxBSUVolumes
+		return -1
 	}
-	max_value, err := strconv.Atoi(value)
+	maxValue, err := strconv.Atoi(value)
 	if err != nil {
-		return defaultMaxBSUVolumes
+		return -1
 	}
-	return int64(max_value)
+	return int64(maxValue)
 }
 
 // hasMountOption returns a boolean indicating whether the given

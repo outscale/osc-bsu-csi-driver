@@ -51,6 +51,8 @@ type Driver struct {
 
 	srv     *grpc.Server
 	options *DriverOptions
+
+	csi.UnimplementedIdentityServer
 }
 
 type DriverOptions struct {

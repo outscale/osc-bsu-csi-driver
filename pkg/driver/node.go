@@ -75,6 +75,8 @@ type nodeService struct {
 	metadata      cloud.MetadataService
 	mounter       Mounter
 	inFlight      *internal.InFlight
+
+	csi.UnimplementedNodeServer
 }
 
 // newNodeService creates a new node service
@@ -823,3 +825,5 @@ func (d *nodeService) checkMountTarget(ctx context.Context, target string) (bool
 
 	return !notMnt, nil
 }
+
+var _ csi.NodeServer = (*nodeService)(nil)

@@ -20,6 +20,7 @@ import (
 	"context"
 	"errors"
 	"os"
+	"slices"
 	"strconv"
 	"strings"
 
@@ -33,14 +34,9 @@ import (
 )
 
 var (
-	// volumeCaps represents how the volume could be accessed.
-	// It is SINGLE_NODE_WRITER since BSU volume could only be
-	// attached to a single node at any given time.
-	volumeCaps = []csi.VolumeCapability_AccessMode{
-		{
-			Mode: csi.VolumeCapability_AccessMode_SINGLE_NODE_WRITER,
-		},
-	}
+	// supportedVolumeModes is the list of supported access modes (SINGLE_NODE_WRITER).
+	// BSU volumes can only be attached to a single node at any given time.
+	supportedVolumeModes = []csi.VolumeCapability_AccessMode_Mode{csi.VolumeCapability_AccessMode_SINGLE_NODE_WRITER}
 
 	// controllerCaps represents the capability of controller service
 	controllerCaps = []csi.ControllerServiceCapability_RPC_Type{
@@ -56,6 +52,8 @@ var (
 type controllerService struct {
 	cloud         cloud.Cloud
 	driverOptions *DriverOptions
+
+	csi.UnimplementedControllerServer
 }
 
 var (
@@ -324,14 +322,6 @@ func (d *controllerService) ControllerGetCapabilities(ctx context.Context, req *
 	return &csi.ControllerGetCapabilitiesResponse{Capabilities: caps}, nil
 }
 
-func (d *controllerService) GetCapacity(ctx context.Context, req *csi.GetCapacityRequest) (*csi.GetCapacityResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "")
-}
-
-func (d *controllerService) ListVolumes(ctx context.Context, req *csi.ListVolumesRequest) (*csi.ListVolumesResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "")
-}
-
 func (d *controllerService) ValidateVolumeCapabilities(ctx context.Context, req *csi.ValidateVolumeCapabilitiesRequest) (*csi.ValidateVolumeCapabilitiesResponse, error) {
 	volumeID := req.GetVolumeId()
 	if volumeID == "" {
@@ -385,22 +375,12 @@ func (d *controllerService) ControllerExpandVolume(ctx context.Context, req *csi
 }
 
 func isValidVolumeCapabilities(volCaps []*csi.VolumeCapability) bool {
-	hasSupport := func(cap *csi.VolumeCapability) bool {
-		for _, c := range volumeCaps {
-			if c.GetMode() == cap.AccessMode.GetMode() {
-				return true
-			}
-		}
-		return false
-	}
-
-	foundAll := true
 	for _, c := range volCaps {
-		if !hasSupport(c) {
-			foundAll = false
+		if !slices.Contains(supportedVolumeModes, c.GetAccessMode().GetMode()) {
+			return false
 		}
 	}
-	return foundAll
+	return true
 }
 
 func (d *controllerService) CreateSnapshot(ctx context.Context, req *csi.CreateSnapshotRequest) (*csi.CreateSnapshotResponse, error) {
@@ -601,6 +581,4 @@ func getVolSizeBytes(req *csi.CreateVolumeRequest) (int64, error) {
 	return volSizeBytes, nil
 }
 
-func (d *controllerService) ControllerGetVolume(ctx context.Context, req *csi.ControllerGetVolumeRequest) (*csi.ControllerGetVolumeResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "")
-}
+var _ csi.ControllerServer = (*controllerService)(nil)

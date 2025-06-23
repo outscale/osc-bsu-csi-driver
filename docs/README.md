@@ -12,12 +12,13 @@ The Outscale Block Storage Unit Container Storage Interface (CSI) Driver provide
 
 ## CSI Specification Compability Matrix
 
-| Plugin Version   | Compatible with CSI Version                                                       | Min K8s Version | Recommended K8s Version |
-| ---------------- | --------------------------------------------------------------------------------- | --------------- | ----------------------- |
-| <= v0.0.14beta   | [v1.3.0](https://github.com/container-storage-interface/spec/releases/tag/v1.3.0) | 1.16            | 1.22                    |
-| v0.0.15          | [v1.5.0](https://github.com/container-storage-interface/spec/releases/tag/v1.5.0) | 1.20            | 1.23                    |
-| v0.1.0 -  v1.3.0 | [v1.5.0](https://github.com/container-storage-interface/spec/releases/tag/v1.5.0) | 1.20            | 1.23                    |
-| v0.1.0 -  v1.6.X | [v1.8.0](https://github.com/container-storage-interface/spec/releases/tag/v1.8.0) | 1.20            | 1.30                    |
+| Plugin Version  | Compatible with CSI Version                                                         | Min K8s Version | Recommended K8s Version |
+| ---------------- | ---------------------------------------------------------------------------------- | --------------- | ----------------------- |
+| <= v0.0.14beta  | [v1.3.0](https://github.com/container-storage-interface/spec/releases/tag/v1.3.0)   | 1.16            | 1.22                    |
+| v0.0.15         | [v1.5.0](https://github.com/container-storage-interface/spec/releases/tag/v1.5.0)   | 1.20            | 1.23                    |
+| v0.1.0 - v1.3.0 | [v1.5.0](https://github.com/container-storage-interface/spec/releases/tag/v1.5.0)   | 1.20            | 1.23                    |
+| v0.1.0 - v1.6.X | [v1.8.0](https://github.com/container-storage-interface/spec/releases/tag/v1.8.0)   | 1.20            | 1.30                    |
+| v1.7.X -        | [v1.10.0](https://github.com/container-storage-interface/spec/releases/tag/v1.10.0) | 1.20            | 1.30                    |
 
 ## Features
 

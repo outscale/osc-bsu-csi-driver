@@ -18,10 +18,11 @@ jobs:
   lint:
     runs-on: ubuntu-22.04
     steps:
-    - uses: actions/checkout@v4
-    - name: Docker lint
+    - name: ⬇️ Checkout repository
+      uses: actions/checkout@v4
+    - name: 🔎 Docker lint
       run: bash -c "make dockerlint"
-    - name: golangci-lint
+    - name: 🔎 golangci-lint
       uses: golangci/golangci-lint-action@v8
       with:
         version: v2.1.6
@@ -30,29 +31,35 @@ jobs:
   unit-test:
     runs-on: ubuntu-22.04
     steps:
-    - uses: actions/checkout@v4
-    - uses: actions/setup-go@v5
+    - name: ⬇️ Checkout repository
+      uses: actions/checkout@v4
+    - name: ⬇️ Install Go
+      uses: actions/setup-go@v5
       with:
         go-version-file: 'go.mod'
-    - name: Test
-      run: bash -c "make test"
+    - name: 🧪 Test
+      run: make test
+    - name: 🧪 Sanity test
+      run: make test-sanity
   docs:
     runs-on: ubuntu-22.04
     steps:
-    - uses: actions/checkout@v4
-    - name: Check docs
+    - name: ⬇️ Checkout repository
+      uses: actions/checkout@v4
+    - name: 🔎 Check docs
       run: bash -c "make check-helm-docs"
   trivy:
     runs-on: ubuntu-22.04
     steps:
-    - uses: actions/checkout@v4
-    - name: Image
+    - name: ⬇️ Checkout repository
+      uses: actions/checkout@v4
+    - name: 📦 Build image
       run: bash -c "make build-image"
-    - name: Trivy-Scan
+    - name: 🔎 Trivy-Scan
       run: bash -c "make trivy-scan"
-    - name: Trivy-Ignore-Check
+    - name: 🔎 Trivy-Ignore-Check
       run: bash -c "make trivy-ignore-check"
-    - name: Upload Scan if errors
+    - name: ⬆️ Upload result
       if: ${{ always() && github.event_name != 'pull_request' }}
       uses: github/codeql-action/upload-sarif@v2
       with:

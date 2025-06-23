@@ -32,9 +32,9 @@ func getHelmSpecs(t *testing.T, vars ...string) []runtime.Object {
 	args = append(args, ".")
 	cmd := exec.Command("helm", args...)
 	stdout, err := cmd.StdoutPipe()
-	require.NoError(t, err)
+	require.NoError(t, err, "helm stdout")
 	err = cmd.Start()
-	require.NoError(t, err)
+	require.NoError(t, err, "helm start")
 	scheme := runtime.NewScheme()
 	_ = corev1.AddToScheme(scheme)
 	_ = appsv1.AddToScheme(scheme)
@@ -50,13 +50,13 @@ func getHelmSpecs(t *testing.T, vars ...string) []runtime.Object {
 		if errors.Is(err, io.EOF) {
 			break
 		}
-		require.NoError(t, err)
+		require.NoError(t, err, "read yaml")
 		spec, _, err := decode(buf, nil, nil)
-		require.NoError(t, err)
+		require.NoError(t, err, "decode yaml")
 		specs = append(specs, spec)
 	}
 	err = cmd.Wait()
-	require.NoError(t, err)
+	require.NoError(t, err, "helm wait")
 	return specs
 }
 
@@ -345,5 +345,31 @@ func TestHelmTemplate_DaemonSet(t *testing.T) {
 			},
 		},
 			dep.Spec.UpdateStrategy)
+	})
+
+	t.Run("tolerations can be set", func(t *testing.T) {
+		dep := getDaemonSet(t,
+			"node.tolerateAllTaints=false",
+			"node.tolerations[0].key=foo",
+			"node.tolerations[0].operator=Exists",
+		)
+		require.Len(t, dep.Spec.Template.Spec.Containers, 3)
+		assert.Equal(t, []corev1.Toleration{
+			{Key: "CriticalAddonsOnly", Operator: corev1.TolerationOpExists},
+			{Operator: corev1.TolerationOpExists, Effect: corev1.TaintEffectNoExecute, TolerationSeconds: ptr.To[int64](300)},
+			{Key: "foo", Operator: corev1.TolerationOpExists},
+		},
+			dep.Spec.Template.Spec.Tolerations)
+	})
+
+	t.Run("imagePullSecrets can be set", func(t *testing.T) {
+		dep := getDaemonSet(t,
+			"imagePullSecrets[0].name=regcred",
+		)
+		require.Len(t, dep.Spec.Template.Spec.Containers, 3)
+		assert.Equal(t, []corev1.LocalObjectReference{
+			{Name: "regcred"},
+		},
+			dep.Spec.Template.Spec.ImagePullSecrets)
 	})
 }

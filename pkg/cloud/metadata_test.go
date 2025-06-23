@@ -18,6 +18,7 @@ package cloud
 
 import (
 	"fmt"
+	"strings"
 	"testing"
 
 	"github.com/aws/aws-sdk-go/aws/ec2metadata"
@@ -28,8 +29,8 @@ import (
 )
 
 var (
-	stdInstanceID       = "instance-1"
-	stdInstanceType     = "t2.medium"
+	stdInstanceID       = "i-foo"
+	stdInstanceType     = "tinav6.c1r3p2"
 	stdRegion           = "az-1"
 	stdAvailabilityZone = "az-1a"
 )
@@ -39,6 +40,7 @@ func TestNewMetadataService(t *testing.T) {
 		name             string
 		isAvailable      bool
 		identityDocument ec2metadata.EC2InstanceIdentityDocument
+		volumes          []string
 		err              error
 	}{
 		{
@@ -50,7 +52,8 @@ func TestNewMetadataService(t *testing.T) {
 				Region:           stdRegion,
 				AvailabilityZone: stdAvailabilityZone,
 			},
-			err: nil,
+			volumes: []string{"/dev/sda"},
+			err:     nil,
 		},
 		{
 			name:        "fail: metadata not available",
@@ -120,6 +123,10 @@ func TestNewMetadataService(t *testing.T) {
 				if tc.err == nil {
 					mockEC2Metadata.EXPECT().GetMetadata(gomock.Eq("instance-type")).Return(tc.identityDocument.InstanceType, tc.err)
 					mockEC2Metadata.EXPECT().GetMetadata(gomock.Eq("placement/availability-zone")).Return(tc.identityDocument.AvailabilityZone, tc.err)
+					mockEC2Metadata.EXPECT().GetMetadata(gomock.Eq("block-device-mapping/")).Return(strings.Join(tc.volumes, "\n"), tc.err)
+					for _, vol := range tc.volumes {
+						mockEC2Metadata.EXPECT().GetMetadata(gomock.Eq("block-device-mapping/"+vol)).Return(vol, tc.err)
+					}
 				}
 			}
 
@@ -130,6 +137,7 @@ func TestNewMetadataService(t *testing.T) {
 				assert.Equal(t, tc.identityDocument.InstanceType, m.GetInstanceType())
 				assert.Equal(t, tc.identityDocument.Region, m.GetRegion())
 				assert.Equal(t, tc.identityDocument.AvailabilityZone, m.GetAvailabilityZone())
+				assert.Equal(t, tc.volumes, m.GetMountedDevices())
 			} else {
 				require.Error(t, err)
 			}

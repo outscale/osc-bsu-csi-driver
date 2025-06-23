@@ -17,7 +17,10 @@ limitations under the License.
 package cloud
 
 import (
+	"bufio"
 	"errors"
+	"slices"
+	"strings"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/ec2metadata"
@@ -37,6 +40,7 @@ type MetadataService interface {
 	GetInstanceType() string
 	GetRegion() string
 	GetAvailabilityZone() string
+	GetMountedDevices() []string
 }
 
 type Metadata struct {
@@ -44,6 +48,7 @@ type Metadata struct {
 	InstanceType     string
 	Region           string
 	AvailabilityZone string
+	MountedDevices   []string
 }
 
 var _ MetadataService = &Metadata{}
@@ -68,6 +73,11 @@ func (m *Metadata) GetAvailabilityZone() string {
 	return m.AvailabilityZone
 }
 
+// GetMountedDevices returns the list of volume devices (/dev/xxx).
+func (m *Metadata) GetMountedDevices() []string {
+	return m.MountedDevices
+}
+
 func NewMetadata() (MetadataService, error) {
 	sess := session.Must(session.NewSession(&aws.Config{
 		EndpointResolver: util.OscSetupMetadataResolver(),
@@ -83,16 +93,16 @@ func NewMetadataService(svc EC2Metadata) (MetadataService, error) {
 	}
 
 	instanceID, err := svc.GetMetadata("instance-id")
-	if err != nil || len(instanceID) == 0 {
+	if err != nil || instanceID == "" {
 		return nil, errors.New("could not get valid EC2 instance ID")
 	}
 	instanceType, err := svc.GetMetadata("instance-type")
-	if err != nil || len(instanceType) == 0 {
+	if err != nil || instanceType == "" {
 		return nil, errors.New("could not get valid EC2 instance type")
 	}
 
 	availabilityZone, err := svc.GetMetadata("placement/availability-zone")
-	if err != nil || len(availabilityZone) == 0 {
+	if err != nil || availabilityZone == "" {
 		return nil, errors.New("could not get valid EC2 availavility zone")
 	}
 	region := availabilityZone[0 : len(availabilityZone)-1]
@@ -100,10 +110,27 @@ func NewMetadataService(svc EC2Metadata) (MetadataService, error) {
 		return nil, errors.New("could not get valid EC2 region")
 	}
 
+	var devices []string
+	volumes, err := svc.GetMetadata("block-device-mapping/")
+	if err != nil || volumes == "" {
+		return nil, errors.New("could not get valid EC2 availavility zone")
+	}
+	scanner := bufio.NewScanner(strings.NewReader(volumes))
+	for scanner.Scan() {
+		dev, err := svc.GetMetadata("block-device-mapping/" + scanner.Text())
+		if err != nil || volumes == "" {
+			return nil, errors.New("could not get valid EC2 availavility zone")
+		}
+		// the root volume appears twice
+		if !slices.Contains(devices, dev) {
+			devices = append(devices, dev)
+		}
+	}
 	return &Metadata{
 		InstanceID:       instanceID,
 		InstanceType:     instanceType,
 		Region:           region,
 		AvailabilityZone: availabilityZone,
+		MountedDevices:   devices,
 	}, nil
 }

@@ -33,6 +33,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	exec "k8s.io/utils/exec"
+	"k8s.io/utils/mount"
 )
 
 func TestNodeStageVolume(t *testing.T) {
@@ -1720,21 +1721,37 @@ func TestNodeGetInfo(t *testing.T) {
 		instanceID       string
 		instanceType     string
 		availabilityZone string
+		osMounted        []string
+		kubeMounted      []mount.MountPoint
 		expMaxVolumes    int64
 	}{
 		{
 			name:             "success normal",
 			instanceID:       "i-123456789abcdef01",
-			instanceType:     "t2.medium",
+			instanceType:     "tinav6.c1r6p2",
 			availabilityZone: "us-west-2b",
-			expMaxVolumes:    defaultMaxBSUVolumes,
+			osMounted:        []string{"/dev/sda1"},
+			expMaxVolumes:    39,
 		},
 		{
-			name:             "success normal with NVMe",
+			name:             "success normal with 1 mounted volume by the OS",
 			instanceID:       "i-123456789abcdef01",
-			instanceType:     "m5d.large",
+			instanceType:     "tinav6.c1r6p2",
 			availabilityZone: "us-west-2b",
-			expMaxVolumes:    defaultMaxBSUVolumes,
+			osMounted:        []string{"/dev/sda1", "/dev/sdb"},
+			expMaxVolumes:    38,
+		},
+		{
+			name:             "success normal with 1 mounted volume by the kube",
+			instanceID:       "i-123456789abcdef01",
+			instanceType:     "tinav6.c1r6p2",
+			availabilityZone: "us-west-2b",
+			osMounted:        []string{"/dev/sda1", "/dev/sdb"},
+			kubeMounted: []mount.MountPoint{
+				{Device: "/dev/xvdb", Path: "/var/lib/kubelet/plugins/kubernetes.io/csi/bsu.csi.outscale.com/foo/globalmount"},
+				{Device: "/dev/xvdb", Path: "/var/lib/kubelet/pods/a122745a-1db3-4aa8-a9e9-c63a46323606/volumes/kubernetes.io~csi/pvc-foo/mount"},
+			},
+			expMaxVolumes: 39,
 		},
 	}
 	for _, tc := range testCases {
@@ -1745,14 +1762,21 @@ func TestNodeGetInfo(t *testing.T) {
 			mockMetadata := mocks.NewMockMetadataService(mockCtl)
 			mockMetadata.EXPECT().GetInstanceID().Return(tc.instanceID)
 			mockMetadata.EXPECT().GetAvailabilityZone().Return(tc.availabilityZone)
+			mockMetadata.EXPECT().GetMountedDevices().Return(tc.osMounted)
 
 			mockMounter := mocks.NewMockMounter(mockCtl)
+			mockMounter.EXPECT().List().Return(tc.kubeMounted, nil)
 
 			oscDriver := &nodeService{
 				metadata: mockMetadata,
 				mounter:  mockMounter,
 				inFlight: internal.NewInFlight(),
 			}
+
+			limit, err := oscDriver.getVolumesLimit()
+			require.NoError(t, err)
+			assert.Equal(t, int64(tc.expMaxVolumes), limit)
+			oscDriver.maxVolumes = limit
 
 			resp, err := oscDriver.NodeGetInfo(context.TODO(), &csi.NodeGetInfoRequest{})
 			require.NoError(t, err)

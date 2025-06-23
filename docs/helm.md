@@ -48,7 +48,7 @@ Kubernetes: `>=1.20`
 | image.repository | string | `"outscale/osc-bsu-csi-driver"` | Container image to use |
 | image.tag | string | `"v1.6.0"` | Container image tag to deploy |
 | imagePullSecrets | list | `[]` | Specify image pull secrets |
-| maxBsuVolumes | string | `"39"` | Maximum volume to attach to a node (see [Docs](https://docs.outscale.com/en/userguide/About-Volumes.html)) |
+| maxBsuVolumes | string | `""` | Maximum number of volumes that can be attached to a node, autocomputed by default (see [Docs](https://docs.outscale.com/en/userguide/About-Volumes.html)) |
 | nameOverride | string | `""` | Override name of the app (instead of `osc-bsu-csi-driver`) |
 | noProxy | string | `""` | Value used to create environment variable NO_PROXY |
 | node.args | list | `[]` | Node controller command line additional args |

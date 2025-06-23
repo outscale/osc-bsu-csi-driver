@@ -123,7 +123,6 @@ func TestHelmTemplate_Deployment(t *testing.T) {
 				},
 			}},
 			{Name: "OSC_REGION", Value: "eu-west2"},
-			{Name: "MAX_BSU_VOLUMES", Value: "39"},
 			{Name: "BACKOFF_DURATION", Value: "750ms"},
 			{Name: "BACKOFF_FACTOR", Value: "1.4"},
 			{Name: "BACKOFF_STEPS", Value: "3"},
@@ -252,7 +251,30 @@ func TestHelmTemplate_DaemonSet(t *testing.T) {
 		return nil
 	}
 	t.Run("The daemonset has the right defaults", func(t *testing.T) {
-		dep := getDaemonSet(t, "enableVolumeResizing=true", "enableVolumeSnapshot=true", "region=eu-west2")
+		dep := getDaemonSet(t)
+		require.Len(t, dep.Spec.Template.Spec.Containers, 3)
+		manager := dep.Spec.Template.Spec.Containers[0]
+		assert.Equal(t, "outscale/osc-bsu-csi-driver:v1.5.2", manager.Image)
+		assert.Equal(t, []string{
+			"node",
+			"--endpoint=$(CSI_ENDPOINT)",
+			"--logtostderr",
+			"--v=3",
+		}, manager.Args)
+		assert.Equal(t, []corev1.EnvVar{
+			{Name: "CSI_ENDPOINT", Value: "unix:/csi/csi.sock"},
+			{Name: "BACKOFF_DURATION", Value: "750ms"},
+			{Name: "BACKOFF_FACTOR", Value: "1.4"},
+			{Name: "BACKOFF_STEPS", Value: "3"},
+		}, manager.Env)
+		assert.Equal(t, corev1.ResourceRequirements{
+			Requests: nil,
+			Limits:   nil,
+		}, manager.Resources)
+	})
+
+		t.Run("MAX_BSU_VOLUMES can be set", func(t *testing.T) {
+		dep := getDaemonSet(t, "maxBsuVolumes=39")
 		require.Len(t, dep.Spec.Template.Spec.Containers, 3)
 		manager := dep.Spec.Template.Spec.Containers[0]
 		assert.Equal(t, "outscale/osc-bsu-csi-driver:v1.6.0", manager.Image)

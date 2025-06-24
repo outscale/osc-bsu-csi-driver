@@ -18,28 +18,18 @@ package driver
 
 import (
 	"fmt"
-	"math/rand"
 	"strconv"
+	"strings"
 	"testing"
 
 	"github.com/outscale/osc-bsu-csi-driver/pkg/cloud"
 	"github.com/stretchr/testify/require"
 )
 
-func randomString(n int) string {
-	var letter = []rune("ABCDEFGHIJKLMNOPQRSabcdefghijTUVWXYZ0123456789klmnopqrstuvwxyz")
-
-	b := make([]rune, n)
-	for i := range b {
-		b[i] = letter[rand.Intn(len(letter))]
-	}
-	return string(b)
-}
-
-func randomStringMap(n int) map[string]string {
+func stringMap(n int) map[string]string {
 	result := map[string]string{}
 	for i := 0; i < n; i++ {
-		result[strconv.Itoa(i)] = randomString(10)
+		result[strconv.Itoa(i)] = "foo"
 	}
 	return result
 }
@@ -60,14 +50,14 @@ func TestValidateExtraVolumeTags(t *testing.T) {
 		{
 			name: "invalid tag: key too long",
 			tags: map[string]string{
-				randomString(cloud.MaxTagKeyLength + 1): "extra-tag-value",
+				strings.Repeat("a", cloud.MaxTagKeyLength+1): "extra-tag-value",
 			},
 			expErr: fmt.Errorf("Volume tag key too long (actual: %d, limit: %d)", cloud.MaxTagKeyLength+1, cloud.MaxTagKeyLength),
 		},
 		{
 			name: "invalid tag: value too long",
 			tags: map[string]string{
-				"extra-tag-key": randomString(cloud.MaxTagValueLength + 1),
+				"extra-tag-key": strings.Repeat("a", cloud.MaxTagValueLength+1),
 			},
 			expErr: fmt.Errorf("Volume tag value too long (actual: %d, limit: %d)", cloud.MaxTagValueLength+1, cloud.MaxTagValueLength),
 		},
@@ -94,7 +84,7 @@ func TestValidateExtraVolumeTags(t *testing.T) {
 		},
 		{
 			name:   "invalid tag: too many volume tags",
-			tags:   randomStringMap(cloud.MaxNumTagsPerResource + 1),
+			tags:   stringMap(cloud.MaxNumTagsPerResource + 1),
 			expErr: fmt.Errorf("Too many volume tags (actual: %d, limit: %d)", cloud.MaxNumTagsPerResource+1, cloud.MaxNumTagsPerResource),
 		},
 	}
@@ -172,7 +162,7 @@ func TestValidateDriverOptions(t *testing.T) {
 			name: "fail because validateExtraVolumeTags fails",
 			mode: AllMode,
 			extraVolumeTags: map[string]string{
-				randomString(cloud.MaxTagKeyLength + 1): "extra-tag-value",
+				strings.Repeat("a", cloud.MaxTagKeyLength+1): "extra-tag-value",
 			},
 			expErr: fmt.Errorf("Invalid extra volume tags: Volume tag key too long (actual: %d, limit: %d)", cloud.MaxTagKeyLength+1, cloud.MaxTagKeyLength),
 		},

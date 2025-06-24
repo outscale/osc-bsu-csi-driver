@@ -20,7 +20,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"math/rand"
 	"reflect"
 	"testing"
 	"time"
@@ -1129,7 +1128,7 @@ func TestCreateSnapshot(t *testing.T) {
 
 		ctx := context.Background()
 		mockSnapshot := cloud.Snapshot{
-			SnapshotID:     fmt.Sprintf("snapshot-%d", rand.New(rand.NewSource(time.Now().UnixNano())).Uint64()),
+			SnapshotID:     "snapshot-foo",
 			SourceVolumeID: req.SourceVolumeId,
 			Size:           1,
 			CreationTime:   time.Now(),
@@ -1188,7 +1187,7 @@ func TestCreateSnapshot(t *testing.T) {
 
 		ctx := context.Background()
 		mockSnapshot := cloud.Snapshot{
-			SnapshotID:     fmt.Sprintf("snapshot-%d", rand.New(rand.NewSource(time.Now().UnixNano())).Uint64()),
+			SnapshotID:     "snapshot-foo",
 			SourceVolumeID: req.SourceVolumeId,
 			Size:           1,
 			CreationTime:   time.Now(),
@@ -1248,7 +1247,7 @@ func TestCreateSnapshot(t *testing.T) {
 
 		ctx := context.Background()
 		mockSnapshot := cloud.Snapshot{
-			SnapshotID:     fmt.Sprintf("snapshot-%d", rand.New(rand.NewSource(time.Now().UnixNano())).Uint64()),
+			SnapshotID:     "snapshot-foo",
 			SourceVolumeID: req.SourceVolumeId,
 			Size:           1,
 			CreationTime:   time.Now(),
@@ -1297,7 +1296,7 @@ func TestCreateSnapshot(t *testing.T) {
 
 		ctx := context.Background()
 		mockSnapshot := cloud.Snapshot{
-			SnapshotID:     fmt.Sprintf("snapshot-%d", rand.New(rand.NewSource(time.Now().UnixNano())).Uint64()),
+			SnapshotID:     "snapshot-foo",
 			SourceVolumeID: req.SourceVolumeId,
 			Size:           1,
 			CreationTime:   time.Now(),
@@ -1345,7 +1344,7 @@ func TestCreateSnapshot(t *testing.T) {
 
 		ctx := context.Background()
 		mockSnapshot := cloud.Snapshot{
-			SnapshotID:     fmt.Sprintf("snapshot-%d", rand.New(rand.NewSource(time.Now().UnixNano())).Uint64()),
+			SnapshotID:     "snapshot-foo",
 			SourceVolumeID: req.SourceVolumeId,
 			Size:           1,
 			CreationTime:   time.Now(),

@@ -90,24 +90,24 @@ const (
 var (
 	// ErrMultiDisks is returned when multiple
 	// disks are found with the same volume name.
-	ErrMultiDisks = errors.New("Multiple disks with same name")
+	ErrMultiDisks = errors.New("multiple disks with same name")
 
 	// ErrDiskExistsDiffSize is returned if a disk with a given
 	// name, but different size, is found.
-	ErrDiskExistsDiffSize = errors.New("There is already a disk with same name and different size")
+	ErrDiskExistsDiffSize = errors.New("there is already a disk with same name and different size")
 
 	// ErrNotFound is returned when a resource is not found.
-	ErrNotFound = errors.New("Resource was not found")
+	ErrNotFound = errors.New("resource was not found")
 
 	// ErrAlreadyExists is returned when a resource already exists.
-	ErrAlreadyExists = errors.New("Resource already exists")
+	ErrAlreadyExists = errors.New("resource already exists")
 
 	// ErrMultiSnapshots is returned when multiple snapshots are found
 	// with the same ID or name
-	ErrMultiSnapshots = errors.New("Multiple snapshots with the same name/id found")
+	ErrMultiSnapshots = errors.New("multiple snapshots with the same name/id found")
 
 	// ErrMultiVMs is returned when multiple VMs are found with the same name.
-	ErrMultiVMs = errors.New("Multiple VMs with the same ID found")
+	ErrMultiVMs = errors.New("multiple VMs with the same ID found")
 )
 
 // Disk represents a BSU volume
@@ -394,7 +394,7 @@ func (c *cloud) CreateDisk(ctx context.Context, volumeName string, diskOptions *
 
 	// NOT SUPPORTED YET BY Outscale API
 	if len(diskOptions.KmsKeyID) > 0 {
-		return Disk{}, errors.New("Encryption is not supported yet by Outscale API")
+		return Disk{}, errors.New("encryption is not supported yet by Outscale API")
 	}
 
 	snapshotID := diskOptions.SnapshotID

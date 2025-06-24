@@ -89,5 +89,5 @@ func WaitForPvToResize(c clientset.Interface, ns *v1.Namespace, pvName string, d
 			return nil
 		}
 	}
-	return fmt.Errorf("Gave up after waiting %v for pv %q to complete resizing", timeout, pvName)
+	return fmt.Errorf("gave up after waiting %v for pv %q to complete resizing", timeout, pvName)
 }

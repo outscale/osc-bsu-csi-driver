@@ -1,6 +1,7 @@
 package driver
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"strings"
@@ -32,7 +33,7 @@ func TestIsLuks(t *testing.T) {
 	// Check Isluks when device is not luks
 	mockCommand := mocks.NewMockInterface(mockCtl)
 	mockRun := mocks.NewMockCmd(mockCtl)
-	mockRun.EXPECT().Run().Return(fmt.Errorf("error"))
+	mockRun.EXPECT().Run().Return(errors.New("error"))
 	mockCommand.EXPECT().Command(gomock.Eq("cryptsetup"), gomock.Eq("isLuks"), gomock.Eq(devicePath)).Return(mockRun)
 	assert.False(t, IsLuks(mockCommand, devicePath))
 
@@ -152,7 +153,7 @@ func TestCheckLuksPassphrase(t *testing.T) {
 	mockCommand = mocks.NewMockInterface(mockCtl)
 	mockRun = mocks.NewMockCmd(mockCtl)
 	mockRun.EXPECT().SetStdin(gomock.Any()).Return()
-	mockRun.EXPECT().CombinedOutput().Return([]byte{}, fmt.Errorf("error"))
+	mockRun.EXPECT().CombinedOutput().Return([]byte{}, errors.New("error"))
 	mockCommand.EXPECT().Command(
 		gomock.Eq("cryptsetup"),
 		gomock.Eq("-v"),
@@ -235,7 +236,7 @@ func TestLuksOpen(t *testing.T) {
 			gomock.Eq("fake_crypt"),
 		).Return(mockRun)
 		mockRun.EXPECT().SetStdin(gomock.Any()).Return()
-		mockRun.EXPECT().CombinedOutput().Return([]byte{}, fmt.Errorf("error"))
+		mockRun.EXPECT().CombinedOutput().Return([]byte{}, errors.New("error"))
 		ok, err := LuksOpen(mockStat, devicePath, "fake_crypt", passphrase)
 		require.Error(t, err)
 		assert.False(t, ok)
@@ -286,7 +287,7 @@ func TestIsLuksMapping(t *testing.T) {
 	ok, mappingName, err = IsLuksMapping(mockCommand, devicePath)
 	require.NoError(t, err)
 	assert.False(t, ok)
-	assert.Equal(t, "", mappingName)
+	assert.Empty(t, mappingName)
 }
 
 func TestLuksResize(t *testing.T) {
@@ -340,7 +341,7 @@ func TestLuksResize(t *testing.T) {
 	})
 
 	// Expect CombinedOutput to return an error
-	mockRun.EXPECT().CombinedOutput().Return([]byte(""), fmt.Errorf("Error"))
+	mockRun.EXPECT().CombinedOutput().Return([]byte(""), errors.New("Error"))
 
 	require.Error(t, LuksResize(mockCommand, devicePath, passphrase))
 }
@@ -378,7 +379,7 @@ func TestLuksClose(t *testing.T) {
 		gomock.Eq("luksClose"),
 		gomock.Eq("fake_crypt"),
 	).Return(mockRun)
-	mockRun.EXPECT().Run().Return(fmt.Errorf("error"))
+	mockRun.EXPECT().Run().Return(errors.New("error"))
 	err = LuksClose(mockStat, "fake_crypt")
 	require.Error(t, err)
 }

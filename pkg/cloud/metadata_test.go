@@ -17,7 +17,7 @@ limitations under the License.
 package cloud
 
 import (
-	"fmt"
+	"errors"
 	"testing"
 
 	"github.com/aws/aws-sdk-go/aws/ec2metadata"
@@ -72,7 +72,7 @@ func TestNewMetadataService(t *testing.T) {
 				Region:           stdRegion,
 				AvailabilityZone: stdAvailabilityZone,
 			},
-			err: fmt.Errorf(""),
+			err: errors.New(""),
 		},
 		{
 			name:        "fail: GetInstanceIdentityDocument returned empty instance",
@@ -83,7 +83,7 @@ func TestNewMetadataService(t *testing.T) {
 				Region:           stdRegion,
 				AvailabilityZone: stdAvailabilityZone,
 			},
-			err: fmt.Errorf("Empty content"),
+			err: errors.New("empty content"),
 		},
 		{
 			name:        "fail: GetInstanceIdentityDocument returned empty region",
@@ -94,7 +94,7 @@ func TestNewMetadataService(t *testing.T) {
 				Region:           "",
 				AvailabilityZone: stdAvailabilityZone,
 			},
-			err: fmt.Errorf("Empty content"),
+			err: errors.New("empty content"),
 		},
 		{
 			name:        "fail: GetInstanceIdentityDocument returned empty az",
@@ -105,7 +105,7 @@ func TestNewMetadataService(t *testing.T) {
 				Region:           stdRegion,
 				AvailabilityZone: "",
 			},
-			err: fmt.Errorf("Empty content"),
+			err: errors.New("empty content"),
 		},
 	}
 

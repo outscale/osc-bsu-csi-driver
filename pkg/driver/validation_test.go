@@ -62,40 +62,40 @@ func TestValidateExtraVolumeTags(t *testing.T) {
 			tags: map[string]string{
 				randomString(cloud.MaxTagKeyLength + 1): "extra-tag-value",
 			},
-			expErr: fmt.Errorf("Volume tag key too long (actual: %d, limit: %d)", cloud.MaxTagKeyLength+1, cloud.MaxTagKeyLength),
+			expErr: fmt.Errorf("volume tag key too long (actual: %d, limit: %d)", cloud.MaxTagKeyLength+1, cloud.MaxTagKeyLength),
 		},
 		{
 			name: "invalid tag: value too long",
 			tags: map[string]string{
 				"extra-tag-key": randomString(cloud.MaxTagValueLength + 1),
 			},
-			expErr: fmt.Errorf("Volume tag value too long (actual: %d, limit: %d)", cloud.MaxTagValueLength+1, cloud.MaxTagValueLength),
+			expErr: fmt.Errorf("volume tag value too long (actual: %d, limit: %d)", cloud.MaxTagValueLength+1, cloud.MaxTagValueLength),
 		},
 		{
 			name: "invalid tag: reserved CSI key",
 			tags: map[string]string{
 				cloud.VolumeNameTagKey: "extra-tag-value",
 			},
-			expErr: fmt.Errorf("Volume tag key '%s' is reserved", cloud.VolumeNameTagKey),
+			expErr: fmt.Errorf("volume tag key '%s' is reserved", cloud.VolumeNameTagKey),
 		},
 		{
 			name: "invalid tag: reserved Kubernetes key prefix",
 			tags: map[string]string{
 				cloud.KubernetesTagKeyPrefix + "/cluster": "extra-tag-value",
 			},
-			expErr: fmt.Errorf("Volume tag key prefix '%s' is reserved", cloud.KubernetesTagKeyPrefix),
+			expErr: fmt.Errorf("volume tag key prefix '%s' is reserved", cloud.KubernetesTagKeyPrefix),
 		},
 		{
 			name: "invalid tag: reserved Osc key prefix",
 			tags: map[string]string{
 				cloud.OscTagKeyPrefix + "foo": "extra-tag-value",
 			},
-			expErr: fmt.Errorf("Volume tag key prefix '%s' is reserved", cloud.OscTagKeyPrefix),
+			expErr: fmt.Errorf("volume tag key prefix '%s' is reserved", cloud.OscTagKeyPrefix),
 		},
 		{
 			name:   "invalid tag: too many volume tags",
 			tags:   randomStringMap(cloud.MaxNumTagsPerResource + 1),
-			expErr: fmt.Errorf("Too many volume tags (actual: %d, limit: %d)", cloud.MaxNumTagsPerResource+1, cloud.MaxNumTagsPerResource),
+			expErr: fmt.Errorf("too many volume tags (actual: %d, limit: %d)", cloud.MaxNumTagsPerResource+1, cloud.MaxNumTagsPerResource),
 		},
 	}
 
@@ -135,7 +135,7 @@ func TestValidateMode(t *testing.T) {
 		{
 			name:   "invalid mode: unknown",
 			mode:   Mode("unknown"),
-			expErr: fmt.Errorf("Mode is not supported (actual: unknown, supported: %v)", []Mode{AllMode, ControllerMode, NodeMode}),
+			expErr: fmt.Errorf("mode is not supported (actual: unknown, supported: %v)", []Mode{AllMode, ControllerMode, NodeMode}),
 		},
 	}
 
@@ -166,7 +166,7 @@ func TestValidateDriverOptions(t *testing.T) {
 		{
 			name:   "fail because validateMode fails",
 			mode:   Mode("unknown"),
-			expErr: fmt.Errorf("Invalid mode: Mode is not supported (actual: unknown, supported: %v)", []Mode{AllMode, ControllerMode, NodeMode}),
+			expErr: fmt.Errorf("invalid mode: mode is not supported (actual: unknown, supported: %v)", []Mode{AllMode, ControllerMode, NodeMode}),
 		},
 		{
 			name: "fail because validateExtraVolumeTags fails",
@@ -174,7 +174,7 @@ func TestValidateDriverOptions(t *testing.T) {
 			extraVolumeTags: map[string]string{
 				randomString(cloud.MaxTagKeyLength + 1): "extra-tag-value",
 			},
-			expErr: fmt.Errorf("Invalid extra volume tags: Volume tag key too long (actual: %d, limit: %d)", cloud.MaxTagKeyLength+1, cloud.MaxTagKeyLength),
+			expErr: fmt.Errorf("invalid extra volume tags: volume tag key too long (actual: %d, limit: %d)", cloud.MaxTagKeyLength+1, cloud.MaxTagKeyLength),
 		},
 	}
 

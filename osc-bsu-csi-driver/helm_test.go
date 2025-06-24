@@ -295,7 +295,7 @@ func TestHelmTemplate_DaemonSet(t *testing.T) {
 		}
 	})
 
-	t.Run("Resources can be overriden globally", func(t *testing.T) {
+	t.Run("Resources can be overridden globally", func(t *testing.T) {
 		dep := getDaemonSet(t,
 			"enableVolumeResizing=true", "enableVolumeSnapshot=true",
 

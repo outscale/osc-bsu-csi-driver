@@ -95,7 +95,7 @@ func TestCreateDisk(t *testing.T) {
 				CapacityGiB:      1,
 				AvailabilityZone: expZone,
 			},
-			expErr: errors.New("Encryption is not supported yet by Outscale API"),
+			expErr: errors.New("encryption is not supported yet by Outscale API"),
 		},
 		{
 			name:       "fail: CreateVolume returned CreateVolume error",
@@ -350,14 +350,14 @@ func TestGetDiskByName(t *testing.T) {
 		volumeName       string
 		volumeCapacity   int64
 		availabilityZone string
-		snapshotId       *string
+		snapshotID       *string
 		expErr           error
 	}{
 		{
 			name:             "success: normal",
 			volumeName:       "vol-test-1234",
 			volumeCapacity:   util.GiBToBytes(1),
-			snapshotId:       nil,
+			snapshotID:       nil,
 			availabilityZone: expZone,
 			expErr:           nil,
 		},
@@ -365,7 +365,7 @@ func TestGetDiskByName(t *testing.T) {
 			name:             "success: normal with snapshotId",
 			volumeName:       "vol-test-1234",
 			volumeCapacity:   util.GiBToBytes(1),
-			snapshotId:       osc.PtrString("snapshot-id123"),
+			snapshotID:       osc.PtrString("snapshot-id123"),
 			availabilityZone: expZone,
 			expErr:           nil,
 		},
@@ -373,7 +373,7 @@ func TestGetDiskByName(t *testing.T) {
 			name:           "fail: DescribeVolumes returned generic error",
 			volumeName:     "vol-test-1234",
 			volumeCapacity: util.GiBToBytes(1),
-			snapshotId:     nil,
+			snapshotID:     nil,
 			expErr:         errors.New("DescribeVolumes generic error"),
 		},
 	}
@@ -387,7 +387,7 @@ func TestGetDiskByName(t *testing.T) {
 			vol := osc.Volume{
 				VolumeId:      &tc.volumeName,
 				SubregionName: &tc.availabilityZone,
-				SnapshotId:    tc.snapshotId,
+				SnapshotId:    tc.snapshotID,
 			}
 			vol.SetSize(util.BytesToGiB(tc.volumeCapacity))
 
@@ -401,8 +401,8 @@ func TestGetDiskByName(t *testing.T) {
 				require.NoError(t, err)
 				assert.Equal(t, tc.volumeName, disk.VolumeID)
 				assert.Equal(t, util.BytesToGiB(tc.volumeCapacity), disk.CapacityGiB)
-				if tc.snapshotId != nil {
-					assert.Equal(t, *tc.snapshotId, disk.SnapshotID)
+				if tc.snapshotID != nil {
+					assert.Equal(t, *tc.snapshotID, disk.SnapshotID)
 				} else {
 					assert.Empty(t, disk.SnapshotID)
 				}
@@ -704,19 +704,19 @@ func TestListSnapshots(t *testing.T) {
 			},
 		}
 		state := "completed"
-		volumeIds := []string{
+		volumeIDs := []string{
 			"snap-test-volume1",
 			"snap-test-volume2",
 		}
 		oscsnapshot := []osc.Snapshot{
 			{
 				SnapshotId: &expSnapshots[0].SnapshotID,
-				VolumeId:   &volumeIds[0],
+				VolumeId:   &volumeIDs[0],
 				State:      &state,
 			},
 			{
 				SnapshotId: &expSnapshots[1].SnapshotID,
-				VolumeId:   &volumeIds[1],
+				VolumeId:   &volumeIDs[1],
 				State:      &state,
 			},
 		}
@@ -743,19 +743,19 @@ func TestListSnapshots(t *testing.T) {
 			},
 		}
 		state := "completed"
-		volumeIds := []string{
+		volumeIDs := []string{
 			"snap-test-volume1",
 			"snap-test-volume2",
 		}
 		oscsnapshot := []osc.Snapshot{
 			{
 				SnapshotId: &expSnapshots[0].SnapshotID,
-				VolumeId:   &volumeIds[0],
+				VolumeId:   &volumeIDs[0],
 				State:      &state,
 			},
 			{
 				SnapshotId: &expSnapshots[1].SnapshotID,
-				VolumeId:   &volumeIds[1],
+				VolumeId:   &volumeIDs[1],
 				State:      &state,
 			},
 		}
@@ -784,19 +784,19 @@ func TestListSnapshots(t *testing.T) {
 			},
 		}
 		state := "completed"
-		volumeIds := []string{
+		volumeIDs := []string{
 			"snap-test-volume1",
 			"snap-test-volume2",
 		}
 		oscsnapshot := []osc.Snapshot{
 			{
 				SnapshotId: &expSnapshots[0].SnapshotID,
-				VolumeId:   &volumeIds[0],
+				VolumeId:   &volumeIDs[0],
 				State:      &state,
 			},
 			{
 				SnapshotId: &expSnapshots[1].SnapshotID,
-				VolumeId:   &volumeIds[1],
+				VolumeId:   &volumeIDs[1],
 				State:      &state,
 			},
 		}

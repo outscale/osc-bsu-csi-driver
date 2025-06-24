@@ -19,7 +19,6 @@ package driver
 import (
 	"context"
 	"errors"
-	"fmt"
 	"os"
 	"testing"
 
@@ -1790,7 +1789,7 @@ func TestFindScsiName(t *testing.T) {
 			name:                "Invalide format xvdxyz",
 			devicePath:          "/dev/xvdaaa",
 			scsiName:            "scsi-0QEMU_QEMU_HARDDISK_sd",
-			expTestFindScsiName: fmt.Errorf("devicePath /dev/xvdaaa is not supported"),
+			expTestFindScsiName: errors.New("devicePath /dev/xvdaaa is not supported"),
 		},
 	}
 	for _, fsnc := range findScsiNameCase {

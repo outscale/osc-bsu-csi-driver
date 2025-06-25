@@ -1,5 +1,11 @@
 # Changelog
 
+## [v0.5.0]
+### Added
+* ✨ feat: add ClientToken in CreateVolume/CreateSnapshot by @jfbus in https://github.com/outscale/osc-bsu-csi-driver/pull/962
+### Changed
+* 👷 ci: bump ubuntu versions by @jfbus in https://github.com/outscale/osc-bsu-csi-driver/pull/894
+
 ## [v0.4.1] - 2025-02-05
 ### 🐛 Fixed
 * 🐛 Fix ListSnapshot pagination infinite loop ([#889](https://github.com/outscale/osc-bsu-csi-driver/pull/889))

@@ -1,5 +1,34 @@
 # Changelog
 
+## [v1.6.0]
+### ✨ Added
+* ✨ feat: add luksOpen additional args by @jfbus in https://github.com/outscale/osc-bsu-csi-driver/pull/933
+* 🔧 helm: add custom update strategy to node/controller by @jfbus in https://github.com/outscale/osc-bsu-csi-driver/pull/949
+* ✨ feat: add ClientToken in CreateVolume/CreateSnapshot by @jfbus in https://github.com/outscale/osc-bsu-csi-driver/pull/960
+### 🛠️ Changed
+* 🥅 errors: properly handle quota errors/snapshots in error by @jfbus in https://github.com/outscale/osc-bsu-csi-driver/pull/929
+* ⚡️ perfs: improve snapshot readiness delay by @jfbus in https://github.com/outscale/osc-bsu-csi-driver/pull/964
+* ⬆️ helm: bump sidecar images by @jfbus in https://github.com/outscale/osc-bsu-csi-driver/pull/920
+* ♻️ refacto: improve ListSnapshots/DeleteSnapshot error handling by @jfbus in https://github.com/outscale/osc-bsu-csi-driver/pull/934
+* Bump golang.org/x/crypto from 0.31.0 to 0.35.0 by @dependabot in https://github.com/outscale/osc-bsu-csi-driver/pull/928
+* Bump golang.org/x/net from 0.33.0 to 0.36.0 by @dependabot in https://github.com/outscale/osc-bsu-csi-driver/pull/901
+* Bump google.golang.org/grpc from 1.66.2 to 1.71.1 by @dependabot in https://github.com/outscale/osc-bsu-csi-driver/pull/914
+* ⬆️ bump k8s packages to v1.30.10 by @jfbus in https://github.com/outscale/osc-bsu-csi-driver/pull/931
+* 👷 ci: add missing helm test by @jfbus in https://github.com/outscale/osc-bsu-csi-driver/pull/932
+* 📝 doc: updated helm doc by @jfbus in https://github.com/outscale/osc-bsu-csi-driver/pull/938
+* Bump golang.org/x/net from 0.36.0 to 0.38.0 by @dependabot in https://github.com/outscale/osc-bsu-csi-driver/pull/937
+* 👷 ci: update cred-scan workflow by @jfbus in https://github.com/outscale/osc-bsu-csi-driver/pull/943
+* ⬆️ deps: bump k8s + Outscale SDK by @jfbus in https://github.com/outscale/osc-bsu-csi-driver/pull/942
+* 👷 dependabot: ignore major/minor k8s releases by @jfbus in https://github.com/outscale/osc-bsu-csi-driver/pull/944
+* ⬆️ deps: bump ginkgo to v2.23.4 by @jfbus in https://github.com/outscale/osc-bsu-csi-driver/pull/948
+* Bump k8s.io/mount-utils from 0.30.12 to 0.30.13 by @dependabot in https://github.com/outscale/osc-bsu-csi-driver/pull/953
+* Bump go.uber.org/mock from 0.5.1 to 0.5.2 by @dependabot in https://github.com/outscale/osc-bsu-csi-driver/pull/951
+* Bump k8s.io/pod-security-admission from 0.30.12 to 0.30.13 by @dependabot in https://github.com/outscale/osc-bsu-csi-driver/pull/959
+* 👷 ci: use cluster-api to build test cluster by @jfbus in https://github.com/outscale/osc-bsu-csi-driver/pull/956
+* 👷 ci: bump golangci-lint by @jfbus in https://github.com/outscale/osc-bsu-csi-driver/pull/965
+### 🐛 Fixed
+* 🐛 fix/helm: custom node tolerations were invalid by @jfbus in https://github.com/outscale/osc-bsu-csi-driver/pull/968
+
 ## [v1.5.2]
 ### 🛠️ Changed
 * 🔊 errors: better OAPI error reporting by @jfbus in https://github.com/outscale/osc-bsu-csi-driver/pull/926

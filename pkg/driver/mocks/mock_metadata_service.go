@@ -81,6 +81,20 @@ func (mr *MockMetadataServiceMockRecorder) GetInstanceType() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetInstanceType", reflect.TypeOf((*MockMetadataService)(nil).GetInstanceType))
 }
 
+// GetMountedDevices mocks base method.
+func (m *MockMetadataService) GetMountedDevices() []string {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetMountedDevices")
+	ret0, _ := ret[0].([]string)
+	return ret0
+}
+
+// GetMountedDevices indicates an expected call of GetMountedDevices.
+func (mr *MockMetadataServiceMockRecorder) GetMountedDevices() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMountedDevices", reflect.TypeOf((*MockMetadataService)(nil).GetMountedDevices))
+}
+
 // GetRegion mocks base method.
 func (m *MockMetadataService) GetRegion() string {
 	m.ctrl.T.Helper()

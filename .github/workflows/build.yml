@@ -7,6 +7,7 @@ on:
       - master
     paths:
       - "**.go"
+      - "**.yaml"
       - "Dockerfile"
       - ".trivyignore"
       - "Makefile"

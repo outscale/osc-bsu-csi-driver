@@ -80,14 +80,14 @@ Kubernetes: `>=1.20`
 | sidecars.attacherImage.securityContext.allowPrivilegeEscalation | bool | `false` |  |
 | sidecars.attacherImage.securityContext.readOnlyRootFilesystem | bool | `true` |  |
 | sidecars.attacherImage.securityContext.seccompProfile.type | string | `"RuntimeDefault"` |  |
-| sidecars.attacherImage.tag | string | `"v4.8.1"` |  |
+| sidecars.attacherImage.tag | string | `"v4.9.0"` |  |
 | sidecars.livenessProbeImage.port | string | `"9808"` | Port of the liveness of the main container |
 | sidecars.livenessProbeImage.repository | string | `"registry.k8s.io/sig-storage/livenessprobe"` |  |
 | sidecars.livenessProbeImage.resources | object | `{}` | Sidecar resources. If not set, the node or top-level resources will be used. |
 | sidecars.livenessProbeImage.securityContext.allowPrivilegeEscalation | bool | `false` |  |
 | sidecars.livenessProbeImage.securityContext.readOnlyRootFilesystem | bool | `true` |  |
 | sidecars.livenessProbeImage.securityContext.seccompProfile.type | string | `"RuntimeDefault"` |  |
-| sidecars.livenessProbeImage.tag | string | `"v2.13.1"` |  |
+| sidecars.livenessProbeImage.tag | string | `"v2.16.0"` |  |
 | sidecars.nodeDriverRegistrarImage.enableHttpEndpoint | bool | `false` | Enable http endpoint to get metrics of the container |
 | sidecars.nodeDriverRegistrarImage.enableLivenessProbe | bool | `false` | Enable liveness probe for the container |
 | sidecars.nodeDriverRegistrarImage.httpEndpointPort | string | `"8093"` | Port of the http endpoint |
@@ -96,7 +96,7 @@ Kubernetes: `>=1.20`
 | sidecars.nodeDriverRegistrarImage.securityContext.allowPrivilegeEscalation | bool | `false` |  |
 | sidecars.nodeDriverRegistrarImage.securityContext.readOnlyRootFilesystem | bool | `true` |  |
 | sidecars.nodeDriverRegistrarImage.securityContext.seccompProfile.type | string | `"RuntimeDefault"` |  |
-| sidecars.nodeDriverRegistrarImage.tag | string | `"v2.12.0"` |  |
+| sidecars.nodeDriverRegistrarImage.tag | string | `"v2.14.0"` |  |
 | sidecars.provisionerImage.additionalArgs | list | `[]` |  |
 | sidecars.provisionerImage.additionalClusterRoleRules | string | `nil` |  |
 | sidecars.provisionerImage.enableHttpEndpoint | bool | `false` | Enable http endpoint to get metrics of the container |
@@ -108,7 +108,7 @@ Kubernetes: `>=1.20`
 | sidecars.provisionerImage.securityContext.allowPrivilegeEscalation | bool | `false` |  |
 | sidecars.provisionerImage.securityContext.readOnlyRootFilesystem | bool | `true` |  |
 | sidecars.provisionerImage.securityContext.seccompProfile.type | string | `"RuntimeDefault"` |  |
-| sidecars.provisionerImage.tag | string | `"v5.1.0"` |  |
+| sidecars.provisionerImage.tag | string | `"v5.3.0"` |  |
 | sidecars.resizerImage.additionalArgs | list | `[]` |  |
 | sidecars.resizerImage.additionalClusterRoleRules | string | `nil` | Grant additional permissions to csi-resizer |
 | sidecars.resizerImage.enableHttpEndpoint | bool | `false` | Enable http endpoint to get metrics of the container |
@@ -120,7 +120,7 @@ Kubernetes: `>=1.20`
 | sidecars.resizerImage.securityContext.allowPrivilegeEscalation | bool | `false` |  |
 | sidecars.resizerImage.securityContext.readOnlyRootFilesystem | bool | `true` |  |
 | sidecars.resizerImage.securityContext.seccompProfile.type | string | `"RuntimeDefault"` |  |
-| sidecars.resizerImage.tag | string | `"v1.11.2"` |  |
+| sidecars.resizerImage.tag | string | `"v1.14.0"` |  |
 | sidecars.snapshotterImage.additionalArgs | list | `[]` |  |
 | sidecars.snapshotterImage.additionalClusterRoleRules | string | `nil` | Grant additional permissions to csi-snapshotter |
 | sidecars.snapshotterImage.enableHttpEndpoint | bool | `false` | Enable http endpoint to get metrics of the container |
@@ -132,7 +132,7 @@ Kubernetes: `>=1.20`
 | sidecars.snapshotterImage.securityContext.allowPrivilegeEscalation | bool | `false` |  |
 | sidecars.snapshotterImage.securityContext.readOnlyRootFilesystem | bool | `true` |  |
 | sidecars.snapshotterImage.securityContext.seccompProfile.type | string | `"RuntimeDefault"` |  |
-| sidecars.snapshotterImage.tag | string | `"v8.1.1"` |  |
+| sidecars.snapshotterImage.tag | string | `"v8.3.0"` |  |
 | timeout | string | `"60s"` | Timeout for sidecars |
 | tolerations | list | `[{"key":"CriticalAddonsOnly","operator":"Exists"},{"effect":"NoExecute","operator":"Exists","tolerationSeconds":300}]` | Pod tolerations |
 | updateStrategy | object | `{"rollingUpdate":{"maxUnavailable":1},"type":"RollingUpdate"}` | Controller deployment update strategy. |

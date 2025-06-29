@@ -97,7 +97,6 @@ func TestGetOptions(t *testing.T) {
 	t.Run("all mode given - expect all mode", func(t *testing.T) {
 		options := testFunc(t, []string{"all"}, true, true, true)
 		assert.Equal(t, driver.AllMode, options.DriverMode)
-
 	})
 	t.Run("controller mode given - expect controller mode", func(t *testing.T) {
 		options := testFunc(t, []string{"controller"}, true, true, false)

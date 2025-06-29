@@ -102,17 +102,14 @@ func OscSetupServiceResolver(region string) endpoints.ResolverFunc {
 			endpoints.IamServiceID:                  "eim",
 			endpoints.DirectconnectServiceID:        "directlink",
 		}
-		var osc_service string
-		var ok bool
-		if osc_service, ok = supported_service[service]; ok {
+		if oscService, ok := supported_service[service]; ok {
 			return endpoints.ResolvedEndpoint{
-				URL:           OscEndpoint(region, osc_service),
+				URL:           OscEndpoint(region, oscService),
 				SigningRegion: region,
 				SigningName:   service,
 			}, nil
-		} else {
-			return endpoints.DefaultResolver().EndpointFor(service, region, optFns...)
 		}
+		return endpoints.DefaultResolver().EndpointFor(service, region, optFns...)
 	}
 }
 

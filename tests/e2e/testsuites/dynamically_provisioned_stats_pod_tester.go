@@ -125,7 +125,7 @@ func (t *DynamicallyProvisionedStatsPodTest) Run(client clientset.Interface, nam
 
 	pod_host_ip := pods.Items[0].Status.HostIP
 	pvc_ns := tDeployment.namespace.Name
-	pvc_name := tDeployment.deployment.Spec.Template.Spec.Volumes[0].VolumeSource.PersistentVolumeClaim.ClaimName
+	pvc_name := tDeployment.deployment.Spec.Template.Spec.Volumes[0].PersistentVolumeClaim.ClaimName
 
 	By("checking volume stats using /metrics ")
 	metrics_kubelet_volume_stats := ""

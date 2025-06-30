@@ -152,9 +152,8 @@ helm_deploy:
 			--wait-for-jobs  \
 			osc-bsu-csi-driver ./osc-bsu-csi-driver \
 			--namespace kube-system \
-			--set enableVolumeScheduling=true \
-			--set enableVolumeResizing=true \
 			--set enableVolumeSnapshot=true \
+			--set enableVolumeAttributesClass=true \
 			--set region=${OSC_REGION} \
 			--set image.repository=$(TARGET_IMAGE) \
 			--set image.tag=$(TARGET_TAG) \

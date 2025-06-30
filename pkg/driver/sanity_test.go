@@ -33,6 +33,7 @@ func TestSanity(t *testing.T) {
 	config.CreateTargetDir = createDir
 	config.CreateStagingDir = createDir
 	config.CheckPath = checkPath
+	config.IdempotentCount = 2
 
 	driverOptions := &DriverOptions{
 		endpoint: endpoint,
@@ -285,6 +286,13 @@ func (c *fakeCloudProvider) ResizeDisk(ctx context.Context, volumeID string, new
 		return int64(util.RoundUpGiB(newSize)) * util.GiB, nil
 	}
 	return 0, cloud.ErrNotFound
+}
+
+func (c *fakeCloudProvider) UpdateDisk(ctx context.Context, volumeID string, volumeType string, iops int32) error {
+	if _, found := c.disks[volumeID]; !found {
+		return cloud.ErrNotFound
+	}
+	return nil
 }
 
 // GetMetadata mocks base method

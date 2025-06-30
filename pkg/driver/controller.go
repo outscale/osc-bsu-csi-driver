@@ -45,6 +45,7 @@ var (
 		csi.ControllerServiceCapability_RPC_CREATE_DELETE_SNAPSHOT,
 		csi.ControllerServiceCapability_RPC_LIST_SNAPSHOTS,
 		csi.ControllerServiceCapability_RPC_EXPAND_VOLUME,
+		csi.ControllerServiceCapability_RPC_MODIFY_VOLUME,
 	}
 )
 
@@ -135,7 +136,7 @@ func (d *controllerService) CreateVolume(ctx context.Context, req *csi.CreateVol
 		volumeContextExtra map[string]string
 	)
 
-	for key, value := range req.GetParameters() {
+	for key, value := range util.GetUpdatedParameters(req) {
 		switch strings.ToLower(key) {
 		case "fstype":
 			klog.FromContext(ctx).V(2).Info(`"fstype" is deprecated, please use "csi.storage.k8s.io/fstype" instead`)
@@ -372,6 +373,40 @@ func (d *controllerService) ControllerExpandVolume(ctx context.Context, req *csi
 		CapacityBytes:         actualSize,
 		NodeExpansionRequired: true,
 	}, nil
+}
+
+func (d *controllerService) ControllerModifyVolume(ctx context.Context, req *csi.ControllerModifyVolumeRequest) (*csi.ControllerModifyVolumeResponse, error) {
+	volumeID := req.GetVolumeId()
+	if volumeID == "" {
+		return nil, status.Error(codes.InvalidArgument, "Volume ID not provided")
+	}
+
+	var (
+		volumeType string
+		iopsPerGB  int64
+	)
+
+	for key, value := range req.GetMutableParameters() {
+		switch strings.ToLower(key) {
+		case VolumeTypeKey:
+			volumeType = value
+		case IopsPerGBKey:
+			var err error
+			iopsPerGB, err = strconv.ParseInt(value, 10, 32)
+			if err != nil {
+				return nil, status.Errorf(codes.InvalidArgument, "Invalid iopsPerGB value: %v", err)
+			}
+		default:
+			return nil, status.Errorf(codes.InvalidArgument, "Invalid parameter key %s for ModifyVolume", key)
+		}
+	}
+
+	err := d.cloud.UpdateDisk(ctx, volumeID, volumeType, int32(iopsPerGB))
+	if err != nil {
+		return nil, status.Errorf(cloud.GRPCCode(err), "Could not modify volume %q: %v", volumeID, err)
+	}
+
+	return &csi.ControllerModifyVolumeResponse{}, nil
 }
 
 func isValidVolumeCapabilities(volCaps []*csi.VolumeCapability) bool {

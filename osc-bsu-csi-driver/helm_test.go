@@ -62,7 +62,7 @@ func getHelmSpecs(t *testing.T, vars ...string) []runtime.Object {
 
 func TestHelmTemplate(t *testing.T) {
 	t.Run("The chart contains the right objects", func(t *testing.T) {
-		specs := getHelmSpecs(t, "enableVolumeResizing=true", "enableVolumeSnapshot=true")
+		specs := getHelmSpecs(t, "enableVolumeSnapshot=true")
 		require.Len(t, specs, 13)
 		objs := map[string]int{}
 		for _, obj := range specs {
@@ -91,7 +91,7 @@ func TestHelmTemplate_Deployment(t *testing.T) {
 		return nil
 	}
 	t.Run("The deployment has the right defaults", func(t *testing.T) {
-		dep := getDeployment(t, "enableVolumeResizing=true", "enableVolumeSnapshot=true", "region=eu-west2")
+		dep := getDeployment(t, "enableVolumeSnapshot=true", "region=eu-west2")
 		assert.Equal(t, int32(2), *dep.Spec.Replicas)
 		require.Len(t, dep.Spec.Template.Spec.Containers, 6)
 		manager := dep.Spec.Template.Spec.Containers[0]
@@ -135,7 +135,7 @@ func TestHelmTemplate_Deployment(t *testing.T) {
 
 	t.Run("Resources can be set globally", func(t *testing.T) {
 		dep := getDeployment(t,
-			"enableVolumeResizing=true", "enableVolumeSnapshot=true",
+			"enableVolumeSnapshot=true",
 			"resources.limits.memory=64Mi", "resources.limits.cpu=10m",
 			"resources.requests.memory=96Mi", "resources.requests.cpu=20m")
 		require.Len(t, dep.Spec.Template.Spec.Containers, 6)
@@ -155,7 +155,7 @@ func TestHelmTemplate_Deployment(t *testing.T) {
 
 	t.Run("Sidecar resources can be set individually", func(t *testing.T) {
 		dep := getDeployment(t,
-			"enableVolumeResizing=true", "enableVolumeSnapshot=true",
+			"enableVolumeSnapshot=true",
 
 			"sidecars.provisionerImage.resources.limits.memory=65Mi", "sidecars.provisionerImage.resources.limits.cpu=11m",
 			"sidecars.provisionerImage.resources.requests.memory=97Mi", "sidecars.provisionerImage.resources.requests.cpu=21m",
@@ -299,7 +299,7 @@ func TestHelmTemplate_DaemonSet(t *testing.T) {
 
 	t.Run("Resources can be set globally", func(t *testing.T) {
 		dep := getDaemonSet(t,
-			"enableVolumeResizing=true", "enableVolumeSnapshot=true",
+			"enableVolumeSnapshot=true",
 			"resources.limits.memory=64Mi", "resources.limits.cpu=10m",
 			"resources.requests.memory=96Mi", "resources.requests.cpu=20m")
 		require.Len(t, dep.Spec.Template.Spec.Containers, 3)
@@ -319,7 +319,7 @@ func TestHelmTemplate_DaemonSet(t *testing.T) {
 
 	t.Run("Resources can be overriden globally", func(t *testing.T) {
 		dep := getDaemonSet(t,
-			"enableVolumeResizing=true", "enableVolumeSnapshot=true",
+			"enableVolumeSnapshot=true",
 
 			"resources.limits.memory=64Mi", "resources.limits.cpu=10m",
 			"resources.requests.memory=96Mi", "resources.requests.cpu=20m",

@@ -458,6 +458,8 @@ func TestGetDiskByID(t *testing.T) {
 							VolumeId:      &tc.volumeID,
 							SubregionName: &tc.availabilityZone,
 							SnapshotId:    tc.snapshotId,
+							Size:          ptr.To[int32](1),
+							Iops:          ptr.To[int32](100),
 						},
 					},
 				},

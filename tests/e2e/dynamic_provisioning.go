@@ -457,7 +457,7 @@ var _ = Describe("[bsu-csi-e2e] [single-az] Dynamic Provisioning", func() {
 		}
 		test.Run(cs, ns)
 	})
-	It("should create an EXT4 on demand volume and resize it", func() {
+	It("should create an EXT4 on demand volume and offline resize it", func() {
 		allowVolumeExpansion := true
 		pod := testsuites.PodDetails{
 			Cmd: "echo 'hello world' >> /mnt/test-1/data && grep 'hello world' /mnt/test-1/data && sync",
@@ -480,7 +480,31 @@ var _ = Describe("[bsu-csi-e2e] [single-az] Dynamic Provisioning", func() {
 		}
 		test.Run(cs, ns)
 	})
-	It("should create a XFS on demand volume and resize it", func() {
+	It("should create an EXT4 on demand volume and online resize it", func() {
+		allowVolumeExpansion := true
+		pod := testsuites.PodDetails{
+			Cmd: "while true; do echo $(date -u) >> /mnt/test-1/data; sleep 1; done",
+			Volumes: []testsuites.VolumeDetails{
+				{
+					VolumeType: osccloud.VolumeTypeGP2,
+					FSType:     bsucsidriver.FSTypeExt4,
+					ClaimSize:  driver.MinimumSizeForVolumeType(osccloud.VolumeTypeGP2),
+					VolumeMount: testsuites.VolumeMountDetails{
+						NameGenerate:      "test-volume-",
+						MountPathGenerate: "/mnt/test-",
+					},
+					AllowVolumeExpansion: &allowVolumeExpansion,
+				},
+			},
+		}
+		test := testsuites.DynamicallyProvisionedResizeVolumeTest{
+			CSIDriver: bsuDriver,
+			Pod:       pod,
+			Online:    true,
+		}
+		test.Run(cs, ns)
+	})
+	It("should create a XFS on demand volume and offline resize it", func() {
 		allowVolumeExpansion := true
 		pod := testsuites.PodDetails{
 			Cmd: "echo 'hello world' >> /mnt/test-1/data && grep 'hello world' /mnt/test-1/data && sync",
@@ -771,12 +795,17 @@ var _ = Describe("[bsu-csi-e2e] [multi-az] Dynamic Provisioning", func() {
 		test.Run(cs, ns)
 	})
 
-	// Requires env AWS_AVAILABILITY_ZONES, a comma separated list of AZs
 	It("[env] should allow for topology aware volume with specified zone in allowedTopologies", func() {
-		if os.Getenv(awsAvailabilityZonesEnv) == "" {
+		var allowedTopologyZones []string
+		switch {
+		case os.Getenv(awsAvailabilityZonesEnv) != "":
+			allowedTopologyZones = strings.Split(os.Getenv(awsAvailabilityZonesEnv), ",")
+		case os.Getenv("OSC_REGION") != "":
+			region := os.Getenv("OSC_REGION")
+			allowedTopologyZones = []string{region + "a", region + "b"}
+		default:
 			Skip(fmt.Sprintf("env %q not set", awsAvailabilityZonesEnv))
 		}
-		allowedTopologyZones := strings.Split(os.Getenv(awsAvailabilityZonesEnv), ",")
 		volumeBindingMode := storagev1.VolumeBindingWaitForFirstConsumer
 		pods := []testsuites.PodDetails{
 			{
@@ -861,5 +890,78 @@ var _ = Describe("[bsu-csi-e2e] [single-az] [encryption] Dynamic Provisioning", 
 
 		test.Run(cs, ns)
 	})
+})
 
+var _ = Describe("[bsu-csi-e2e] [single-az] Updating iops/volumeType using VolumeAttributeClass", func() {
+	f := framework.NewDefaultFramework("bsu")
+	f.NamespacePodSecurityEnforceLevel = admissionapi.LevelPrivileged
+
+	var (
+		cs        clientset.Interface
+		ns        *v1.Namespace
+		bsuDriver driver.PVTestDriver
+	)
+
+	BeforeEach(func() {
+		cs = f.ClientSet
+		ns = f.Namespace
+		bsuDriver = driver.InitBsuCSIDriver()
+	})
+
+	region := os.Getenv("OSC_REGION")
+	cloud, err := osccloud.NewCloud(region, osccloud.WithoutMetadata())
+	if err != nil {
+		Fail(fmt.Sprintf("could not get NewCloud: %v", err))
+	}
+
+	It("should create a volume and update iops & type (offline)", func() {
+		pod := testsuites.PodDetails{
+			Cmd: "echo 'hello world' >> /mnt/test-1/data && grep 'hello world' /mnt/test-1/data && sync",
+			Volumes: []testsuites.VolumeDetails{
+				{
+					VolumeType: osccloud.VolumeTypeGP2,
+					FSType:     bsucsidriver.FSTypeExt4,
+					ClaimSize:  driver.MinimumSizeForVolumeType(osccloud.VolumeTypeIO1),
+					VolumeMount: testsuites.VolumeMountDetails{
+						NameGenerate:      "test-volume-",
+						MountPathGenerate: "/mnt/test-",
+					},
+					VolumeAttributeClass: "test-volumeattributeclass",
+				},
+			},
+		}
+
+		test := testsuites.DynamicallyProvisionedModifyVolumeTest{
+			CSIDriver: bsuDriver,
+			Pod:       pod,
+			Cloud:     cloud,
+		}
+		test.Run(cs, ns)
+	})
+
+	It("should create a volume and update iops & type (online)", func() {
+		pod := testsuites.PodDetails{
+			Cmd: "while true; do echo $(date -u) >> /mnt/test-1/data; sleep 1; done",
+			Volumes: []testsuites.VolumeDetails{
+				{
+					VolumeType: osccloud.VolumeTypeGP2,
+					FSType:     bsucsidriver.FSTypeExt4,
+					ClaimSize:  driver.MinimumSizeForVolumeType(osccloud.VolumeTypeIO1),
+					VolumeMount: testsuites.VolumeMountDetails{
+						NameGenerate:      "test-volume-",
+						MountPathGenerate: "/mnt/test-",
+					},
+					VolumeAttributeClass: "test-volumeattributeclass",
+				},
+			},
+		}
+
+		test := testsuites.DynamicallyProvisionedModifyVolumeTest{
+			CSIDriver: bsuDriver,
+			Pod:       pod,
+			Cloud:     cloud,
+			Online:    true,
+		}
+		test.Run(cs, ns)
+	})
 })

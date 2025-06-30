@@ -17,14 +17,12 @@ package testsuites
 import (
 	"fmt"
 
+	. "github.com/onsi/ginkgo/v2" //nolint
 	"github.com/outscale/osc-bsu-csi-driver/tests/e2e/driver"
-
 	v1 "k8s.io/api/core/v1"
 	storagev1 "k8s.io/api/storage/v1"
 	clientset "k8s.io/client-go/kubernetes"
 	restclientset "k8s.io/client-go/rest"
-
-	. "github.com/onsi/ginkgo/v2"
 )
 
 type PodDetails struct {
@@ -45,6 +43,7 @@ type VolumeDetails struct {
 	ClaimSize             string
 	ReclaimPolicy         *v1.PersistentVolumeReclaimPolicy
 	AllowVolumeExpansion  *bool
+	VolumeAttributeClass  string
 	VolumeBindingMode     *storagev1.VolumeBindingMode
 	AllowedTopologyValues []string
 	VolumeMode            VolumeMode
@@ -126,7 +125,7 @@ func (pod *PodDetails) SetupDeployment(client clientset.Interface, namespace *v1
 	volume := pod.Volumes[0]
 	By("setting up the StorageClass")
 	storageClass := csiDriver.GetDynamicProvisionStorageClass(driver.GetParameters(volume.VolumeType, volume.FSType, volume.IopsPerGB, volume.Encrypted, volume.SecretName, volume.SecretNamespace), volume.MountOptions, volume.ReclaimPolicy, volume.AllowVolumeExpansion, volume.VolumeBindingMode, volume.AllowedTopologyValues, namespace.Name)
-	tsc := NewTestStorageClass(client, namespace, storageClass)
+	tsc := NewTestStorageClass(client, storageClass)
 	createdStorageClass := tsc.Create()
 	cleanupFuncs = append(cleanupFuncs, tsc.Cleanup)
 	By("setting up the PVC")
@@ -145,7 +144,7 @@ func (volume *VolumeDetails) SetupDynamicPersistentVolumeClaim(client clientset.
 	cleanupFuncs := make([]func(), 0)
 	By("setting up the StorageClass")
 	storageClass := csiDriver.GetDynamicProvisionStorageClass(driver.GetParameters(volume.VolumeType, volume.FSType, volume.IopsPerGB, volume.Encrypted, volume.SecretName, volume.SecretNamespace), volume.MountOptions, volume.ReclaimPolicy, volume.AllowVolumeExpansion, volume.VolumeBindingMode, volume.AllowedTopologyValues, namespace.Name)
-	tsc := NewTestStorageClass(client, namespace, storageClass)
+	tsc := NewTestStorageClass(client, storageClass)
 	createdStorageClass := tsc.Create()
 	cleanupFuncs = append(cleanupFuncs, tsc.Cleanup)
 
@@ -178,6 +177,16 @@ func (volume *VolumeDetails) SetupDynamicPersistentVolumeClaim(client clientset.
 	}
 
 	return tpvc, cleanupFuncs
+}
+
+func (volume *VolumeDetails) SetupVolumeAttributesClass(client clientset.Interface, namespace *v1.Namespace, name, volumeType, iopsPerGB string, csiDriver driver.DynamicPVTestDriver) (*TestVolumeAttributesClass, []func()) {
+	var cleanupFuncs []func()
+	By("setting up the VolumeAttributesClass")
+	vac := csiDriver.GetVolumeAttributesClass(namespace.Name, name, volumeType, iopsPerGB)
+	tvac := NewTestVolumeAttributesClass(client, vac)
+	_ = tvac.Create()
+	cleanupFuncs = append(cleanupFuncs, tvac.Cleanup)
+	return tvac, cleanupFuncs
 }
 
 func (volume *VolumeDetails) SetupPreProvisionedPersistentVolumeClaim(client clientset.Interface, namespace *v1.Namespace, csiDriver driver.PreProvisionedVolumeTestDriver) (*TestPersistentVolumeClaim, []func()) {

@@ -22,14 +22,13 @@ import (
 
 	volumesnapshotv1 "github.com/kubernetes-csi/external-snapshotter/client/v8/apis/volumesnapshot/v1"
 	snapshotclientset "github.com/kubernetes-csi/external-snapshotter/client/v8/clientset/versioned"
-	e2epodoutput "k8s.io/kubernetes/test/e2e/framework/pod/output"
-
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
+	. "github.com/onsi/ginkgo/v2" //nolint
+	. "github.com/onsi/gomega"    //nolint
 	osccloud "github.com/outscale/osc-bsu-csi-driver/pkg/cloud"
 	apps "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	storagev1 "k8s.io/api/storage/v1"
+	storagev1beta1 "k8s.io/api/storage/v1beta1"
 	apierrs "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -39,6 +38,7 @@ import (
 	"k8s.io/kubernetes/test/e2e/framework"
 	e2edeployment "k8s.io/kubernetes/test/e2e/framework/deployment"
 	e2epod "k8s.io/kubernetes/test/e2e/framework/pod"
+	e2epodoutput "k8s.io/kubernetes/test/e2e/framework/pod/output"
 	e2epv "k8s.io/kubernetes/test/e2e/framework/pv"
 	imageutils "k8s.io/kubernetes/test/utils/image"
 )
@@ -54,14 +54,12 @@ const (
 type TestStorageClass struct {
 	client       clientset.Interface
 	storageClass *storagev1.StorageClass
-	namespace    *v1.Namespace
 }
 
-func NewTestStorageClass(c clientset.Interface, ns *v1.Namespace, sc *storagev1.StorageClass) *TestStorageClass {
+func NewTestStorageClass(c clientset.Interface, sc *storagev1.StorageClass) *TestStorageClass {
 	return &TestStorageClass{
 		client:       c,
 		storageClass: sc,
-		namespace:    ns,
 	}
 }
 
@@ -77,6 +75,33 @@ func (t *TestStorageClass) Create() storagev1.StorageClass {
 func (t *TestStorageClass) Cleanup() {
 	framework.Logf("deleting StorageClass %s", t.storageClass.Name)
 	err := t.client.StorageV1().StorageClasses().Delete(context.Background(), t.storageClass.Name, metav1.DeleteOptions{})
+	framework.ExpectNoError(err)
+}
+
+type TestVolumeAttributesClass struct {
+	client                clientset.Interface
+	VolumeAttributesClass *storagev1beta1.VolumeAttributesClass
+}
+
+func NewTestVolumeAttributesClass(c clientset.Interface, sc *storagev1beta1.VolumeAttributesClass) *TestVolumeAttributesClass {
+	return &TestVolumeAttributesClass{
+		client:                c,
+		VolumeAttributesClass: sc,
+	}
+}
+
+func (t *TestVolumeAttributesClass) Create() storagev1beta1.VolumeAttributesClass {
+	var err error
+
+	By("creating VolumeAttributesClass " + t.VolumeAttributesClass.Name)
+	t.VolumeAttributesClass, err = t.client.StorageV1beta1().VolumeAttributesClasses().Create(context.Background(), t.VolumeAttributesClass, metav1.CreateOptions{})
+	framework.ExpectNoError(err)
+	return *t.VolumeAttributesClass
+}
+
+func (t *TestVolumeAttributesClass) Cleanup() {
+	framework.Logf("deleting VolumeAttributesClass %s", t.VolumeAttributesClass.Name)
+	err := t.client.StorageV1beta1().VolumeAttributesClasses().Delete(context.Background(), t.VolumeAttributesClass.Name, metav1.DeleteOptions{})
 	framework.ExpectNoError(err)
 }
 

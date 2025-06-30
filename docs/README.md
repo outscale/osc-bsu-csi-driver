@@ -18,21 +18,22 @@ The Outscale Block Storage Unit Container Storage Interface (CSI) Driver provide
 | v0.0.15         | [v1.5.0](https://github.com/container-storage-interface/spec/releases/tag/v1.5.0)   | 1.20            | 1.23                    |
 | v0.1.0 - v1.3.0 | [v1.5.0](https://github.com/container-storage-interface/spec/releases/tag/v1.5.0)   | 1.20            | 1.23                    |
 | v0.1.0 - v1.6.X | [v1.8.0](https://github.com/container-storage-interface/spec/releases/tag/v1.8.0)   | 1.20            | 1.30                    |
-| v1.7.X -        | [v1.10.0](https://github.com/container-storage-interface/spec/releases/tag/v1.10.0) | 1.20            | 1.30                    |
+| v1.7.X -        | [v1.10.0](https://github.com/container-storage-interface/spec/releases/tag/v1.10.0) | 1.20            | 1.31                    |
 
 ## Features
 
 The following CSI gRPC calls are implemented:
-* **Controller Service**: CreateVolume, DeleteVolume, ControllerPublishVolume, ControllerUnpublishVolume, ControllerGetCapabilities, ControllerExpandVolume, ValidateVolumeCapabilities, CreateSnapshot, DeleteSnapshot, ListSnapshots
+* **Controller Service**: CreateVolume, DeleteVolume, ControllerPublishVolume, ControllerUnpublishVolume, ControllerGetCapabilities, ControllerExpandVolume, ControllerModifyVolume, ValidateVolumeCapabilities, CreateSnapshot, DeleteSnapshot, ListSnapshots
 * **Node Service**: NodeStageVolume, NodeUnstageVolume, NodePublishVolume, NodeUnpublishVolume, NodeExpandVolume, NodeGetCapabilities, NodeGetInfo, NodeGetVolumeStats
 * **Identity Service**: GetPluginInfo, GetPluginCapabilities, Probe
 
-The following CSI gRPC calls are **not yet** implemented:
+The following CSI gRPC calls are currently not implemented:
 * **Controller Service**: GetCapacity, ListVolumes, ControllerGetVolume
 * **Node Service**: N/A
 * **Identity Service**: N/A
 
-### CreateVolume Parameters
+### CreateVolume
+
 There are several optional parameters that can be passed into `CreateVolumeRequest.parameters` map:
 
 | Parameter                                      | Values                | Default | Description |
@@ -51,16 +52,23 @@ There are several optional parameters that can be passed into `CreateVolumeReque
 **Notes**:
 * Parameter names are case sensitive.
 
+### ControllerExpandVolume
+
+Both cold volumes (volumes not mounted on a VM) and hot volumes (volumes mounted) can be resized.
+
+### ControllerModifyVolume
+
+Volume type (volumeType) and IOPS (iopspergb) may be changed using VolumeAttributeClasses. Both cold volumes (volumes not mounted on a VM) and hot volumes (volumes mounted) can be updated.
+
 ## Use with Kubernetes
 
 Following sections are Kubernetes specific. If you are Kubernetes user, use followings for driver features, installation steps and examples.
 
 ### Features
-* **Static Provisioning** - create a new or migrating existing BSU volumes, then create persistence volume (PV) from the BSU volume and consume the PV from container using persistence volume claim (PVC).
-* **Dynamic Provisioning** - uses persistence volume claim (PVC) to request the Kuberenetes to create the BSU volume on behalf of user and consumes the volume from inside container.
-* **Mount Option** - mount options could be specified in persistence volume (PV) to define how the volume should be mounted.
-* **Block Volume** (beta since 1.14) - consumes the BSU volume as a raw block device for latency sensitive application eg. MySql.
-* **Volume Snapshot** - creating volume snapshots and restore volume from snapshot.
+* **Static Provisioning** - create a new or migrate existing BSU volumes, and mounts them in pods through persistent volume claims (PVC),
+* **Dynamic Provisioning** - use persistent volume claims (PVC) to create on-demand volumes and mount them in pods,
+* **Block Volumes** - mount raw block devices for latency sensitive application eg. MySql,
+* **Volume Snapshots** - create volume snapshots and restore volumes from snapshots,
 * **Volume Encryption** - using Luks & cryptsetup.
 
 ### Prerequisites
@@ -81,12 +89,12 @@ See [Migration Process](migration.md)
 
 ## Examples
 
-Make sure you follow the [Prerequisites](README.md#Prerequisites) before the examples:
 * [Dynamic Provisioning](../examples/kubernetes/dynamic-provisioning)
 * [Block Volume](../examples/kubernetes/block-volume)
 * [Volume Snapshot](../examples/kubernetes/snapshot)
-* [Configure StorageClass](../examples/kubernetes/storageclass)
+* [StorageClasses](../examples/kubernetes/storageclass)
 * [Volume Resizing](../examples/kubernetes/resizing)
+* [Volume Updates (VolumeAttributeClasses)](../examples/kubernetes/volume-attribute-class)
 * [Encryption](../examples/kubernetes/encryption/)
 
 ## Development

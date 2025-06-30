@@ -234,6 +234,20 @@ func (mr *MockCloudMockRecorder) ResizeDisk(ctx, volumeID, reqSize any) *gomock.
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ResizeDisk", reflect.TypeOf((*MockCloud)(nil).ResizeDisk), ctx, volumeID, reqSize)
 }
 
+// UpdateDisk mocks base method.
+func (m *MockCloud) UpdateDisk(ctx context.Context, volumeID, volumeType string, iopsPerGB int32) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateDisk", ctx, volumeID, volumeType, iopsPerGB)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateDisk indicates an expected call of UpdateDisk.
+func (mr *MockCloudMockRecorder) UpdateDisk(ctx, volumeID, volumeType, iopsPerGB any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateDisk", reflect.TypeOf((*MockCloud)(nil).UpdateDisk), ctx, volumeID, volumeType, iopsPerGB)
+}
+
 // WaitForAttachmentState mocks base method.
 func (m *MockCloud) WaitForAttachmentState(ctx context.Context, volumeID, state string) error {
 	m.ctrl.T.Helper()

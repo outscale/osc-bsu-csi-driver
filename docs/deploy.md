@@ -27,8 +27,6 @@ kubectl create secret generic osc-csi-bsu \
 ```shell
 helm upgrade --install osc-bsu-csi-driver oci://docker.io/outscalehelm/osc-bsu-csi-driver \
     --namespace kube-system \
-    --set enableVolumeScheduling=true \
-    --set enableVolumeResizing=true \
     --set enableVolumeSnapshot=true \
     --set region=$OSC_REGION
 ```

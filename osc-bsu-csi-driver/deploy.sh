@@ -17,8 +17,8 @@ fi
 helm uninstall osc-bsu-csi-driver  --namespace kube-system
 
 helm install osc-bsu-csi-driver ./osc-bsu-csi-driver \
-     --namespace kube-system --set enableVolumeScheduling=true \
-     --set enableVolumeResizing=true --set enableVolumeSnapshot=true \
+     --namespace kube-system \
+     --set enableVolumeSnapshot=true \
      --set region=$REGION \
-    --set image.repository=$IMAGE_NAME \
-    --set image.tag=$IMAGE_TAG
+     --set image.repository=$IMAGE_NAME \
+     --set image.tag=$IMAGE_TAG

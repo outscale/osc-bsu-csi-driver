@@ -116,6 +116,8 @@ type Disk struct {
 	CapacityGiB      int32
 	AvailabilityZone string
 	SnapshotID       string
+	VolumeType       string
+	IOPSPerGB        int32
 }
 
 // DiskOptions represents parameters to create an BSU volume
@@ -171,6 +173,7 @@ type Cloud interface {
 	AttachDisk(ctx context.Context, volumeID string, nodeID string) (devicePath string, err error)
 	DetachDisk(ctx context.Context, volumeID string, nodeID string) (err error)
 	ResizeDisk(ctx context.Context, volumeID string, reqSize int64) (newSize int64, err error)
+	UpdateDisk(ctx context.Context, volumeID string, volumeType string, iopsPerGB int32) (err error)
 	WaitForAttachmentState(ctx context.Context, volumeID, state string) error
 	GetDiskByName(ctx context.Context, name string, capacityBytes int64) (disk Disk, err error)
 	GetDiskByID(ctx context.Context, volumeID string) (disk Disk, err error)
@@ -338,10 +341,24 @@ func IsNilSnapshot(snapshot Snapshot) bool {
 	return snapshot.SnapshotID == ""
 }
 
+func iops(iopsPerGB, capacityGiB int32) int32 {
+	if iopsPerGB > MaxIopsPerGb {
+		iopsPerGB = 300
+	}
+
+	iops := capacityGiB * iopsPerGB
+	if iops < MinTotalIOPS {
+		iops = MinTotalIOPS
+	}
+	if iops > MaxTotalIOPS {
+		iops = MaxTotalIOPS
+	}
+	return iops
+}
+
 func (c *cloud) CreateDisk(ctx context.Context, volumeName string, diskOptions *DiskOptions) (Disk, error) {
 	var (
 		createType string
-		iops       int32
 		request    osc.CreateVolumeRequest
 	)
 
@@ -357,20 +374,7 @@ func (c *cloud) CreateDisk(ctx context.Context, volumeName string, diskOptions *
 		createType = diskOptions.VolumeType
 	case VolumeTypeIO1:
 		createType = diskOptions.VolumeType
-
-		iopsPerGb := diskOptions.IOPSPerGB
-		if iopsPerGb > MaxIopsPerGb {
-			iopsPerGb = 300
-		}
-
-		iops = capacityGiB * iopsPerGb
-		if iops < MinTotalIOPS {
-			iops = MinTotalIOPS
-		}
-		if iops > MaxTotalIOPS {
-			iops = MaxTotalIOPS
-		}
-
+		iops := iops(diskOptions.IOPSPerGB, capacityGiB)
 		request.SetIops(iops)
 	case "":
 		createType = DefaultVolumeType
@@ -451,7 +455,10 @@ func (c *cloud) CreateDisk(ctx context.Context, volumeName string, diskOptions *
 		return Disk{}, fmt.Errorf("unable to fetch newly created volume: %w", err)
 	}
 
-	return Disk{CapacityGiB: size, VolumeID: volumeID, AvailabilityZone: zone, SnapshotID: snapshotID}, nil
+	return Disk{
+		CapacityGiB: size, VolumeID: volumeID, AvailabilityZone: zone, SnapshotID: snapshotID,
+		VolumeType: creation.Volume.GetVolumeType(), IOPSPerGB: creation.Volume.GetIops() / creation.Volume.GetSize(),
+	}, nil
 }
 
 func (c *cloud) DeleteDisk(ctx context.Context, volumeID string) (bool, error) {
@@ -631,6 +638,8 @@ func (c *cloud) GetDiskByName(ctx context.Context, name string, capacityBytes in
 		CapacityGiB:      volume.GetSize(),
 		AvailabilityZone: volume.GetSubregionName(),
 		SnapshotID:       volume.GetSnapshotId(),
+		VolumeType:       volume.GetVolumeType(),
+		IOPSPerGB:        volume.GetIops() / volume.GetSize(),
 	}, nil
 }
 
@@ -651,6 +660,8 @@ func (c *cloud) GetDiskByID(ctx context.Context, volumeID string) (Disk, error) 
 		CapacityGiB:      volume.GetSize(),
 		AvailabilityZone: volume.GetSubregionName(),
 		SnapshotID:       volume.GetSnapshotId(),
+		VolumeType:       volume.GetVolumeType(),
+		IOPSPerGB:        volume.GetIops() / volume.GetSize(),
 	}, nil
 }
 
@@ -1030,14 +1041,9 @@ func (c *cloud) ResizeDisk(ctx context.Context, volumeID string, newSizeBytes in
 			VolumeIds: &[]string{volumeID},
 		},
 	}
-	logger.V(4).Info("Check Volume state.")
 	volume, err := c.getVolume(ctx, request, true)
 	if err != nil {
 		return 0, err
-	}
-
-	if volume.GetState() != "available" {
-		return 0, fmt.Errorf("could not modify volume in non 'available' state: %v", volume)
 	}
 
 	// resizes in chunks of GiB (not GB)
@@ -1072,6 +1078,40 @@ func (c *cloud) ResizeDisk(ctx context.Context, volumeID string, newSizeBytes in
 	logger.V(4).Info(fmt.Sprintf("Waiting %d sec for the effective modification.", delay))
 	time.Sleep(time.Duration(delay) * time.Second)
 	return c.checkDesiredSize(ctx, volumeID, newSizeGiB)
+}
+
+// UpdateDisk updates the type and iops of a volume.
+func (c *cloud) UpdateDisk(ctx context.Context, volumeID string, volumeType string, iopsPerGB int32) (err error) {
+	logger := klog.FromContext(ctx)
+	request := osc.ReadVolumesRequest{
+		Filters: &osc.FiltersVolume{
+			VolumeIds: &[]string{volumeID},
+		},
+	}
+	volume, err := c.getVolume(ctx, request, true)
+	if err != nil {
+		return err
+	}
+
+	iops := iops(iopsPerGB, volume.GetSize())
+	logger.V(4).Info(fmt.Sprintf("Updating type to %s and iops to %d", volumeType, iops))
+	req := osc.UpdateVolumeRequest{
+		VolumeId:   volumeID,
+		VolumeType: &volumeType,
+		Iops:       &iops,
+	}
+
+	updateVolumeCallBack := func(ctx context.Context) (bool, error) {
+		response, httpRes, err := c.client.UpdateVolume(ctx, req)
+		logAPICall(ctx, "UpdateVolume", req, response, httpRes, err)
+		return c.backoff.OAPIResponseBackoff(ctx, httpRes, err)
+	}
+
+	waitErr := c.backoff.ExponentialBackoff(ctx, updateVolumeCallBack)
+	if waitErr != nil {
+		return fmt.Errorf("could not modify volume: %w", waitErr)
+	}
+	return nil
 }
 
 // Checks for desired size on volume by also verifying volume size by describing volume.

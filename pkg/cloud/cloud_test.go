@@ -498,6 +498,8 @@ func TestGetDiskByID(t *testing.T) {
 							VolumeId:      &tc.volumeID,
 							SubregionName: &tc.availabilityZone,
 							SnapshotId:    tc.snapshotId,
+							Size:          ptr.To[int32](1),
+							Iops:          ptr.To[int32](100),
 						},
 					},
 				},
@@ -1019,7 +1021,6 @@ func TestResizeDisk(t *testing.T) {
 				},
 			},
 			reqSizeGiB: 2,
-			expErr:     nil,
 		},
 		{
 			name:     "success: with previous expansion",
@@ -1031,7 +1032,6 @@ func TestResizeDisk(t *testing.T) {
 				State:         &state,
 			},
 			reqSizeGiB: 2,
-			expErr:     nil,
 		},
 		{
 			name:                "fail: volume doesn't exist",
@@ -1041,15 +1041,21 @@ func TestResizeDisk(t *testing.T) {
 			expErr:              errors.New("ResizeDisk generic error"),
 		},
 		{
-			name:     "failure: volume in modifying state",
+			name:     "success: volume in modifying state",
 			volumeID: "vol-test",
 			existingVolume: osc.Volume{
 				VolumeId:      &volumeId,
 				Size:          &existingVolumeSize,
 				SubregionName: &defaultZoneVar,
 			},
+			modifiedVolume: osc.UpdateVolumeResponse{
+				Volume: &osc.Volume{
+					VolumeId:      &volumeId,
+					Size:          &modifiedVolumeSize,
+					SubregionName: &defaultZoneVar,
+				},
+			},
 			reqSizeGiB: 2,
-			expErr:     errors.New("ResizeDisk generic error"),
 		},
 	}
 

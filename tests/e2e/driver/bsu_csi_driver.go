@@ -21,6 +21,7 @@ import (
 	bsucsidriver "github.com/outscale/osc-bsu-csi-driver/pkg/driver"
 	v1 "k8s.io/api/core/v1"
 	storagev1 "k8s.io/api/storage/v1"
+	storagev1beta1 "k8s.io/api/storage/v1beta1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -68,7 +69,7 @@ func (d *bsuCSIDriver) GetVolumeSnapshotClass(namespace string) *volumesnapshotv
 
 func (d *bsuCSIDriver) GetPersistentVolume(volumeID string, fsType string, size string, reclaimPolicy *v1.PersistentVolumeReclaimPolicy, namespace string) *v1.PersistentVolume {
 	provisioner := d.driverName
-	generateName := fmt.Sprintf("%s-%s-preprovsioned-pv-", namespace, provisioner)
+	generateName := fmt.Sprintf("%s-%s-preprovisioned-pv-", namespace, provisioner)
 	// Default to Retain ReclaimPolicy for pre-provisioned volumes
 	pvReclaimPolicy := v1.PersistentVolumeReclaimRetain
 	if reclaimPolicy != nil {
@@ -101,9 +102,9 @@ func (d *bsuCSIDriver) GetPersistentVolume(volumeID string, fsType string, size 
 }
 
 // GetParameters returns the parameters specific for this driver
-func GetParameters(volumeType string, fsType string, iops string, encrypted bool, secretName string, secretNamespace string) map[string]string {
+func GetParameters(volumeType, fsType, iops string, encrypted bool, secretName, secretNamespace string) map[string]string {
 	parameters := map[string]string{
-		"type":                      volumeType,
+		bsucsidriver.VolumeTypeKey:  volumeType,
 		"csi.storage.k8s.io/fstype": fsType,
 	}
 
@@ -111,11 +112,11 @@ func GetParameters(volumeType string, fsType string, iops string, encrypted bool
 		iops = IOPSPerGBForVolumeType(volumeType)
 	}
 	if iops != "" {
-		parameters["iopsPerGB"] = iops
+		parameters[bsucsidriver.IopsPerGBKey] = iops
 	}
 
 	if encrypted {
-		parameters["encrypted"] = True
+		parameters[bsucsidriver.EncryptedKey] = True
 	}
 	if len(secretName) != 0 {
 		parameters["csi.storage.k8s.io/node-stage-secret-name"] = secretName
@@ -161,6 +162,20 @@ func (d *bsuCSIDriver) GetPassphraseSecret(name string, passphrase string) *v1.S
 		},
 		StringData: map[string]string{
 			bsucsidriver.LuksPassphraseKey: passphrase,
+		},
+	}
+}
+
+func (d *bsuCSIDriver) GetVolumeAttributesClass(namespace, name, volumeType, iopsPerGB string) *storagev1beta1.VolumeAttributesClass {
+	return &storagev1beta1.VolumeAttributesClass{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: namespace,
+		},
+		DriverName: d.driverName,
+		Parameters: map[string]string{
+			bsucsidriver.VolumeTypeKey: volumeType,
+			bsucsidriver.IopsPerGBKey:  iopsPerGB,
 		},
 	}
 }

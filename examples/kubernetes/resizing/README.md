@@ -1,9 +1,6 @@
 ## Volume Resizing
 This example shows how to resize BSU persistence volume using volume resizing features.
 
-**Note**
-- BSU has a limitation with volume modification only when state is available. Refer to [API documentation](https://docs.outscale.com/api#updatevolume) for more details.
-
 ## Usage
 1. Add `allowVolumeExpansion: true` in the StorageClass spec in [example manifest](./spec/sc.yaml) to enable volume expansion. You can only expand a PVC if its storage class’s allowVolumeExpansion field is set to true
 

@@ -23,7 +23,6 @@ import (
 	"sync"
 
 	osc "github.com/outscale/osc-sdk-go/v2"
-
 	"k8s.io/klog/v2"
 )
 

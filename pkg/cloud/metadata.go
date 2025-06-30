@@ -53,7 +53,7 @@ func (m *Metadata) GetInstanceID() string {
 	return m.InstanceID
 }
 
-// GetInstanceID returns the instance type.
+// GetInstanceType returns the instance type.
 func (m *Metadata) GetInstanceType() string {
 	return m.InstanceType
 }

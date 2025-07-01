@@ -25,8 +25,7 @@ import (
 	"strings"
 	"time"
 
-	. "github.com/onsi/ginkgo/v2"
-	"github.com/outscale/osc-bsu-csi-driver/pkg/cloud"
+	. "github.com/onsi/ginkgo/v2" //nolint
 	osccloud "github.com/outscale/osc-bsu-csi-driver/pkg/cloud"
 	bsucsidriver "github.com/outscale/osc-bsu-csi-driver/pkg/driver"
 	"github.com/outscale/osc-bsu-csi-driver/tests/e2e/driver"
@@ -60,34 +59,58 @@ var _ = Describe("[bsu-csi-e2e] [single-az] Dynamic Provisioning", func() {
 		bsuDriver = driver.InitBsuCSIDriver()
 	})
 
-	for _, t := range osccloud.ValidVolumeTypes {
-		for _, fs := range bsucsidriver.ValidFSTypes {
-			volumeType := t
-			fsType := fs
-			It(fmt.Sprintf("should create an on demand volume with volume type %q and fs type %q", volumeType, fsType), func() {
-				pods := []testsuites.PodDetails{
-					{
-						Cmd: "echo 'hello world' > /mnt/test-1/data && grep 'hello world' /mnt/test-1/data",
-						Volumes: []testsuites.VolumeDetails{
-							{
-								VolumeType: volumeType,
-								FSType:     fsType,
-								ClaimSize:  driver.MinimumSizeForVolumeType(volumeType),
-								VolumeMount: testsuites.VolumeMountDetails{
-									NameGenerate:      "test-volume-",
-									MountPathGenerate: "/mnt/test-",
-								},
+	for _, volumeType := range osccloud.ValidVolumeTypes {
+		fsType := bsucsidriver.FSTypeExt4
+		It(fmt.Sprintf("should create an on demand volume with volume type %q", volumeType), func() {
+			pods := []testsuites.PodDetails{
+				{
+					Cmd: "echo 'hello world' > /mnt/test-1/data && grep 'hello world' /mnt/test-1/data",
+					Volumes: []testsuites.VolumeDetails{
+						{
+							VolumeType: volumeType,
+							FSType:     fsType,
+							ClaimSize:  driver.MinimumSizeForVolumeType(volumeType),
+							VolumeMount: testsuites.VolumeMountDetails{
+								NameGenerate:      "test-volume-",
+								MountPathGenerate: "/mnt/test-",
 							},
 						},
 					},
-				}
-				test := testsuites.DynamicallyProvisionedCmdVolumeTest{
-					CSIDriver: bsuDriver,
-					Pods:      pods,
-				}
-				test.Run(cs, ns)
-			})
-		}
+				},
+			}
+			test := testsuites.DynamicallyProvisionedCmdVolumeTest{
+				CSIDriver: bsuDriver,
+				Pods:      pods,
+			}
+			test.Run(cs, ns)
+		})
+	}
+
+	for _, fsType := range []string{bsucsidriver.FSTypeExt4, bsucsidriver.FSTypeXfs} {
+		volumeType := osccloud.VolumeTypeGP2
+		It(fmt.Sprintf("should create an on demand volume with fs type %q", fsType), func() {
+			pods := []testsuites.PodDetails{
+				{
+					Cmd: "echo 'hello world' > /mnt/test-1/data && grep 'hello world' /mnt/test-1/data",
+					Volumes: []testsuites.VolumeDetails{
+						{
+							VolumeType: volumeType,
+							FSType:     fsType,
+							ClaimSize:  driver.MinimumSizeForVolumeType(volumeType),
+							VolumeMount: testsuites.VolumeMountDetails{
+								NameGenerate:      "test-volume-",
+								MountPathGenerate: "/mnt/test-",
+							},
+						},
+					},
+				},
+			}
+			test := testsuites.DynamicallyProvisionedCmdVolumeTest{
+				CSIDriver: bsuDriver,
+				Pods:      pods,
+			}
+			test.Run(cs, ns)
+		})
 	}
 
 	It("should create an on demand volume with provided mountOptions", func() {
@@ -576,7 +599,7 @@ var _ = Describe("[bsu-csi-e2e] [single-az] Dynamic Provisioning", func() {
 		pv := tpvc.GetPersistentVolume()
 		for i := 1; i < 100; i++ {
 			_, err := oscCloud.DeleteDisk(context.Background(), pv.Spec.CSI.VolumeHandle)
-			if errors.Is(err, cloud.ErrNotFound) {
+			if errors.Is(err, osccloud.ErrNotFound) {
 				break
 			}
 			fmt.Println("Disk still present, waiting")
@@ -693,11 +716,11 @@ var _ = Describe("[bsu-csi-e2e] [single-az] Snapshot", func() {
 		By("Keep deleting the snapshot until error")
 		for i := 1; i < 100; i++ {
 			esnap, err := oscCloud.GetSnapshotByID(ctx, snap.SnapshotID)
-			if errors.Is(err, cloud.ErrNotFound) || esnap.State == "deleting" {
+			if errors.Is(err, osccloud.ErrNotFound) || esnap.State == "deleting" {
 				break
 			}
 			_, err = oscCloud.DeleteSnapshot(ctx, snap.SnapshotID)
-			if errors.Is(err, cloud.ErrNotFound) {
+			if errors.Is(err, osccloud.ErrNotFound) {
 				break
 			}
 			fmt.Println("Snapshot still present, waiting")

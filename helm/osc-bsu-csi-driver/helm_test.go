@@ -24,7 +24,7 @@ import (
 )
 
 func getHelmSpecs(t *testing.T, vars ...string) []runtime.Object {
-	vars = append(vars, "credentials.create=true", "credentials.accessKey=foo", "credentials.secretKey=bar")
+	vars = append(vars, "cloud.credentials.create=true", "cloud.credentials.accessKey=foo", "cloud.credentials.secretKey=bar")
 	args := []string{"template", "--debug"}
 	if len(vars) > 0 {
 		args = append(args, "--set", strings.Join(vars, ","))
@@ -62,7 +62,7 @@ func getHelmSpecs(t *testing.T, vars ...string) []runtime.Object {
 
 func TestHelmTemplate(t *testing.T) {
 	t.Run("The chart contains the right objects", func(t *testing.T) {
-		specs := getHelmSpecs(t, "enableVolumeSnapshot=true")
+		specs := getHelmSpecs(t, "driver.enableVolumeSnapshot=true")
 		require.Len(t, specs, 13)
 		objs := map[string]int{}
 		for _, obj := range specs {
@@ -91,7 +91,7 @@ func TestHelmTemplate_Deployment(t *testing.T) {
 		return nil
 	}
 	t.Run("The deployment has the right defaults", func(t *testing.T) {
-		dep := getDeployment(t, "enableVolumeSnapshot=true", "region=eu-west2")
+		dep := getDeployment(t, "driver.enableVolumeSnapshot=true", "cloud.region=eu-west2")
 		assert.Equal(t, int32(2), *dep.Spec.Replicas)
 		require.Len(t, dep.Spec.Template.Spec.Containers, 6)
 		manager := dep.Spec.Template.Spec.Containers[0]
@@ -125,7 +125,7 @@ func TestHelmTemplate_Deployment(t *testing.T) {
 			{Name: "OSC_REGION", Value: "eu-west2"},
 			{Name: "BACKOFF_DURATION", Value: "750ms"},
 			{Name: "BACKOFF_FACTOR", Value: "1.6"},
-			{Name: "BACKOFF_STEPS", Value: "3"},
+			{Name: "BACKOFF_STEPS", Value: "5"},
 		}, manager.Env)
 		assert.Equal(t, corev1.ResourceRequirements{
 			Requests: nil,
@@ -133,13 +133,16 @@ func TestHelmTemplate_Deployment(t *testing.T) {
 		}, manager.Resources)
 	})
 
-	t.Run("Resources can be set globally", func(t *testing.T) {
+	t.Run("Controller resources can be set", func(t *testing.T) {
 		dep := getDeployment(t,
-			"enableVolumeSnapshot=true",
-			"resources.limits.memory=64Mi", "resources.limits.cpu=10m",
-			"resources.requests.memory=96Mi", "resources.requests.cpu=20m")
+			"driver.enableVolumeSnapshot=true",
+			"controller.resources.limits.memory=64Mi", "controller.resources.limits.cpu=10m",
+			"controller.resources.requests.memory=96Mi", "controller.resources.requests.cpu=20m")
 		require.Len(t, dep.Spec.Template.Spec.Containers, 6)
 		for _, container := range dep.Spec.Template.Spec.Containers {
+			if container.Name != "osc-plugin" {
+				continue
+			}
 			assert.Equal(t, corev1.ResourceRequirements{
 				Requests: corev1.ResourceList{
 					"memory": resource.MustParse("96Mi"),
@@ -153,21 +156,53 @@ func TestHelmTemplate_Deployment(t *testing.T) {
 		}
 	})
 
+	t.Run("Sidecar resources can be set globally", func(t *testing.T) {
+		dep := getDeployment(t,
+			"driver.enableVolumeSnapshot=true",
+			"sidecars.resources.limits.memory=64Mi", "sidecars.resources.limits.cpu=10m",
+			"sidecars.resources.requests.memory=96Mi", "sidecars.resources.requests.cpu=20m")
+		require.Len(t, dep.Spec.Template.Spec.Containers, 6)
+		for _, container := range dep.Spec.Template.Spec.Containers {
+			if container.Name == "osc-plugin" {
+				continue
+			}
+			assert.Equal(t, corev1.ResourceRequirements{
+				Requests: corev1.ResourceList{
+					"memory": resource.MustParse("96Mi"),
+					"cpu":    resource.MustParse("20m"),
+				},
+				Limits: corev1.ResourceList{
+					"memory": resource.MustParse("64Mi"),
+					"cpu":    resource.MustParse("10m"),
+				},
+			}, container.Resources, container.Name)
+		}
+	})
+
+	t.Run("imagePullPolicy is set", func(t *testing.T) {
+		dep := getDeployment(t,
+			"driver.imagePullPolicy=foo",
+		)
+		for _, container := range dep.Spec.Template.Spec.Containers {
+			assert.Equal(t, corev1.PullPolicy("foo"), container.ImagePullPolicy)
+		}
+	})
+
 	t.Run("Sidecar resources can be set individually", func(t *testing.T) {
 		dep := getDeployment(t,
-			"enableVolumeSnapshot=true",
+			"driver.enableVolumeSnapshot=true",
 
-			"sidecars.provisionerImage.resources.limits.memory=65Mi", "sidecars.provisionerImage.resources.limits.cpu=11m",
-			"sidecars.provisionerImage.resources.requests.memory=97Mi", "sidecars.provisionerImage.resources.requests.cpu=21m",
+			"sidecars.provisioner.resources.limits.memory=65Mi", "sidecars.provisioner.resources.limits.cpu=11m",
+			"sidecars.provisioner.resources.requests.memory=97Mi", "sidecars.provisioner.resources.requests.cpu=21m",
 
-			"sidecars.attacherImage.resources.limits.memory=66Mi", "sidecars.attacherImage.resources.limits.cpu=12m",
-			"sidecars.attacherImage.resources.requests.memory=98Mi", "sidecars.attacherImage.resources.requests.cpu=22m",
+			"sidecars.attacher.resources.limits.memory=66Mi", "sidecars.attacher.resources.limits.cpu=12m",
+			"sidecars.attacher.resources.requests.memory=98Mi", "sidecars.attacher.resources.requests.cpu=22m",
 
-			"sidecars.snapshotterImage.resources.limits.memory=67Mi", "sidecars.snapshotterImage.resources.limits.cpu=13m",
-			"sidecars.snapshotterImage.resources.requests.memory=99Mi", "sidecars.snapshotterImage.resources.requests.cpu=23m",
+			"sidecars.snapshotter.resources.limits.memory=67Mi", "sidecars.snapshotter.resources.limits.cpu=13m",
+			"sidecars.snapshotter.resources.requests.memory=99Mi", "sidecars.snapshotter.resources.requests.cpu=23m",
 
-			"sidecars.resizerImage.resources.limits.memory=68Mi", "sidecars.resizerImage.resources.limits.cpu=14m",
-			"sidecars.resizerImage.resources.requests.memory=100Mi", "sidecars.resizerImage.resources.requests.cpu=24m",
+			"sidecars.resizer.resources.limits.memory=68Mi", "sidecars.resizer.resources.limits.cpu=14m",
+			"sidecars.resizer.resources.requests.memory=100Mi", "sidecars.resizer.resources.requests.cpu=24m",
 		)
 		require.Len(t, dep.Spec.Template.Spec.Containers, 6)
 		container := dep.Spec.Template.Spec.Containers[1]
@@ -223,11 +258,11 @@ func TestHelmTemplate_Deployment(t *testing.T) {
 		}, container.Resources, container.Name)
 	})
 
-	t.Run("strategy can be set", func(t *testing.T) {
+	t.Run("updateStrategy can be set", func(t *testing.T) {
 		dep := getDeployment(t,
-			"updateStrategy.type=Recreate",
-			"updateStrategy.rollingUpdate.maxSurge=1",
-			"updateStrategy.rollingUpdate.maxUnavailable=20%",
+			"controller.updateStrategy.type=Recreate",
+			"controller.updateStrategy.rollingUpdate.maxSurge=1",
+			"controller.updateStrategy.rollingUpdate.maxUnavailable=20%",
 		)
 		assert.Equal(t, appsv1.DeploymentStrategy{
 			Type: appsv1.RecreateDeploymentStrategyType,
@@ -237,6 +272,86 @@ func TestHelmTemplate_Deployment(t *testing.T) {
 			},
 		},
 			dep.Spec.Strategy)
+	})
+
+	t.Run("Sidecar kube api access is configured", func(t *testing.T) {
+		dep := getDeployment(t,
+			"driver.enableVolumeSnapshot=true")
+		for _, container := range dep.Spec.Template.Spec.Containers {
+			if container.Name == "osc-plugin" || container.Name == "liveness-probe" {
+				continue
+			}
+			assert.Contains(t, container.Args, "--kube-api-qps=20", container.Name)
+			assert.Contains(t, container.Args, "--kube-api-burst=100", container.Name)
+		}
+	})
+
+	t.Run("Sidecar kube api access can be tuned", func(t *testing.T) {
+		dep := getDeployment(t,
+			"driver.enableVolumeSnapshot=true",
+			"sidecars.kubeAPI.QPS=42", "sidecars.kubeAPI.burst=43")
+		for _, container := range dep.Spec.Template.Spec.Containers {
+			if container.Name == "osc-plugin" || container.Name == "liveness-probe" {
+				continue
+			}
+			assert.Contains(t, container.Args, "--kube-api-qps=42", container.Name)
+			assert.Contains(t, container.Args, "--kube-api-burst=43", container.Name)
+		}
+	})
+
+	t.Run("Sidecar threads are configured", func(t *testing.T) {
+		dep := getDeployment(t,
+			"driver.enableVolumeSnapshot=true")
+		for _, container := range dep.Spec.Template.Spec.Containers {
+			if container.Name == "osc-plugin" || container.Name == "liveness-probe" {
+				continue
+			}
+			if container.Name == "csi-resizer" {
+				assert.Contains(t, container.Args, "--workers=100", container.Name)
+			} else {
+				assert.Contains(t, container.Args, "--worker-threads=100", container.Name)
+			}
+		}
+	})
+
+	t.Run("Sidecar threads can be tuned", func(t *testing.T) {
+		dep := getDeployment(t,
+			"driver.enableVolumeSnapshot=true",
+			"sidecars.provisioner.workerThreads=42",
+			"sidecars.attacher.workerThreads=43",
+			"sidecars.snapshotter.workerThreads=44",
+			"sidecars.resizer.workerThreads=45",
+		)
+		require.Len(t, dep.Spec.Template.Spec.Containers, 6)
+		containers := dep.Spec.Template.Spec.Containers
+		assert.Contains(t, containers[1].Args, "--worker-threads=42", containers[1].Name)
+		assert.Contains(t, containers[2].Args, "--worker-threads=43", containers[2].Name)
+		assert.Contains(t, containers[3].Args, "--worker-threads=44", containers[3].Name)
+		assert.Contains(t, containers[4].Args, "--workers=45", containers[4].Name)
+	})
+
+	t.Run("Sidecar timeout is configured", func(t *testing.T) {
+		dep := getDeployment(t,
+			"driver.enableVolumeSnapshot=true")
+		for _, container := range dep.Spec.Template.Spec.Containers {
+			if container.Name == "osc-plugin" || container.Name == "liveness-probe" {
+				continue
+			}
+			assert.Contains(t, container.Args, "--timeout=5m", container.Name)
+		}
+	})
+
+	t.Run("Sidecar timeout can be tuned", func(t *testing.T) {
+		dep := getDeployment(t,
+			"driver.enableVolumeSnapshot=true",
+			"sidecars.timeout=10m",
+		)
+		for _, container := range dep.Spec.Template.Spec.Containers {
+			if container.Name == "osc-plugin" || container.Name == "liveness-probe" {
+				continue
+			}
+			assert.Contains(t, container.Args, "--timeout=10m", container.Name)
+		}
 	})
 }
 
@@ -263,18 +378,23 @@ func TestHelmTemplate_DaemonSet(t *testing.T) {
 		}, manager.Args)
 		assert.Equal(t, []corev1.EnvVar{
 			{Name: "CSI_ENDPOINT", Value: "unix:/csi/csi.sock"},
-			{Name: "BACKOFF_DURATION", Value: "750ms"},
-			{Name: "BACKOFF_FACTOR", Value: "1.6"},
-			{Name: "BACKOFF_STEPS", Value: "3"},
 		}, manager.Env)
 		assert.Equal(t, corev1.ResourceRequirements{
 			Requests: nil,
 			Limits:   nil,
 		}, manager.Resources)
+		assert.Equal(t, &corev1.SecurityContext{
+			ReadOnlyRootFilesystem:   ptr.To(false),
+			Privileged:               ptr.To(true),
+			AllowPrivilegeEscalation: ptr.To(true),
+			SeccompProfile: &corev1.SeccompProfile{
+				Type: corev1.SeccompProfileTypeUnconfined,
+			},
+		}, manager.SecurityContext)
 	})
 
 	t.Run("MAX_BSU_VOLUMES can be set", func(t *testing.T) {
-		dep := getDaemonSet(t, "maxBsuVolumes=39")
+		dep := getDaemonSet(t, "driver.maxBsuVolumes=39")
 		require.Len(t, dep.Spec.Template.Spec.Containers, 3)
 		manager := dep.Spec.Template.Spec.Containers[0]
 		assert.Equal(t, "outscale/osc-bsu-csi-driver:v1.8.0", manager.Image)
@@ -286,9 +406,6 @@ func TestHelmTemplate_DaemonSet(t *testing.T) {
 		}, manager.Args)
 		assert.Equal(t, []corev1.EnvVar{
 			{Name: "CSI_ENDPOINT", Value: "unix:/csi/csi.sock"},
-			{Name: "BACKOFF_DURATION", Value: "750ms"},
-			{Name: "BACKOFF_FACTOR", Value: "1.6"},
-			{Name: "BACKOFF_STEPS", Value: "3"},
 			{Name: "MAX_BSU_VOLUMES", Value: "39"},
 		}, manager.Env)
 		assert.Equal(t, corev1.ResourceRequirements{
@@ -297,13 +414,16 @@ func TestHelmTemplate_DaemonSet(t *testing.T) {
 		}, manager.Resources)
 	})
 
-	t.Run("Resources can be set globally", func(t *testing.T) {
+	t.Run("Node resources can be set", func(t *testing.T) {
 		dep := getDaemonSet(t,
-			"enableVolumeSnapshot=true",
-			"resources.limits.memory=64Mi", "resources.limits.cpu=10m",
-			"resources.requests.memory=96Mi", "resources.requests.cpu=20m")
+			"driver.enableVolumeSnapshot=true",
+			"node.resources.limits.memory=64Mi", "node.resources.limits.cpu=10m",
+			"node.resources.requests.memory=96Mi", "node.resources.requests.cpu=20m")
 		require.Len(t, dep.Spec.Template.Spec.Containers, 3)
 		for _, container := range dep.Spec.Template.Spec.Containers {
+			if container.Name != "osc-plugin" {
+				continue
+			}
 			assert.Equal(t, corev1.ResourceRequirements{
 				Requests: corev1.ResourceList{
 					"memory": resource.MustParse("96Mi"),
@@ -317,26 +437,33 @@ func TestHelmTemplate_DaemonSet(t *testing.T) {
 		}
 	})
 
-	t.Run("Resources can be overriden globally", func(t *testing.T) {
+	t.Run("imagePullPolicy is set", func(t *testing.T) {
 		dep := getDaemonSet(t,
-			"enableVolumeSnapshot=true",
-
-			"resources.limits.memory=64Mi", "resources.limits.cpu=10m",
-			"resources.requests.memory=96Mi", "resources.requests.cpu=20m",
-
-			"node.resources.limits.memory=65Mi", "node.resources.limits.cpu=11m",
-			"node.resources.requests.memory=97Mi", "node.resources.requests.cpu=21m",
+			"driver.imagePullPolicy=foo",
 		)
+		for _, container := range dep.Spec.Template.Spec.Containers {
+			assert.Equal(t, corev1.PullPolicy("foo"), container.ImagePullPolicy)
+		}
+	})
+
+	t.Run("Sidecar resources can be set globally", func(t *testing.T) {
+		dep := getDaemonSet(t,
+			"driver.enableVolumeSnapshot=true",
+			"sidecars.resources.limits.memory=64Mi", "sidecars.resources.limits.cpu=10m",
+			"sidecars.resources.requests.memory=96Mi", "sidecars.resources.requests.cpu=20m")
 		require.Len(t, dep.Spec.Template.Spec.Containers, 3)
 		for _, container := range dep.Spec.Template.Spec.Containers {
+			if container.Name == "osc-plugin" {
+				continue
+			}
 			assert.Equal(t, corev1.ResourceRequirements{
 				Requests: corev1.ResourceList{
-					"memory": resource.MustParse("97Mi"),
-					"cpu":    resource.MustParse("21m"),
+					"memory": resource.MustParse("96Mi"),
+					"cpu":    resource.MustParse("20m"),
 				},
 				Limits: corev1.ResourceList{
-					"memory": resource.MustParse("65Mi"),
-					"cpu":    resource.MustParse("11m"),
+					"memory": resource.MustParse("64Mi"),
+					"cpu":    resource.MustParse("10m"),
 				},
 			}, container.Resources, container.Name)
 		}
@@ -344,7 +471,7 @@ func TestHelmTemplate_DaemonSet(t *testing.T) {
 
 	t.Run("Additional args can be set", func(t *testing.T) {
 		dep := getDaemonSet(t,
-			"node.args={--luks-open-flags=--perf-no_read_workqueue,--luks-open-flags=--perf-no_write_workqueue}",
+			"node.additionalArgs={--luks-open-flags=--perf-no_read_workqueue,--luks-open-flags=--perf-no_write_workqueue}",
 		)
 		require.Len(t, dep.Spec.Template.Spec.Containers, 3)
 		assert.Equal(t, []string{
@@ -355,14 +482,14 @@ func TestHelmTemplate_DaemonSet(t *testing.T) {
 	t.Run("updateStrategy can be set", func(t *testing.T) {
 		dep := getDaemonSet(t,
 			"node.updateStrategy.type=OnDelete",
-			"node.updateStrategy.rollingUpdate.maxSurge=1",
+			"node.updateStrategy.rollingUpdate.maxSurge=2",
 			"node.updateStrategy.rollingUpdate.maxUnavailable=20%",
 		)
 		require.Len(t, dep.Spec.Template.Spec.Containers, 3)
 		assert.Equal(t, appsv1.DaemonSetUpdateStrategy{
 			Type: appsv1.OnDeleteDaemonSetStrategyType,
 			RollingUpdate: &appsv1.RollingUpdateDaemonSet{
-				MaxSurge:       ptr.To(intstr.FromInt(1)),
+				MaxSurge:       ptr.To(intstr.FromInt(2)),
 				MaxUnavailable: ptr.To(intstr.FromString("20%")),
 			},
 		},

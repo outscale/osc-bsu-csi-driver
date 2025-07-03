@@ -308,6 +308,7 @@ func NewCloud(region string, opts ...CloudOption) (Cloud, error) {
 	if configEnv.ProfileName != nil {
 		klog.V(1).InfoS("Profile: " + *configEnv.ProfileName)
 	}
+
 	client.config = config
 	client.config.Debug = false
 	client.config.UserAgent = "osc-bsu-csi-driver/" + version.DriverVersion

@@ -67,7 +67,7 @@ verify:
 
 .PHONY: test
 test:
-	go test -v -race -skip ^TestSanity ./pkg/... ./osc-bsu-csi-driver/...
+	go test -v -race -skip ^TestSanity ./pkg/... ./helm/osc-bsu-csi-driver/...
 
 .PHONY: test-sanity
 test-sanity:
@@ -149,27 +149,27 @@ helm_deploy:
 			--install \
 			--wait \
 			--wait-for-jobs  \
-			osc-bsu-csi-driver ./osc-bsu-csi-driver \
+			osc-bsu-csi-driver ./helm/osc-bsu-csi-driver \
 			--namespace kube-system \
-			--set enableVolumeSnapshot=true \
-			--set enableVolumeAttributesClass=true \
-			--set region=${OSC_REGION} \
-			--set image.repository=$(TARGET_IMAGE) \
-			--set image.tag=$(TARGET_TAG) \
-			--set verbosity=5
+			--set driver.enableVolumeSnapshot=true \
+			--set driver.enableVolumeAttributesClass=true \
+			--set cloud.region=${OSC_REGION} \
+			--set driver.image=$(TARGET_IMAGE) \
+			--set driver.tag=$(TARGET_TAG) \
+			--set logs.verbosity=5
 
 helm-docs:
-	docker run --rm --volume "$$(pwd):/helm-docs" -u "$$(id -u)" jnorwood/helm-docs:v1.11.0 --output-file ../docs/helm.md
+	docker run --rm --volume "$$(pwd):/helm-docs" -u "$$(id -u)" jnorwood/helm-docs:v1.11.0 --output-file ../../docs/helm.md
 
 check-helm-docs:
 	./hack/verify-helm-docs
 
 helm-package:
 # Copy docs into the archive for ArtfactHub, symlink does not work with helm-git
-	cp CHANGELOG-1.X.md osc-bsu-csi-driver/CHANGELOG.md
-	cp docs/README.md LICENSE osc-bsu-csi-driver/
-	helm package osc-bsu-csi-driver -d out-helm
-	rm osc-bsu-csi-driver/CHANGELOG.md osc-bsu-csi-driver/README.md osc-bsu-csi-driver/LICENSE
+	cp CHANGELOG-1.X.md helm/osc-bsu-csi-driver/CHANGELOG.md
+	cp docs/README.md LICENSE helm/osc-bsu-csi-driver/
+	helm package helm/osc-bsu-csi-driver -d out-helm
+	rm helm/osc-bsu-csi-driver/CHANGELOG.md helm/osc-bsu-csi-driver/README.md helm/osc-bsu-csi-driver/LICENSE
 
 helm-push: helm-package
 	helm push out-helm/*.tgz oci://registry-1.docker.io/${DOCKER_USER}

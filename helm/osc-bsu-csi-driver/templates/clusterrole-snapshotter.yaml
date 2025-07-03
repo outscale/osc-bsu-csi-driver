@@ -1,5 +1,4 @@
-{{- if .Values.enableVolumeSnapshot }}
----
+{{- if .Values.driver.enableVolumeSnapshot }}
 kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
@@ -34,7 +33,4 @@ rules:
   - apiGroups: ["groupsnapshot.storage.k8s.io"]
     resources: ["volumegroupsnapshotcontents/status"]
     verbs: ["update", "patch"]
-    {{- with .Values.sidecars.snapshotterImage.additionalClusterRoleRules }}
-    {{- . | toYaml | nindent 2 }}
-  {{- end }}
 {{- end }}

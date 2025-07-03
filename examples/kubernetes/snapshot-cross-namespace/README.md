@@ -47,11 +47,9 @@ You must manually enable it by setting the following flag on both the **kube-api
 ```bash
 helm install --upgrade osc-bsu-csi-driver oci://docker.io/outscalehelm/osc-bsu-csi-driver \
   --namespace kube-system \
-  --set enableVolumeScheduling=true \
-  --set enableVolumeResizing=true \
-  --set enableVolumeSnapshot=true \
-  --set enableSnapshotCrossNamespace=true \   # Enable cross-namespace snapshot support
-  --set region=$OSC_REGION
+  --set driver.enableVolumeSnapshot=true \
+  --set driver.enableSnapshotCrossNamespace=true \   # Enable cross-namespace snapshot support
+  --set cloud.region=$OSC_REGION
 ```
 
 ## Usage

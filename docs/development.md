@@ -24,8 +24,8 @@ REGISTRY_IMAGE=localhost:4242/<IMAGE_NAME> REGISTRY_TAG=<CUSTOM_TAG> make image-
 Finaly, deploy the plugin by using `helm` (see [deploy](deploy.md)) and add to the command line the following parameters:
 ```sh
     # Note: set your docker-registry address
-    --set image.repository=10.0.1.10:30754/<IMAGE_NAME> \
-	--set image.tag=<IMAGE_TAG>
+    --set driver.image=10.0.1.10:30754/<IMAGE_NAME> \
+	--set driver.tag=<IMAGE_TAG>
 ```
 
 ## Release

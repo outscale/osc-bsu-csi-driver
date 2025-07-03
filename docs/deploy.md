@@ -29,10 +29,8 @@ kubectl apply -f osc-secret.yaml --namespace=kube-system
 ```shell
 helm install --upgrade osc-bsu-csi-driver oci://docker.io/outscalehelm/osc-bsu-csi-driver \
     --namespace kube-system \
-    --set enableVolumeScheduling=true \
-    --set enableVolumeResizing=true \
     --set enableVolumeSnapshot=true \
-    --set region=$OSC_REGION
+    --set cloud.region=$OSC_REGION
 ```
 
 > **_NOTE:_** If region is not defined, the controller will need to access the [metadata server](https://docs.outscale.com/en/userguide/Accessing-the-Metadata-and-User-Data-of-an-Instance.html) in order to get information. Access to `169.254.169.254/32` on TCP port 80 (http) must be allowed.

@@ -1,10 +1,10 @@
 apiVersion: storage.k8s.io/v1
 kind: CSIDriver
 metadata:
-  name: bsu.csi.outscale.com
+  name: {{ .Values.driver.name }}
   labels:
     {{- include "osc-bsu-csi-driver.labels" . | nindent 4 }}
 spec:
   attachRequired: true
   podInfoOnMount: false
-  fsGroupPolicy: {{ .Values.csiDriver.fsGroupPolicy }}
+  fsGroupPolicy: {{ .Values.driver.fsGroupPolicy }}

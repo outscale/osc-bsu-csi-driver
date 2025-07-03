@@ -1,4 +1,3 @@
----
 kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
@@ -15,7 +14,7 @@ rules:
   - apiGroups: [ "storage.k8s.io" ]
     resources: [ "storageclasses" ]
     verbs: [ "get", "list", "watch" ]
-{{- if .Values.enableVolumeAttributesClass }}
+{{- if .Values.driver.enableVolumeAttributesClass }}
   - apiGroups: [ "storage.k8s.io" ]
     resources: [ "volumeattributesclasses" ]
     verbs: [ "get", "list", "watch" ]
@@ -41,11 +40,8 @@ rules:
   - apiGroups: [ "storage.k8s.io" ]
     resources: [ "volumeattachments" ]
     verbs: [ "get", "list", "watch" ]
-  {{- if .Values.enableSnapshotCrossNamespace }}
+  {{- if .Values.driver.enableSnapshotCrossNamespace }}
   - apiGroups: [ "gateway.networking.k8s.io" ]
     resources: [ "referencegrants" ]
     verbs: [ "get", "list", "watch" ]
-  {{- end }}
-  {{- with .Values.sidecars.provisionerImage.additionalClusterRoleRules }}
-    {{- . | toYaml | nindent 2 }}
   {{- end }}

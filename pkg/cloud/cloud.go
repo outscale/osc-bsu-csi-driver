@@ -759,7 +759,7 @@ func (c *cloud) waitForSnapshot(ctx context.Context, snapshotID string) (osc.Sna
 		snap, err = c.getSnapshot(ctx, request, false)
 		if err != nil {
 			logger.V(4).Error(err, "cannot check state")
-			return true, nil
+			return false, nil
 		}
 		switch snap.GetState() {
 		case "error", "deleting":
@@ -1002,7 +1002,7 @@ func (c *cloud) waitForVolume(ctx context.Context, volumeID string) error {
 		vol, err := c.getVolume(ctx, request, false)
 		if err != nil {
 			logger.V(4).Error(err, "cannot check state")
-			return true, nil
+			return false, nil
 		}
 		switch vol.GetState() {
 		case "error", "deleting":

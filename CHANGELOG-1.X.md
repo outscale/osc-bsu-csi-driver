@@ -1,5 +1,9 @@
 # Changelog
 
+## [v1.6.1]
+### 🐛 Fixed
+* 🐛 fix: volume/snapshot creation did not properly handle API throttling by @jfbus in https://github.com/outscale/osc-bsu-csi-driver/pull/981
+
 ## [v1.6.0]
 ### ✨ Added
 * ✨ feat: add luksOpen additional args by @jfbus in https://github.com/outscale/osc-bsu-csi-driver/pull/933

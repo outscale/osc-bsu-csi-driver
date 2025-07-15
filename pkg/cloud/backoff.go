@@ -65,7 +65,7 @@ func (bp *BackoffPolicy) With(opts ...BackoffOpt) BackoffPolicyer {
 	return &nbp
 }
 
-// ExponentialBackoffWithContext repeats a condition check with exponential backoff.
+// ExponentialBackoff repeats a condition check with exponential backoff.
 // It stops if context is cancelled.
 func (bp *BackoffPolicy) ExponentialBackoff(ctx context.Context, fn func(ctx context.Context) (bool, error)) error {
 	// bp.backoff is not a pointer, a copy is used each time, ensuring that backoff restarts at 0 each time.

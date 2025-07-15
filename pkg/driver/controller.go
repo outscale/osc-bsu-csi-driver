@@ -429,7 +429,7 @@ func (d *controllerService) CreateSnapshot(ctx context.Context, req *csi.CreateS
 func (d *controllerService) DeleteSnapshot(ctx context.Context, req *csi.DeleteSnapshotRequest) (*csi.DeleteSnapshotResponse, error) {
 	snapshotID := req.GetSnapshotId()
 	if snapshotID == "" {
-		return nil, status.Error(codes.InvalidArgument, "Snapshot ID not provided")
+		return &csi.DeleteSnapshotResponse{}, nil
 	}
 
 	if _, err := d.cloud.DeleteSnapshot(ctx, snapshotID); err != nil {

@@ -24,6 +24,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	osccloud "github.com/outscale/osc-bsu-csi-driver/pkg/cloud"
 	bsucsidriver "github.com/outscale/osc-bsu-csi-driver/pkg/driver"
+	"github.com/outscale/osc-bsu-csi-driver/pkg/util"
 	"github.com/outscale/osc-bsu-csi-driver/tests/e2e/driver"
 	"github.com/outscale/osc-bsu-csi-driver/tests/e2e/testsuites"
 	v1 "k8s.io/api/core/v1"
@@ -33,19 +34,16 @@ import (
 )
 
 const (
-	defaultDiskSize   = 4
-	defaultVolumeType = osccloud.VolumeTypeGP2
-
+	defaultDiskSize         = 4
+	defaultVolumeType       = osccloud.VolumeTypeGP2
 	awsAvailabilityZonesEnv = "AWS_AVAILABILITY_ZONES"
-
-	dummyVolumeName = "pre-provisioned"
+	dummyVolumeName         = "pre-provisioned"
 )
 
 var (
-	defaultDiskSizeBytes int64 = defaultDiskSize * 1024 * 1024 * 1024
+	defaultDiskSizeBytes int64 = util.GiBToBytes(defaultDiskSize)
 )
 
-// Requires env AWS_AVAILABILITY_ZONES a comma separated list of AZs to be set
 var _ = Describe("[bsu-csi-e2e] [single-az] Pre-Provisioned", func() {
 	f := framework.NewDefaultFramework("bsu")
 	f.NamespacePodSecurityEnforceLevel = admissionapi.LevelPrivileged
@@ -66,13 +64,18 @@ var _ = Describe("[bsu-csi-e2e] [single-az] Pre-Provisioned", func() {
 		ns = f.Namespace
 		bsuDriver = driver.InitBsuCSIDriver()
 
-		// setup BSU volume
-		if os.Getenv(awsAvailabilityZonesEnv) == "" {
+		var availabilityZone, region string
+		switch {
+		case os.Getenv(awsAvailabilityZonesEnv) != "":
+			availabilityZones := strings.Split(os.Getenv(awsAvailabilityZonesEnv), ",")
+			availabilityZone = availabilityZones[rand.Intn(len(availabilityZones))] //nolint: gosec
+			region = availabilityZone[0 : len(availabilityZone)-1]
+		case os.Getenv("OSC_REGION") != "":
+			region := os.Getenv("OSC_REGION")
+			availabilityZone = region + "a"
+		default:
 			Skip(fmt.Sprintf("env %q not set", awsAvailabilityZonesEnv))
 		}
-		availabilityZones := strings.Split(os.Getenv(awsAvailabilityZonesEnv), ",")
-		availabilityZone := availabilityZones[rand.Intn(len(availabilityZones))] //nolint: gosec
-		region := availabilityZone[0 : len(availabilityZone)-1]
 
 		diskOptions := &osccloud.DiskOptions{
 			CapacityBytes:    defaultDiskSizeBytes,
@@ -86,8 +89,6 @@ var _ = Describe("[bsu-csi-e2e] [single-az] Pre-Provisioned", func() {
 			Fail(fmt.Sprintf("could not get NewCloud: %v", err))
 		}
 		disk, err := cloud.CreateDisk(context.Background(), "", diskOptions)
-		fmt.Printf("Debug diskOptions diskOptions diskOptions::::: %+v\n", diskOptions)
-		fmt.Printf("Debug disk disk disk::::: %+v\n", disk)
 		if err != nil {
 			Fail(fmt.Sprintf("could not provision a volume: %v", err))
 		}

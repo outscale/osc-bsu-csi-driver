@@ -163,6 +163,9 @@ spec:
             {{- if .Values.enableVolumeScheduling }}
             - --feature-gates=Topology=true
             {{- end}}
+            {{- if .Values.enableSnapshotCrossNamespace }}
+            - --feature-gates=CrossNamespaceVolumeDataSource=true
+            {{- end}}
             {{- if .Values.extraCreateMetadata }}
             - --extra-create-metadata
             {{- end}}

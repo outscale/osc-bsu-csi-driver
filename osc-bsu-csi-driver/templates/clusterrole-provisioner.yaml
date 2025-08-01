@@ -36,6 +36,11 @@ rules:
   - apiGroups: [ "storage.k8s.io" ]
     resources: [ "volumeattachments" ]
     verbs: [ "get", "list", "watch" ]
+  {{- if .Values.enableSnapshotCrossNamespace }}
+  - apiGroups: [ "gateway.networking.k8s.io" ]
+    resources: [ "referencegrants" ]
+    verbs: [ "get", "list", "watch" ]
+  {{- end }}
   {{- with .Values.sidecars.provisionerImage.additionalClusterRoleRules }}
     {{- . | toYaml | nindent 2 }}
   {{- end }}

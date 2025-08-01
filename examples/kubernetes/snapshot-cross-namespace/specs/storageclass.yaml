@@ -1,0 +1,13 @@
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: gp2-delete-immediate
+allowVolumeExpansion: true
+parameters:
+  csi.storage.k8s.io/provisioner-secret-name: osc-csi-bsu
+  csi.storage.k8s.io/provisioner-secret-namespace: kube-system
+  csi.storage.k8s.io/fstype: ext4
+  type: gp2
+provisioner: bsu.csi.outscale.com
+reclaimPolicy: Delete
+volumeBindingMode: Immediate

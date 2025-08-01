@@ -37,6 +37,7 @@ Kubernetes: `>=1.20`
 | csiDriver.fsGroupPolicy | string | `"File"` | Policy of the FileSystem (see [Docs](https://kubernetes-csi.github.io/docs/support-fsgroup.html#supported-modes)) |
 | customEndpoint | string | `""` | Use customEndpoint (url with protocol) ex: https://api.eu-west-2.outscale.com/api/v1 |
 | defaultFsType | string | `"ext4"` | Default filesystem for the volume if no `FsType` is set in `StorageClass` |
+| enableSnapshotCrossNamespace | bool | `false` | Enable snapshot cross namespace True if enable snapshot cross namespace |
 | enableVolumeResizing | bool | `false` | Enable volume resizing True if enable volume resizing |
 | enableVolumeScheduling | bool | `true` | Enable schedule volume for dynamic volume provisioning True if enable volume scheduling for dynamic volume provisioning |
 | enableVolumeSnapshot | bool | `false` | Enable volume snapshot True if enable volume snapshot |

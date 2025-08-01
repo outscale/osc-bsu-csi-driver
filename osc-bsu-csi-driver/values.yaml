@@ -172,6 +172,10 @@ enableVolumeResizing: false
 # True if enable volume snapshot
 enableVolumeSnapshot: false
 
+# -- Enable snapshot cross namespace
+# True if enable snapshot cross namespace
+enableSnapshotCrossNamespace: false
+
 # -- Specify limits of resources used by the pod containers
 resources: {}
   # We usually recommend not to specify default resources and to leave this as a conscious

@@ -1,0 +1,9 @@
+apiVersion: snapshot.storage.k8s.io/v1
+kind: VolumeSnapshot
+metadata:
+  name: my-source-snapshot
+  namespace: my-source-namespace
+spec:
+  volumeSnapshotClassName: csi-osc-vsc-delete
+  source:
+    persistentVolumeClaimName: my-source-pvc

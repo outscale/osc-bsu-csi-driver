@@ -1,0 +1,14 @@
+apiVersion: gateway.networking.k8s.io/v1beta1
+kind: ReferenceGrant
+metadata:
+  name: allow-to-clone-our-snapshot
+  namespace: my-source-namespace
+spec:
+  from:
+    - group: ''
+      kind: PersistentVolumeClaim
+      namespace: my-destination-namespace
+  to:
+    - group: snapshot.storage.k8s.io
+      kind: VolumeSnapshot
+      name: my-source-snapshot

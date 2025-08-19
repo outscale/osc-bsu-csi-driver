@@ -328,12 +328,16 @@ func NewCloud(region string, opts ...CloudOption) (Cloud, error) {
 	client.auth = context.WithValue(client.auth, osc.ContextServerIndex, 0)
 	client.auth = context.WithValue(client.auth, osc.ContextServerVariables, map[string]string{"region": region})
 
+	interval, err := time.ParseDuration(util.Getenv("READ_STATUS_INTERVAL", "2s"))
+	if err != nil {
+		interval = 2 * time.Second
+	}
 	c := &cloud{
 		region:          region,
 		dm:              dm.NewDeviceManager(),
 		client:          client,
-		snapshotWatcher: NewSnapshotWatcher(2*time.Second, client),
-		volumeWatcher:   NewVolumeWatcher(2*time.Second, client),
+		snapshotWatcher: NewSnapshotWatcher(interval, client),
+		volumeWatcher:   NewVolumeWatcher(interval, client),
 	}
 	for _, opt := range opts {
 		err := opt(c)

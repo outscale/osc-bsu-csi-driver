@@ -86,6 +86,8 @@ cloud:
     steps: "5"
 
 controller:
+  # -- The delay between two read calls while checking for a volume/snapshot status.
+  readStatusInterval: 2s
   # -- Number of replicas to deploy
   replicas: 2
   # -- Specify limits of resources used by the pod containers

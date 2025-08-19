@@ -94,7 +94,7 @@ var _ BackoffPolicyer = (*BackoffPolicy)(nil)
 func EnvBackoff() wait.Backoff {
 	// BACKOFF_DURATION duration The initial duration.
 	// Fallback as int/duration in seconds.
-	dur := util.GetEnv("BACKOFF_DURATION", "750ms")
+	dur := util.Getenv("BACKOFF_DURATION", "1s")
 	duration, err := time.ParseDuration(dur)
 	if err != nil {
 		d, derr := strconv.Atoi(dur)
@@ -102,20 +102,20 @@ func EnvBackoff() wait.Backoff {
 		err = derr
 	}
 	if err != nil {
-		duration = 750 * time.Millisecond
+		duration = time.Second
 	}
 
 	// BACKOFF_FACTOR float Duration is multiplied by factor each iteration
-	factor, err := strconv.ParseFloat(util.GetEnv("BACKOFF_FACTOR", "1.4"), 32)
+	factor, err := strconv.ParseFloat(util.Getenv("BACKOFF_FACTOR", "2"), 32)
 	if err != nil {
-		factor = 1.4
+		factor = 2
 	}
 
 	// BACKOFF_STEPS integer : The remaining number of iterations in which
 	// the duration parameter may change
-	steps, err := strconv.Atoi(util.GetEnv("BACKOFF_STEPS", "3"))
+	steps, err := strconv.Atoi(util.Getenv("BACKOFF_STEPS", "5"))
 	if err != nil {
-		steps = 3
+		steps = 5
 	}
 	return wait.Backoff{
 		Duration: duration,

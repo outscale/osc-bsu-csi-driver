@@ -20,9 +20,9 @@ func TestEnvBackoff(t *testing.T) {
 	}{{
 		name: "default values",
 		backoff: wait.Backoff{
-			Duration: 750 * time.Millisecond,
-			Factor:   1.4,
-			Steps:    3,
+			Duration: time.Second,
+			Factor:   2,
+			Steps:    5,
 		},
 	}, {
 		name: "environnement based config",
@@ -37,8 +37,8 @@ func TestEnvBackoff(t *testing.T) {
 		env:  []string{"BACKOFF_DURATION=2"},
 		backoff: wait.Backoff{
 			Duration: 2 * time.Second,
-			Factor:   1.4,
-			Steps:    3,
+			Factor:   2,
+			Steps:    5,
 		},
 	}}
 	for _, tc := range tcs {

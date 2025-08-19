@@ -49,13 +49,14 @@ You may now tune the performance of the driver with the following variables:
 
 | Variable | Description |
 | -------- | ----------- |
-| sidecars.timeout | The maximum time a sidecar (provisioner, attacher, resizer, snapshotter) will wait for the CSI driver to process a query. Safe to raise if your volumes/snapshots are very large and you encounter timeouts. |
-| sidecars.kubeAPI.QPS | The maximum of requests per seconds that a sidecar may make to the Kubernetes API server |
-| sidecars.kubeAPI.burst | The burst above sidecars.kubeAPI.QPS allowed for short periods of time |
-| sidecars.provisioner.workerThreads | The number of simultaneous provisioning requests the provisioner sidecar can process |
-| sidecars.attacher.workerThreads | The number of simultaneous attachment requests the attacher sidecar can process |
-| sidecars.resizer.workerThreads | The number of simultaneous resizing requests the resizer sidecar can process |
-| sidecars.snapshotter.workerThreads | The number of simultaneous snapshot requests the snapshotter sidecar can process |
+| `controller.readStatusInterval` | The interval between consecutive volume/snapshot checks, raise if you see throttling errors in ReadSnapshot/ReadVolumes calls. |
+| `sidecars.timeout` | The maximum time a sidecar (provisioner, attacher, resizer, snapshotter) will wait for the CSI driver to process a query. Safe to raise if your volumes/snapshots are very large and you encounter timeouts. |
+| `sidecars.kubeAPI.QPS` | The maximum of requests per seconds that a sidecar may make to the Kubernetes API server. |
+| `sidecars.kubeAPI.burst` | The burst above `sidecars.kubeAPI.QPS` allowed for short periods of time. |
+| `sidecars.provisioner.workerThreads` | The number of simultaneous provisioning requests the provisioner sidecar can process. |
+| `sidecars.attacher.workerThreads` | The number of simultaneous attachment requests the attacher sidecar can process. |
+| `sidecars.resizer.workerThreads` | The number of simultaneous resizing requests the resizer sidecar can process. |
+| `sidecars.snapshotter.workerThreads` | The number of simultaneous snapshot requests the snapshotter sidecar can process. |
 
 > Please be aware that there is a limit in the number of API calls you are allowed to make to the Outscale API.
 If you raise workerThreads too much, you may decrease the performance of the CSI driver by being throttled by the Outscale API.

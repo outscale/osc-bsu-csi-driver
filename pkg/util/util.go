@@ -116,7 +116,7 @@ func OscSetupServiceResolver(region string) endpoints.ResolverFunc {
 	}
 }
 
-func GetEnv(key string, defaultValue string) string {
+func Getenv(key string, defaultValue string) string {
 	value := os.Getenv(key)
 	if value == "" {
 		return defaultValue

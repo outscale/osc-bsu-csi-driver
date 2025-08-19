@@ -41,6 +41,7 @@ Kubernetes: `>=1.20`
 | controller.nodeSelector | object | `{}` | Node selector used to deploy controller pods. |
 | controller.podAnnotations | object | `{}` | Annotations for controller pod |
 | controller.podLabels | object | `{}` | Labels for controller pod |
+| controller.readStatusInterval | string | `"2s"` | The delay between two read calls while checking for a volume/snapshot status. |
 | controller.replicas | int | `2` | Number of replicas to deploy |
 | controller.resources | object | `{}` | Specify limits of resources used by the pod containers |
 | controller.securityContext | object | `{}` | Security context for the controller container. |

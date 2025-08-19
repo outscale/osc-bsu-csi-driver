@@ -123,6 +123,7 @@ func TestHelmTemplate_Deployment(t *testing.T) {
 				},
 			}},
 			{Name: "OSC_REGION", Value: "eu-west2"},
+			{Name: "READ_STATUS_INTERVAL", Value: "2s"},
 			{Name: "BACKOFF_DURATION", Value: "1s"},
 			{Name: "BACKOFF_FACTOR", Value: "2"},
 			{Name: "BACKOFF_STEPS", Value: "5"},

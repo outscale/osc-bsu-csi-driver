@@ -3,13 +3,13 @@ module github.com/outscale/osc-bsu-csi-driver
 go 1.23.7
 
 require (
-	github.com/aws/aws-sdk-go v1.55.7
+	github.com/aws/aws-sdk-go v1.55.8
 	github.com/container-storage-interface/spec v1.10.0
 	github.com/kubernetes-csi/csi-test/v5 v5.3.1
 	github.com/kubernetes-csi/external-snapshotter/client/v8 v8.2.0
 	github.com/onsi/ginkgo/v2 v2.23.4
 	github.com/onsi/gomega v1.36.3
-	github.com/outscale/osc-sdk-go/v2 v2.27.0
+	github.com/outscale/osc-sdk-go/v2 v2.29.0
 	github.com/rs/xid v1.6.0
 	github.com/stretchr/testify v1.10.0
 	go.uber.org/mock v0.5.2

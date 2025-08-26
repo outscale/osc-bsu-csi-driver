@@ -61,7 +61,7 @@ Kubernetes: `>=1.20`
 | node.podLabels | object | `{}` | Labels for node controller pod |
 | node.resources | object | `{}` | Node controller DaemonSet resources. If not set, the top-level resources will be used. |
 | node.tolerations | list | `[]` | Pod tolerations |
-| node.updateStrategy | object | `{"rollingUpdate":{"maxSurge":0,"maxUnavailable":"10%"},"type":"RollingUpdate"}` | Node controller DaemonSet update strategy |
+| node.updateStrategy | object | `{"type":"RollingUpdate"}` | Node controller DaemonSet update strategy |
 | nodeSelector | object | `{}` |  |
 | podAnnotations | object | `{}` | Annotations for controller pod |
 | podLabels | object | `{}` | Labels for controller pod |
@@ -136,7 +136,7 @@ Kubernetes: `>=1.20`
 | sidecars.snapshotterImage.tag | string | `"v8.3.0"` |  |
 | timeout | string | `"60s"` | Timeout for sidecars |
 | tolerations | list | `[{"key":"CriticalAddonsOnly","operator":"Exists"},{"effect":"NoExecute","operator":"Exists","tolerationSeconds":300}]` | Pod tolerations |
-| updateStrategy | object | `{"rollingUpdate":{"maxUnavailable":1},"type":"RollingUpdate"}` | Controller deployment update strategy. |
+| updateStrategy | object | `{"type":"RollingUpdate"}` | Controller deployment update strategy. |
 | verbosity | int | `3` | Verbosity level of the plugin |
 
 ----------------------------------------------

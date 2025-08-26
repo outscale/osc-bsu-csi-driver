@@ -192,8 +192,6 @@ nodeSelector: {}
 # -- Controller deployment update strategy.
 updateStrategy:
   type: RollingUpdate
-  rollingUpdate:
-    maxUnavailable: 1
 
 #@ignored
 tolerateAllTaints: true
@@ -256,10 +254,6 @@ node:
   # -- Node controller DaemonSet update strategy
   updateStrategy:
     type: RollingUpdate
-    rollingUpdate:
-      maxSurge: 0
-      maxUnavailable: 10%
-
 
 serviceAccount:
   controller:

@@ -17,7 +17,7 @@ export OSC_ACCESS_KEY=XXXXX
 export OSC_SECRET_KEY=XXXXX
 export OSC_REGION=XXXXX
 
-curl https://raw.githubusercontent.com/outscale/osc-bsu-csi-driver/master/deploy/kubernetes/secret.yaml | \
+curl https://raw.githubusercontent.com/outscale/osc-bsu-csi-driver/main/deploy/kubernetes/secret.yaml | \
     sed "s/secret_key: \"\"/secret_key: \"$OSC_SECRET_KEY\"/g" | \
     sed "s/access_key: \"\"/access_key: \"$OSC_ACCESS_KEY\"/g" > osc-secret.yaml
 kubectl delete -f osc-secret.yaml --namespace=kube-system

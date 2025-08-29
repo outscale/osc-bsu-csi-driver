@@ -2,9 +2,9 @@ name: "CodeQL"
 
 on:
   push:
-    branches: [ "master", "OSC-MIGRATION" ]
+    branches: [ "main", "OSC-MIGRATION" ]
   pull_request:
-    branches: [ "master" ]
+    branches: [ "main" ]
   schedule:
     - cron: "26 11 * * 6"
 

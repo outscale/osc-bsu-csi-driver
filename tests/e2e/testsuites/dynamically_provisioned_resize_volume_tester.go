@@ -62,8 +62,8 @@ func (t *DynamicallyProvisionedResizeVolumeTest) Run(client clientset.Interface,
 	updatedSize := updatedPvc.Spec.Resources.Requests["storage"]
 
 	By("checking the resizing PV result")
-	error := WaitForPvToResize(client, namespace, updatedPvc.Spec.VolumeName, updatedSize, 5*time.Minute, 10*time.Second)
-	framework.ExpectNoError(error)
+	err = WaitForPvToResize(client, namespace, updatedPvc.Spec.VolumeName, updatedSize, 5*time.Minute, 10*time.Second)
+	framework.ExpectNoError(err)
 
 	By("Validate volume can be attached")
 	tpod := NewTestPod(client, namespace, t.Pod.Cmd)
@@ -89,5 +89,5 @@ func WaitForPvToResize(c clientset.Interface, ns *v1.Namespace, pvName string, d
 			return nil
 		}
 	}
-	return fmt.Errorf("Gave up after waiting %v for pv %q to complete resizing", timeout, pvName)
+	return fmt.Errorf("gave up after waiting %v for pv %q to resize", timeout, pvName)
 }

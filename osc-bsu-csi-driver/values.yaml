@@ -160,13 +160,11 @@ podAnnotations: {}
 # -- Labels for controller pod
 podLabels: {}
 
-# -- Enable schedule volume for dynamic volume provisioning
-# True if enable volume scheduling for dynamic volume provisioning
+# -- Enable schedule volume for dynamic volume provisioning (deprecated, cannot be disabled)
 enableVolumeScheduling: true
 
-# -- Enable volume resizing
-# True if enable volume resizing
-enableVolumeResizing: false
+# -- Enable volume resizing (deprecated, cannot be disabled)
+enableVolumeResizing: true
 
 # -- Enable volume snapshot
 # True if enable volume snapshot

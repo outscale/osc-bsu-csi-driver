@@ -29,8 +29,6 @@ kubectl apply -f osc-secret.yaml --namespace=kube-system
 ```shell
 helm install --upgrade osc-bsu-csi-driver oci://docker.io/outscalehelm/osc-bsu-csi-driver \
     --namespace kube-system \
-    --set enableVolumeScheduling=true \
-    --set enableVolumeResizing=true \
     --set enableVolumeSnapshot=true \
     --set region=$OSC_REGION
 ```

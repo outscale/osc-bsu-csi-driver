@@ -20,11 +20,6 @@ jobs:
     steps:
     - name: ⬇️ Checkout repository
       uses: actions/checkout@v4
-    - name: ⬇️ Checkout CAPOSC
-      uses: actions/checkout@v4
-      with:
-        repository: 'outscale/cluster-api-provider-outscale'
-        path: "cluster-api-provider-outscale"
     - name: 🔐 Set ak/sk name based on runner region
       run: .github/scripts/runneraksk.sh
     - name: ⬇️ Install kubectl
@@ -59,6 +54,7 @@ jobs:
         CLUSTER_NAME: "csi"
         IMAGE_NAME: ${{ vars.IMG_MANAGEMENT }}
         CCM: true
+        KUSTOMIZE_PATH: "tests/e2e/capi-kustomize"
     - name: 📦 Build & Push the Docker image
       run: |
         docker login ${{ vars.REGISTRY }} -u admin -p ${{ secrets.HARBOR_ADMIN_PASSWORD }}

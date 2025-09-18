@@ -44,6 +44,8 @@ func (err OAPIError) GRPCCode() codes.Code {
 		return codes.ResourceExhausted // https://github.com/container-storage-interface/spec/blob/master/spec.md#createvolume-errors
 	case code == 4116 || code < 4117: // ErrorNextPageTokenExpired, ErrorInvalidNextPageTokenValue
 		return codes.Aborted // https://github.com/container-storage-interface/spec/blob/master/spec.md#listsnapshots-errors
+	case code == 4202 || code == 4029: // ErrorInvalidIopsSizeRatio, ErrorInvalidIops
+		return codes.InvalidArgument // https://github.com/container-storage-interface/spec/blob/master/spec.md#controllermodifyvolume-errors
 	default:
 		return codes.Internal
 	}

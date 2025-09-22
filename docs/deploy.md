@@ -17,17 +17,15 @@ export OSC_ACCESS_KEY=XXXXX
 export OSC_SECRET_KEY=XXXXX
 export OSC_REGION=XXXXX
 
-curl https://raw.githubusercontent.com/outscale/osc-bsu-csi-driver/main/deploy/kubernetes/secret.yaml | \
-    sed "s/secret_key: \"\"/secret_key: \"$OSC_SECRET_KEY\"/g" | \
-    sed "s/access_key: \"\"/access_key: \"$OSC_ACCESS_KEY\"/g" > osc-secret.yaml
-kubectl delete -f osc-secret.yaml --namespace=kube-system
-kubectl apply -f osc-secret.yaml --namespace=kube-system
+kubectl create secret generic osc-csi-bsu \
+    --from-literal=access_key=$OSC_ACCESS_KEY --from-literal=secret_key=$OSC_SECRET_KEY \
+    -n kube-system
 ```
 
 ## Install the driver
 
 ```shell
-helm install --upgrade osc-bsu-csi-driver oci://docker.io/outscalehelm/osc-bsu-csi-driver \
+helm upgrade --install osc-bsu-csi-driver oci://docker.io/outscalehelm/osc-bsu-csi-driver \
     --namespace kube-system \
     --set enableVolumeScheduling=true \
     --set enableVolumeResizing=true \

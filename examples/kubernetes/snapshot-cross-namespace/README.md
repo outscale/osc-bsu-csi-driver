@@ -45,7 +45,7 @@ You must manually enable it by setting the following flag on both the **kube-api
 
 ### 4. Deploy the Helm Chart with enableSnapshotCrossNamespace=true
 ```bash
-helm install --upgrade osc-bsu-csi-driver oci://docker.io/outscalehelm/osc-bsu-csi-driver \
+helm upgrade --install osc-bsu-csi-driver oci://docker.io/outscalehelm/osc-bsu-csi-driver \
   --namespace kube-system \
   --set enableVolumeScheduling=true \
   --set enableVolumeResizing=true \

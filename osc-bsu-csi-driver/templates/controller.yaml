@@ -344,7 +344,7 @@ spec:
         {{- if .Values.enableVolumeResizing }}
         - name: csi-resizer
           image: {{ printf "%s:%s" .Values.sidecars.resizerImage.repository .Values.sidecars.resizerImage.tag }}
-          imagePullPolicy: Always
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
           args:
             {{- if not (regexMatch "(-retry-interval-max)" (join " " .Values.sidecars.resizerImage.additionalArgs)) }}
             - --retry-interval-max=5m

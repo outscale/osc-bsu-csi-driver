@@ -25,13 +25,11 @@ import (
 // These are set during build time via -ldflags
 var (
 	driverVersion string
-	gitCommit     string
 	buildDate     string
 )
 
 type VersionInfo struct {
 	DriverVersion string `json:"driverVersion"`
-	GitCommit     string `json:"gitCommit"`
 	BuildDate     string `json:"buildDate"`
 	GoVersion     string `json:"goVersion"`
 	Compiler      string `json:"compiler"`
@@ -41,7 +39,6 @@ type VersionInfo struct {
 func GetVersion() VersionInfo {
 	return VersionInfo{
 		DriverVersion: driverVersion,
-		GitCommit:     gitCommit,
 		BuildDate:     buildDate,
 		GoVersion:     runtime.Version(),
 		Compiler:      runtime.Compiler,

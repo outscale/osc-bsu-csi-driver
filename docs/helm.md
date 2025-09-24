@@ -1,8 +1,8 @@
 # osc-bsu-csi-driver
 
-![Version: 1.8.0](https://img.shields.io/badge/Version-1.8.0-informational?style=flat-square) ![AppVersion: v1.6.0](https://img.shields.io/badge/AppVersion-v1.6.0-informational?style=flat-square)
+![Version: 1.9.0](https://img.shields.io/badge/Version-1.9.0-informational?style=flat-square) ![AppVersion: v1.7.0](https://img.shields.io/badge/AppVersion-v1.7.0-informational?style=flat-square)
 
-A Helm chart for Outscale BSU CSI Driver
+A Helm chart for the Outscale BSU CSI Driver
 
 **Homepage:** <https://github.com/outscale/osc-bsu-csi-driver>
 
@@ -47,9 +47,9 @@ Kubernetes: `>=1.20`
 | httpsProxy | string | `""` | Value used to create environment variable HTTPS_PROXY |
 | image.pullPolicy | string | `"IfNotPresent"` | Container pull policy |
 | image.repository | string | `"outscale/osc-bsu-csi-driver"` | Container image to use |
-| image.tag | string | `"v1.6.0"` | Container image tag to deploy |
+| image.tag | string | `"v1.7.0"` | Container image tag to deploy |
 | imagePullSecrets | list | `[]` | Specify image pull secrets |
-| maxBsuVolumes | string | `""` | Maximum number of volumes that can be attached to a node, autocomputed by default (see [Docs](https://docs.outscale.com/en/userguide/About-Volumes.html)) |
+| maxBsuVolumes | string | `""` | Maximum number of volumes that can be attached to a single node, autocomputed by default (see [Docs](https://docs.outscale.com/en/userguide/About-Volumes.html)) |
 | nameOverride | string | `""` | Override name of the app (instead of `osc-bsu-csi-driver`) |
 | noProxy | string | `""` | Value used to create environment variable NO_PROXY |
 | node.args | list | `[]` | Node controller command line additional args |

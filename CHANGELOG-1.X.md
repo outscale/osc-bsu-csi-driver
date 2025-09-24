@@ -1,5 +1,24 @@
 # Changelog
 
+## [v1.7.0] - 2025-10-01
+### ✨ Added
+* ✨ feat: automatically compute maxBsuVolumes by @jfbus in https://github.com/outscale/osc-bsu-csi-driver/pull/969
+* ✨ feat: allow snapshot cross namespace by @albundy83 in https://github.com/outscale/osc-bsu-csi-driver/pull/988
+* ✨ feat: allow online/offline change of size/volumeType/iopspergb by @jfbus in https://github.com/outscale/osc-bsu-csi-driver/pull/978
+### 🛠️ Changed / Refactoring
+* 🔧 helm: remove rollingUpdate defaults  in updateStrategy by @jfbus in https://github.com/outscale/osc-bsu-csi-driver/pull/996
+* 👷 build: build with Go 1.24 by @jfbus in https://github.com/outscale/osc-bsu-csi-driver/pull/1006
+### 📝 Documentation
+* 📝 doc: updated Helm doc by @jfbus in https://github.com/outscale/osc-bsu-csi-driver/pull/977
+* 📝 doc(deploy): fixes by @jfbus in https://github.com/outscale/osc-bsu-csi-driver/pull/1007
+### 🐛 Fixed
+* 🐛 fix: volume/snapshot creation did not properly handle API throttling by @jfbus in https://github.com/outscale/osc-bsu-csi-driver/pull/981
+* 🐛 fix(helm): use image.pullPolicy on all sidecars by @jfbus in https://github.com/outscale/osc-bsu-csi-driver/pull/1009
+### 📦 Dependency updates
+* ⬆️ deps: bump CSI spec & test suite by @jfbus in https://github.com/outscale/osc-bsu-csi-driver/pull/970
+* ⬆️ deps/helm: bump sidecars by @jfbus in https://github.com/outscale/osc-bsu-csi-driver/pull/972
+* ⬆️ deps: bump Kube to v1.31.10 by @jfbus in https://github.com/outscale/osc-bsu-csi-driver/pull/971
+
 ## [v1.6.1]
 ### 🐛 Fixed
 * 🐛 fix: volume/snapshot creation did not properly handle API throttling by @jfbus in https://github.com/outscale/osc-bsu-csi-driver/pull/981

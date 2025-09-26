@@ -138,31 +138,22 @@ var _ = Describe("[bsu-csi-e2e] [single-az] Dynamic Provisioning", func() {
 		test.Run(cs, ns)
 	})
 
-	It("should create multiple PV objects, bind to PVCs and attach all to a single pod", func() {
+	It("should create 39 volumes and attach all to a single pod", func() {
 		pods := []testsuites.PodDetails{
 			{
 				Cmd: "echo 'hello world' > /mnt/test-1/data && echo 'hello world' > /mnt/test-2/data && grep 'hello world' /mnt/test-1/data  && grep 'hello world' /mnt/test-2/data",
-				Volumes: []testsuites.VolumeDetails{
-					{
-						VolumeType: osccloud.VolumeTypeGP2,
-						FSType:     bsucsidriver.FSTypeExt3,
-						ClaimSize:  driver.MinimumSizeForVolumeType(osccloud.VolumeTypeGP2),
-						VolumeMount: testsuites.VolumeMountDetails{
-							NameGenerate:      "test-volume-",
-							MountPathGenerate: "/mnt/test-",
-						},
-					},
-					{
-						VolumeType: osccloud.VolumeTypeIO1,
-						FSType:     bsucsidriver.FSTypeExt4,
-						ClaimSize:  driver.MinimumSizeForVolumeType(osccloud.VolumeTypeIO1),
-						VolumeMount: testsuites.VolumeMountDetails{
-							NameGenerate:      "test-volume-",
-							MountPathGenerate: "/mnt/test-",
-						},
-					},
-				},
 			},
+		}
+		for i := 0; i < 39; i++ {
+			pods[0].Volumes = append(pods[0].Volumes, testsuites.VolumeDetails{
+				VolumeType: osccloud.VolumeTypeGP2,
+				FSType:     bsucsidriver.FSTypeExt4,
+				ClaimSize:  driver.MinimumSizeForVolumeType(osccloud.VolumeTypeGP2),
+				VolumeMount: testsuites.VolumeMountDetails{
+					NameGenerate:      "test-volume-",
+					MountPathGenerate: "/mnt/test-",
+				},
+			})
 		}
 		test := testsuites.DynamicallyProvisionedCmdVolumeTest{
 			CSIDriver: bsuDriver,
@@ -334,7 +325,7 @@ var _ = Describe("[bsu-csi-e2e] [single-az] Dynamic Provisioning", func() {
 		test.Run(cs, ns)
 	})
 
-	It("should create a volume with too many iops", func() {
+	It("should create a volume even when too many iops are requested", func() {
 		pods := []testsuites.PodDetails{
 			{
 				Cmd: "touch /mnt/test-1/data",
@@ -360,7 +351,7 @@ var _ = Describe("[bsu-csi-e2e] [single-az] Dynamic Provisioning", func() {
 		test.Run(cs, ns)
 	})
 
-	It("should create a volume with a ratio iops/size too high", func() {
+	It("should create a volume even when the requested iops/size ratio is too high", func() {
 		pods := []testsuites.PodDetails{
 			{
 				Cmd: "touch /mnt/test-1/data",

@@ -10,7 +10,7 @@ image:
   # -- Container image to use
   repository: outscale/osc-bsu-csi-driver
   # -- Container image tag to deploy
-  tag: v1.6.0
+  tag: v1.7.0
   # -- Container pull policy
   pullPolicy: IfNotPresent
 
@@ -223,7 +223,7 @@ extraCreateMetadata: false
 # -- Region to use, otherwise it will be looked up via metadata. By providing this parameter, the controller will not require to access the metadata.
 region: ""
 
-# -- Maximum number of volumes that can be attached to a node, autocomputed by default (see [Docs](https://docs.outscale.com/en/userguide/About-Volumes.html))
+# -- Maximum number of volumes that can be attached to a single node, autocomputed by default (see [Docs](https://docs.outscale.com/en/userguide/About-Volumes.html))
 maxBsuVolumes: ""
 
 # -- Default filesystem for the volume if no `FsType` is set in `StorageClass`

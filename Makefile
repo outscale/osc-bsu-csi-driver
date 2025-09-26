@@ -24,9 +24,8 @@ PKG := github.com/outscale/osc-bsu-csi-driver
 IMAGE := outscale/osc-bsu-csi-driver
 IMAGE_TAG ?= $(shell git describe --tags --always --dirty)
 VERSION ?= ${IMAGE_TAG}
-GIT_COMMIT ?= $(shell git rev-parse HEAD)
 BUILD_DATE ?= $(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
-LDFLAGS ?= "-s -w -X ${PKG}/pkg/util.driverVersion=${VERSION} -X ${PKG}/pkg/util.gitCommit=${GIT_COMMIT} -X ${PKG}/pkg/util.buildDate=${BUILD_DATE}"
+LDFLAGS ?= "-s -w -X ${PKG}/pkg/util.driverVersion=${VERSION} -X ${PKG}/pkg/util.buildDate=${BUILD_DATE}"
 GO111MODULE := on
 GOPROXY := direct
 TRIVY_IMAGE := aquasec/trivy:0.30.0

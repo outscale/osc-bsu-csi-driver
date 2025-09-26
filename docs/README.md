@@ -84,8 +84,13 @@ See [Deploy](deploy.md)
 ### Troubleshooting
 See [Troubleshooting](troubleshooting.md)
 
-### Migration from v0.X to v1.0.0
+## Upgrade notes
+
+### Upgrading from v0.X to v1.0.0
 See [Migration Process](migration.md)
+
+### Upgrading from v1.6 to v1.7
+`maxBsuVolumes` is now automatically computed when the driver starts. Configuring it is not necessary in most cases, even if multiple BSU volumes are mounted by the OS.
 
 ## Examples
 

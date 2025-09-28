@@ -257,10 +257,11 @@ func (client *OscClient) UpdateVolume(ctx context.Context, localVarOptionals osc
 var _ OscInterface = &OscClient{}
 
 type cloud struct {
-	region  string
-	dm      dm.DeviceManager
-	client  OscInterface
-	backoff BackoffPolicyer
+	readinessInterval time.Duration
+	region            string
+	dm                dm.DeviceManager
+	client            OscInterface
+	backoff           BackoffPolicyer
 }
 
 var _ Cloud = &cloud{}
@@ -316,10 +317,15 @@ func NewCloud(region string, opts ...CloudOption) (Cloud, error) {
 	client.auth = context.WithValue(client.auth, osc.ContextServerIndex, 0)
 	client.auth = context.WithValue(client.auth, osc.ContextServerVariables, map[string]string{"region": region})
 
+	interval, err := time.ParseDuration(util.Getenv("READINESS_INTERVAL", "2s"))
+	if err != nil {
+		interval = 2 * time.Second
+	}
 	c := &cloud{
-		region: region,
-		dm:     dm.NewDeviceManager(),
-		client: client,
+		readinessInterval: interval,
+		region:            region,
+		dm:                dm.NewDeviceManager(),
+		client:            client,
 	}
 	for _, opt := range opts {
 		err := opt(c)
@@ -607,7 +613,7 @@ func (c *cloud) WaitForAttachmentState(ctx context.Context, volumeID, state stri
 		return false, nil
 	}
 
-	waitErr := wait.PollUntilContextCancel(ctx, 2*time.Second, false, verifyVolumeFunc)
+	waitErr := wait.PollUntilContextCancel(ctx, c.readinessInterval, false, verifyVolumeFunc)
 	logger.V(4).Info("End of wait", "success", waitErr == nil, "duration", time.Since(start))
 	if waitErr != nil {
 		return fmt.Errorf("could not check attachment state: %w", waitErr)
@@ -781,7 +787,7 @@ func (c *cloud) waitForSnapshot(ctx context.Context, snapshotID string) (osc.Sna
 			return false, nil
 		}
 	}
-	err := wait.PollUntilContextCancel(ctx, 2*time.Second, false, testVolume)
+	err := wait.PollUntilContextCancel(ctx, c.readinessInterval, false, testVolume)
 	logger.V(4).Info("End of wait", "success", err == nil, "duration", time.Since(start))
 	if err != nil {
 		return snap, fmt.Errorf("unable to wait for snapshot: %w", err)
@@ -1024,7 +1030,7 @@ func (c *cloud) waitForVolume(ctx context.Context, volumeID string) error {
 			return false, nil
 		}
 	}
-	err := wait.PollUntilContextCancel(ctx, 2*time.Second, false, testVolume)
+	err := wait.PollUntilContextCancel(ctx, c.readinessInterval, false, testVolume)
 	logger.V(4).Info("End of wait", "success", err == nil, "duration", time.Since(start))
 	if err != nil {
 		return fmt.Errorf("unable to wait for volume: %w", err)

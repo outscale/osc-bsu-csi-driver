@@ -1,98 +1,155 @@
+[![Project Graduated](https://docs.outscale.com/fr/userguide/_images/Project-Graduated-green.svg)](https://docs.outscale.com/en/userguide/Open-Source-Projects.html) [![Artifact Hub](https://img.shields.io/endpoint?url=https://artifacthub.io/badge/repository/osc-bsu-csi-driver)](https://artifacthub.io/packages/search?repo=osc-bsu-csi-driver) [![](https://dcbadge.limes.pink/api/server/HUVtY5gT6s?style=flat\&theme=default-inverted)](https://discord.gg/HUVtY5gT6s)
 
-[![Project Graduated](https://docs.outscale.com/fr/userguide/_images/Project-Graduated-green.svg)](https://docs.outscale.com/en/userguide/Open-Source-Projects.html)
-# Outscale Block Storage Unit (BSU) CSI driver
+# Outscale Block Storage Unit (BSU) CSI Driver
 
-> **_NOTE:_** We are currently maintaining two versions of the plugin: v1.X (`master` branch) and v0.X (`OSC-MIGRATION` branch). If you are using the v0.X, we provide a guide to migrate to the new version [here](#migration-from-v0x-to-v100). The version v0.X will still receive bug and CVE fixes for as long it is used but no new features will be added.
+> We currently maintain two branches: **v1.x** (`master`) and **v0.x** (`OSC-MIGRATION`). If you use **v0.x**, see the migration guide: [Upgrading from v0.x to v1.0.0](#upgrading-from-v0x-to-v100).
+> v0.x will continue to receive bug and CVE fixes while in use, but **no new features** will be added.
 
-[![Artifact Hub](https://img.shields.io/endpoint?url=https://artifacthub.io/badge/repository/osc-bsu-csi-driver)](https://artifacthub.io/packages/search?repo=osc-bsu-csi-driver)
+<p align="center">
+  <img alt="Kubernetes Logo" src="https://upload.wikimedia.org/wikipedia/commons/3/39/Kubernetes_logo_without_workmark.svg" width="120px">
+</p>
 
-## Overview
+---
 
-The Outscale Block Storage Unit Container Storage Interface (CSI) Driver provides a [CSI](https://github.com/container-storage-interface/spec/blob/master/spec.md) interface used by Container Orchestrators to manage the lifecycle of 3DS outscale BSU volumes.
+## 🌐 Links
 
-## CSI Specification Compability Matrix
+* Project repo: [https://github.com/outscale/osc-bsu-csi-driver](https://github.com/outscale/osc-bsu-csi-driver)
+* Artifact Hub: [https://artifacthub.io/packages/search?repo=osc-bsu-csi-driver](https://artifacthub.io/packages/search?repo=osc-bsu-csi-driver)
+* Join our community on [Discord](https://discord.gg/HUVtY5gT6s)
 
-| Plugin Version  | Compatible with CSI Version                                                         | Min K8s Version | Recommended K8s Version |
-| ---------------- | ---------------------------------------------------------------------------------- | --------------- | ----------------------- |
-| <= v0.0.14beta  | [v1.3.0](https://github.com/container-storage-interface/spec/releases/tag/v1.3.0)   | 1.16            | 1.22                    |
-| v0.0.15         | [v1.5.0](https://github.com/container-storage-interface/spec/releases/tag/v1.5.0)   | 1.20            | 1.23                    |
-| v0.1.0 - v1.3.0 | [v1.5.0](https://github.com/container-storage-interface/spec/releases/tag/v1.5.0)   | 1.20            | 1.23                    |
-| v0.1.0 - v1.6.X | [v1.8.0](https://github.com/container-storage-interface/spec/releases/tag/v1.8.0)   | 1.20            | 1.30                    |
-| v1.7.X -        | [v1.10.0](https://github.com/container-storage-interface/spec/releases/tag/v1.10.0) | 1.20            | 1.31                    |
+---
 
-## Features
+## 📄 Table of Contents
 
-The following CSI gRPC calls are implemented:
-* **Controller Service**: CreateVolume, DeleteVolume, ControllerPublishVolume, ControllerUnpublishVolume, ControllerGetCapabilities, ControllerExpandVolume, ControllerModifyVolume, ValidateVolumeCapabilities, CreateSnapshot, DeleteSnapshot, ListSnapshots
-* **Node Service**: NodeStageVolume, NodeUnstageVolume, NodePublishVolume, NodeUnpublishVolume, NodeExpandVolume, NodeGetCapabilities, NodeGetInfo, NodeGetVolumeStats
-* **Identity Service**: GetPluginInfo, GetPluginCapabilities, Probe
+* [Overview](#-overview)
+* [Compatibility](#-compatibility)
+* [Features](#-features)
+* [Kubernetes Usage](#-kubernetes-usage)
+* [Configuration (StorageClass Parameters)](#-configuration-storageclass-parameters)
+* [Installation](#-installation)
+* [Troubleshooting](#-troubleshooting)
+* [Upgrade Notes](#-upgrade-notes)
+* [Examples](#-examples)
+* [Development](#-development)
+* [License](#-license)
+* [Contributing](#-contributing)
 
-The following CSI gRPC calls are currently not implemented:
-* **Controller Service**: GetCapacity, ListVolumes, ControllerGetVolume
-* **Node Service**: N/A
-* **Identity Service**: N/A
+---
 
-### CreateVolume
+## 🧭 Overview
 
-There are several optional parameters that can be passed into `CreateVolumeRequest.parameters` map:
+The **Outscale Block Storage Unit (BSU) CSI Driver** implements the Container Storage Interface ([CSI](https://github.com/container-storage-interface/spec/blob/master/spec.md)) for OUTSCALE BSU volumes. It allows container orchestrators (e.g., Kubernetes) to provision, attach, mount, snapshot, and expand BSU volumes.
 
-| Parameter                                      | Values                | Default | Description |
-| ---------------------------------------------- | --------------------- | ------- | ----------- |
-| csi.storage.k8s.io/fstype                      | xfs, ext2, ext3, ext4 | ext4    | File system type that will used to format the volume |
-| type                                           | io1, gp2, standard    | gp2     | BSU volume type |
-| iopsPerGB                                      |                       |         | I/O operations per second per GiB. Required when io1 volume type is specified |
-| encrypted                                      | true, false           | false   | Specify if we want to encrypt the disk or not |
-| csi.storage.k8s.io/node-stage-secret-name      | string                |         | The name of the secret  (See [template](https://kubernetes-csi.github.io/docs/secrets-and-credentials-storage-class.html#node-stage-secret)) |
-| csi.storage.k8s.io/node-stage-secret-namespace | string                |         | The namespace of the secret (See [template](https://kubernetes-csi.github.io/docs/secrets-and-credentials-storage-class.html#node-stage-secret)) |
-| kmsKeyId                                       | string                |         | Not yet supported |
-| luks-cipher                                    | string                |         | LUKS encryption cipher to use  (See [doc](https://gitlab.com/cryptsetup/cryptsetup/blob/master/docs/on-disk-format-luks2.pdf) or `cryptsetup --help`). Default value depends on the cryptsetup version |
-| luks-hash                                      | string                |         | Derivation Password hash algorithm (See [doc](https://gitlab.com/cryptsetup/cryptsetup/blob/master/docs/on-disk-format-luks2.pdf) or `cryptsetup --help`). Default value depends on the cryptsetup version |
-| luks-key-size                                  | string                |         | Size of the encryption key  (See [doc](https://gitlab.com/cryptsetup/cryptsetup/blob/master/docs/on-disk-format-luks2.pdf) or `cryptsetup --help`). Default value depends on the cryptsetup version |
+---
 
-**Notes**:
-* Parameter names are case sensitive.
+## 🔗 Compatibility
 
-### ControllerExpandVolume
+<details>
+<summary><strong>CSI Specification Compatibility Matrix</strong></summary>
 
-Both cold volumes (volumes not mounted on a VM) and hot volumes (volumes mounted) can be resized.
+| Plugin Version  | Compatible CSI Version                                                              | Min K8s | Recommended K8s |
+| --------------- | ----------------------------------------------------------------------------------- | ------- | --------------- |
+| <= v0.0.14beta  | [v1.3.0](https://github.com/container-storage-interface/spec/releases/tag/v1.3.0)   | 1.16    | 1.22            |
+| v0.0.15         | [v1.5.0](https://github.com/container-storage-interface/spec/releases/tag/v1.5.0)   | 1.20    | 1.23            |
+| v0.1.0 – v1.3.0 | [v1.5.0](https://github.com/container-storage-interface/spec/releases/tag/v1.5.0)   | 1.20    | 1.23            |
+| v0.1.0 – v1.6.x | [v1.8.0](https://github.com/container-storage-interface/spec/releases/tag/v1.8.0)   | 1.20    | 1.30            |
+| v1.7.x – latest | [v1.10.0](https://github.com/container-storage-interface/spec/releases/tag/v1.10.0) | 1.20    | 1.31            |
 
-### ControllerModifyVolume
+</details>
 
-Volume type (volumeType) and IOPS (iopspergb) may be changed using VolumeAttributeClasses. Both cold volumes (volumes not mounted on a VM) and hot volumes (volumes mounted) can be updated.
+---
 
-## Use with Kubernetes
+## ✨ Features
 
-Following sections are Kubernetes specific. If you are Kubernetes user, use followings for driver features, installation steps and examples.
+**Implemented CSI gRPCs**
 
-### Features
-* **Static Provisioning** - create a new or migrate existing BSU volumes, and mounts them in pods through persistent volume claims (PVC),
-* **Dynamic Provisioning** - use persistent volume claims (PVC) to create on-demand volumes and mount them in pods,
-* **Block Volumes** - mount raw block devices for latency sensitive application eg. MySql,
-* **Volume Snapshots** - create volume snapshots and restore volumes from snapshots,
-* **Volume Encryption** - using Luks & cryptsetup.
+* **Controller**: `CreateVolume`, `DeleteVolume`, `ControllerPublishVolume`, `ControllerUnpublishVolume`, `ControllerGetCapabilities`, `ControllerExpandVolume`, `ControllerModifyVolume`, `ValidateVolumeCapabilities`, `CreateSnapshot`, `DeleteSnapshot`, `ListSnapshots`
+* **Node**: `NodeStageVolume`, `NodeUnstageVolume`, `NodePublishVolume`, `NodeUnpublishVolume`, `NodeExpandVolume`, `NodeGetCapabilities`, `NodeGetInfo`, `NodeGetVolumeStats`
+* **Identity**: `GetPluginInfo`, `GetPluginCapabilities`, `Probe`
 
-### Prerequisites
-- Cluster K8S with compatible version (See [Version](README.md#csi-specification-compability-matrix))
-- The plugin needs AK/SK to interact with Outscale BSU API, so you can create an AK/SK using an eim user, for example, with a proper permission by attaching [a policy like](./example-eim-policy.json) 
+**Not implemented**
 
-### Chart Configuration
-See [Helm Chart Configuration](helm.md)
+* **Controller**: `GetCapacity`, `ListVolumes`, `ControllerGetVolume`
+* **Node**: —
+* **Identity**: —
 
-### Installation
-See [Deploy](deploy.md)
+**Additional behavior**
 
-### Troubleshooting
-See [Troubleshooting](troubleshooting.md)
+* **ControllerExpandVolume**: supports both cold (detached) and hot (attached) volume resize.
+* **ControllerModifyVolume**: update `volumeType` and `iopsPerGB` via VolumeAttributeClasses on both cold and hot volumes.
 
-## Upgrade notes
+---
 
-### Upgrading from v0.X to v1.0.0
-See [Migration Process](migration.md)
+## ☸️ Kubernetes Usage
+
+* **Static provisioning**: import existing BSU volumes and mount via PVCs.
+* **Dynamic provisioning**: create on-demand volumes via PVCs.
+* **Block volumes**: raw block device support for latency-sensitive apps (e.g., MySQL).
+* **Volume snapshots**: create and restore from snapshots.
+* **Volume encryption**: LUKS + `cryptsetup`.
+
+**Prerequisites**
+
+* A Kubernetes cluster within a compatible version range (see [Compatibility](#-compatibility)).
+* Driver access to OUTSCALE APIs using AK/SK credentials (for example via an EIM user with an appropriate policy such as [`example-eim-policy.json`](./example-eim-policy.json)).
+
+---
+
+## 🛠 Configuration (StorageClass Parameters)
+
+These parameters are passed via the StorageClass to `CreateVolumeRequest.parameters`:
+
+<details>
+<summary><strong>StorageClass parameters</strong></summary>
+
+| Parameter                                        | Values                   | Default | Description                                                        |
+| ------------------------------------------------ | ------------------------ | ------- | ------------------------------------------------------------------ |
+| `csi.storage.k8s.io/fstype`                      | `xfs`, `ext2/3/4`        | `ext4`  | Filesystem to format the volume with.                              |
+| `type`                                           | `io1`, `gp2`, `standard` | `gp2`   | BSU volume type.                                                   |
+| `iopsPerGB`                                      | integer                  | —       | Required when `type=io1`; IOPS per GiB.                            |
+| `encrypted`                                      | `true`, `false`          | `false` | Enable LUKS encryption.                                            |
+| `csi.storage.k8s.io/node-stage-secret-name`      | string                   | —       | Name of the node-stage secret (see CSI docs).                      |
+| `csi.storage.k8s.io/node-stage-secret-namespace` | string                   | —       | Namespace of the node-stage secret (see CSI docs).                 |
+| `kmsKeyId`                                       | string                   | —       | Not yet supported.                                                 |
+| `luks-cipher`                                    | string                   | —       | LUKS cipher; default depends on `cryptsetup` version.              |
+| `luks-hash`                                      | string                   | —       | Password derivation hash; default depends on `cryptsetup` version. |
+| `luks-key-size`                                  | string                   | —       | Encryption key size; default depends on `cryptsetup` version.      |
+
+**Notes**
+
+* Parameter names are **case-sensitive**.
+
+</details>
+
+---
+
+## 📦 Installation
+
+See **[Deploy](./deploy.md)** for step-by-step installation (Helm/Manifests) and cluster-specific notes.
+
+**Chart configuration**: see **[Helm Chart Configuration](./helm.md)**.
+
+---
+
+## 🐞 Troubleshooting
+
+Common issues and diagnostics are covered in **[Troubleshooting](./troubleshooting.md)**.
+
+---
+
+## ⬆️ Upgrade Notes
+
+### Upgrading from v0.x to v1.0.0
+
+Follow the **[Migration Process](./migration.md)**.
 
 ### Upgrading from v1.6 to v1.7
-`maxBsuVolumes` is now automatically computed when the driver starts. Configuring it is not necessary in most cases, even if multiple BSU volumes are mounted by the OS.
 
-## Examples
+`maxBsuVolumes` is now computed automatically at driver startup. Manual configuration is usually unnecessary, even when multiple BSU volumes are mounted by the OS.
+
+---
+
+## 💡 Examples
 
 * [Dynamic Provisioning](../examples/kubernetes/dynamic-provisioning)
 * [Block Volume](../examples/kubernetes/block-volume)
@@ -102,6 +159,23 @@ See [Migration Process](migration.md)
 * [Volume Updates (VolumeAttributeClasses)](../examples/kubernetes/volume-attribute-class)
 * [Encryption](../examples/kubernetes/encryption/)
 
-## Development
+---
 
-See [Development Process](development.md)
+## 🧪 Development
+
+See **[Development Process](./development.md)**.
+
+---
+
+## 📜 License
+
+© 2025 Outscale SAS
+
+See [LICENSE](./LICENSE) for full details.
+
+---
+
+## 🤝 Contributing
+
+Contributions are welcome!
+Please read our **[Contributing Guidelines](./CONTRIBUTING.md)** and **[Code of Conduct](./CODE_OF_CONDUCT.md)** before opening a pull request.

@@ -37,7 +37,7 @@ my-cli-tool test
 
 ## Checklist
 
-* [ ] I have followed the [Contributing Guidelines](CONTRIBUTING.md)
+* [ ] I have followed the [Contributing Guidelines](../blob/main/CONTRIBUTING.md)
 * [ ] I have added tests or explained why they are not needed
 * [ ] I have updated relevant documentation (README, examples, etc.)
 * [ ] My changes follow the [Conventional Commits](https://www.conventionalcommits.org/) specification

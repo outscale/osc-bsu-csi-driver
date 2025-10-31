@@ -57,6 +57,7 @@ var _ = Describe("[bsu-csi-e2e] [single-az] Pre-Provisioned", func() {
 		diskSize  string
 		// Set to true if the volume should be deleted automatically after test
 		skipManuallyDeletingVolume bool
+		cancel                     func()
 	)
 
 	BeforeEach(func() {
@@ -88,26 +89,33 @@ var _ = Describe("[bsu-csi-e2e] [single-az] Pre-Provisioned", func() {
 		if err != nil {
 			Fail(fmt.Sprintf("could not get NewCloud: %v", err))
 		}
+		var ctx context.Context
+		ctx, cancel = context.WithCancel(context.Background())
+		cloud.Start(ctx)
+		By("Provisioning volume")
 		disk, err := cloud.CreateDisk(context.Background(), "", diskOptions)
 		if err != nil {
 			Fail(fmt.Sprintf("could not provision a volume: %v", err))
 		}
 		volumeID = disk.VolumeID
 		diskSize = fmt.Sprintf("%dGi", defaultDiskSize)
-		By(fmt.Sprintf("Successfully provisioned BSU volume: %q\n", volumeID))
+		By(fmt.Sprintf("Successfully provisioned volume: %q", volumeID))
 	})
 
 	AfterEach(func() {
 		if !skipManuallyDeletingVolume {
+			By("Waiting until volume is detached")
 			err := cloud.WaitForAttachmentState(context.Background(), volumeID, "detached")
 			if err != nil {
 				Fail(fmt.Sprintf("could not detach volume %q: %v", volumeID, err))
 			}
+			By("Deleting volume")
 			ok, err := cloud.DeleteDisk(context.Background(), volumeID)
 			if err != nil || !ok {
 				Fail(fmt.Sprintf("could not delete volume %q: %v", volumeID, err))
 			}
 		}
+		cancel()
 	})
 
 	It("[env] should write and read to a pre-provisioned volume", func() {

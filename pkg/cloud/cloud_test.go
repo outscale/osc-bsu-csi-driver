@@ -23,6 +23,7 @@ import (
 	"reflect"
 	"strings"
 	"testing"
+	"time"
 
 	dm "github.com/outscale/osc-bsu-csi-driver/pkg/cloud/devicemanager"
 	"github.com/outscale/osc-bsu-csi-driver/pkg/cloud/mocks"
@@ -144,6 +145,9 @@ func TestCreateDisk(t *testing.T) {
 			mockCtrl := gomock.NewController(t)
 			mockOscInterface := mocks.NewMockOscInterface(mockCtrl)
 			c := newCloud(mockOscInterface)
+			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			defer cancel()
+			c.Start(ctx)
 			volState := tc.volState
 			if volState == "" {
 				volState = "available"
@@ -164,7 +168,6 @@ func TestCreateDisk(t *testing.T) {
 			readSnapshot.SetState("completed")
 
 			tag := osc.CreateTagsResponse{}
-			ctx := context.Background()
 			if !tc.diskOptions.Encrypted {
 				mockOscInterface.EXPECT().CreateVolume(gomock.Eq(ctx), gomock.Any()).Return(vol, nil, tc.expCreateVolumeErr)
 				mockOscInterface.EXPECT().CreateTags(gomock.Eq(ctx), gomock.Any()).Return(tag, nil, nil).AnyTimes()
@@ -195,6 +198,9 @@ func TestCreateDisk(t *testing.T) {
 		mockCtrl := gomock.NewController(t)
 		mockOscInterface := mocks.NewMockOscInterface(mockCtrl)
 		c := newCloud(mockOscInterface)
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		c.Start(ctx)
 
 		created := osc.Volume{}
 		created.SetVolumeId(volumeID)
@@ -202,7 +208,6 @@ func TestCreateDisk(t *testing.T) {
 		created.SetSize(4)
 
 		tag := osc.CreateTagsResponse{}
-		ctx := context.Background()
 		mockOscInterface.EXPECT().CreateVolume(gomock.Eq(ctx), gomock.Eq(osc.CreateVolumeRequest{
 			ClientToken:   &volName,
 			SubregionName: "az",
@@ -297,6 +302,9 @@ func TestAttachDisk(t *testing.T) {
 			mockCtrl := gomock.NewController(t)
 			mockOscInterface := mocks.NewMockOscInterface(mockCtrl)
 			c := newCloud(mockOscInterface)
+			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			defer cancel()
+			c.Start(ctx)
 
 			vol := osc.Volume{
 				VolumeId: &tc.volumeID,
@@ -306,7 +314,6 @@ func TestAttachDisk(t *testing.T) {
 			}
 			vol.GetLinkedVolumes()[0].SetState("attached")
 
-			ctx := context.Background()
 			mockOscInterface.EXPECT().ReadVolumes(gomock.Eq(ctx), gomock.Any()).Return(osc.ReadVolumesResponse{Volumes: &[]osc.Volume{vol}}, nil, nil).AnyTimes()
 			mockOscInterface.EXPECT().ReadVms(gomock.Eq(ctx), gomock.Any()).Return(newDescribeInstancesOutput(tc.nodeID), nil, nil)
 			mockOscInterface.EXPECT().LinkVolume(gomock.Eq(ctx), gomock.Any()).Return(osc.LinkVolumeResponse{}, nil, tc.expErr)
@@ -350,13 +357,15 @@ func TestDetachDisk(t *testing.T) {
 			mockCtrl := gomock.NewController(t)
 			mockOscInterface := mocks.NewMockOscInterface(mockCtrl)
 			c := newCloud(mockOscInterface)
+			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			defer cancel()
+			c.Start(ctx)
 
 			vol := osc.Volume{
 				VolumeId:      &tc.volumeID,
 				LinkedVolumes: nil,
 			}
 
-			ctx := context.Background()
 			mockOscInterface.EXPECT().ReadVolumes(gomock.Eq(ctx), gomock.Any()).Return(osc.ReadVolumesResponse{Volumes: &[]osc.Volume{vol}}, nil, nil).AnyTimes()
 			// Create a Vm and add device in BSU
 			vm := newDescribeInstancesOutput(tc.nodeID)
@@ -535,6 +544,9 @@ func TestCreateSnapshot(t *testing.T) {
 		mockCtrl := gomock.NewController(t)
 		mockOscInterface := mocks.NewMockOscInterface(mockCtrl)
 		c := newCloud(mockOscInterface)
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		c.Start(ctx)
 
 		created := osc.Snapshot{}
 		created.SetSnapshotId(snapID)
@@ -548,7 +560,6 @@ func TestCreateSnapshot(t *testing.T) {
 		completed.SetState("completed")
 
 		tag := osc.CreateTagsResponse{}
-		ctx := context.Background()
 		mockOscInterface.EXPECT().CreateSnapshot(gomock.Eq(ctx), gomock.Eq(osc.CreateSnapshotRequest{
 			ClientToken: &snapName,
 			Description: ptr.To("Created by Outscale BSU CSI driver for volume " + volumeID),
@@ -582,6 +593,9 @@ func TestCreateSnapshot(t *testing.T) {
 		mockCtrl := gomock.NewController(t)
 		mockOscInterface := mocks.NewMockOscInterface(mockCtrl)
 		c := newCloud(mockOscInterface)
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		c.Start(ctx)
 
 		created := osc.Snapshot{}
 		created.SetSnapshotId(snapID)
@@ -589,7 +603,6 @@ func TestCreateSnapshot(t *testing.T) {
 		created.SetState("completed")
 
 		tag := osc.CreateTagsResponse{}
-		ctx := context.Background()
 		mockOscInterface.EXPECT().CreateSnapshot(gomock.Eq(ctx), gomock.Eq(osc.CreateSnapshotRequest{
 			ClientToken: &snapName,
 			Description: ptr.To("Created by Outscale BSU CSI driver for volume " + volumeID),
@@ -973,10 +986,12 @@ func TestListSnapshots(t *testing.T) {
 
 func newCloud(mockOscInterface OscInterface) *cloud {
 	return &cloud{
-		region:  defaultRegion,
-		dm:      dm.NewDeviceManager(),
-		client:  mockOscInterface,
-		backoff: NewBackoffPolicy(),
+		region:          defaultRegion,
+		dm:              dm.NewDeviceManager(),
+		client:          mockOscInterface,
+		backoff:         NewBackoffPolicy(),
+		snapshotWatcher: NewSnapshotWatcher(time.Second, mockOscInterface),
+		volumeWatcher:   NewVolumeWatcher(time.Second, mockOscInterface),
 	}
 }
 
@@ -1064,7 +1079,9 @@ func TestResizeDisk(t *testing.T) {
 			mockCtrl := gomock.NewController(t)
 			mockEC2 := mocks.NewMockOscInterface(mockCtrl)
 			c := newCloud(mockEC2)
-			ctx := context.Background()
+			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			defer cancel()
+			c.Start(ctx)
 
 			if !reflect.DeepEqual(tc.existingVolume, osc.Volume{}) || tc.existingVolumeError != nil {
 				mockEC2.EXPECT().ReadVolumes(gomock.Eq(ctx), gomock.Any()).Return(

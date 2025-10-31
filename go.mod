@@ -1,6 +1,6 @@
 module github.com/outscale/osc-bsu-csi-driver
 
-go 1.23.7
+go 1.25.0
 
 require (
 	github.com/aws/aws-sdk-go v1.55.7

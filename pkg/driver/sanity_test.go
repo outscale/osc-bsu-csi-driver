@@ -132,6 +132,8 @@ func newFakeCloudProvider() *fakeCloudProvider {
 	}
 }
 
+func (c *fakeCloudProvider) Start(ctx context.Context) {}
+
 func (c *fakeCloudProvider) CreateDisk(ctx context.Context, volumeName string, diskOptions *cloud.DiskOptions) (cloud.Disk, error) {
 	if len(diskOptions.SnapshotID) > 0 {
 		if _, ok := c.snapshots[diskOptions.SnapshotID]; !ok {

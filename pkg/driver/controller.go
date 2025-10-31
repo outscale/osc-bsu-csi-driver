@@ -92,6 +92,13 @@ func newControllerService(driverOptions *DriverOptions) controllerService {
 	}
 }
 
+func (c *controllerService) Start(ctx context.Context) {
+	if c.cloud == nil {
+		return
+	}
+	c.cloud.Start(ctx)
+}
+
 func (d *controllerService) CreateVolume(ctx context.Context, req *csi.CreateVolumeRequest) (*csi.CreateVolumeResponse, error) {
 	volName := req.GetName()
 	if volName == "" {

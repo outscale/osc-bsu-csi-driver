@@ -17,6 +17,7 @@ limitations under the License.
 package driver
 
 import (
+	"context"
 	"fmt"
 	"net"
 	"strings"
@@ -39,6 +40,14 @@ const (
 	AllMode Mode = "all"
 )
 
+func (m Mode) HasController() bool {
+	return m == ControllerMode || m == AllMode
+}
+
+func (m Mode) HasNode() bool {
+	return m == NodeMode || m == AllMode
+}
+
 const (
 	DriverName     = "bsu.csi.outscale.com"
 	TopologyKey    = "topology." + DriverName + "/zone"
@@ -48,6 +57,8 @@ const (
 type Driver struct {
 	controllerService
 	nodeService
+
+	cancel func()
 
 	srv     *grpc.Server
 	options *DriverOptions
@@ -84,16 +95,12 @@ func NewDriver(options ...func(*DriverOptions)) (*Driver, error) {
 		options: &driverOptions,
 	}
 
-	switch driverOptions.mode {
-	case ControllerMode:
+	// no need to test for invalid modes, as ValidateDriverOptions has already done it.
+	if driverOptions.mode.HasController() {
 		driver.controllerService = newControllerService(&driverOptions)
-	case NodeMode:
+	}
+	if driverOptions.mode.HasNode() {
 		driver.nodeService = newNodeService(&driverOptions)
-	case AllMode:
-		driver.controllerService = newControllerService(&driverOptions)
-		driver.nodeService = newNodeService(&driverOptions)
-	default:
-		return nil, fmt.Errorf("unknown mode: %s", driverOptions.mode)
 	}
 
 	return &driver, nil
@@ -126,10 +133,8 @@ func (d *Driver) checkTools() error {
 }
 func (d *Driver) Run() error {
 	version := util.GetVersion().DriverVersion
-	klog.V(1).InfoS(fmt.Sprintf("Driver: %v Version: %v", DriverName, version))
-	if err := d.checkTools(); err != nil {
-		return err
-	}
+	klog.V(3).InfoS(fmt.Sprintf("Driver: %v Version: %v", DriverName, version))
+	klog.V(1).InfoS("Running in mode: " + string(d.options.mode))
 
 	scheme, addr, err := util.ParseEndpoint(d.options.endpoint)
 	if err != nil {
@@ -139,6 +144,7 @@ func (d *Driver) Run() error {
 	if err != nil {
 		return err
 	}
+	klog.V(3).InfoS("Listening for connections on: " + listener.Addr().String())
 
 	opts := []grpc.ServerOption{
 		grpc.UnaryInterceptor(LoggingInterceptor(version)),
@@ -147,26 +153,26 @@ func (d *Driver) Run() error {
 
 	csi.RegisterIdentityServer(d.srv, d)
 
-	switch d.options.mode {
-	case ControllerMode:
+	if d.options.mode.HasController() {
 		csi.RegisterControllerServer(d.srv, d)
-	case NodeMode:
+		ctx, cancel := context.WithCancel(context.Background())
+		d.cancel = cancel
+		d.controllerService.Start(ctx) //nolint
+	}
+	if d.options.mode.HasNode() {
 		csi.RegisterNodeServer(d.srv, d)
-	case AllMode:
-		csi.RegisterControllerServer(d.srv, d)
-		csi.RegisterNodeServer(d.srv, d)
-	default:
-		return fmt.Errorf("unknown mode: %s", d.options.mode)
+		if err := d.checkTools(); err != nil {
+			return err
+		}
 	}
 
-	klog.V(1).InfoS("Running in mode: " + string(d.options.mode))
-	klog.V(1).InfoS("Listening for connections on: " + listener.Addr().String())
 	return d.srv.Serve(listener)
 }
 
 func (d *Driver) Stop() {
 	klog.V(0).InfoS("Stopping server")
 	d.srv.Stop()
+	d.cancel()
 }
 
 func WithEndpoint(endpoint string) func(*DriverOptions) {

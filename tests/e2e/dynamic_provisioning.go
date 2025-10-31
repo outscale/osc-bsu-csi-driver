@@ -414,6 +414,9 @@ var _ = Describe("[bsu-csi-e2e] [single-az] Dynamic Provisioning", func() {
 		if err != nil {
 			Fail(fmt.Sprintf("could not get NewCloud: %v", err))
 		}
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+		cloud.Start(ctx)
 
 		test := testsuites.DynamicallyProvisionedReclaimPolicyTest{
 			CSIDriver: bsuDriver,
@@ -607,6 +610,9 @@ var _ = Describe("[bsu-csi-e2e] [single-az] Dynamic Provisioning", func() {
 
 		oscCloud, err := osccloud.NewCloud(os.Getenv(OSC_REGION), osccloud.WithoutMetadata())
 		framework.ExpectNoError(err, "Error while creating a cloud configuration")
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+		oscCloud.Start(ctx)
 
 		By("Keep delete the disk until error")
 		tpvc.DeleteBackingVolume(oscCloud)
@@ -618,9 +624,8 @@ var _ = Describe("[bsu-csi-e2e] [single-az] Dynamic Provisioning", func() {
 				break
 			}
 			fmt.Println("Disk still present, waiting")
-			time.Sleep(1 * time.Second)
+			time.Sleep(5 * time.Second)
 		}
-
 	})
 })
 
@@ -719,6 +724,9 @@ var _ = Describe("[bsu-csi-e2e] [single-az] Snapshot", func() {
 		By("Create the cloud")
 		oscCloud, err := osccloud.NewCloud(os.Getenv(OSC_REGION), osccloud.WithoutMetadata())
 		framework.ExpectNoError(err, "Error while creating a cloud configuration")
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+		oscCloud.Start(ctx)
 
 		By("Retrieve the snapshot")
 		snap, err := oscCloud.GetSnapshotByName(ctx, fmt.Sprintf("snapshot-%v", snapshot.UID))
@@ -728,7 +736,7 @@ var _ = Describe("[bsu-csi-e2e] [single-az] Snapshot", func() {
 		_, err = oscCloud.DeleteSnapshot(ctx, snap.SnapshotID)
 		framework.ExpectNoError(err, fmt.Sprintf("Error while deleting snapshot %v", snap.SnapshotID))
 
-		By("Keep deleting the snapshot until error")
+		By("Delete snapshot")
 		for i := 1; i < 100; i++ {
 			esnap, err := oscCloud.GetSnapshotByID(ctx, snap.SnapshotID)
 			if errors.Is(err, osccloud.ErrNotFound) || esnap.State == "deleting" {
@@ -739,7 +747,7 @@ var _ = Describe("[bsu-csi-e2e] [single-az] Snapshot", func() {
 				break
 			}
 			fmt.Println("Snapshot still present, waiting")
-			time.Sleep(1 * time.Second)
+			time.Sleep(5 * time.Second)
 		}
 	})
 })
@@ -891,19 +899,30 @@ var _ = Describe("[bsu-csi-e2e] [single-az] Updating iops/volumeType using Volum
 		cs        clientset.Interface
 		ns        *v1.Namespace
 		bsuDriver driver.PVTestDriver
+		cancel    func()
+		cloud     osccloud.Cloud
 	)
 
 	BeforeEach(func() {
 		cs = f.ClientSet
 		ns = f.Namespace
 		bsuDriver = driver.InitBsuCSIDriver()
+
+		region := os.Getenv("OSC_REGION")
+		var err error
+		cloud, err = osccloud.NewCloud(region, osccloud.WithoutMetadata())
+		if err != nil {
+			Fail(fmt.Sprintf("could not get NewCloud: %v", err))
+		}
+		var ctx context.Context
+		ctx, cancel = context.WithCancel(context.Background())
+		defer cancel()
+		cloud.Start(ctx)
 	})
 
-	region := os.Getenv("OSC_REGION")
-	cloud, err := osccloud.NewCloud(region, osccloud.WithoutMetadata())
-	if err != nil {
-		Fail(fmt.Sprintf("could not get NewCloud: %v", err))
-	}
+	AfterEach(func() {
+		cancel()
+	})
 
 	It("should create a volume and update iops & type (offline)", func() {
 		pod := testsuites.PodDetails{

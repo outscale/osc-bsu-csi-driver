@@ -234,6 +234,18 @@ func (mr *MockCloudMockRecorder) ResizeDisk(ctx, volumeID, reqSize any) *gomock.
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ResizeDisk", reflect.TypeOf((*MockCloud)(nil).ResizeDisk), ctx, volumeID, reqSize)
 }
 
+// Start mocks base method.
+func (m *MockCloud) Start(ctx context.Context) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "Start", ctx)
+}
+
+// Start indicates an expected call of Start.
+func (mr *MockCloudMockRecorder) Start(ctx any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Start", reflect.TypeOf((*MockCloud)(nil).Start), ctx)
+}
+
 // UpdateDisk mocks base method.
 func (m *MockCloud) UpdateDisk(ctx context.Context, volumeID, volumeType string, iopsPerGB int32) error {
 	m.ctrl.T.Helper()

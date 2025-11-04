@@ -1,5 +1,12 @@
 # Changelog
 
+## [v1.8.0-beta.1] - 2025-11-04
+### 🛠️ Changed / Refactoring
+* ⚡️ perfs: batch Read calls for all snapshot/volumes being processed by @jfbus in https://github.com/outscale/osc-bsu-csi-driver/pull/1019
+
+## New Contributors
+* @outscale-rce made their first contribution in https://github.com/outscale/osc-bsu-csi-driver/pull/1015
+
 ## [v1.7.0] - 2025-10-01
 ### ✨ Added
 * ✨ feat: automatically compute maxBsuVolumes by @jfbus in https://github.com/outscale/osc-bsu-csi-driver/pull/969

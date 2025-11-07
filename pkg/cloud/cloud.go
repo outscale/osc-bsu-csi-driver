@@ -478,13 +478,16 @@ func (c *cloud) CreateDisk(ctx context.Context, volumeName string, diskOptions *
 func (c *cloud) waitForNewVolume(ctx context.Context, volumeID string) error {
 	klog.FromContext(ctx).V(4).Info("Waiting until volume is available")
 	testVolume := func(vol *osc.Volume) (bool, error) {
+		if vol == nil {
+			return false, errors.New("volume not found")
+		}
 		switch vol.GetState() {
 		case "error", "deleting":
 			return false, fmt.Errorf("volume is in %q state", vol.GetState())
-		case "available":
-			return true, nil
-		default:
+		case "creating":
 			return false, nil
+		default: // available, in-use
+			return true, nil
 		}
 	}
 	_, err := c.volumeWatcher.WaitUntil(ctx, volumeID, testVolume)
@@ -563,6 +566,9 @@ func (c *cloud) AttachDisk(ctx context.Context, volumeID, nodeID string) (string
 func (c *cloud) waitForAttachedVolume(ctx context.Context, volumeID string) error {
 	klog.FromContext(ctx).V(4).Info("Waiting until volume is attached")
 	testVolume := func(vol *osc.Volume) (bool, error) {
+		if vol == nil || vol.GetState() == "deleting" {
+			return false, errors.New("volume not found")
+		}
 		for _, a := range vol.GetLinkedVolumes() {
 			if a.GetState() == "attached" {
 				return true, nil
@@ -633,7 +639,7 @@ func (c *cloud) DetachDisk(ctx context.Context, volumeID, nodeID string) error {
 func (c *cloud) waitForDetachedVolume(ctx context.Context, volumeID string) error {
 	klog.FromContext(ctx).V(4).Info("Waiting until volume is detached")
 	testVolume := func(vol *osc.Volume) (bool, error) {
-		return len(vol.GetLinkedVolumes()) == 0, nil
+		return vol == nil || vol.GetState() == "deleting" || len(vol.GetLinkedVolumes()) == 0, nil
 	}
 	_, err := c.volumeWatcher.WaitUntil(ctx, volumeID, testVolume)
 	if err != nil {
@@ -774,6 +780,9 @@ func (c *cloud) CreateSnapshot(ctx context.Context, volumeID string, snapshotOpt
 func (c *cloud) waitForSnapshot(ctx context.Context, snapshotID string) (*osc.Snapshot, error) {
 	klog.FromContext(ctx).V(4).Info("Waiting until snapshot is ready")
 	testSnapshot := func(snap *osc.Snapshot) (ok bool, err error) {
+		if snap == nil {
+			return false, errors.New("snapshot not found")
+		}
 		switch snap.GetState() {
 		case "error", "deleting":
 			return false, fmt.Errorf("snapshot is in %q state", snap.GetState())

@@ -26,6 +26,7 @@ func resultError[T any](err error) result[T] {
 }
 
 type watcher[T any] struct {
+	ctx   context.Context // the context of the waiter
 	id    string
 	until func(r *T) (ok bool, err error)
 	resp  chan result[T]
@@ -33,14 +34,14 @@ type watcher[T any] struct {
 
 type ResourceWatcher[T any] struct {
 	interval time.Duration
-	refresh  func(ctx context.Context, ids []string) ([]T, error)
+	refresh  func(ctx context.Context, ids []string) ([]*T, error)
 
 	in       chan watcher[T]
 	watchers map[string]watcher[T]
 }
 
 func NewResourceWatcher[T any](interval time.Duration,
-	refresh func(ctx context.Context, ids []string) ([]T, error)) *ResourceWatcher[T] {
+	refresh func(ctx context.Context, ids []string) ([]*T, error)) *ResourceWatcher[T] {
 	return &ResourceWatcher[T]{
 		interval: interval,
 		refresh:  refresh,
@@ -51,7 +52,7 @@ func NewResourceWatcher[T any](interval time.Duration,
 }
 
 func NewSnapshotWatcher(interval time.Duration, client OscInterface) *ResourceWatcher[osc.Snapshot] {
-	return NewResourceWatcher(interval, func(ctx context.Context, ids []string) ([]osc.Snapshot, error) {
+	return NewResourceWatcher(interval, func(ctx context.Context, ids []string) ([]*osc.Snapshot, error) {
 		req := osc.ReadSnapshotsRequest{
 			Filters: &osc.FiltersSnapshot{
 				SnapshotIds: &ids,
@@ -64,12 +65,11 @@ func NewSnapshotWatcher(interval time.Duration, client OscInterface) *ResourceWa
 			return nil, fmt.Errorf("read snapshots: %w", err)
 		}
 		rsnaps := resp.GetSnapshots()
-		snaps := make([]osc.Snapshot, len(rsnaps))
-		for i := range snaps {
-			id := ids[i]
+		snaps := make([]*osc.Snapshot, len(ids))
+		for i, id := range ids {
 			j := slices.IndexFunc(rsnaps, func(snap osc.Snapshot) bool { return snap.GetSnapshotId() == id })
 			if j >= 0 {
-				snaps[i] = rsnaps[j]
+				snaps[i] = &rsnaps[j]
 			}
 		}
 		return snaps, nil
@@ -77,7 +77,7 @@ func NewSnapshotWatcher(interval time.Duration, client OscInterface) *ResourceWa
 }
 
 func NewVolumeWatcher(interval time.Duration, client OscInterface) *ResourceWatcher[osc.Volume] {
-	return NewResourceWatcher(interval, func(ctx context.Context, ids []string) ([]osc.Volume, error) {
+	return NewResourceWatcher(interval, func(ctx context.Context, ids []string) ([]*osc.Volume, error) {
 		req := osc.ReadVolumesRequest{
 			Filters: &osc.FiltersVolume{
 				VolumeIds: &ids,
@@ -90,14 +90,12 @@ func NewVolumeWatcher(interval time.Duration, client OscInterface) *ResourceWatc
 			return nil, fmt.Errorf("read volumes: %w", err)
 		}
 		rvols := resp.GetVolumes()
-		vols := make([]osc.Volume, len(rvols))
-		for i := range vols {
-			id := ids[i]
+		vols := make([]*osc.Volume, len(ids))
+		for i, id := range ids {
 			j := slices.IndexFunc(rvols, func(vol osc.Volume) bool { return vol.GetVolumeId() == id })
 			if j >= 0 {
-				vols[i] = rvols[j]
+				vols[i] = &rvols[j]
 			}
-
 		}
 		return vols, nil
 	})
@@ -129,16 +127,16 @@ func (sw *ResourceWatcher[T]) Run(ctx context.Context) {
 				if !found { // should not occur
 					continue
 				}
-				ok, err := w.until(&rsrc)
+				ok, err := w.until(rsrc)
 				switch {
 				case ok:
 					logger.V(5).Info("Resource is ok", "id", ids[i])
-					w.resp <- resultOk(&rsrc)
+					sw.response(ctx, w, resultOk(rsrc))
 					delete(sw.watchers, ids[i])
 					close(w.resp)
 				case err != nil:
 					logger.V(5).Info("Resource is in error", "id", ids[i])
-					w.resp <- resultError[T](err)
+					sw.response(ctx, w, resultError[T](err))
 					delete(sw.watchers, ids[i])
 					close(w.resp)
 				default:
@@ -149,6 +147,14 @@ func (sw *ResourceWatcher[T]) Run(ctx context.Context) {
 	}
 }
 
+func (sw *ResourceWatcher[T]) response(ctx context.Context, w watcher[T], res result[T]) {
+	select {
+	case <-ctx.Done():
+	case <-w.ctx.Done(): // we do not want to block if the waiter context has been cancelled.
+	case w.resp <- res: // send the response, would block without the previous test...
+	}
+}
+
 func (sw *ResourceWatcher[T]) WaitUntil(ctx context.Context, id string, until func(r *T) (ok bool, err error)) (r *T, err error) {
 	logger := klog.FromContext(ctx)
 	start := time.Now()
@@ -156,8 +162,14 @@ func (sw *ResourceWatcher[T]) WaitUntil(ctx context.Context, id string, until fu
 		logger.V(4).Info("End of wait", "success", err == nil, "duration", time.Since(start))
 	}()
 	resp := make(chan result[T], 1)
-	w := watcher[T]{id: id, until: until, resp: resp}
-	sw.in <- w
+	w := watcher[T]{ctx: ctx, id: id, until: until, resp: resp}
+	// send (unless context has been cancelled)
+	select {
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	case sw.in <- w:
+	}
+	// receive (unless context has been cancelled)
 	select {
 	case <-ctx.Done():
 		return nil, ctx.Err()

@@ -897,12 +897,16 @@ func (c *cloud) oscSnapshotResponseToStruct(oscSnapshot *osc.Snapshot) Snapshot 
 		return Snapshot{}
 	}
 	snapshotSize := util.GiBToBytes(oscSnapshot.GetVolumeSize())
-	return Snapshot{
+	snap := Snapshot{
 		SnapshotID:     oscSnapshot.GetSnapshotId(),
 		SourceVolumeID: oscSnapshot.GetVolumeId(),
 		Size:           snapshotSize,
 		State:          oscSnapshot.GetState(),
 	}
+	if t, err := time.Parse(time.RFC3339, oscSnapshot.GetCreationDate()); err == nil {
+		snap.CreationTime = t
+	}
+	return snap
 }
 
 // Pagination not supported

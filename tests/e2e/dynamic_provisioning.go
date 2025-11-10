@@ -729,7 +729,7 @@ var _ = Describe("[bsu-csi-e2e] [single-az] Snapshot", func() {
 		oscCloud.Start(ctx)
 
 		By("Retrieve the snapshot")
-		snap, err := oscCloud.GetSnapshotByName(ctx, fmt.Sprintf("snapshot-%v", snapshot.UID))
+		snap, err := oscCloud.CheckCreatedSnapshot(ctx, fmt.Sprintf("snapshot-%v", snapshot.UID))
 		framework.ExpectNoError(err, fmt.Sprintf("Error while retrieving snapshot %v", snapshot.UID))
 
 		By("Deleting the snapshot")

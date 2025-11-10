@@ -119,7 +119,7 @@ func (d *controllerService) CreateVolume(ctx context.Context, req *csi.CreateVol
 		return nil, status.Error(codes.InvalidArgument, "Volume capabilities not supported")
 	}
 
-	disk, err := d.cloud.GetDiskByName(ctx, volName, volSizeBytes)
+	disk, err := d.cloud.CheckCreatedDisk(ctx, volName, volSizeBytes)
 	if err != nil {
 		switch {
 		case errors.Is(err, cloud.ErrNotFound):
@@ -435,7 +435,7 @@ func (d *controllerService) CreateSnapshot(ctx context.Context, req *csi.CreateS
 	if volumeID == "" {
 		return nil, status.Error(codes.InvalidArgument, "Snapshot volume source ID not provided")
 	}
-	snapshot, err := d.cloud.GetSnapshotByName(ctx, snapshotName)
+	snapshot, err := d.cloud.CheckCreatedSnapshot(ctx, snapshotName)
 	switch {
 	case errors.Is(err, cloud.ErrNotFound):
 		// No snapshot found, continue with creation.

@@ -176,12 +176,12 @@ type Cloud interface {
 	ResizeDisk(ctx context.Context, volumeID string, reqSize int64) (newSize int64, err error)
 	UpdateDisk(ctx context.Context, volumeID string, volumeType string, iopsPerGB int32) (err error)
 	WaitForAttachmentState(ctx context.Context, volumeID, state string) error
-	GetDiskByName(ctx context.Context, name string, capacityBytes int64) (disk Disk, err error)
+	CheckCreatedDisk(ctx context.Context, name string, capacityBytes int64) (disk Disk, err error)
 	GetDiskByID(ctx context.Context, volumeID string) (disk Disk, err error)
 	IsExistInstance(ctx context.Context, nodeID string) (success bool)
 	CreateSnapshot(ctx context.Context, volumeID string, snapshotOptions *SnapshotOptions) (snapshot Snapshot, err error)
 	DeleteSnapshot(ctx context.Context, snapshotID string) (success bool, err error)
-	GetSnapshotByName(ctx context.Context, name string) (snapshot Snapshot, err error)
+	CheckCreatedSnapshot(ctx context.Context, name string) (snapshot Snapshot, err error)
 	GetSnapshotByID(ctx context.Context, snapshotID string) (snapshot Snapshot, err error)
 	ListSnapshots(ctx context.Context, volumeID string, maxResults int32, nextToken string) (listSnapshotsResponse ListSnapshotsResponse, err error)
 }
@@ -463,7 +463,7 @@ func (c *cloud) CreateDisk(ctx context.Context, volumeName string, diskOptions *
 		return Disk{}, fmt.Errorf("unable to add tags: %w", waitErr)
 	}
 
-	if err := c.waitForNewVolume(ctx, volumeID); err != nil {
+	if err := c.waitForNewVolume(ctx, creation.Volume); err != nil {
 		return Disk{}, fmt.Errorf("unable to fetch newly created volume: %w", err)
 	}
 
@@ -475,7 +475,7 @@ func (c *cloud) CreateDisk(ctx context.Context, volumeName string, diskOptions *
 
 // waitForNewVolume waits for volume to be in the "available" state.
 // On a random Outscale account (shared among several developers) it took 4s on average.
-func (c *cloud) waitForNewVolume(ctx context.Context, volumeID string) error {
+func (c *cloud) waitForNewVolume(ctx context.Context, vol *osc.Volume) error {
 	klog.FromContext(ctx).V(4).Info("Waiting until volume is available")
 	testVolume := func(vol *osc.Volume) (bool, error) {
 		if vol == nil {
@@ -490,7 +490,10 @@ func (c *cloud) waitForNewVolume(ctx context.Context, volumeID string) error {
 			return true, nil
 		}
 	}
-	_, err := c.volumeWatcher.WaitUntil(ctx, volumeID, testVolume)
+	if ok, err := testVolume(vol); ok || err != nil {
+		return err
+	}
+	_, err := c.volumeWatcher.WaitUntil(ctx, vol.GetVolumeId(), testVolume)
 	if err != nil {
 		return fmt.Errorf("unable to wait for volume: %w", err)
 	}
@@ -660,7 +663,7 @@ func (c *cloud) WaitForAttachmentState(ctx context.Context, volumeID, state stri
 }
 
 // FIXME: as the code also checks size, either the name should not be Get or the size should be checked by caller.
-func (c *cloud) GetDiskByName(ctx context.Context, name string, capacityBytes int64) (Disk, error) {
+func (c *cloud) CheckCreatedDisk(ctx context.Context, name string, capacityBytes int64) (Disk, error) {
 	request := osc.ReadVolumesRequest{
 		Filters: &osc.FiltersVolume{
 			TagKeys:   &[]string{VolumeNameTagKey},
@@ -675,6 +678,10 @@ func (c *cloud) GetDiskByName(ctx context.Context, name string, capacityBytes in
 
 	if volume.GetSize() != util.BytesToGiB(capacityBytes) {
 		return Disk{}, ErrDiskExistsDiffSize
+	}
+
+	if err := c.waitForNewVolume(ctx, volume); err != nil {
+		return Disk{}, fmt.Errorf("unable to fetch created volume: %w", err)
 	}
 
 	return Disk{
@@ -768,7 +775,7 @@ func (c *cloud) CreateSnapshot(ctx context.Context, volumeID string, snapshotOpt
 	if waitErr != nil {
 		return Snapshot{}, fmt.Errorf("unable to add tags: %w", waitErr)
 	}
-	snap, err := c.waitForSnapshot(ctx, *res.GetSnapshot().SnapshotId)
+	snap, err := c.waitForSnapshot(ctx, res.Snapshot)
 	if err != nil {
 		return Snapshot{}, fmt.Errorf("wait error: %w", err)
 	}
@@ -777,7 +784,7 @@ func (c *cloud) CreateSnapshot(ctx context.Context, volumeID string, snapshotOpt
 }
 
 // waitForSnapshot waits for a snapshot to be in the "completed" state.
-func (c *cloud) waitForSnapshot(ctx context.Context, snapshotID string) (*osc.Snapshot, error) {
+func (c *cloud) waitForSnapshot(ctx context.Context, snap *osc.Snapshot) (*osc.Snapshot, error) {
 	klog.FromContext(ctx).V(4).Info("Waiting until snapshot is ready")
 	testSnapshot := func(snap *osc.Snapshot) (ok bool, err error) {
 		if snap == nil {
@@ -792,7 +799,10 @@ func (c *cloud) waitForSnapshot(ctx context.Context, snapshotID string) (*osc.Sn
 			return false, nil
 		}
 	}
-	snap, err := c.snapshotWatcher.WaitUntil(ctx, snapshotID, testSnapshot)
+	if ok, err := testSnapshot(snap); ok || err != nil {
+		return snap, err
+	}
+	snap, err := c.snapshotWatcher.WaitUntil(ctx, snap.GetSnapshotId(), testSnapshot)
 	if err != nil {
 		return snap, fmt.Errorf("unable to wait for snapshot: %w", err)
 	}
@@ -821,7 +831,7 @@ func (c *cloud) DeleteSnapshot(ctx context.Context, snapshotID string) (success 
 	}
 }
 
-func (c *cloud) GetSnapshotByName(ctx context.Context, name string) (snapshot Snapshot, err error) {
+func (c *cloud) CheckCreatedSnapshot(ctx context.Context, name string) (snapshot Snapshot, err error) {
 	request := osc.ReadSnapshotsRequest{
 		Filters: &osc.FiltersSnapshot{
 			TagKeys:   &[]string{SnapshotNameTagKey},
@@ -829,12 +839,17 @@ func (c *cloud) GetSnapshotByName(ctx context.Context, name string) (snapshot Sn
 		},
 	}
 
-	oscsnapshot, err := c.getSnapshot(ctx, request, true)
+	snap, err := c.getSnapshot(ctx, request, true)
 	if err != nil {
 		return Snapshot{}, err
 	}
 
-	return c.oscSnapshotResponseToStruct(&oscsnapshot), nil
+	snap, err = c.waitForSnapshot(ctx, snap)
+	if err != nil {
+		return Snapshot{}, fmt.Errorf("wait error: %w", err)
+	}
+
+	return c.oscSnapshotResponseToStruct(snap), nil
 }
 
 func (c *cloud) GetSnapshotByID(ctx context.Context, snapshotID string) (snapshot Snapshot, err error) {
@@ -844,12 +859,12 @@ func (c *cloud) GetSnapshotByID(ctx context.Context, snapshotID string) (snapsho
 		},
 	}
 
-	oscsnapshot, err := c.getSnapshot(ctx, request, true)
+	snap, err := c.getSnapshot(ctx, request, true)
 	if err != nil {
 		return Snapshot{}, err
 	}
 
-	return c.oscSnapshotResponseToStruct(&oscsnapshot), nil
+	return c.oscSnapshotResponseToStruct(snap), nil
 }
 
 const maxResultsLimit = 1000
@@ -977,7 +992,7 @@ func (c *cloud) getInstance(ctx context.Context, vmID string) (*osc.Vm, error) {
 }
 
 // Pagination not supported
-func (c *cloud) getSnapshot(ctx context.Context, request osc.ReadSnapshotsRequest, backoff bool) (osc.Snapshot, error) {
+func (c *cloud) getSnapshot(ctx context.Context, request osc.ReadSnapshotsRequest, backoff bool) (*osc.Snapshot, error) {
 	var snapshots []osc.Snapshot
 	var response osc.ReadSnapshotsResponse
 	getSnapshotsCallback := func(ctx context.Context) (bool, error) {
@@ -996,16 +1011,16 @@ func (c *cloud) getSnapshot(ctx context.Context, request osc.ReadSnapshotsReques
 	}
 
 	if err != nil {
-		return osc.Snapshot{}, fmt.Errorf("error listing snapshots: %w", err)
+		return nil, fmt.Errorf("error listing snapshots: %w", err)
 	}
 	snapshots = response.GetSnapshots()
 	switch len(snapshots) {
 	case 0:
-		return osc.Snapshot{}, ErrNotFound
+		return nil, ErrNotFound
 	case 1:
-		return snapshots[0], nil
+		return &snapshots[0], nil
 	default:
-		return osc.Snapshot{}, ErrMultiSnapshots
+		return nil, ErrMultiSnapshots
 	}
 }
 

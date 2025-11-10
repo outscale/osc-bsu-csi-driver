@@ -43,14 +43,14 @@ const (
 
 func TestCreateDisk(t *testing.T) {
 	testCases := []struct {
-		name               string
-		volumeName         string
-		volState           string
-		diskOptions        *DiskOptions
-		expDisk            *Disk
-		expErr             error
-		expCreateVolumeErr error
-		expDescVolumeErr   error
+		name                  string
+		volumeName            string
+		firstState, nextState string
+		diskOptions           *DiskOptions
+		expDisk               *Disk
+		expErr                error
+		expCreateVolumeErr    error
+		expDescVolumeErr      error
 	}{
 		{
 			name:       "fail: no provided zone",
@@ -80,7 +80,9 @@ func TestCreateDisk(t *testing.T) {
 				CapacityGiB:      1,
 				AvailabilityZone: expZone,
 			},
-			expErr: nil,
+			firstState: "creating",
+			nextState:  "available",
+			expErr:     nil,
 		},
 		{
 			name:       "success: normal with encrypted volume",
@@ -113,7 +115,7 @@ func TestCreateDisk(t *testing.T) {
 		{
 			name:       "fail: CreateVolume returned a DescribeVolumes error",
 			volumeName: "vol-test-name-error",
-			volState:   "creating",
+			firstState: "creating",
 			diskOptions: &DiskOptions{
 				CapacityBytes:    util.GiBToBytes(1),
 				Tags:             map[string]string{VolumeNameTagKey: "vol-test"},
@@ -145,21 +147,20 @@ func TestCreateDisk(t *testing.T) {
 			mockCtrl := gomock.NewController(t)
 			mockOscInterface := mocks.NewMockOscInterface(mockCtrl)
 			c := newCloud(mockOscInterface)
-			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-			defer cancel()
+			ctx := t.Context()
 			c.Start(ctx)
-			volState := tc.volState
-			if volState == "" {
-				volState = "available"
+			if tc.firstState == "" {
+				tc.firstState = "available"
 			}
 
-			vol := osc.CreateVolumeResponse{
-				Volume: &osc.Volume{},
+			firstVol := osc.Volume{
+				VolumeId:      ptr.To(tc.diskOptions.Tags[VolumeNameTagKey]),
+				Size:          ptr.To(util.BytesToGiB(tc.diskOptions.CapacityBytes)),
+				State:         &tc.firstState,
+				SubregionName: ptr.To(tc.diskOptions.AvailabilityZone),
 			}
-			vol.Volume.SetVolumeId(tc.diskOptions.Tags[VolumeNameTagKey])
-			vol.Volume.SetSize(util.BytesToGiB(tc.diskOptions.CapacityBytes))
-			vol.Volume.SetState(volState)
-			vol.Volume.SetSubregionName(tc.diskOptions.AvailabilityZone)
+			nextVol := firstVol
+			nextVol.State = &tc.nextState
 
 			readSnapshot := osc.Snapshot{
 				SnapshotId: &tc.diskOptions.SnapshotID,
@@ -169,9 +170,13 @@ func TestCreateDisk(t *testing.T) {
 
 			tag := osc.CreateTagsResponse{}
 			if !tc.diskOptions.Encrypted {
-				mockOscInterface.EXPECT().CreateVolume(gomock.Eq(ctx), gomock.Any()).Return(vol, nil, tc.expCreateVolumeErr)
+				mockOscInterface.EXPECT().CreateVolume(gomock.Eq(ctx), gomock.Any()).Return(osc.CreateVolumeResponse{
+					Volume: &firstVol,
+				}, nil, tc.expCreateVolumeErr)
 				mockOscInterface.EXPECT().CreateTags(gomock.Eq(ctx), gomock.Any()).Return(tag, nil, nil).AnyTimes()
-				mockOscInterface.EXPECT().ReadVolumes(gomock.Eq(ctx), gomock.Any()).Return(osc.ReadVolumesResponse{Volumes: &[]osc.Volume{vol.GetVolume()}}, nil, tc.expDescVolumeErr).AnyTimes()
+				if tc.nextState != "" {
+					mockOscInterface.EXPECT().ReadVolumes(gomock.Eq(ctx), gomock.Any()).Return(osc.ReadVolumesResponse{Volumes: &[]osc.Volume{nextVol}}, nil, tc.expDescVolumeErr).AnyTimes()
+				}
 				if len(tc.diskOptions.SnapshotID) > 0 {
 					mockOscInterface.EXPECT().ReadSnapshots(gomock.Eq(ctx), gomock.Any()).Return(osc.ReadSnapshotsResponse{Snapshots: &[]osc.Snapshot{readSnapshot}}, nil, nil).AnyTimes()
 				}
@@ -198,15 +203,15 @@ func TestCreateDisk(t *testing.T) {
 		mockCtrl := gomock.NewController(t)
 		mockOscInterface := mocks.NewMockOscInterface(mockCtrl)
 		c := newCloud(mockOscInterface)
-		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-		defer cancel()
+		ctx := t.Context()
 		c.Start(ctx)
 
-		created := osc.Volume{}
-		created.SetVolumeId(volumeID)
-		created.SetState("available")
-		created.SetSize(4)
-
+		firstVolume := osc.Volume{}
+		firstVolume.SetVolumeId(volumeID)
+		firstVolume.SetState("creating")
+		firstVolume.SetSize(4)
+		nextVolume := firstVolume
+		nextVolume.State = ptr.To("available")
 		tag := osc.CreateTagsResponse{}
 		mockOscInterface.EXPECT().CreateVolume(gomock.Eq(ctx), gomock.Eq(osc.CreateVolumeRequest{
 			ClientToken:   &volName,
@@ -214,10 +219,10 @@ func TestCreateDisk(t *testing.T) {
 			Size:          ptr.To[int32](4),
 			VolumeType:    ptr.To("gp2"),
 		})).Return(osc.CreateVolumeResponse{
-			Volume: &created,
+			Volume: &firstVolume,
 		}, nil, nil)
 		mockOscInterface.EXPECT().CreateTags(gomock.Eq(ctx), gomock.Any()).Return(tag, nil, nil)
-		mockOscInterface.EXPECT().ReadVolumes(gomock.Eq(ctx), gomock.Any()).Return(osc.ReadVolumesResponse{Volumes: &[]osc.Volume{created}}, nil, nil).After(
+		mockOscInterface.EXPECT().ReadVolumes(gomock.Eq(ctx), gomock.Any()).Return(osc.ReadVolumesResponse{Volumes: &[]osc.Volume{nextVolume}}, nil, nil).After(
 			mockOscInterface.EXPECT().ReadVolumes(gomock.Eq(ctx), gomock.Any()).Return(osc.ReadVolumesResponse{}, &http.Response{StatusCode: 429}, errors.New("throttled")),
 		)
 
@@ -302,8 +307,7 @@ func TestAttachDisk(t *testing.T) {
 			mockCtrl := gomock.NewController(t)
 			mockOscInterface := mocks.NewMockOscInterface(mockCtrl)
 			c := newCloud(mockOscInterface)
-			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-			defer cancel()
+			ctx := t.Context()
 			c.Start(ctx)
 
 			vol := osc.Volume{
@@ -357,8 +361,7 @@ func TestDetachDisk(t *testing.T) {
 			mockCtrl := gomock.NewController(t)
 			mockOscInterface := mocks.NewMockOscInterface(mockCtrl)
 			c := newCloud(mockOscInterface)
-			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-			defer cancel()
+			ctx := t.Context()
 			c.Start(ctx)
 
 			vol := osc.Volume{
@@ -393,14 +396,15 @@ func TestDetachDisk(t *testing.T) {
 	}
 }
 
-func TestGetDiskByName(t *testing.T) {
+func TestCheckCreatedDisk(t *testing.T) {
 	testCases := []struct {
-		name             string
-		volumeName       string
-		volumeCapacity   int64
-		availabilityZone string
-		snapshotId       *string
-		expErr           error
+		name                  string
+		volumeName            string
+		volumeCapacity        int64
+		availabilityZone      string
+		snapshotId            *string
+		firstState, nextState string
+		expErr                error
 	}{
 		{
 			name:             "success: normal",
@@ -408,6 +412,16 @@ func TestGetDiskByName(t *testing.T) {
 			volumeCapacity:   util.GiBToBytes(1),
 			snapshotId:       nil,
 			availabilityZone: expZone,
+			expErr:           nil,
+		},
+		{
+			name:             "success: normal with retry",
+			volumeName:       "vol-test-1234",
+			volumeCapacity:   util.GiBToBytes(1),
+			snapshotId:       nil,
+			availabilityZone: expZone,
+			firstState:       "creating",
+			nextState:        "available",
 			expErr:           nil,
 		},
 		{
@@ -432,18 +446,29 @@ func TestGetDiskByName(t *testing.T) {
 			mockCtrl := gomock.NewController(t)
 			mockOscInterface := mocks.NewMockOscInterface(mockCtrl)
 			c := newCloud(mockOscInterface)
-
-			vol := osc.Volume{
+			ctx := t.Context()
+			c.Start(ctx)
+			if tc.firstState == "" {
+				tc.firstState = "available"
+			}
+			firstVol := osc.Volume{
 				VolumeId:      &tc.volumeName,
 				SubregionName: &tc.availabilityZone,
 				SnapshotId:    tc.snapshotId,
+				State:         &tc.firstState,
+				Size:          ptr.To(util.BytesToGiB(tc.volumeCapacity)),
 			}
-			vol.SetSize(util.BytesToGiB(tc.volumeCapacity))
+			nextVol := firstVol
+			nextVol.State = &tc.nextState
 
-			ctx := context.Background()
-			mockOscInterface.EXPECT().ReadVolumes(gomock.Eq(ctx), gomock.Any()).Return(osc.ReadVolumesResponse{Volumes: &[]osc.Volume{vol}}, nil, tc.expErr)
+			mockOscInterface.EXPECT().ReadVolumes(gomock.Eq(ctx), gomock.Any()).Return(osc.ReadVolumesResponse{Volumes: &[]osc.Volume{firstVol}}, nil, tc.expErr)
+			if tc.nextState != "" {
+				mockOscInterface.EXPECT().ReadVolumes(gomock.Eq(ctx), gomock.Any()).Return(osc.ReadVolumesResponse{Volumes: &[]osc.Volume{nextVol}}, nil, nil).After(
+					mockOscInterface.EXPECT().ReadVolumes(gomock.Eq(ctx), gomock.Any()).Return(osc.ReadVolumesResponse{}, &http.Response{StatusCode: 429}, errors.New("throttled")),
+				)
+			}
 
-			disk, err := c.GetDiskByName(ctx, tc.volumeName, tc.volumeCapacity)
+			disk, err := c.CheckCreatedDisk(ctx, tc.volumeName, tc.volumeCapacity)
 			if tc.expErr != nil {
 				require.Error(t, err)
 			} else {
@@ -544,8 +569,7 @@ func TestCreateSnapshot(t *testing.T) {
 		mockCtrl := gomock.NewController(t)
 		mockOscInterface := mocks.NewMockOscInterface(mockCtrl)
 		c := newCloud(mockOscInterface)
-		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-		defer cancel()
+		ctx := t.Context()
 		c.Start(ctx)
 
 		created := osc.Snapshot{}
@@ -593,14 +617,16 @@ func TestCreateSnapshot(t *testing.T) {
 		mockCtrl := gomock.NewController(t)
 		mockOscInterface := mocks.NewMockOscInterface(mockCtrl)
 		c := newCloud(mockOscInterface)
-		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-		defer cancel()
+		ctx := t.Context()
 		c.Start(ctx)
 
-		created := osc.Snapshot{}
-		created.SetSnapshotId(snapID)
-		created.SetVolumeId(volumeID)
-		created.SetState("completed")
+		firstSnap := osc.Snapshot{
+			SnapshotId: &snapID,
+			VolumeId:   &volumeID,
+			State:      ptr.To("creating"),
+		}
+		nextSnap := firstSnap
+		nextSnap.State = ptr.To("completed")
 
 		tag := osc.CreateTagsResponse{}
 		mockOscInterface.EXPECT().CreateSnapshot(gomock.Eq(ctx), gomock.Eq(osc.CreateSnapshotRequest{
@@ -608,10 +634,10 @@ func TestCreateSnapshot(t *testing.T) {
 			Description: ptr.To("Created by Outscale BSU CSI driver for volume " + volumeID),
 			VolumeId:    &volumeID,
 		})).Return(osc.CreateSnapshotResponse{
-			Snapshot: &created,
+			Snapshot: &firstSnap,
 		}, nil, nil)
 		mockOscInterface.EXPECT().CreateTags(gomock.Eq(ctx), gomock.Any()).Return(tag, nil, nil)
-		mockOscInterface.EXPECT().ReadSnapshots(gomock.Eq(ctx), gomock.Any()).Return(osc.ReadSnapshotsResponse{Snapshots: &[]osc.Snapshot{created}}, nil, nil).After(
+		mockOscInterface.EXPECT().ReadSnapshots(gomock.Eq(ctx), gomock.Any()).Return(osc.ReadSnapshotsResponse{Snapshots: &[]osc.Snapshot{nextSnap}}, nil, nil).After(
 			mockOscInterface.EXPECT().ReadSnapshots(gomock.Eq(ctx), gomock.Any()).Return(osc.ReadSnapshotsResponse{}, &http.Response{StatusCode: 429}, errors.New("throttled")),
 		)
 
@@ -666,13 +692,14 @@ func TestDeleteSnapshot(t *testing.T) {
 	}
 }
 
-func TestGetSnapshotByName(t *testing.T) {
+func TestCheckCreatedSnapshot(t *testing.T) {
 	testCases := []struct {
-		name            string
-		snapshotName    string
-		snapshotOptions *SnapshotOptions
-		expSnapshot     *Snapshot
-		expErr          error
+		name                  string
+		snapshotName          string
+		snapshotOptions       *SnapshotOptions
+		expSnapshot           *Snapshot
+		firstState, nextState string
+		expErr                error
 	}{
 		{
 			name:         "success: normal",
@@ -685,7 +712,23 @@ func TestGetSnapshotByName(t *testing.T) {
 			expSnapshot: &Snapshot{
 				SourceVolumeID: "snap-test-volume",
 			},
-			expErr: nil,
+			firstState: "completed",
+			expErr:     nil,
+		},
+		{
+			name:         "success: normal after retry",
+			snapshotName: "snap-test-name",
+			snapshotOptions: &SnapshotOptions{
+				Tags: map[string]string{
+					SnapshotNameTagKey: "snap-test-name",
+				},
+			},
+			expSnapshot: &Snapshot{
+				SourceVolumeID: "snap-test-volume",
+			},
+			firstState: "in-queue",
+			nextState:  "completed",
+			expErr:     nil,
 		},
 	}
 
@@ -694,16 +737,24 @@ func TestGetSnapshotByName(t *testing.T) {
 			mockCtrl := gomock.NewController(t)
 			mockOscInterface := mocks.NewMockOscInterface(mockCtrl)
 			c := newCloud(mockOscInterface)
+			ctx := t.Context()
+			c.Start(ctx)
 
-			oscsnapshot := osc.Snapshot{}
-			oscsnapshot.SetSnapshotId(tc.snapshotOptions.Tags[SnapshotNameTagKey])
-			oscsnapshot.SetVolumeId("snap-test-volume")
-			oscsnapshot.SetState("completed")
+			firstSnap := osc.Snapshot{
+				SnapshotId: ptr.To(tc.snapshotOptions.Tags[SnapshotNameTagKey]),
+				VolumeId:   ptr.To("snap-test-volume"),
+				State:      &tc.firstState,
+			}
+			nextSnap := firstSnap
+			nextSnap.State = &tc.nextState
+			mockOscInterface.EXPECT().ReadSnapshots(gomock.Eq(ctx), gomock.Any()).Return(osc.ReadSnapshotsResponse{Snapshots: &[]osc.Snapshot{firstSnap}}, nil, nil)
+			if tc.nextState != "" {
+				mockOscInterface.EXPECT().ReadSnapshots(gomock.Eq(ctx), gomock.Any()).Return(osc.ReadSnapshotsResponse{Snapshots: &[]osc.Snapshot{nextSnap}}, nil, nil).After(
+					mockOscInterface.EXPECT().ReadSnapshots(gomock.Eq(ctx), gomock.Any()).Return(osc.ReadSnapshotsResponse{}, &http.Response{StatusCode: 429}, errors.New("throttled")),
+				)
+			}
 
-			ctx := context.Background()
-			mockOscInterface.EXPECT().ReadSnapshots(gomock.Eq(ctx), gomock.Any()).Return(osc.ReadSnapshotsResponse{Snapshots: &[]osc.Snapshot{oscsnapshot}}, nil, nil)
-
-			_, err := c.GetSnapshotByName(ctx, tc.snapshotOptions.Tags[SnapshotNameTagKey])
+			_, err := c.CheckCreatedSnapshot(ctx, tc.snapshotOptions.Tags[SnapshotNameTagKey])
 			if tc.expErr != nil {
 				require.Error(t, err)
 			} else {

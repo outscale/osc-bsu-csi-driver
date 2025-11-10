@@ -1,6 +1,6 @@
 # osc-bsu-csi-driver
 
-![Version: 1.9.0](https://img.shields.io/badge/Version-1.9.0-informational?style=flat-square) ![AppVersion: v1.7.0](https://img.shields.io/badge/AppVersion-v1.7.0-informational?style=flat-square)
+![Version: 1.10.0](https://img.shields.io/badge/Version-1.10.0-informational?style=flat-square) ![AppVersion: v1.8.0](https://img.shields.io/badge/AppVersion-v1.8.0-informational?style=flat-square)
 
 A Helm chart for the Outscale BSU CSI Driver
 
@@ -26,7 +26,7 @@ Kubernetes: `>=1.20`
 |-----|------|---------|-------------|
 | affinity | object | `{}` | Affinity settings |
 | backoff.duration | string | `"750ms"` | Initial duraction of backoff |
-| backoff.factor | string | `"1.4"` | Factor multiplied by Duration for each iteration |
+| backoff.factor | string | `"1.6"` | Factor multiplied by Duration for each iteration |
 | backoff.steps | string | `"3"` | Remaining number of iterations in which the duration parameter may change |
 | caBundle.key | string | `""` | Entry key in secret used to store additional certificates authorities |
 | caBundle.name | string | `""` | Secret name containing additional certificates authorities |
@@ -47,7 +47,7 @@ Kubernetes: `>=1.20`
 | httpsProxy | string | `""` | Value used to create environment variable HTTPS_PROXY |
 | image.pullPolicy | string | `"IfNotPresent"` | Container pull policy |
 | image.repository | string | `"outscale/osc-bsu-csi-driver"` | Container image to use |
-| image.tag | string | `"v1.7.0"` | Container image tag to deploy |
+| image.tag | string | `"v1.8.0"` | Container image tag to deploy |
 | imagePullSecrets | list | `[]` | Specify image pull secrets |
 | maxBsuVolumes | string | `""` | Maximum number of volumes that can be attached to a single node, autocomputed by default (see [Docs](https://docs.outscale.com/en/userguide/About-Volumes.html)) |
 | nameOverride | string | `""` | Override name of the app (instead of `osc-bsu-csi-driver`) |
@@ -134,7 +134,7 @@ Kubernetes: `>=1.20`
 | sidecars.snapshotterImage.securityContext.readOnlyRootFilesystem | bool | `true` |  |
 | sidecars.snapshotterImage.securityContext.seccompProfile.type | string | `"RuntimeDefault"` |  |
 | sidecars.snapshotterImage.tag | string | `"v8.3.0"` |  |
-| timeout | string | `"60s"` | Timeout for sidecars |
+| timeout | string | `"120s"` | Timeout for sidecars |
 | tolerations | list | `[{"key":"CriticalAddonsOnly","operator":"Exists"},{"effect":"NoExecute","operator":"Exists","tolerationSeconds":300}]` | Pod tolerations |
 | updateStrategy | object | `{"type":"RollingUpdate"}` | Controller deployment update strategy. |
 | verbosity | int | `3` | Verbosity level of the plugin |

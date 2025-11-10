@@ -173,7 +173,7 @@ func (c *fakeCloudProvider) WaitForAttachmentState(ctx context.Context, volumeID
 	return nil
 }
 
-func (c *fakeCloudProvider) GetDiskByName(ctx context.Context, name string, capacityBytes int64) (cloud.Disk, error) {
+func (c *fakeCloudProvider) CheckCreatedDisk(ctx context.Context, name string, capacityBytes int64) (cloud.Disk, error) {
 	var disks []*fakeDisk
 	for _, d := range c.disks {
 		for key, value := range d.tags {
@@ -233,7 +233,7 @@ func (c *fakeCloudProvider) DeleteSnapshot(ctx context.Context, snapshotID strin
 	return true, nil
 }
 
-func (c *fakeCloudProvider) GetSnapshotByName(ctx context.Context, name string) (snapshot cloud.Snapshot, err error) {
+func (c *fakeCloudProvider) CheckCreatedSnapshot(ctx context.Context, name string) (snapshot cloud.Snapshot, err error) {
 	var snapshots []*fakeSnapshot
 	for _, s := range c.snapshots {
 		if s.tags[cloud.SnapshotNameTagKey] == name {

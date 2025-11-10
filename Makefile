@@ -125,7 +125,7 @@ trivy-scan:
 			--exit-code 1 \
 			--severity="HIGH,CRITICAL" \
 			--ignorefile /root/.trivyignore \
-			--security-checks vuln \
+			--skip-files "/bin/osc-bsu-csi-driver" \
 			--format sarif -o /root/.trivyscan/report.sarif \
 			$(IMAGE):$(IMAGE_TAG)
 

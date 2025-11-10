@@ -95,7 +95,7 @@ func TestHelmTemplate_Deployment(t *testing.T) {
 		assert.Equal(t, int32(2), *dep.Spec.Replicas)
 		require.Len(t, dep.Spec.Template.Spec.Containers, 6)
 		manager := dep.Spec.Template.Spec.Containers[0]
-		assert.Equal(t, "outscale/osc-bsu-csi-driver:v1.7.0", manager.Image)
+		assert.Equal(t, "outscale/osc-bsu-csi-driver:v1.8.0", manager.Image)
 		assert.Equal(t, []string{
 			"controller",
 			"--endpoint=$(CSI_ENDPOINT)",
@@ -124,7 +124,7 @@ func TestHelmTemplate_Deployment(t *testing.T) {
 			}},
 			{Name: "OSC_REGION", Value: "eu-west2"},
 			{Name: "BACKOFF_DURATION", Value: "750ms"},
-			{Name: "BACKOFF_FACTOR", Value: "1.4"},
+			{Name: "BACKOFF_FACTOR", Value: "1.6"},
 			{Name: "BACKOFF_STEPS", Value: "3"},
 		}, manager.Env)
 		assert.Equal(t, corev1.ResourceRequirements{
@@ -254,7 +254,7 @@ func TestHelmTemplate_DaemonSet(t *testing.T) {
 		dep := getDaemonSet(t)
 		require.Len(t, dep.Spec.Template.Spec.Containers, 3)
 		manager := dep.Spec.Template.Spec.Containers[0]
-		assert.Equal(t, "outscale/osc-bsu-csi-driver:v1.7.0", manager.Image)
+		assert.Equal(t, "outscale/osc-bsu-csi-driver:v1.8.0", manager.Image)
 		assert.Equal(t, []string{
 			"node",
 			"--endpoint=$(CSI_ENDPOINT)",
@@ -264,7 +264,7 @@ func TestHelmTemplate_DaemonSet(t *testing.T) {
 		assert.Equal(t, []corev1.EnvVar{
 			{Name: "CSI_ENDPOINT", Value: "unix:/csi/csi.sock"},
 			{Name: "BACKOFF_DURATION", Value: "750ms"},
-			{Name: "BACKOFF_FACTOR", Value: "1.4"},
+			{Name: "BACKOFF_FACTOR", Value: "1.6"},
 			{Name: "BACKOFF_STEPS", Value: "3"},
 		}, manager.Env)
 		assert.Equal(t, corev1.ResourceRequirements{
@@ -277,7 +277,7 @@ func TestHelmTemplate_DaemonSet(t *testing.T) {
 		dep := getDaemonSet(t, "maxBsuVolumes=39")
 		require.Len(t, dep.Spec.Template.Spec.Containers, 3)
 		manager := dep.Spec.Template.Spec.Containers[0]
-		assert.Equal(t, "outscale/osc-bsu-csi-driver:v1.7.0", manager.Image)
+		assert.Equal(t, "outscale/osc-bsu-csi-driver:v1.8.0", manager.Image)
 		assert.Equal(t, []string{
 			"node",
 			"--endpoint=$(CSI_ENDPOINT)",
@@ -287,7 +287,7 @@ func TestHelmTemplate_DaemonSet(t *testing.T) {
 		assert.Equal(t, []corev1.EnvVar{
 			{Name: "CSI_ENDPOINT", Value: "unix:/csi/csi.sock"},
 			{Name: "BACKOFF_DURATION", Value: "750ms"},
-			{Name: "BACKOFF_FACTOR", Value: "1.4"},
+			{Name: "BACKOFF_FACTOR", Value: "1.6"},
 			{Name: "BACKOFF_STEPS", Value: "3"},
 			{Name: "MAX_BSU_VOLUMES", Value: "39"},
 		}, manager.Env)

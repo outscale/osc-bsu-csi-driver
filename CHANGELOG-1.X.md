@@ -1,5 +1,15 @@
 # Changelog
 
+## [v1.8.0-rc.1] - 2025-11-13
+### 🐛 Fixed
+* 🐛 fix: handle edge cases in resource watchers by @jfbus in https://github.com/outscale/osc-bsu-csi-driver/pull/1023
+* 🐛 fix: set the snapshot creation time by @jfbus in https://github.com/outscale/osc-bsu-csi-driver/pull/1024
+* 🐛 fix: wait for status in CreateVolume/Snapshot retries by @jfbus in https://github.com/outscale/osc-bsu-csi-driver/pull/1027
+### 📦 Dependency updates
+* build(deps): bump github.com/outscale/osc-sdk-go/v2 from 2.27.0 to 2.30.0 by @dependabot[bot] in https://github.com/outscale/osc-bsu-csi-driver/pull/1022
+* build(deps): bump go.uber.org/mock from 0.5.2 to 0.6.0 by @dependabot[bot] in https://github.com/outscale/osc-bsu-csi-driver/pull/1030
+* ⬆️ deps: bump Kube to v1.32.8 by @jfbus in https://github.com/outscale/osc-bsu-csi-driver/pull/1029
+
 ## [v1.8.0-beta.1] - 2025-11-04
 ### 🛠️ Changed / Refactoring
 * ⚡️ perfs: batch Read calls for all snapshot/volumes being processed by @jfbus in https://github.com/outscale/osc-bsu-csi-driver/pull/1019

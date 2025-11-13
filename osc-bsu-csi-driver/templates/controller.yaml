@@ -291,6 +291,13 @@ spec:
             - --retry-interval-max=5m
             {{- end }}
             - --csi-address=$(ADDRESS)
+            - --v={{ .Values.verbosity }}
+            - --timeout={{ .Values.timeout }}
+            {{- if not (regexMatch "(-kube-api-qps)|(-kube-api-burst)|(-worker-threads)" (join " " .Values.sidecars.snapshotterImage.additionalArgs)) }}
+            - --kube-api-qps=20
+            - --kube-api-burst=100
+            - --worker-threads=100
+            {{- end }}
             # Dynamically adding additionalArgs from values.yaml
             {{- range .Values.sidecars.snapshotterImage.additionalArgs }}
             - {{ . }}

@@ -10,7 +10,7 @@ image:
   # -- Container image to use
   repository: outscale/osc-bsu-csi-driver
   # -- Container image tag to deploy
-  tag: v1.7.0
+  tag: v1.8.0
   # -- Container pull policy
   pullPolicy: IfNotPresent
 
@@ -18,7 +18,7 @@ image:
 verbosity: 3
 
 # -- Timeout for sidecars
-timeout: 60s
+timeout: 120s
 
 backoff:
   # integer in second defining initial duration
@@ -26,7 +26,7 @@ backoff:
   duration: "750ms"
   # float define the factor multiplied by Duration each iteration
   # -- Factor multiplied by Duration for each iteration
-  factor: "1.4"
+  factor: "1.6"
   # integer defining the remaining number of iterations in which the duration parameter may change
   # -- Remaining number of iterations in which the duration parameter may change
   steps: "3"

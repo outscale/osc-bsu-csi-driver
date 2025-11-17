@@ -3,12 +3,16 @@ name: Publish
 on:
   release:
     types: [published]
+
+permissions:
+  contents: read
+
 jobs:
   push-docker-image:
     runs-on: ubuntu-22.04
     steps:
       - name: Check the repo
-        uses: actions/checkout@v2
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
       - name: Docker login
@@ -22,7 +26,7 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - name: Check the repo
-        uses: actions/checkout@v2
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
       - uses: azure/setup-helm@v3

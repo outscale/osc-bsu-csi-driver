@@ -25,7 +25,7 @@ jobs:
           path: "CHANGELOG-1.X.md"
           version: ${{ github.ref_name }}
 
-      - uses: azure/setup-helm@v3
+      - uses: azure/setup-helm@v4
         with:
           version: v3.10.1
       - name : Create Helm-package

@@ -1,5 +1,9 @@
 # Changelog
 
+## [v1.8.0] - 2025-11-19
+### 🛠️ Changed / Refactoring
+* 🔧 helm: snapshotter tuning, raise timeout for all by @jfbus in https://github.com/outscale/osc-bsu-csi-driver/pull/1028
+
 ## [v1.8.0-rc.1] - 2025-11-13
 ### 🐛 Fixed
 * 🐛 fix: handle edge cases in resource watchers by @jfbus in https://github.com/outscale/osc-bsu-csi-driver/pull/1023

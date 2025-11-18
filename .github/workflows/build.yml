@@ -24,7 +24,7 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
     - name: ⬇️ Checkout repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
     - name: 🔎 Docker lint
       run: bash -c "make dockerlint"
     - name: 🔎 golangci-lint
@@ -37,7 +37,7 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
     - name: ⬇️ Checkout repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
     - name: ⬇️ Install Go
       uses: actions/setup-go@v6
       with:
@@ -50,14 +50,14 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
     - name: ⬇️ Checkout repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
     - name: 🔎 Check docs
       run: bash -c "make check-helm-docs"
   trivy:
     runs-on: ubuntu-22.04
     steps:
     - name: ⬇️ Checkout repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
     - name: 📦 Build image
       run: bash -c "make build-image"
     - name: 🔎 Trivy-Scan

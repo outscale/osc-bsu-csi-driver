@@ -22,7 +22,7 @@ jobs:
     runs-on: [self-hosted, linux]
     steps:
     - name: ⬇️ Checkout repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
     - name: 🔐 Set ak/sk name based on runner region
       run: .github/scripts/runneraksk.sh
     - name: ⬇️ Install kubectl

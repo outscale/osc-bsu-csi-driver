@@ -1,0 +1,381 @@
+# Controller Service
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: osc-csi-controller
+  namespace: kube-system
+  labels:
+    {{- include "osc-bsu-csi-driver.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.controller.replica }}
+  strategy:
+    {{- toYaml .Values.controller.updateStrategy | nindent 4 }}
+  selector:
+    matchLabels:
+      app: osc-csi-controller
+      {{- include "osc-bsu-csi-driver.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        app: osc-csi-controller
+        {{- include "osc-bsu-csi-driver.labels" . | nindent 8 }}
+        {{- if .Values.controller.podLabels }}
+          {{ toYaml .Values.controller.podLabels | nindent 8 }}
+        {{- end }}
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
+        {{- if .Values.controller.podAnnotations }}
+        {{- toYaml .Values.controller.podAnnotations | nindent 8 }}
+        {{- end }}
+    spec:
+      nodeSelector:
+        kubernetes.io/os: linux
+        {{- with .Values.controller.nodeSelector }}
+{{ toYaml . | indent 8 }}
+        {{- end }}
+      serviceAccountName: osc-csi-controller-sa
+      priorityClassName: system-cluster-critical
+      {{- with .Values.controller.affinity }}
+      affinity: {{ toYaml . | nindent 8 }}
+      {{- end }}
+      tolerations:
+        {{- if .Values.controller.tolerateAllTaints }}
+        - operator: Exists
+        {{- end }}
+        {{- with .Values.tolerations }}
+{{ toYaml . | indent 8 }}
+        {{- end }}
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: osc-plugin
+          image: {{ .Values.driver.image }}:{{ .Values.driver.tag }}
+          imagePullPolicy: {{ .Values.driver.imagePullPolicy }}
+          args:
+            - controller
+            - --endpoint=$(CSI_ENDPOINT)
+            {{- if .Values.driver.extraVolumeTags }}
+              {{- include "osc-bsu-csi-driver.extra-volume-tags" . | nindent 12 }}
+            {{- end }}
+            {{- if .Values.driver.extraSnapshotTags }}
+              {{- include "osc-bsu-csi-driver.extra-snapshot-tags" . | nindent 12 }}
+            {{- end }}
+            - --logtostderr
+            - --v={{ .Values.logs.verbosity }}
+          env:
+            - name: CSI_ENDPOINT
+              value: unix:///var/lib/csi/sockets/pluginproxy/csi.sock
+            - name: OSC_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.cloud.credentials.secretName }}
+                  key: access_key
+                  optional: true
+            - name: OSC_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.cloud.credentials.secretName }}
+                  key: secret_key
+                  optional: true
+            {{- if .Values.cloud.customEndpoint }}
+            - name: OSC_ENDPOINT_API
+              value: {{ .Values.cloud.customEndpoint }}
+            {{- end }}
+            {{- if .Values.cloud.region }}
+            - name: OSC_REGION
+              value: {{ .Values.cloud.region }}
+            {{- end }}
+            - name: BACKOFF_DURATION
+              value: "{{ .Values.cloud.backoff.duration }}"
+            - name: BACKOFF_FACTOR
+              value: "{{ .Values.cloud.backoff.factor }}"
+            - name: BACKOFF_STEPS
+              value: "{{ .Values.cloud.backoff.steps }}"
+            {{- if .Values.cloud.httpsProxy }}
+            - name: HTTPS_PROXY
+              value: {{ .Values.cloud.httpsProxy }}
+            - name: NO_PROXY
+              value: {{ .Values.cloud.noProxy }}
+            {{- end }}
+          volumeMounts:
+            - name: socket-dir
+              mountPath: /var/lib/csi/sockets/pluginproxy/
+            {{- if .Values.cloud.caBundle.name }}
+            - name: ca-bundle
+              mountPath: /etc/ssl/certs
+              readOnly: true
+            {{- end }}
+          {{- with .Values.controller.resources }}
+          resources: {{ toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.controller.securityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+        - name: csi-provisioner
+          image: {{ .Values.sidecars.provisioner.image }}:{{ .Values.sidecars.provisioner.tag }}
+          imagePullPolicy: {{ .Values.driver.imagePullPolicy }}
+          args:
+            - --csi-address=$(ADDRESS)
+            - --v={{ .Values.logs.verbosity }}
+            - --retry-interval-max=5m
+            - --kube-api-qps={{ .Values.sidecars.kubeAPI.QPS }}
+            - --kube-api-burst={{ .Values.sidecars.kubeAPI.burst }}
+            - --worker-threads={{ .Values.sidecars.provisioner.workerThreads }}
+            - --timeout={{ .Values.sidecars.timeout }}
+            - --default-fstype={{ .Values.driver.defaultFsType }}
+            - --leader-election=true
+            {{- if .Values.driver.enableSnapshotCrossNamespace }}
+            - --feature-gates=CrossNamespaceVolumeDataSource=true
+            {{- end}}
+            {{- if .Values.driver.enableVolumeAttributesClass }}
+            - --feature-gates=VolumeAttributesClass=true
+            {{- end}}
+            {{- if .Values.sidecars.leaderElection.leaseDuration }}
+            - --leader-election-lease-duration={{ .Values.sidecars.leaderElection.leaseDuration }}
+            {{- end }}
+            {{- if .Values.sidecars.leaderElection.renewDeadline}}
+            - --leader-election-renew-deadline={{ .Values.sidecars.leaderElection.renewDeadline }}
+            {{- end }}
+            {{- if .Values.sidecars.leaderElection.retryPeriod }}
+            - --leader-election-retry-period={{ .Values.sidecars.leaderElection.retryPeriod }}
+            {{- end }}
+            {{- range .Values.sidecars.provisioner.additionalArgs }}
+            - {{ . }}
+            {{- end }}
+          {{- if .Values.sidecars.provisioner.metrics }}
+            - --http-endpoint=:{{ .Values.sidecars.provisioner.metricsPort }}
+          ports:
+            - name: httpendpoint
+              containerPort: {{ .Values.sidecars.provisioner.metricsPort }}
+              protocol: TCP
+          {{- end }}
+          env:
+            - name: ADDRESS
+              value: /var/lib/csi/sockets/pluginproxy/csi.sock
+          volumeMounts:
+            - name: socket-dir
+              mountPath: /var/lib/csi/sockets/pluginproxy/
+          {{- if .Values.sidecars.provisioner.resources }}
+            {{- with .Values.sidecars.provisioner.resources }}
+          resources: {{ toYaml . | nindent 12 }}
+            {{- end }}
+          {{- else }}
+            {{- with .Values.sidecars.resources }}
+          resources: {{ toYaml . | nindent 12 }}
+            {{- end }}
+          {{- end }}
+          {{- with .Values.sidecars.provisioner.securityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+        - name: csi-attacher
+          image: {{ .Values.sidecars.attacher.image}}:{{ .Values.sidecars.attacher.tag }}
+          imagePullPolicy: {{ .Values.driver.imagePullPolicy }}
+          args:
+            - --csi-address=$(ADDRESS)
+            - --v={{ .Values.logs.verbosity }}
+            - --retry-interval-max=5m
+            - --kube-api-qps={{ .Values.sidecars.kubeAPI.QPS }}
+            - --kube-api-burst={{ .Values.sidecars.kubeAPI.burst }}
+            - --worker-threads={{ .Values.sidecars.attacher.workerThreads }}
+            - --timeout={{ .Values.sidecars.timeout }}
+            - --leader-election=true
+            {{- if .Values.sidecars.leaderElection.leaseDuration }}
+            - --leader-election-lease-duration={{ .Values.sidecars.leaderElection.leaseDuration }}
+            {{- end }}
+            {{- if .Values.sidecars.leaderElection.renewDeadline}}
+            - --leader-election-renew-deadline={{ .Values.sidecars.leaderElection.renewDeadline }}
+            {{- end }}
+            {{- if .Values.sidecars.leaderElection.retryPeriod }}
+            - --leader-election-retry-period={{ .Values.sidecars.leaderElection.retryPeriod }}
+            {{- end }}
+            {{- range .Values.sidecars.attacher.additionalArgs }}
+            - {{ . }}
+            {{- end }}
+          {{- if .Values.sidecars.attacher.metrics }}
+            - --http-endpoint=:{{ .Values.sidecars.attacher.metricsPort }}
+          ports:
+            - name: httpendpoint
+              containerPort: {{ .Values.sidecars.attacher.metricsPort }}
+              protocol: TCP
+          {{- end }}
+          env:
+            - name: ADDRESS
+              value: /var/lib/csi/sockets/pluginproxy/csi.sock
+          volumeMounts:
+            - name: socket-dir
+              mountPath: /var/lib/csi/sockets/pluginproxy/
+          {{- if .Values.sidecars.attacher.resources }}
+            {{- with .Values.sidecars.attacher.resources }}
+          resources: {{ toYaml . | nindent 12 }}
+            {{- end }}
+          {{- else }}
+            {{- with .Values.sidecars.resources }}
+          resources: {{ toYaml . | nindent 12 }}
+            {{- end }}
+          {{- end }}
+          {{- with .Values.sidecars.securityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+        {{- if .Values.driver.enableVolumeSnapshot }}
+        - name: csi-snapshotter
+          image: {{ .Values.sidecars.snapshotter.image }}:{{ .Values.sidecars.snapshotter.tag }}
+          imagePullPolicy: {{ .Values.driver.imagePullPolicy }}
+          args:
+            - --csi-address=$(ADDRESS)
+            - --v={{ .Values.logs.verbosity }}
+            - --retry-interval-max=5m
+            - --kube-api-qps={{ .Values.sidecars.kubeAPI.QPS }}
+            - --kube-api-burst={{ .Values.sidecars.kubeAPI.burst }}
+            - --worker-threads={{ .Values.sidecars.snapshotter.workerThreads }}
+            - --timeout={{ .Values.sidecars.timeout }}
+            - --leader-election=true
+            {{- if .Values.sidecars.leaderElection.leaseDuration }}
+            - --leader-election-lease-duration={{ .Values.sidecars.leaderElection.leaseDuration }}
+            {{- end }}
+            {{- if .Values.sidecars.leaderElection.renewDeadline}}
+            - --leader-election-renew-deadline={{ .Values.sidecars.leaderElection.renewDeadline }}
+            {{- end }}
+            {{- if .Values.sidecars.leaderElection.retryPeriod }}
+            - --leader-election-retry-period={{ .Values.sidecars.leaderElection.retryPeriod }}
+            {{- end }}
+            {{- range .Values.sidecars.snapshotter.additionalArgs }}
+            - {{ . }}
+            {{- end }}
+          {{- if .Values.sidecars.snapshotter.metrics }}
+            - --http-endpoint=:{{ .Values.sidecars.snapshotter.metricsPort }}
+          ports:
+            - name: httpendpoint
+              containerPort: {{ .Values.sidecars.snapshotter.metricsPort }}
+              protocol: TCP
+          {{- end }}
+          env:
+            - name: ADDRESS
+              value: /var/lib/csi/sockets/pluginproxy/csi.sock
+          volumeMounts:
+            - name: socket-dir
+              mountPath: /var/lib/csi/sockets/pluginproxy/
+          {{- if .Values.sidecars.snapshotter.resources }}
+            {{- with .Values.sidecars.snapshotter.resources }}
+          resources: {{ toYaml . | nindent 12 }}
+            {{- end }}
+          {{- else }}
+            {{- with .Values.sidecars.resources }}
+          resources: {{ toYaml . | nindent 12 }}
+            {{- end }}
+          {{- end }}
+          {{- with .Values.sidecars.securityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+        {{- end }}
+        - name: csi-resizer
+          image: {{ .Values.sidecars.resizer.image }}:{{ .Values.sidecars.resizer.tag }}
+          imagePullPolicy: {{ .Values.driver.imagePullPolicy }}
+          args:
+            - --csi-address=$(ADDRESS)
+            - --v={{ .Values.logs.verbosity }}
+            - --retry-interval-max=5m
+            - --timeout={{ .Values.sidecars.timeout }}
+            - --kube-api-qps={{ .Values.sidecars.kubeAPI.QPS }}
+            - --kube-api-burst={{ .Values.sidecars.kubeAPI.burst }}
+            - --workers={{ .Values.sidecars.resizer.workerThreads }}
+            - --leader-election=true
+            {{- if .Values.driver.enableVolumeAttributesClass }}
+            - --feature-gates=VolumeAttributesClass=true
+            {{- end}}
+            {{- if .Values.sidecars.leaderElection.leaseDuration }}
+            - --leader-election-lease-duration={{ .Values.sidecars.leaderElection.leaseDuration }}
+            {{- end }}
+            {{- if .Values.sidecars.leaderElection.renewDeadline}}
+            - --leader-election-renew-deadline={{ .Values.sidecars.leaderElection.renewDeadline }}
+            {{- end }}
+            {{- if .Values.sidecars.leaderElection.retryPeriod }}
+            - --leader-election-retry-period={{ .Values.sidecars.leaderElection.retryPeriod }}
+            {{- end }}
+            {{- range .Values.sidecars.resizer.additionalArgs }}
+            - {{ . }}
+            {{- end }}
+          {{- if .Values.sidecars.resizer.metrics }}
+            - --http-endpoint=:{{ .Values.sidecars.resizer.metricsPort }}
+          ports:
+            - name: httpendpoint
+              containerPort: {{ .Values.sidecars.resizer.metricsPort }}
+              protocol: TCP
+          {{- end }}
+          env:
+            - name: ADDRESS
+              value: /var/lib/csi/sockets/pluginproxy/csi.sock
+          volumeMounts:
+            - name: socket-dir
+              mountPath: /var/lib/csi/sockets/pluginproxy/
+          {{- if .Values.sidecars.resizer.resources }}
+            {{- with .Values.sidecars.resizer.resources }}
+          resources: {{ toYaml . | nindent 12 }}
+            {{- end }}
+          {{- else }}
+            {{- with .Values.sidecars.resources }}
+          resources: {{ toYaml . | nindent 12 }}
+            {{- end }}
+          {{- end }}
+          {{- with .Values.sidecars.securityContext }}
+          securityContext:  
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+        - name: liveness-probe
+          image: {{ .Values.sidecars.livenessProbe.image }}:{{ .Values.sidecars.livenessProbe.tag }}
+          imagePullPolicy: {{ .Values.driver.imagePullPolicy }}
+          args:
+            - --csi-address=/csi/csi.sock
+            - --health-port={{ .Values.sidecars.livenessProbe.port }}
+          volumeMounts:
+            - name: socket-dir
+              mountPath: /csi
+          ports:
+            - name: healthz
+              containerPort: {{ .Values.sidecars.livenessProbe.port }}
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: healthz
+            initialDelaySeconds: 10
+            timeoutSeconds: 3
+            periodSeconds: 10
+            failureThreshold: 5
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: healthz
+            initialDelaySeconds: 10
+            timeoutSeconds: 3
+            periodSeconds: 10
+            failureThreshold: 5
+          {{- if .Values.sidecars.livenessProbe.resources }}
+            {{- with .Values.sidecars.livenessProbe.resources }}
+          resources: {{ toYaml . | nindent 12 }}
+            {{- end }}
+          {{- else }}
+            {{- with .Values.sidecars.resources }}
+          resources: {{ toYaml . | nindent 12 }}
+            {{- end }}
+          {{- end }}
+          {{- with .Values.sidecars.securityContext }}
+          securityContext:  
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+      volumes:
+        - name: socket-dir
+          emptyDir: {}
+        {{- if .Values.cloud.caBundle.name }}
+        - name: ca-bundle
+          secret:
+            secretName: {{ .Values.cloud.caBundle.name }}
+            items:
+              - key: {{ .Values.cloud.caBundle.key }}
+                path: ca-certificates.crt
+        {{- end }}

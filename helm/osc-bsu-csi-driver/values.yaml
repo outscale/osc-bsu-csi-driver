@@ -1,0 +1,222 @@
+# Default values for osc-bsu-csi-driver.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+
+# -- Specify image pull secrets
+imagePullSecrets: []
+
+serviceAccount:
+  annotations: {}
+
+logs:
+  # -- Verbosity level of the plugin
+  verbosity: 3
+  # -- Format of logs: test or json
+  format: text
+
+driver:
+  name: bsu.csi.outscale.com
+
+  # -- Container image to use
+  image: outscale/osc-bsu-csi-driver
+  # -- Container image tag to deploy
+  tag: v1.8.0
+  # -- Container pull policy
+  imagePullPolicy: IfNotPresent
+
+  # -- Policy of the FileSystem (see [Docs](https://kubernetes-csi.github.io/docs/support-fsgroup.html#supported-modes))
+  fsGroupPolicy: File
+  # -- Maximum number of volumes that can be attached to a node, autocomputed by default (see [Docs](https://docs.outscale.com/en/userguide/About-Volumes.html))
+  maxBsuVolumes: ""
+  # -- Default filesystem for the volume if no `FsType` is set in `StorageClass`
+  defaultFsType: "ext4"
+  # -- Enable volume snapshot
+  # True if enable volume snapshot
+  enableVolumeSnapshot: false
+  # -- Enable snapshot cross namespace
+  # True if enable snapshot cross namespace
+  enableSnapshotCrossNamespace: false
+  # -- Enable volume updates using VolumeAttributesClass
+  enableVolumeAttributesClass: false
+  # Extra volume tags to attach to every dynamically provisioned volume.
+  # extraVolumeTags:
+  #   key1: value1
+  #   key2: value2
+  # -- Add extra tags on volumes
+  extraVolumeTags: {}
+  # Extra snapshot tags to attach to every created snapshot.
+  # extraSnapshotTags:
+  #   key1: value1
+  #   key2: value2
+  # -- Add extra tags on snapshots
+  extraSnapshotTags: {}
+
+cloud:
+  # -- Region to use, otherwise it will be looked up via metadata. By providing this parameter, the controller will not require to access the metadata.
+  region: ""
+  # -- Use customEndpoint (url with protocol) ex: https://api.eu-west-2.outscale.com/api/v1
+  customEndpoint: ""
+
+  credentials:
+    # -- Secret where AK/SK are stored.
+    secretName: osc-csi-bsu
+    # -- Do we need to create the secret ? (if not set, we expect that the secret already exists)
+    create: false
+    # -- AK to use when creating secret.
+    accessKey: null
+    # -- SK to use when creating secret.
+    secretKey: null 
+
+  caBundle:
+    # -- Secret name containing additional certificates authorities
+    name: ''
+    # -- Entry key in secret used to store additional certificates authorities
+    key: ''
+
+  # -- Value used to create environment variable HTTPS_PROXY
+  httpsProxy: ''
+  # -- Value used to create environment variable NO_PROXY
+  noProxy: ''
+
+  backoff:
+    # integer in second defining initial duration
+    # -- Initial duraction of backoff
+    duration: "750ms"
+    # float define the factor multiplied by Duration each iteration
+    # -- Factor multiplied by Duration for each iteration
+    factor: "1.6"
+    # integer defining the remaining number of iterations in which the duration parameter may change
+    # -- Remaining number of iterations in which the duration parameter may change
+    steps: "5"
+
+controller:
+  # -- Number of replicas to deploy
+  replica: 2
+  # -- Specify limits of resources used by the pod containers
+  resources: {}
+    # We usually recommend not to specify default resources and to leave this as a conscious
+    # choice for the user. This also increases chances charts run on environments with little
+    # resources, such as Minikube. If you do want to specify resources, uncomment the following
+    # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+    # limits:
+    #   cpu: 100m
+    #   memory: 128Mi
+    # requests:
+    #   cpu: 100m
+    #   memory: 128Mi
+  nodeSelector: {}
+  # -- Controller deployment update strategy.
+  updateStrategy:
+    type: RollingUpdate
+  # -- Annotations for controller pod
+  podAnnotations: {}
+  # -- Labels for controller pod
+  podLabels: {}
+  #@ignored
+  tolerateAllTaints: true
+  # -- Pod tolerations
+  tolerations:
+    - key: CriticalAddonsOnly
+      operator: Exists
+    - operator: Exists
+      effect: NoExecute
+      tolerationSeconds: 300
+  # -- Affinity settings
+  affinity: {}
+  # -- Security context for the controller container.
+  securityContext: {}
+
+node:
+  # -- Annotations for node controller pod
+  podAnnotations: {}
+  # -- Labels for node controller pod
+  podLabels: {}
+  # @ignored
+  tolerateAllTaints: true
+  # -- Pod tolerations
+  tolerations: []
+  # -- Security context for the node container.
+  securityContext:
+    readOnlyRootFilesystem: false  # Allow write operations needed for volume management
+    privileged: true
+    allowPrivilegeEscalation: true  # Ensure privileges can be escalated for volume management if needed
+    seccompProfile:
+      type: Unconfined     # temporarily disable seccomp restrictions to allow necessary system calls for LUKS volumes
+  # -- Node controller DaemonSet resources. If not set, the top-level resources will be used.
+  resources: {}
+  # -- Node controller command line additional args
+  additionalArgs: []
+  # -- Node controller DaemonSet update strategy
+  updateStrategy:
+    type: RollingUpdate
+
+sidecars:
+  # -- Timeout for sidecars calls to the CSI driver
+  timeout: 5m
+  # -- Default sidecar resources, unless set at the sidecar level.
+  resources: {}
+  # -- securityContext config for all sidecars.
+  securityContext:
+    seccompProfile:
+      type: RuntimeDefault
+    readOnlyRootFilesystem: true
+    allowPrivilegeEscalation: false
+  # -- leaderElection config for all sidecars
+  leaderElection:
+    leaseDuration: null
+    renewDeadline: null
+    retryPeriod: null
+  # -- activates the metrics HTTP endpoint on sidecars. See each sidecar for port definition.
+  metrics: false
+  # -- kube api throttling
+  kubeAPI:
+    QPS: 20
+    burst: 100 
+
+  provisioner:
+    image: registry.k8s.io/sig-storage/csi-provisioner
+    tag: "v5.3.0"
+    # -- Port of the http endpoint
+    metricsPort: "8089"
+    additionalArgs: []
+    # Sidecar resources. If not set, the top-level resources will be used.
+    resources: {}
+    workerThreads: 100
+  attacher:
+    image: registry.k8s.io/sig-storage/csi-attacher
+    tag: "v4.9.0"
+    # -- Port of the http endpoint
+    metricsPort: "8090"
+    additionalArgs: []
+    # -- Sidecar resources. If not set, the top-level resources will be used.
+    resources: {}
+    workerThreads: 100
+  snapshotter:
+    image: registry.k8s.io/sig-storage/csi-snapshotter
+    tag: "v8.3.0"
+    # -- Port of the http endpoint
+    metricsPort: "8091"
+    additionalArgs: []
+    # -- Sidecar resources. If not set, the top-level resources will be used.
+    resources: {}
+    workerThreads: 100
+  livenessProbe:
+    image: registry.k8s.io/sig-storage/livenessprobe
+    tag: "v2.16.0"
+    # -- Port of the liveness of the main container
+    port: "9808"
+    # -- Sidecar resources. If not set, the node or top-level resources will be used.
+    resources: {}
+  resizer:
+    image: registry.k8s.io/sig-storage/csi-resizer
+    tag: "v1.14.0"
+    # -- Port of the http endpoint
+    metricsPort: "8092"
+    additionalArgs: []
+    # -- Sidecar resources. If not set, the top-level resources will be used.
+    resources: {}
+    workerThreads: 100
+  nodeDriverRegistrar:
+    image: registry.k8s.io/sig-storage/csi-node-driver-registrar
+    tag: "v2.14.0"

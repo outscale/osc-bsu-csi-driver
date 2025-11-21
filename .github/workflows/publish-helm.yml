@@ -1,0 +1,32 @@
+name: Publish Helm 
+
+on:
+  release:
+    types: [published]
+    
+permissions:
+  contents: read
+
+jobs:
+  push-helm-chart:
+    if: ${{ contains(github.ref, 'helm') }}
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Check the repo
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - uses: azure/setup-helm@v4
+        with:
+          version: v3.18.3
+      - name: Docker login
+        run: docker login -u $DOCKER_USER -p $DOCKER_PASSWORD
+        env:
+          DOCKER_USER: ${{secrets.DOCKER_USER_HELM}}
+          DOCKER_PASSWORD: ${{secrets.DOCKER_PASSWORD_HELM}}
+      - name : push to Artifact Hub
+        run:
+          make helm-push
+        env:
+          DOCKER_USER: ${{secrets.DOCKER_USER_HELM}}
+      

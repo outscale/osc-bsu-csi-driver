@@ -9,6 +9,7 @@ permissions:
 
 jobs:
   push-docker-image:
+    if: ${{ !contains(github.ref, 'helm') }}
     runs-on: ubuntu-22.04
     steps:
       - name: Check the repo
@@ -20,25 +21,6 @@ jobs:
         env:
           DOCKER_USER: ${{secrets.DOCKER_USER}}
           DOCKER_PASSWORD: ${{secrets.DOCKER_PASSWORD}}
-      - name : push to Docker Hub
+      - name : Push to Docker Hub
         run: make build-image image-push
-  push-artifact-hub:
-    runs-on: ubuntu-22.04
-    steps:
-      - name: Check the repo
-        uses: actions/checkout@v5
-        with:
-          fetch-depth: 0
-      - uses: azure/setup-helm@v4
-        with:
-          version: v3.10.1
-      - name: Docker login
-        run: docker login -u $DOCKER_USER -p $DOCKER_PASSWORD
-        env:
-          DOCKER_USER: ${{secrets.DOCKER_USER_HELM}}
-          DOCKER_PASSWORD: ${{secrets.DOCKER_PASSWORD_HELM}}
-      - name : push to Artifact Hub
-        run: make helm-push
-        env:
-          DOCKER_USER: ${{secrets.DOCKER_USER_HELM}}
       

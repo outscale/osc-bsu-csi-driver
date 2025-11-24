@@ -11,7 +11,7 @@ jobs:
   github-sanity-scan:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@v6
     - name: Github sanity scanner
       uses: outscale/github-sanity-scan@main
       with:

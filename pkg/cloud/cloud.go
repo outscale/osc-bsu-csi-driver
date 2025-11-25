@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"slices"
 	"time"
 
 	dm "github.com/outscale/osc-bsu-csi-driver/pkg/cloud/devicemanager"
@@ -168,6 +169,7 @@ type oscListSnapshotsResponse struct {
 
 type Cloud interface {
 	Start(ctx context.Context)
+	CheckCredentials(ctx context.Context) error
 
 	CreateDisk(ctx context.Context, volumeName string, diskOptions *DiskOptions) (disk Disk, err error)
 	DeleteDisk(ctx context.Context, volumeID string) (success bool, err error)
@@ -344,6 +346,33 @@ func NewCloud(region string, opts ...CloudOption) (Cloud, error) {
 func (c *cloud) Start(ctx context.Context) {
 	go c.snapshotWatcher.Run(ctx)
 	go c.volumeWatcher.Run(ctx)
+}
+
+var (
+	authErrorCodes        = []string{"1", "5", "7", "14", "20", "4120"}
+	ErrInvalidCredentials = errors.New("authentication error (invalid credentials ?)")
+)
+
+func (c *cloud) CheckCredentials(ctx context.Context) error {
+	klog.FromContext(ctx).V(5).Info("Checking credentials")
+	resp, httpRes, err := c.client.ReadVms(ctx, osc.ReadVmsRequest{})
+	logAPICall(ctx, "ReadVms", osc.ReadVmsRequest{}, resp, httpRes, err)
+	switch {
+	case err == nil || httpRes.StatusCode == http.StatusTooManyRequests:
+		return nil
+	case httpRes == nil:
+		return fmt.Errorf("check credentials: %w", err)
+	default:
+		var oapiErr osc.GenericOpenAPIError
+		if errors.As(err, &oapiErr) {
+			if errs, ok := oapiErr.Model().(osc.ErrorResponse); ok && len(errs.GetErrors()) > 0 {
+				if slices.Contains(authErrorCodes, errs.GetErrors()[0].GetCode()) {
+					err = ErrInvalidCredentials
+				}
+			}
+		}
+		return fmt.Errorf("check credentials: %w", err)
+	}
 }
 
 func IsNilDisk(disk Disk) bool {

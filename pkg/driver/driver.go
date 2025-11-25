@@ -157,7 +157,9 @@ func (d *Driver) Run() error {
 		csi.RegisterControllerServer(d.srv, d)
 		ctx, cancel := context.WithCancel(context.Background())
 		d.cancel = cancel
-		d.controllerService.Start(ctx) //nolint
+		if err := d.controllerService.Start(ctx); err != nil { //nolint:staticcheck
+			return err
+		}
 	}
 	if d.options.mode.HasNode() {
 		csi.RegisterNodeServer(d.srv, d)

@@ -86,6 +86,20 @@ func (mr *MockCloudMockRecorder) CheckCreatedSnapshot(ctx, name any) *gomock.Cal
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CheckCreatedSnapshot", reflect.TypeOf((*MockCloud)(nil).CheckCreatedSnapshot), ctx, name)
 }
 
+// CheckCredentials mocks base method.
+func (m *MockCloud) CheckCredentials(ctx context.Context) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CheckCredentials", ctx)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// CheckCredentials indicates an expected call of CheckCredentials.
+func (mr *MockCloudMockRecorder) CheckCredentials(ctx any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CheckCredentials", reflect.TypeOf((*MockCloud)(nil).CheckCredentials), ctx)
+}
+
 // CreateDisk mocks base method.
 func (m *MockCloud) CreateDisk(ctx context.Context, volumeName string, diskOptions *cloud.DiskOptions) (cloud.Disk, error) {
 	m.ctrl.T.Helper()

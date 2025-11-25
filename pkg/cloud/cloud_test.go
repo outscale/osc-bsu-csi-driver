@@ -235,7 +235,6 @@ func TestCreateDisk(t *testing.T) {
 		assert.Equal(t, volumeID, vol.VolumeID)
 		mockCtrl.Finish()
 	})
-
 }
 
 func TestDeleteDisk(t *testing.T) {
@@ -1181,4 +1180,15 @@ func TestResizeDisk(t *testing.T) {
 			mockCtrl.Finish()
 		})
 	}
+}
+
+func TestCheckCredentials(t *testing.T) {
+	t.Run("Invalid credentials are rejected with an error", func(t *testing.T) {
+		t.Setenv("OSC_ACCESS_KEY", "foo")
+		t.Setenv("OSC_SECRET_KEY", "bar")
+		c, err := NewCloud("eu-west-2")
+		require.NoError(t, err)
+		err = c.CheckCredentials(t.Context())
+		require.ErrorIs(t, err, ErrInvalidCredentials)
+	})
 }

@@ -19,6 +19,7 @@ package driver
 import (
 	"context"
 	"errors"
+	"fmt"
 	"os"
 	"slices"
 	"strconv"
@@ -92,11 +93,15 @@ func newControllerService(driverOptions *DriverOptions) controllerService {
 	}
 }
 
-func (c *controllerService) Start(ctx context.Context) {
+func (c *controllerService) Start(ctx context.Context) error {
 	if c.cloud == nil {
-		return
+		return nil
+	}
+	if err := c.cloud.CheckCredentials(ctx); err != nil {
+		return fmt.Errorf("init cloud: %w", err)
 	}
 	c.cloud.Start(ctx)
+	return nil
 }
 
 func (d *controllerService) CreateVolume(ctx context.Context, req *csi.CreateVolumeRequest) (*csi.CreateVolumeResponse, error) {

@@ -712,8 +712,6 @@ var _ = Describe("[bsu-csi-e2e] [single-az] Snapshot", func() {
 			Skip(fmt.Sprintf("env %q not set", OSC_REGION))
 		}
 
-		ctx := context.Background()
-
 		By("Create the Snapshot")
 		tvsc, cleanup := testsuites.CreateVolumeSnapshotClass(snapshotrcs, ns, bsuDriver)
 		defer cleanup()

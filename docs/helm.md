@@ -73,8 +73,9 @@ Kubernetes: `>=1.20`
 | sidecars.attacher.image | string | `"registry.k8s.io/sig-storage/csi-attacher"` |  |
 | sidecars.attacher.metricsPort | string | `"8090"` | Port of the metrics endpoint |
 | sidecars.attacher.resources | object | `{}` | Sidecar resources. If not set, the top-level resources will be used. |
-| sidecars.attacher.tag | string | `"v4.9.0"` |  |
+| sidecars.attacher.tag | string | `"v4.10.0"` |  |
 | sidecars.attacher.workerThreads | int | `100` |  |
+| sidecars.automaxprocs | bool | `true` | Automatically configure GOMAXPROCS based on container allocated resources. |
 | sidecars.kubeAPI.QPS | int | `20` | Maximum allowed number of queries per second to the Kubernetes API |
 | sidecars.kubeAPI.burst | int | `100` | Allowed burst over QPS |
 | sidecars.leaderElection | object | `{"leaseDuration":null,"renewDeadline":null,"retryPeriod":null}` | leaderElection config for all sidecars |
@@ -84,7 +85,7 @@ Kubernetes: `>=1.20`
 | sidecars.livenessProbe.tag | string | `"v2.16.0"` |  |
 | sidecars.metrics | bool | `false` | activates the metrics HTTP endpoint on sidecars. See each sidecar for port definition. |
 | sidecars.nodeDriverRegistrar.image | string | `"registry.k8s.io/sig-storage/csi-node-driver-registrar"` |  |
-| sidecars.nodeDriverRegistrar.tag | string | `"v2.14.0"` |  |
+| sidecars.nodeDriverRegistrar.tag | string | `"v2.15.0"` |  |
 | sidecars.provisioner.additionalArgs | list | `[]` |  |
 | sidecars.provisioner.image | string | `"registry.k8s.io/sig-storage/csi-provisioner"` |  |
 | sidecars.provisioner.metricsPort | string | `"8089"` | Port of the metrics endpoint |

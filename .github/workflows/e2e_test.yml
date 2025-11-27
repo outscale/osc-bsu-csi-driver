@@ -10,7 +10,7 @@ on:
       - "Dockerfile"
       - "Makefile"
       - "go.*"
-      - "osc-bsu-csi-driver/**.yaml"
+      - "helm/osc-bsu-csi-driver/**.yaml"
       - ".github/workflows/e2e_test.yml"
   workflow_dispatch:
 

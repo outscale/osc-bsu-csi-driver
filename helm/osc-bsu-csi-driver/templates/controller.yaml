@@ -87,6 +87,8 @@ spec:
             - name: OSC_REGION
               value: {{ .Values.cloud.region }}
             {{- end }}
+            - name: READ_STATUS_INTERVAL
+              value: "{{ .Values.controller.readStatusInterval }}"
             - name: BACKOFF_DURATION
               value: "{{ .Values.cloud.backoff.duration }}"
             - name: BACKOFF_FACTOR

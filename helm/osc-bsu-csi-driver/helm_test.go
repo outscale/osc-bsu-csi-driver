@@ -123,8 +123,8 @@ func TestHelmTemplate_Deployment(t *testing.T) {
 				},
 			}},
 			{Name: "OSC_REGION", Value: "eu-west2"},
-			{Name: "BACKOFF_DURATION", Value: "750ms"},
-			{Name: "BACKOFF_FACTOR", Value: "1.6"},
+			{Name: "BACKOFF_DURATION", Value: "1s"},
+			{Name: "BACKOFF_FACTOR", Value: "2"},
 			{Name: "BACKOFF_STEPS", Value: "5"},
 		}, manager.Env)
 		assert.Equal(t, corev1.ResourceRequirements{

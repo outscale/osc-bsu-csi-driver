@@ -1,0 +1,108 @@
+{{- if not (empty .Values.replicaCount) }}
+  {{ fail "replicaCount has been replaced by controller.replicas"}}
+{{- end }}
+{{- if not (empty .Values.customEndpoint) }}
+  {{ fail "customEndpoint has been replaced by cloud.customEndpoint"}}
+{{- end }}
+{{- if and (not (empty .Values.image)) (not (empty .Values.image.repository)) }}
+  {{ fail "image.repository has been replaced by driver.image"}}
+{{- end }}
+{{- if and (not (empty .Values.image)) (not (empty .Values.image.tag)) }}
+  {{ fail "image.tag has been replaced by driver.tag"}}
+{{- end }}
+{{- if and (not (empty .Values.image)) (not (empty .Values.image.pullPolicy)) }}
+  {{ fail "image.pullPolicy has been replaced by driver.imagePullPolicy"}}
+{{- end }}
+{{- if not (empty .Values.verbosity) }}
+  {{ fail "verbosity has been replaced by logs.verbosity"}}
+{{- end }}
+{{- if not (empty .Values.timeout) }}
+  {{ fail "timeout has been replaced by sidecars.timeout"}}
+{{- end }}
+{{- if not (empty .Values.sidecars.provisionerImage) }}
+  {{ fail "sidecars.provisionerImage has been replaced by sidecars.provisioner"}}
+{{- end }}
+{{- if not (empty .Values.sidecars.attacherImage) }}
+  {{ fail "sidecars.attacherImage has been replaced by sidecars.attacher"}}
+{{- end }}
+{{- if not (empty .Values.sidecars.snapshotterImage) }}
+  {{ fail "sidecars.snapshotterImage has been replaced by sidecars.snapshotter"}}
+{{- end }}
+{{- if not (empty .Values.sidecars.livenessProbeImage) }}
+  {{ fail "sidecars.livenessProbeImage has been replaced by sidecars.livenessProbe"}}
+{{- end }}
+{{- if not (empty .Values.sidecars.resizerImage) }}
+  {{ fail "sidecars.resizerImage has been replaced by sidecars.resizer"}}
+{{- end }}
+{{- if not (empty .Values.sidecars.nodeDriverRegistrarImage) }}
+  {{ fail "sidecars.nodeDriverRegistrarImage has been replaced by sidecars.nodeDriverRegistrar"}}
+{{- end }}
+{{- if not (empty .Values.nameOverride) }}
+  {{ fail "nameOverride has been replaced by driver.name"}}
+{{- end }}
+{{- if not (empty .Values.podAnnotations) }}
+  {{ fail "podAnnotations has been replaced by controller.podAnnotations"}}
+{{- end }}
+{{- if not (empty .Values.podLabels) }}
+  {{ fail "podLabels has been replaced by controller.podLabels"}}
+{{- end }}
+{{- if not (empty .Values.enableVolumeSnapshot) }}
+  {{ fail "enableVolumeSnapshot has been replaced by driver.enableVolumeSnapshot"}}
+{{- end }}
+{{- if not (empty .Values.enableSnapshotCrossNamespace) }}
+  {{ fail "enableSnapshotCrossNamespace has been replaced by driver.enableSnapshotCrossNamespace"}}
+{{- end }}
+{{- if not (empty .Values.enableVolumeAttributesClass) }}
+  {{ fail "enableVolumeAttributesClass has been replaced by driver.enableVolumeAttributesClass"}}
+{{- end }}
+{{- if not (empty .Values.resources) }}
+  {{ fail "resources has been replaced by controller.resources"}}
+{{- end }}
+{{- if not (empty .Values.nodeSelector) }}
+  {{ fail "nodeSelector has been replaced by controller.nodeSelector"}}
+{{- end }}
+{{- if not (empty .Values.updateStrategy) }}
+  {{ fail "updateStrategy has been replaced by controller.updateStrategy"}}
+{{- end }}
+{{- if not (empty .Values.tolerations) }}
+  {{ fail "tolerations has been replaced by controller.tolerations"}}
+{{- end }}
+{{- if not (empty .Values.tolerateAllTaints) }}
+  {{ fail "tolerateAllTaints has been replaced by controller.tolerateAllTaints"}}
+{{- end }}
+{{- if not (empty .Values.affinity) }}
+  {{ fail "affinity has been replaced by controller.affinity"}}
+{{- end }}
+{{- if not (empty .Values.extraVolumeTags) }}
+  {{ fail "extraVolumeTags has been replaced by driver.extraVolumeTags"}}
+{{- end }}
+{{- if not (empty .Values.extraSnapshotTags) }}
+  {{ fail "extraSnapshotTags has been replaced by driver.extraSnapshotTags"}}
+{{- end }}
+{{- if not (empty .Values.region) }}
+  {{ fail "region has been replaced by cloud.region"}}
+{{- end }}
+{{- if not (empty .Values.defaultFsType) }}
+  {{ fail "defaultFsType has been replaced by driver.defaultFsType"}}
+{{- end }}
+{{- if not (empty .Values.node.containerSecurityContext) }}
+  {{ fail "node.containerSecurityContext has been replaced by node.securityContext"}}
+{{- end }}
+{{- if not (empty .Values.node.args) }}
+  {{ fail "node.args has been replaced by node.additionalArgs"}}
+{{- end }}
+{{- if not (empty .Values.credentials) }}
+  {{ fail "credentials has been replaced by cloud.credentials"}}
+{{- end }}
+{{- if and (not (empty .Values.csiDriver)) (not (empty .Values.csiDriver.fsGroupPolicy)) }}
+  {{ fail "csiDriver.fsGroupPolicy has been replaced by driver.fsGroupPolicy"}}
+{{- end }}
+{{- if not (empty .Values.caBundle) }}
+  {{ fail "caBundle has been replaced by cloud.caBundle"}}
+{{- end }}
+{{- if not (empty .Values.httpsProxy) }}
+  {{ fail "httpsProxy has been replaced by cloud.httpsProxy"}}
+{{- end }}
+{{- if not (empty .Values.noProxy) }}
+  {{ fail "noProxy has been replaced by cloud.noProxy"}}
+{{- end }}

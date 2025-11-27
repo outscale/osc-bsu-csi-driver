@@ -126,13 +126,13 @@ spec:
             - --worker-threads={{ .Values.sidecars.provisioner.workerThreads }}
             - --timeout={{ .Values.sidecars.timeout }}
             - --default-fstype={{ .Values.driver.defaultFsType }}
-            - --leader-election=true
             {{- if .Values.driver.enableSnapshotCrossNamespace }}
             - --feature-gates=CrossNamespaceVolumeDataSource=true
             {{- end}}
             {{- if .Values.driver.enableVolumeAttributesClass }}
             - --feature-gates=VolumeAttributesClass=true
             {{- end}}
+            - --leader-election=true
             {{- if .Values.sidecars.leaderElection.leaseDuration }}
             - --leader-election-lease-duration={{ .Values.sidecars.leaderElection.leaseDuration }}
             {{- end }}
@@ -182,6 +182,9 @@ spec:
             - --kube-api-burst={{ .Values.sidecars.kubeAPI.burst }}
             - --worker-threads={{ .Values.sidecars.attacher.workerThreads }}
             - --timeout={{ .Values.sidecars.timeout }}
+            {{- if .Values.sidecars.automaxprocs }}
+            - --automaxprocs
+            {{- end}}
             - --leader-election=true
             {{- if .Values.sidecars.leaderElection.leaseDuration }}
             - --leader-election-lease-duration={{ .Values.sidecars.leaderElection.leaseDuration }}
@@ -233,6 +236,9 @@ spec:
             - --kube-api-burst={{ .Values.sidecars.kubeAPI.burst }}
             - --worker-threads={{ .Values.sidecars.snapshotter.workerThreads }}
             - --timeout={{ .Values.sidecars.timeout }}
+            {{- if .Values.sidecars.automaxprocs }}
+            - --automaxprocs
+            {{- end}}
             - --leader-election=true
             {{- if .Values.sidecars.leaderElection.leaseDuration }}
             - --leader-election-lease-duration={{ .Values.sidecars.leaderElection.leaseDuration }}
@@ -284,6 +290,9 @@ spec:
             - --kube-api-qps={{ .Values.sidecars.kubeAPI.QPS }}
             - --kube-api-burst={{ .Values.sidecars.kubeAPI.burst }}
             - --workers={{ .Values.sidecars.resizer.workerThreads }}
+            {{- if .Values.sidecars.automaxprocs }}
+            - --automaxprocs
+            {{- end}}
             - --leader-election=true
             {{- if .Values.driver.enableVolumeAttributesClass }}
             - --feature-gates=VolumeAttributesClass=true

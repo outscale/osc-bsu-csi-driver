@@ -12,7 +12,7 @@ serviceAccount:
 logs:
   # -- Verbosity level of the plugin
   verbosity: 3
-  # -- Format of logs: test or json
+  # -- Format of logs: text or json
   format: text
 
 driver:
@@ -22,20 +22,18 @@ driver:
   image: outscale/osc-bsu-csi-driver
   # -- Container image tag to deploy
   tag: v1.8.0
-  # -- Container pull policy
+  # -- Container image pull policy
   imagePullPolicy: IfNotPresent
 
-  # -- Policy of the FileSystem (see [Docs](https://kubernetes-csi.github.io/docs/support-fsgroup.html#supported-modes))
+  # -- Filesystem group policy (see [Docs](https://kubernetes-csi.github.io/docs/support-fsgroup.html#supported-modes))
   fsGroupPolicy: File
   # -- Maximum number of volumes that can be attached to a node, autocomputed by default (see [Docs](https://docs.outscale.com/en/userguide/About-Volumes.html))
   maxBsuVolumes: ""
   # -- Default filesystem for the volume if no `FsType` is set in `StorageClass`
   defaultFsType: "ext4"
-  # -- Enable volume snapshot
-  # True if enable volume snapshot
+  # -- Enable volume snapshots
   enableVolumeSnapshot: false
-  # -- Enable snapshot cross namespace
-  # True if enable snapshot cross namespace
+  # -- Enable cross namespace snapshots
   enableSnapshotCrossNamespace: false
   # -- Enable volume updates using VolumeAttributesClass
   enableVolumeAttributesClass: false
@@ -71,7 +69,7 @@ cloud:
   caBundle:
     # -- Secret name containing additional certificates authorities
     name: ''
-    # -- Entry key in secret used to store additional certificates authorities
+    # -- Entry where the CA bundle can be found in the secret
     key: ''
 
   # -- Value used to create environment variable HTTPS_PROXY
@@ -80,31 +78,19 @@ cloud:
   noProxy: ''
 
   backoff:
-    # integer in second defining initial duration
-    # -- Initial duraction of backoff
-    duration: "750ms"
-    # float define the factor multiplied by Duration each iteration
-    # -- Factor multiplied by Duration for each iteration
-    factor: "1.6"
-    # integer defining the remaining number of iterations in which the duration parameter may change
-    # -- Remaining number of iterations in which the duration parameter may change
+    # -- Wait before the first retry
+    duration: "1s"
+    # -- Factor by which to multiply the duration between each try
+    factor: "2"
+    # -- Maximum number of tries in case on failure
     steps: "5"
 
 controller:
   # -- Number of replicas to deploy
-  replica: 2
+  replicas: 2
   # -- Specify limits of resources used by the pod containers
   resources: {}
-    # We usually recommend not to specify default resources and to leave this as a conscious
-    # choice for the user. This also increases chances charts run on environments with little
-    # resources, such as Minikube. If you do want to specify resources, uncomment the following
-    # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
-    # limits:
-    #   cpu: 100m
-    #   memory: 128Mi
-    # requests:
-    #   cpu: 100m
-    #   memory: 128Mi
+  # -- Node selector used to deploy controller pods.
   nodeSelector: {}
   # -- Controller deployment update strategy.
   updateStrategy:
@@ -169,15 +155,16 @@ sidecars:
     retryPeriod: null
   # -- activates the metrics HTTP endpoint on sidecars. See each sidecar for port definition.
   metrics: false
-  # -- kube api throttling
   kubeAPI:
+    # -- Maximum allowed number of queries per second to the Kubernetes API
     QPS: 20
+    # -- Allowed burst over QPS
     burst: 100 
 
   provisioner:
     image: registry.k8s.io/sig-storage/csi-provisioner
     tag: "v5.3.0"
-    # -- Port of the http endpoint
+    # -- Port of the metrics endpoint
     metricsPort: "8089"
     additionalArgs: []
     # Sidecar resources. If not set, the top-level resources will be used.
@@ -186,7 +173,7 @@ sidecars:
   attacher:
     image: registry.k8s.io/sig-storage/csi-attacher
     tag: "v4.9.0"
-    # -- Port of the http endpoint
+    # -- Port of the metrics endpoint
     metricsPort: "8090"
     additionalArgs: []
     # -- Sidecar resources. If not set, the top-level resources will be used.
@@ -195,7 +182,7 @@ sidecars:
   snapshotter:
     image: registry.k8s.io/sig-storage/csi-snapshotter
     tag: "v8.3.0"
-    # -- Port of the http endpoint
+    # -- Port of the metrics endpoint
     metricsPort: "8091"
     additionalArgs: []
     # -- Sidecar resources. If not set, the top-level resources will be used.
@@ -211,7 +198,7 @@ sidecars:
   resizer:
     image: registry.k8s.io/sig-storage/csi-resizer
     tag: "v1.14.0"
-    # -- Port of the http endpoint
+    # -- Port of the metrics endpoint
     metricsPort: "8092"
     additionalArgs: []
     # -- Sidecar resources. If not set, the top-level resources will be used.

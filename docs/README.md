@@ -147,6 +147,10 @@ Follow the **[Migration Process](./migration.md)**.
 
 `maxBsuVolumes` is now computed automatically at driver startup. Manual configuration is usually unnecessary, even when multiple BSU volumes are mounted by the OS.
 
+### Upgrading to Helm chart v2
+
+Many variables have been renamed. Please refer to the [upgrade guide](../helm/osc-bsu-csi-driver/migration.md).
+
 ---
 
 ## 💡 Examples

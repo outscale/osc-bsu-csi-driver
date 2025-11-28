@@ -358,8 +358,10 @@ func (c *cloud) Start(ctx context.Context) {
 }
 
 var (
-	authErrorCodes        = []string{"1", "5", "7", "14", "20", "4120"}
-	ErrInvalidCredentials = errors.New("authentication error (invalid credentials ?)")
+	invalidCredentialsErrorCodes = []string{"1", "5", "7", "14", "20", "4120"}
+	ErrInvalidCredentials        = errors.New("authentication error (invalid credentials ?)")
+	expiredCredentialsErrorCodes = []string{"4000"}
+	ErrExpiredCredentials        = errors.New("authentication error (expired credentials or clock drift ?)")
 )
 
 func (c *cloud) CheckCredentials(ctx context.Context) error {
@@ -375,8 +377,10 @@ func (c *cloud) CheckCredentials(ctx context.Context) error {
 		var oapiErr osc.GenericOpenAPIError
 		if errors.As(err, &oapiErr) {
 			if errs, ok := oapiErr.Model().(osc.ErrorResponse); ok && len(errs.GetErrors()) > 0 {
-				if slices.Contains(authErrorCodes, errs.GetErrors()[0].GetCode()) {
+				if slices.Contains(invalidCredentialsErrorCodes, errs.GetErrors()[0].GetCode()) {
 					err = ErrInvalidCredentials
+				} else if slices.Contains(expiredCredentialsErrorCodes, errs.GetErrors()[0].GetCode()) {
+					err = ErrExpiredCredentials
 				}
 			}
 		}

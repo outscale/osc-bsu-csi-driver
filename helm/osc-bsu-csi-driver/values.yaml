@@ -142,6 +142,8 @@ sidecars:
   timeout: 5m
   # -- Default sidecar resources, unless set at the sidecar level.
   resources: {}
+  # -- Automatically configure GOMAXPROCS based on container allocated resources.
+  automaxprocs: true
   # -- securityContext config for all sidecars.
   securityContext:
     seccompProfile:
@@ -172,7 +174,7 @@ sidecars:
     workerThreads: 100
   attacher:
     image: registry.k8s.io/sig-storage/csi-attacher
-    tag: "v4.9.0"
+    tag: "v4.10.0"
     # -- Port of the metrics endpoint
     metricsPort: "8090"
     additionalArgs: []
@@ -206,4 +208,4 @@ sidecars:
     workerThreads: 100
   nodeDriverRegistrar:
     image: registry.k8s.io/sig-storage/csi-node-driver-registrar
-    tag: "v2.14.0"
+    tag: "v2.15.0"

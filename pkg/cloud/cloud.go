@@ -23,6 +23,7 @@ import (
 	"net/http"
 	"os"
 	"slices"
+	"strings"
 	"time"
 
 	dm "github.com/outscale/osc-bsu-csi-driver/pkg/cloud/devicemanager"
@@ -313,7 +314,11 @@ func NewCloud(region string, opts ...CloudOption) (Cloud, error) {
 
 	client.config = config
 	client.config.Debug = false
-	client.config.UserAgent = "osc-bsu-csi-driver/" + version.DriverVersion
+	v := version.DriverVersion
+	if !strings.HasPrefix(v, "v") {
+		v = "dev"
+	}
+	client.config.UserAgent = "osc-bsu-csi-driver/" + v
 	client.api = osc.NewAPIClient(client.config)
 
 	client.auth = context.WithValue(context.Background(), osc.ContextAWSv4, osc.AWSv4{

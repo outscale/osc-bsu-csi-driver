@@ -27,21 +27,22 @@ spec:
     spec:
       nodeSelector:
         kubernetes.io/os: linux
+        {{- with .Values.node.nodeSelector }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
       hostNetwork: true
       priorityClassName: system-node-critical
+      {{- with .Values.node.affinity }}
+      affinity: {{ toYaml . | nindent 8 }}
+      {{- end }}
       tolerations:
-        {{- if .Values.node.tolerateAllTaints }}
+      {{- if .Values.node.tolerateAllTaints }}
         - operator: Exists
-        {{- else }}
-        - key: CriticalAddonsOnly
-          operator: Exists
-        - operator: Exists
-          effect: NoExecute
-          tolerationSeconds: 300
-        {{- end }}
+      {{- else }}
         {{- with .Values.node.tolerations }}
 {{ toYaml . | indent 8 }}
         {{- end }}
+      {{- end }}
       {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}

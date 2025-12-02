@@ -92,8 +92,9 @@ controller:
   replicas: 2
   # -- Specify limits of resources used by the pod containers
   resources: {}
-  # -- Node selector used to deploy controller pods.
-  nodeSelector: {}
+  # -- Node selector used to schedule controller pods.
+  nodeSelector:
+    node-role.kubernetes.io/control-plane: ""
   # -- Controller deployment update strategy.
   updateStrategy:
     type: RollingUpdate
@@ -101,15 +102,17 @@ controller:
   podAnnotations: {}
   # -- Labels for controller pod
   podLabels: {}
-  #@ignored
+  # -- Tolerate all taints
   tolerateAllTaints: true
-  # -- Pod tolerations
+  # -- Pod tolerations (if tolerateAllTaints is false)
   tolerations:
     - key: CriticalAddonsOnly
       operator: Exists
     - operator: Exists
       effect: NoExecute
       tolerationSeconds: 300
+    - key: node-role.kubernetes.io/control-plane
+      effect: NoSchedule
   # -- Affinity settings
   affinity: {}
   # -- Security context for the controller container.
@@ -120,10 +123,19 @@ node:
   podAnnotations: {}
   # -- Labels for node controller pod
   podLabels: {}
-  # @ignored
+  # -- Node selector used to schedule node controller pods.
+  nodeSelector: {}
+  # -- Tolerate all taints
   tolerateAllTaints: true
-  # -- Pod tolerations
-  tolerations: []
+  # -- Pod tolerations (if tolerateAllTaints is false)
+  tolerations:
+    - key: CriticalAddonsOnly
+      operator: Exists
+    - operator: Exists
+      effect: NoExecute
+      tolerationSeconds: 300
+  # -- Affinity settings
+  affinity: {}
   # -- Security context for the node container.
   securityContext:
     readOnlyRootFilesystem: false  # Allow write operations needed for volume management

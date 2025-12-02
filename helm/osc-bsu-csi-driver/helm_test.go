@@ -505,8 +505,6 @@ func TestHelmTemplate_DaemonSet(t *testing.T) {
 		)
 		require.Len(t, dep.Spec.Template.Spec.Containers, 3)
 		assert.Equal(t, []corev1.Toleration{
-			{Key: "CriticalAddonsOnly", Operator: corev1.TolerationOpExists},
-			{Operator: corev1.TolerationOpExists, Effect: corev1.TaintEffectNoExecute, TolerationSeconds: ptr.To[int64](300)},
 			{Key: "foo", Operator: corev1.TolerationOpExists},
 		},
 			dep.Spec.Template.Spec.Tolerations)

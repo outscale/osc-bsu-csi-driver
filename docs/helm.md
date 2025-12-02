@@ -38,14 +38,15 @@ Kubernetes: `>=1.20`
 | cloud.noProxy | string | `""` | Value used to create environment variable NO_PROXY |
 | cloud.region | string | `""` | Region to use, otherwise it will be looked up via metadata. By providing this parameter, the controller will not require to access the metadata. |
 | controller.affinity | object | `{}` | Affinity settings |
-| controller.nodeSelector | object | `{}` | Node selector used to deploy controller pods. |
+| controller.nodeSelector | object | `{"node-role.kubernetes.io/control-plane":""}` | Node selector used to schedule controller pods. |
 | controller.podAnnotations | object | `{}` | Annotations for controller pod |
 | controller.podLabels | object | `{}` | Labels for controller pod |
 | controller.readStatusInterval | string | `"2s"` | The delay between two read calls while checking for a volume/snapshot status. |
 | controller.replicas | int | `2` | Number of replicas to deploy |
 | controller.resources | object | `{}` | Specify limits of resources used by the pod containers |
 | controller.securityContext | object | `{}` | Security context for the controller container. |
-| controller.tolerations | list | `[{"key":"CriticalAddonsOnly","operator":"Exists"},{"effect":"NoExecute","operator":"Exists","tolerationSeconds":300}]` | Pod tolerations |
+| controller.tolerateAllTaints | bool | `true` | Tolerate all taints |
+| controller.tolerations | list | `[{"key":"CriticalAddonsOnly","operator":"Exists"},{"effect":"NoExecute","operator":"Exists","tolerationSeconds":300},{"effect":"NoSchedule","key":"node-role.kubernetes.io/control-plane"}]` | Pod tolerations (if tolerateAllTaints is false) |
 | controller.updateStrategy | object | `{"type":"RollingUpdate"}` | Controller deployment update strategy. |
 | driver.defaultFsType | string | `"ext4"` | Default filesystem for the volume if no `FsType` is set in `StorageClass` |
 | driver.enableSnapshotCrossNamespace | bool | `false` | Enable cross namespace snapshots |
@@ -63,11 +64,14 @@ Kubernetes: `>=1.20`
 | logs.format | string | `"text"` | Format of logs: text or json |
 | logs.verbosity | int | `3` | Verbosity level of the plugin |
 | node.additionalArgs | list | `[]` | Node controller command line additional args |
+| node.affinity | object | `{}` | Affinity settings |
+| node.nodeSelector | object | `{}` | Node selector used to schedule node controller pods. |
 | node.podAnnotations | object | `{}` | Annotations for node controller pod |
 | node.podLabels | object | `{}` | Labels for node controller pod |
 | node.resources | object | `{}` | Node controller DaemonSet resources. If not set, the top-level resources will be used. |
 | node.securityContext | object | `{"allowPrivilegeEscalation":true,"privileged":true,"readOnlyRootFilesystem":false,"seccompProfile":{"type":"Unconfined"}}` | Security context for the node container. |
-| node.tolerations | list | `[]` | Pod tolerations |
+| node.tolerateAllTaints | bool | `true` | Tolerate all taints |
+| node.tolerations | list | `[{"key":"CriticalAddonsOnly","operator":"Exists"},{"effect":"NoExecute","operator":"Exists","tolerationSeconds":300}]` | Pod tolerations (if tolerateAllTaints is false) |
 | node.updateStrategy | object | `{"type":"RollingUpdate"}` | Node controller DaemonSet update strategy |
 | serviceAccount.annotations | object | `{}` |  |
 | sidecars.attacher.additionalArgs | list | `[]` |  |

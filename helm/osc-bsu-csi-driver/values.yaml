@@ -33,6 +33,8 @@ driver:
   defaultFsType: "ext4"
   # -- Enable volume snapshots
   enableVolumeSnapshot: false
+  # -- Enable volume snapshots exports
+  enableVolumeSnapshotExports: false
   # -- Enable cross namespace snapshots
   enableSnapshotCrossNamespace: false
   # -- Enable volume updates using VolumeAttributesClass
@@ -223,3 +225,11 @@ sidecars:
   nodeDriverRegistrar:
     image: registry.k8s.io/sig-storage/csi-node-driver-registrar
     tag: "v2.15.0"
+  exporter:
+    image: outscale/csi-snapshot-exporter
+    tag: "v0.1.0"
+    # -- Port of the metrics endpoint
+    metricsPort: "8093"
+    additionalArgs: []
+    # -- Sidecar resources. If not set, the top-level resources will be used.
+    resources: {}

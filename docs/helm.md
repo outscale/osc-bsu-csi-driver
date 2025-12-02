@@ -52,6 +52,7 @@ Kubernetes: `>=1.20`
 | driver.enableSnapshotCrossNamespace | bool | `false` | Enable cross namespace snapshots |
 | driver.enableVolumeAttributesClass | bool | `false` | Enable volume updates using VolumeAttributesClass |
 | driver.enableVolumeSnapshot | bool | `false` | Enable volume snapshots |
+| driver.enableVolumeSnapshotExports | bool | `false` | Enable volume snapshots exports |
 | driver.extraSnapshotTags | object | `{}` | Add extra tags on snapshots |
 | driver.extraVolumeTags | object | `{}` | Add extra tags on volumes |
 | driver.fsGroupPolicy | string | `"File"` | Filesystem group policy (see [Docs](https://kubernetes-csi.github.io/docs/support-fsgroup.html#supported-modes)) |
@@ -81,6 +82,11 @@ Kubernetes: `>=1.20`
 | sidecars.attacher.tag | string | `"v4.10.0"` |  |
 | sidecars.attacher.workerThreads | int | `100` |  |
 | sidecars.automaxprocs | bool | `true` | Automatically configure GOMAXPROCS based on container allocated resources. |
+| sidecars.exporter.additionalArgs | list | `[]` |  |
+| sidecars.exporter.image | string | `"outscale/csi-snapshot-exporter"` |  |
+| sidecars.exporter.metricsPort | string | `"8093"` | Port of the metrics endpoint |
+| sidecars.exporter.resources | object | `{}` | Sidecar resources. If not set, the top-level resources will be used. |
+| sidecars.exporter.tag | string | `"v0.1.0"` |  |
 | sidecars.kubeAPI.QPS | int | `20` | Maximum allowed number of queries per second to the Kubernetes API |
 | sidecars.kubeAPI.burst | int | `100` | Allowed burst over QPS |
 | sidecars.leaderElection | object | `{"leaseDuration":null,"renewDeadline":null,"retryPeriod":null}` | leaderElection config for all sidecars |

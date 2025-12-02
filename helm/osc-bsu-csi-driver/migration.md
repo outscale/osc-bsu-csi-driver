@@ -1,10 +1,31 @@
 # Migration from v1 chart to v2 chart
 
-## Renamed variables
+Most variables have been renamed, and `helm upgrade` will fail if called with v1 values.
 
-Most variables have been renamed in the new v2 chart.
+You can call `helm get values osc-bsu-csi-driver --namespace kube-system` to display configured values.
+And you will need to reset existing values while upgrading by using `helm upgrade --reset-values`.
 
-| V1 Variable | V2 Variable |
+For example, if you installed the CSI driver using:
+
+```shell
+helm install [...] \
+    --set enableVolumeSnapshot=true \
+    --set region=$OSC_REGION
+```
+
+You will need to upgrade with:
+
+```shell
+helm upgrade [...] --reset-values \
+    --set driver.enableVolumeSnapshot=true \
+    --set cloud.region=$OSC_REGION
+```
+
+## Renamed values
+
+Most values have been renamed in the new v2 chart.
+
+| V1 value | V2 value |
 | ----------- | ----------- |
 | affinity | controller.affinity |
 | caBundle | cloud.caBundle |
@@ -43,11 +64,11 @@ Most variables have been renamed in the new v2 chart.
 | updateStrategy | controller.updateStrategy |
 | verbosity | logs.verbosity |
 
-## Performance tuning variables
+## Performance tuning
 
-You may now tune the performance of the driver with the following variables:
+You may now tune the performance of the driver by setting the following values:
 
-| Variable | Description |
+| Name | Description |
 | -------- | ----------- |
 | `controller.readStatusInterval` | The interval between consecutive volume/snapshot checks, raise if you see throttling errors in ReadSnapshot/ReadVolumes calls. |
 | `sidecars.timeout` | The maximum time a sidecar (provisioner, attacher, resizer, snapshotter) will wait for the CSI driver to process a query. Safe to raise if your volumes/snapshots are very large and you encounter timeouts. |
@@ -59,4 +80,4 @@ You may now tune the performance of the driver with the following variables:
 | `sidecars.snapshotter.workerThreads` | The number of simultaneous snapshot requests the snapshotter sidecar can process. |
 
 > Please be aware that there is a limit in the number of API calls you are allowed to make to the Outscale API.
-If you raise workerThreads too much, you may decrease the performance of the CSI driver by being throttled by the Outscale API.
+If you raise `workerThreads` too much, you may decrease the performance of the CSI driver by being throttled by the Outscale API.

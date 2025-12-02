@@ -149,7 +149,9 @@ Follow the **[Migration Process](./migration.md)**.
 
 ### Upgrading to Helm chart v2
 
-Many variables have been renamed. Please refer to the [upgrade guide](../helm/osc-bsu-csi-driver/migration.md).
+Many variables have been renamed.
+
+Please refer to the [upgrade guide](../helm/osc-bsu-csi-driver/migration.md).
 
 ---
 

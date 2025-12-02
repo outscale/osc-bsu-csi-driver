@@ -136,10 +136,8 @@ func TestHelmTemplate_Deployment(t *testing.T) {
 
 	t.Run("Controller resources can be set", func(t *testing.T) {
 		dep := getDeployment(t,
-			"driver.enableVolumeSnapshot=true",
 			"controller.resources.limits.memory=64Mi", "controller.resources.limits.cpu=10m",
 			"controller.resources.requests.memory=96Mi", "controller.resources.requests.cpu=20m")
-		require.Len(t, dep.Spec.Template.Spec.Containers, 6)
 		for _, container := range dep.Spec.Template.Spec.Containers {
 			if container.Name != "osc-plugin" {
 				continue
@@ -160,9 +158,10 @@ func TestHelmTemplate_Deployment(t *testing.T) {
 	t.Run("Sidecar resources can be set globally", func(t *testing.T) {
 		dep := getDeployment(t,
 			"driver.enableVolumeSnapshot=true",
+			"driver.enableVolumeSnapshotExports=true",
 			"sidecars.resources.limits.memory=64Mi", "sidecars.resources.limits.cpu=10m",
 			"sidecars.resources.requests.memory=96Mi", "sidecars.resources.requests.cpu=20m")
-		require.Len(t, dep.Spec.Template.Spec.Containers, 6)
+		require.Len(t, dep.Spec.Template.Spec.Containers, 7)
 		for _, container := range dep.Spec.Template.Spec.Containers {
 			if container.Name == "osc-plugin" {
 				continue
@@ -182,6 +181,8 @@ func TestHelmTemplate_Deployment(t *testing.T) {
 
 	t.Run("imagePullPolicy is set", func(t *testing.T) {
 		dep := getDeployment(t,
+			"driver.enableVolumeSnapshot=true",
+			"driver.enableVolumeSnapshotExports=true",
 			"driver.imagePullPolicy=foo",
 		)
 		for _, container := range dep.Spec.Template.Spec.Containers {
@@ -192,6 +193,7 @@ func TestHelmTemplate_Deployment(t *testing.T) {
 	t.Run("Sidecar resources can be set individually", func(t *testing.T) {
 		dep := getDeployment(t,
 			"driver.enableVolumeSnapshot=true",
+			"driver.enableVolumeSnapshotExports=true",
 
 			"sidecars.provisioner.resources.limits.memory=65Mi", "sidecars.provisioner.resources.limits.cpu=11m",
 			"sidecars.provisioner.resources.requests.memory=97Mi", "sidecars.provisioner.resources.requests.cpu=21m",
@@ -204,8 +206,11 @@ func TestHelmTemplate_Deployment(t *testing.T) {
 
 			"sidecars.resizer.resources.limits.memory=68Mi", "sidecars.resizer.resources.limits.cpu=14m",
 			"sidecars.resizer.resources.requests.memory=100Mi", "sidecars.resizer.resources.requests.cpu=24m",
+
+			"sidecars.exporter.resources.limits.memory=68Mi", "sidecars.exporter.resources.limits.cpu=14m",
+			"sidecars.exporter.resources.requests.memory=100Mi", "sidecars.exporter.resources.requests.cpu=24m",
 		)
-		require.Len(t, dep.Spec.Template.Spec.Containers, 6)
+		require.Len(t, dep.Spec.Template.Spec.Containers, 7)
 		container := dep.Spec.Template.Spec.Containers[1]
 		assert.Equal(t, "csi-provisioner", container.Name)
 		assert.Equal(t, corev1.ResourceRequirements{
@@ -246,6 +251,19 @@ func TestHelmTemplate_Deployment(t *testing.T) {
 		}, container.Resources, container.Name)
 
 		container = dep.Spec.Template.Spec.Containers[4]
+		assert.Equal(t, "osc-snapshot-exporter", container.Name)
+		assert.Equal(t, corev1.ResourceRequirements{
+			Requests: corev1.ResourceList{
+				"memory": resource.MustParse("100Mi"),
+				"cpu":    resource.MustParse("24m"),
+			},
+			Limits: corev1.ResourceList{
+				"memory": resource.MustParse("68Mi"),
+				"cpu":    resource.MustParse("14m"),
+			},
+		}, container.Resources, container.Name)
+
+		container = dep.Spec.Template.Spec.Containers[5]
 		assert.Equal(t, "csi-resizer", container.Name)
 		assert.Equal(t, corev1.ResourceRequirements{
 			Requests: corev1.ResourceList{

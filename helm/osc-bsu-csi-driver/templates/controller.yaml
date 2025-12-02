@@ -281,6 +281,64 @@ spec:
           securityContext:
             {{- toYaml . | nindent 12 }}
           {{- end }}
+        {{- if .Values.driver.enableVolumeSnapshotExports }}
+        - name: osc-snapshot-exporter
+          image: {{ .Values.sidecars.exporter.image }}:{{ .Values.sidecars.exporter.tag }}
+          imagePullPolicy: {{ .Values.driver.imagePullPolicy }}
+          args:
+            - --v={{ .Values.logs.verbosity }}
+            - --leader-elect=true
+            {{- range .Values.sidecars.exporter.additionalArgs }}
+            - {{ . }}
+            {{- end }}
+          {{- if .Values.sidecars.exporter.metrics }}
+            - --metrics-bind-address=:{{ .Values.sidecars.exporter.metricsPort }}
+          ports:
+            - name: httpendpoint
+              containerPort: {{ .Values.sidecars.exporter.metricsPort }}
+              protocol: TCP
+          {{- end }}
+          env:
+            - name: OSC_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.cloud.credentials.secretName }}
+                  key: access_key
+                  optional: true
+            - name: OSC_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.cloud.credentials.secretName }}
+                  key: secret_key
+                  optional: true
+            {{- if .Values.cloud.customEndpoint }}
+            - name: OSC_ENDPOINT_API
+              value: {{ .Values.cloud.customEndpoint }}
+            {{- end }}
+            {{- if .Values.cloud.region }}
+            - name: OSC_REGION
+              value: {{ .Values.cloud.region }}
+            {{- end }}
+            {{- if .Values.cloud.httpsProxy }}
+            - name: HTTPS_PROXY
+              value: {{ .Values.cloud.httpsProxy }}
+            - name: NO_PROXY
+              value: {{ .Values.cloud.noProxy }}
+            {{- end }}
+          {{- if .Values.sidecars.exporter.resources }}
+            {{- with .Values.sidecars.exporter.resources }}
+          resources: {{ toYaml . | nindent 12 }}
+            {{- end }}
+          {{- else }}
+            {{- with .Values.sidecars.resources }}
+          resources: {{ toYaml . | nindent 12 }}
+            {{- end }}
+          {{- end }}
+          {{- with .Values.sidecars.securityContext }}
+          securityContext:  
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+        {{- end }}
         {{- end }}
         - name: csi-resizer
           image: {{ .Values.sidecars.resizer.image }}:{{ .Values.sidecars.resizer.tag }}

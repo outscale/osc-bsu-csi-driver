@@ -152,6 +152,7 @@ helm_deploy:
 			osc-bsu-csi-driver ./helm/osc-bsu-csi-driver \
 			--namespace kube-system \
 			--set driver.enableVolumeSnapshot=true \
+			--set driver.enableVolumeSnapshotExports=true \
 			--set driver.enableVolumeAttributesClass=true \
 			--set cloud.region=${OSC_REGION} \
 			--set driver.image=$(TARGET_IMAGE) \

@@ -17,15 +17,13 @@ limitations under the License.
 package main
 
 import (
-	"flag"
-
 	"github.com/outscale/osc-bsu-csi-driver/pkg/driver"
-
+	"github.com/spf13/pflag"
 	"k8s.io/klog/v2"
 )
 
 func main() {
-	fs := flag.NewFlagSet("osc-bsu-csi-driver", flag.ExitOnError)
+	fs := pflag.NewFlagSet("osc-bsu-csi-driver", pflag.ExitOnError)
 	options := GetOptions(fs)
 
 	drv, err := driver.NewDriver(

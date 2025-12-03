@@ -99,7 +99,6 @@ func TestHelmTemplate_Deployment(t *testing.T) {
 		assert.Equal(t, []string{
 			"controller",
 			"--endpoint=$(CSI_ENDPOINT)",
-			"--logtostderr",
 			"--v=3",
 		}, manager.Args)
 		assert.Equal(t, []corev1.EnvVar{
@@ -132,6 +131,22 @@ func TestHelmTemplate_Deployment(t *testing.T) {
 			Requests: nil,
 			Limits:   nil,
 		}, manager.Resources)
+	})
+
+	t.Run("Lgging can be configured", func(t *testing.T) {
+		dep := getDeployment(t,
+			"driver.enableVolumeSnapshot=true",
+			"driver.enableVolumeSnapshotExports=true",
+			"logs.verbosity=5", "logs.format=json",
+		)
+		require.Len(t, dep.Spec.Template.Spec.Containers, 7)
+		for _, container := range dep.Spec.Template.Spec.Containers {
+			if container.Name == "liveness-probe" {
+				continue
+			}
+			assert.Contains(t, container.Args, "--v=5")
+			assert.Contains(t, container.Args, "--logging-format=json")
+		}
 	})
 
 	t.Run("Controller resources can be set", func(t *testing.T) {
@@ -392,7 +407,6 @@ func TestHelmTemplate_DaemonSet(t *testing.T) {
 		assert.Equal(t, []string{
 			"node",
 			"--endpoint=$(CSI_ENDPOINT)",
-			"--logtostderr",
 			"--v=3",
 		}, manager.Args)
 		assert.Equal(t, []corev1.EnvVar{
@@ -416,13 +430,6 @@ func TestHelmTemplate_DaemonSet(t *testing.T) {
 		dep := getDaemonSet(t, "driver.maxBsuVolumes=39")
 		require.Len(t, dep.Spec.Template.Spec.Containers, 3)
 		manager := dep.Spec.Template.Spec.Containers[0]
-		assert.Equal(t, "outscale/osc-bsu-csi-driver:v1.8.0", manager.Image)
-		assert.Equal(t, []string{
-			"node",
-			"--endpoint=$(CSI_ENDPOINT)",
-			"--logtostderr",
-			"--v=3",
-		}, manager.Args)
 		assert.Equal(t, []corev1.EnvVar{
 			{Name: "CSI_ENDPOINT", Value: "unix:/csi/csi.sock"},
 			{Name: "MAX_BSU_VOLUMES", Value: "39"},
@@ -494,7 +501,7 @@ func TestHelmTemplate_DaemonSet(t *testing.T) {
 		)
 		require.Len(t, dep.Spec.Template.Spec.Containers, 3)
 		assert.Equal(t, []string{
-			"node", "--endpoint=$(CSI_ENDPOINT)", "--logtostderr", "--v=3", "--luks-open-flags=--perf-no_read_workqueue", "--luks-open-flags=--perf-no_write_workqueue"},
+			"node", "--endpoint=$(CSI_ENDPOINT)", "--v=3", "--luks-open-flags=--perf-no_read_workqueue", "--luks-open-flags=--perf-no_write_workqueue"},
 			dep.Spec.Template.Spec.Containers[0].Args)
 	})
 

@@ -12,7 +12,7 @@ serviceAccount:
 logs:
   # -- Verbosity level of the plugin
   verbosity: 3
-  # -- Format of logs: text or json
+  # -- Format of logs: text or json (requires CSI driver v1.9.0 or later)
   format: text
 
 driver:

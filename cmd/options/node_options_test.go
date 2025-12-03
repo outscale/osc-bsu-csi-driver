@@ -17,8 +17,9 @@ limitations under the License.
 package options
 
 import (
-	"flag"
 	"testing"
+
+	"github.com/spf13/pflag"
 )
 
 func TestNodeOptions(t *testing.T) {
@@ -40,7 +41,7 @@ func TestNodeOptions(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		flagSet := flag.NewFlagSet("test-flagset", flag.ContinueOnError)
+		flagSet := pflag.NewFlagSet("test-flagset", pflag.ContinueOnError)
 		nodeOptions := &NodeOptions{}
 
 		t.Run(tc.name, func(t *testing.T) {

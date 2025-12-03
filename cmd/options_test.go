@@ -17,11 +17,11 @@ limitations under the License.
 package main
 
 import (
-	"flag"
 	"os"
 	"testing"
 
 	"github.com/outscale/osc-bsu-csi-driver/pkg/driver"
+	"github.com/spf13/pflag"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -34,7 +34,7 @@ func TestGetOptions(t *testing.T) {
 		withControllerOptions bool,
 		withNodeOptions bool,
 	) *Options {
-		flagSet := flag.NewFlagSet("test-flagset", flag.ContinueOnError)
+		flagSet := pflag.NewFlagSet("test-flagset", pflag.ContinueOnError)
 
 		endpointFlagName := "endpoint"
 		endpoint := "foo"
@@ -127,7 +127,7 @@ func TestGetOptions(t *testing.T) {
 			"-version",
 		}
 
-		flagSet := flag.NewFlagSet("test-flagset", flag.ContinueOnError)
+		flagSet := pflag.NewFlagSet("test-flagset", pflag.ContinueOnError)
 		_ = GetOptions(flagSet)
 
 		require.Zero(t, exitCode)

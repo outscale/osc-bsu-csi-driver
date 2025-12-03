@@ -54,8 +54,10 @@ spec:
           args:
             - node
             - --endpoint=$(CSI_ENDPOINT)
-            - --logtostderr
             - --v={{ .Values.logs.verbosity }}
+            {{- if ne .Values.logs.format "text" }}
+            - --logging-format={{ .Values.logs.format }}
+            {{- end }}
           {{- range .Values.node.additionalArgs }}
             - {{ . }}
           {{- end }}
@@ -100,6 +102,7 @@ spec:
             - --csi-address=$(ADDRESS)
             - --kubelet-registration-path=$(DRIVER_REG_SOCK_PATH)
             - --v={{ .Values.logs.verbosity }}
+            - --logging-format={{ .Values.logs.format }}
           {{- if .Values.sidecars.metrics }}
             - --http-endpoint=:{{ .Values.sidecars.nodeDriverRegistrar.metricsPort }}
           ports:

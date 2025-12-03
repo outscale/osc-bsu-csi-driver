@@ -17,7 +17,6 @@ limitations under the License.
 package main
 
 import (
-	"flag"
 	"fmt"
 	"os"
 	"strings"
@@ -25,7 +24,10 @@ import (
 	"github.com/outscale/osc-bsu-csi-driver/cmd/options"
 	"github.com/outscale/osc-bsu-csi-driver/pkg/driver"
 	"github.com/outscale/osc-bsu-csi-driver/pkg/util"
-
+	"github.com/spf13/pflag"
+	"k8s.io/component-base/logs"
+	logsv1 "k8s.io/component-base/logs/api/v1"
+	_ "k8s.io/component-base/logs/json/register"
 	"k8s.io/klog/v2"
 )
 
@@ -43,20 +45,18 @@ var osExit = os.Exit
 
 // GetOptions parses the command line options and returns a struct that contains
 // the parsed options.
-func GetOptions(fs *flag.FlagSet) *Options {
-	var (
-		version = fs.Bool("version", false, "Print the version and exit.")
+func GetOptions(fs *pflag.FlagSet) *Options {
+	version := fs.Bool("version", false, "Print the version and exit.")
 
-		args = os.Args[1:]
-		mode = driver.AllMode
-
-		serverOptions     = options.ServerOptions{}
-		controllerOptions = options.ControllerOptions{}
-		nodeOptions       = options.NodeOptions{}
-	)
-
+	serverOptions := options.ServerOptions{}
 	serverOptions.AddFlags(fs)
-	klog.InitFlags(fs)
+	logOptions := logs.NewOptions()
+	logsv1.AddFlags(logOptions, fs)
+
+	args := os.Args[1:]
+	mode := driver.AllMode
+	controllerOptions := options.ControllerOptions{}
+	nodeOptions := options.NodeOptions{}
 
 	if len(os.Args) > 1 {
 		cmd := os.Args[1]
@@ -99,6 +99,11 @@ func GetOptions(fs *flag.FlagSet) *Options {
 		}
 		fmt.Println(info)
 		osExit(0)
+	}
+
+	if err := logsv1.ValidateAndApply(logOptions, nil); err != nil {
+		klog.Fatalln(err)
+		osExit(1)
 	}
 
 	return &Options{

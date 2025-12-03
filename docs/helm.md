@@ -62,7 +62,7 @@ Kubernetes: `>=1.20`
 | driver.name | string | `"bsu.csi.outscale.com"` |  |
 | driver.tag | string | `"v1.8.0"` | Container image tag to deploy |
 | imagePullSecrets | list | `[]` | Specify image pull secrets |
-| logs.format | string | `"text"` | Format of logs: text or json |
+| logs.format | string | `"text"` | Format of logs: text or json (requires CSI driver v1.9.0 or later) |
 | logs.verbosity | int | `3` | Verbosity level of the plugin |
 | node.additionalArgs | list | `[]` | Node controller command line additional args |
 | node.affinity | object | `{}` | Affinity settings |

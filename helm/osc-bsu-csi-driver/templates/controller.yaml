@@ -63,8 +63,10 @@ spec:
             {{- if .Values.driver.extraSnapshotTags }}
               {{- include "osc-bsu-csi-driver.extra-snapshot-tags" . | nindent 12 }}
             {{- end }}
-            - --logtostderr
             - --v={{ .Values.logs.verbosity }}
+            {{- if ne .Values.logs.format "text" }}
+            - --logging-format={{ .Values.logs.format }}
+            {{- end }}
           env:
             - name: CSI_ENDPOINT
               value: unix:///var/lib/csi/sockets/pluginproxy/csi.sock
@@ -123,6 +125,7 @@ spec:
           args:
             - --csi-address=$(ADDRESS)
             - --v={{ .Values.logs.verbosity }}
+            - --logging-format={{ .Values.logs.format }}
             - --retry-interval-max=5m
             - --kube-api-qps={{ .Values.sidecars.kubeAPI.QPS }}
             - --kube-api-burst={{ .Values.sidecars.kubeAPI.burst }}
@@ -180,6 +183,7 @@ spec:
           args:
             - --csi-address=$(ADDRESS)
             - --v={{ .Values.logs.verbosity }}
+            - --logging-format={{ .Values.logs.format }}
             - --retry-interval-max=5m
             - --kube-api-qps={{ .Values.sidecars.kubeAPI.QPS }}
             - --kube-api-burst={{ .Values.sidecars.kubeAPI.burst }}
@@ -234,6 +238,7 @@ spec:
           args:
             - --csi-address=$(ADDRESS)
             - --v={{ .Values.logs.verbosity }}
+            - --logging-format={{ .Values.logs.format }}
             - --retry-interval-max=5m
             - --kube-api-qps={{ .Values.sidecars.kubeAPI.QPS }}
             - --kube-api-burst={{ .Values.sidecars.kubeAPI.burst }}
@@ -287,6 +292,7 @@ spec:
           imagePullPolicy: {{ .Values.driver.imagePullPolicy }}
           args:
             - --v={{ .Values.logs.verbosity }}
+            - --logging-format={{ .Values.logs.format }}
             - --leader-elect=true
             {{- range .Values.sidecars.exporter.additionalArgs }}
             - {{ . }}
@@ -346,6 +352,7 @@ spec:
           args:
             - --csi-address=$(ADDRESS)
             - --v={{ .Values.logs.verbosity }}
+            - --logging-format={{ .Values.logs.format }}
             - --retry-interval-max=5m
             - --timeout={{ .Values.sidecars.timeout }}
             - --kube-api-qps={{ .Values.sidecars.kubeAPI.QPS }}

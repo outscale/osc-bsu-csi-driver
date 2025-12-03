@@ -17,9 +17,8 @@ limitations under the License.
 package options
 
 import (
-	"flag"
-
 	"github.com/outscale/osc-bsu-csi-driver/pkg/driver"
+	"github.com/spf13/pflag"
 )
 
 // ServerOptions contains options and configuration settings for the driver server.
@@ -28,6 +27,6 @@ type ServerOptions struct {
 	Endpoint string
 }
 
-func (s *ServerOptions) AddFlags(fs *flag.FlagSet) {
+func (s *ServerOptions) AddFlags(fs *pflag.FlagSet) {
 	fs.StringVar(&s.Endpoint, "endpoint", driver.DefaultCSIEndpoint, "Endpoint for the CSI driver server")
 }

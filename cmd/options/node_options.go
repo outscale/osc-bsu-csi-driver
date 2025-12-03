@@ -17,8 +17,7 @@ limitations under the License.
 package options
 
 import (
-	"flag"
-
+	"github.com/spf13/pflag"
 	cliflag "k8s.io/component-base/cli/flag"
 )
 
@@ -29,6 +28,6 @@ type NodeOptions struct {
 	LuksOpenFlags []string
 }
 
-func (s *NodeOptions) AddFlags(fs *flag.FlagSet) {
+func (s *NodeOptions) AddFlags(fs *pflag.FlagSet) {
 	fs.Var(cliflag.NewStringSlice(&s.LuksOpenFlags), "luks-open-flags", "Flag to add to cryptsetup luksOpen. It may be specified multiple times to add multiple flags, for example: '--luks-open-flags=--perf-no_read_workqueue --luks-open-flags=--perf-no_write_workqueue'")
 }

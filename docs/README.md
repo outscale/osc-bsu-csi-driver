@@ -141,7 +141,7 @@ Common issues and diagnostics are covered in **[Troubleshooting](./troubleshooti
 
 ### Upgrading from v0.x to v1.0.0
 
-Follow the **[Migration Process](./migration.md)**.
+Follow the [migration guide](./migration.md).
 
 ### Upgrading from v1.6 to v1.7
 
@@ -149,9 +149,7 @@ Follow the **[Migration Process](./migration.md)**.
 
 ### Upgrading to Helm chart v2
 
-Many variables have been renamed.
-
-Please refer to the [upgrade guide](../helm/osc-bsu-csi-driver/migration.md).
+Most values have been renamed, and need to be set again using the new names during the upgrade. Please refer to the [upgrade guide](../helm/osc-bsu-csi-driver/migration.md).
 
 ---
 

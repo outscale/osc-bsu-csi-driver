@@ -21,7 +21,7 @@ driver:
   # -- Container image to use
   image: outscale/osc-bsu-csi-driver
   # -- Container image tag to deploy
-  tag: v1.8.0
+  tag: v1.9.0
   # -- Container image pull policy
   imagePullPolicy: IfNotPresent
 

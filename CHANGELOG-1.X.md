@@ -1,5 +1,29 @@
 # Changelog
 
+## [v2.0.0-helm] - 2025-12-11
+
+> Helm chart rewrite. See [migration guide](./helm/osc-bsu-csi-driver/migration.md) for more information.
+
+### 💥 Breaking
+* 🔧 helm: move chart to helm directory + refactoring of values by @jfbus in https://github.com/outscale/osc-bsu-csi-driver/pull/980
+### ✨ Added
+* 🚀 Helm: bump sidecars, configure automaxprocs by @jfbus in https://github.com/outscale/osc-bsu-csi-driver/pull/1047
+* 🚀 helm: scheduling of pods by @jfbus in https://github.com/outscale/osc-bsu-csi-driver/pull/1052
+* ✨ feat(helm): add snapshot exporter sidecar by @jfbus in https://github.com/outscale/osc-bsu-csi-driver/pull/1053
+### 📝 Documentation
+* 🚀 Helm: migration docs/helpers by @jfbus in https://github.com/outscale/osc-bsu-csi-driver/pull/1046
+* 📝 helm: improve upgrade doc by @jfbus in https://github.com/outscale/osc-bsu-csi-driver/pull/1056
+
+## [v1.9.0] - 2025-12-11
+### ✨ Added
+* ✨ feat: check credentials at boot by @jfbus in https://github.com/outscale/osc-bsu-csi-driver/pull/1045
+* 📈 api: use dev user-agent for CI calls by @jfbus in https://github.com/outscale/osc-bsu-csi-driver/pull/1050
+* ✨ feat: make readiness interval configurable by @jfbus in https://github.com/outscale/osc-bsu-csi-driver/pull/991
+* 🥅 auth: catch error code 4000 by @jfbus in https://github.com/outscale/osc-bsu-csi-driver/pull/1051
+* 🔊 logs: add JSON log format by @jfbus in https://github.com/outscale/osc-bsu-csi-driver/pull/1055
+### 📦 Dependency updates
+* build(deps): bump golang.org/x/crypto from 0.41.0 to 0.45.0 by @dependabot[bot] in https://github.com/outscale/osc-bsu-csi-driver/pull/1042
+
 ## [v1.8.0] - 2025-11-19
 ### 🛠️ Changed / Refactoring
 * 🔧 helm: snapshotter tuning, raise timeout for all by @jfbus in https://github.com/outscale/osc-bsu-csi-driver/pull/1028

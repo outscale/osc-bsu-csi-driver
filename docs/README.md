@@ -2,12 +2,11 @@
 
 # Outscale Block Storage Unit (BSU) CSI Driver
 
-> We currently maintain two branches: **v1.x** (`master`) and **v0.x** (`OSC-MIGRATION`). If you use **v0.x**, see the migration guide: [Upgrading from v0.x to v1.0.0](#upgrading-from-v0x-to-v100).
-> v0.x will continue to receive bug and CVE fixes while in use, but **no new features** will be added.
-
 <p align="center">
   <img alt="Kubernetes Logo" src="https://upload.wikimedia.org/wikipedia/commons/3/39/Kubernetes_logo_without_workmark.svg" width="120px">
 </p>
+
+> NEW: Helm chart rewrite. See [migration guide](./helm/osc-bsu-csi-driver/migration.md) for more information.
 
 ---
 
@@ -40,6 +39,9 @@
 
 The **Outscale Block Storage Unit (BSU) CSI Driver** implements the Container Storage Interface ([CSI](https://github.com/container-storage-interface/spec/blob/master/spec.md)) for OUTSCALE BSU volumes. It allows container orchestrators (e.g., Kubernetes) to provision, attach, mount, snapshot, and expand BSU volumes.
 
+> We currently maintain two branches: **v1.x** (`main`) and **v0.x** (`OSC-MIGRATION`). If you use **v0.x**, see the migration guide: [Upgrading from v0.x to v1.0.0](#upgrading-from-v0x-to-v100).
+> v0.x will continue to receive bug and CVE fixes while in use, but **no new features** will be added.
+
 ---
 
 ## 🔗 Compatibility
@@ -54,6 +56,7 @@ The **Outscale Block Storage Unit (BSU) CSI Driver** implements the Container St
 | v0.1.0 – v1.3.0 | [v1.5.0](https://github.com/container-storage-interface/spec/releases/tag/v1.5.0)   | 1.20    | 1.23            |
 | v0.1.0 – v1.6.x | [v1.8.0](https://github.com/container-storage-interface/spec/releases/tag/v1.8.0)   | 1.20    | 1.30            |
 | v1.7.x - v1.8.x | [v1.10.0](https://github.com/container-storage-interface/spec/releases/tag/v1.10.0) | 1.20    | 1.31            |
+| v1.9.x          | [v1.10.0](https://github.com/container-storage-interface/spec/releases/tag/v1.10.0) | 1.20    | 1.32            |
 
 </details>
 

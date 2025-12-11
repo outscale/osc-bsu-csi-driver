@@ -24,4 +24,4 @@ jobs:
       - name : Push to Docker Hub
         run: make build-image image-push
         env:
-          IMAGE_TAG: ${{ github.ref }}
+          IMAGE_TAG: ${{ github.ref_name }}

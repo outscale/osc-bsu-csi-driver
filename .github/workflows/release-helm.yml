@@ -22,7 +22,7 @@ jobs:
         id: changelog
         uses: mindsers/changelog-reader-action@v2
         with:
-          path: "docs/CHANGELOG.md"
+          path: "CHANGELOG-1.X.md"
           version: ${{ github.ref_name }}
       - uses: azure/setup-helm@v4
         with:

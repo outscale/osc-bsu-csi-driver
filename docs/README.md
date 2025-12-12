@@ -12,8 +12,9 @@
 
 ## 🌐 Links
 
-* Project repo: [https://github.com/outscale/osc-bsu-csi-driver](https://github.com/outscale/osc-bsu-csi-driver)
-* Artifact Hub: [https://artifacthub.io/packages/search?repo=osc-bsu-csi-driver](https://artifacthub.io/packages/search?repo=osc-bsu-csi-driver)
+* Project repo: [github.com/outscale/osc-bsu-csi-driver](https://github.com/outscale/osc-bsu-csi-driver)
+* Helm chart: [osc-bsu-csi-driver](https://artifacthub.io/packages/helm/osc-bsu-csi-driver/osc-bsu-csi-driver)
+* 🤝 Contribution Guide: [CONTRIBUTING.md](../CONTRIBUTING.md)
 * Join our community on [Discord](https://discord.gg/HUVtY5gT6s)
 
 ---
@@ -30,8 +31,8 @@
 * [Upgrade Notes](#-upgrade-notes)
 * [Examples](#-examples)
 * [Development](#-development)
-* [License](#-license)
 * [Contributing](#-contributing)
+* [License](#-license)
 
 ---
 
@@ -174,15 +175,17 @@ See **[Development Process](./development.md)**.
 
 ---
 
+## 🤝 Contributing
+
+Contributions are welcome!
+Please read our **[Contributing Guidelines](../CONTRIBUTING.md)** and **[Code of Conduct](../CODE_OF_CONDUCT.md)** before opening a pull request.
+
+---
+
 ## 📜 License
 
 © 2025 Outscale SAS
 
-See [LICENSE](./LICENSE) for full details.
+This project complies with the [REUSE Specification](https://reuse.software/).
 
----
-
-## 🤝 Contributing
-
-Contributions are welcome!
-Please read our **[Contributing Guidelines](./CONTRIBUTING.md)** and **[Code of Conduct](./CODE_OF_CONDUCT.md)** before opening a pull request.
+See [LICENSES/](../LICENSES) directory for full license information.

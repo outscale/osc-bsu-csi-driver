@@ -1,2 +1,5 @@
 OSC BSU CSI Driver
+Copyright 2025 Outscale SAS.
+
+This project is derived from or includes code by The Kubernetes Authors.
 Copyright 2019 The Kubernetes Authors.

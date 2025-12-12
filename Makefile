@@ -133,6 +133,9 @@ trivy-scan:
 trivy-ignore-check:
 	@./hack/verify-trivyignore
 
+.PHONY: lint-reuse
+lint-reuse:
+	docker run --rm --volume $(PWD):/data fsfe/reuse:5.1 lint
 
 REGISTRY_IMAGE ?= $(IMAGE)
 REGISTRY_TAG ?= $(IMAGE_TAG)

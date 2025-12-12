@@ -4,3 +4,8 @@ metadata:
   name: csi-osc-vsc
 driver: bsu.csi.outscale.com
 deletionPolicy: Delete
+parameters:
+  exportBucket: "csi-snapshot-exporter"
+  exportImageFormat: "qcow2"
+  exportPrefix: "{ns}/{vs}/{date}/"
+  exportToOOS: "true"

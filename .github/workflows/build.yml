@@ -33,6 +33,8 @@ jobs:
         version: v2.6.0
         args: --timeout=300s
         only-new-issues: true
+    - name: 🔎 Reuse check
+      run: make lint-reuse
   unit-test:
     runs-on: ubuntu-22.04
     steps:

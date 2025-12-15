@@ -17,14 +17,14 @@ require (
 	golang.org/x/sys v0.38.0
 	google.golang.org/grpc v1.71.1
 	google.golang.org/protobuf v1.36.5
-	k8s.io/api v0.32.8
-	k8s.io/apimachinery v0.32.8
-	k8s.io/client-go v0.32.8
-	k8s.io/component-base v0.32.8
+	k8s.io/api v0.32.10
+	k8s.io/apimachinery v0.32.10
+	k8s.io/client-go v0.32.10
+	k8s.io/component-base v0.32.10
 	k8s.io/klog/v2 v2.130.1
-	k8s.io/kubernetes v1.32.8
-	k8s.io/mount-utils v0.32.8
-	k8s.io/pod-security-admission v0.32.8
+	k8s.io/kubernetes v1.32.10
+	k8s.io/mount-utils v0.32.10
+	k8s.io/pod-security-admission v0.32.10
 	k8s.io/utils v0.0.0-20250604170112-4c0f3b243397
 )
 
@@ -137,7 +137,7 @@ require (
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	k8s.io/apiextensions-apiserver v0.32.8 // indirect
-	k8s.io/apiserver v0.32.8 // indirect
+	k8s.io/apiserver v0.32.10 // indirect
 	k8s.io/cloud-provider v0.32.8 // indirect
 	k8s.io/component-helpers v0.32.8 // indirect
 	k8s.io/controller-manager v0.32.8 // indirect
@@ -145,7 +145,7 @@ require (
 	k8s.io/cri-client v0.32.8 // indirect
 	k8s.io/csi-translation-lib v0.32.8 // indirect
 	k8s.io/dynamic-resource-allocation v0.32.8 // indirect
-	k8s.io/kms v0.32.8 // indirect
+	k8s.io/kms v0.32.10 // indirect
 	k8s.io/kube-openapi v0.0.0-20241105132330-32ad38e42d3f // indirect
 	k8s.io/kube-scheduler v0.32.8 // indirect
 	k8s.io/kubectl v0.32.8 // indirect

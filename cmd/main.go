@@ -17,6 +17,8 @@ limitations under the License.
 package main
 
 import (
+	"context"
+
 	"github.com/outscale/osc-bsu-csi-driver/pkg/driver"
 	"github.com/spf13/pflag"
 	"k8s.io/klog/v2"
@@ -26,17 +28,19 @@ func main() {
 	fs := pflag.NewFlagSet("osc-bsu-csi-driver", pflag.ExitOnError)
 	options := GetOptions(fs)
 
-	drv, err := driver.NewDriver(
-		driver.WithEndpoint(options.ServerOptions.Endpoint),
-		driver.WithExtraVolumeTags(options.ControllerOptions.ExtraVolumeTags),
-		driver.WithExtraSnapshotTags(options.ControllerOptions.ExtraSnapshotTags),
-		driver.WithLuksOpenFlags(options.NodeOptions.LuksOpenFlags),
+	ctx := context.Background()
+	drv, err := driver.NewDriver(ctx,
 		driver.WithMode(options.DriverMode),
+		driver.WithEndpoint(options.Endpoint),
+		driver.WithExtraVolumeTags(options.ExtraVolumeTags),
+		driver.WithExtraSnapshotTags(options.ExtraSnapshotTags),
+		driver.WithLuksOpenFlags(options.LuksOpenFlags),
+		driver.WithCloudOptions(options.CloudOptions),
 	)
 	if err != nil {
 		klog.Fatalln(err)
 	}
-	if err := drv.Run(); err != nil {
+	if err := drv.Run(ctx); err != nil {
 		klog.Fatalln(err)
 	}
 }

@@ -38,7 +38,7 @@
 
 ## 🧭 Overview
 
-The **Outscale Block Storage Unit (BSU) CSI Driver** implements the Container Storage Interface ([CSI](https://github.com/container-storage-interface/spec/blob/master/spec.md)) for OUTSCALE BSU volumes. It allows container orchestrators (e.g., Kubernetes) to provision, attach, mount, snapshot, and expand BSU volumes.
+The **Outscale Block Storage Unit (BSU) CSI Driver** implements the Container Storage Interface ([CSI](https://github.com/container-storage-interface/spec/blob/master/spec.md)) for OUTSCALE BSU volumes. It allows container orchestrators (e.g., Kubernetes) to provision, attach, mount, snapshot, modify and expand BSU volumes.
 
 > We currently maintain two branches: **v1.x** (`main`) and **v0.x** (`OSC-MIGRATION`). If you use **v0.x**, see the migration guide: [Upgrading from v0.x to v1.0.0](#upgrading-from-v0x-to-v100).
 > v0.x will continue to receive bug and CVE fixes while in use, but **no new features** will be added.
@@ -50,14 +50,15 @@ The **Outscale Block Storage Unit (BSU) CSI Driver** implements the Container St
 <details>
 <summary><strong>CSI Specification Compatibility Matrix</strong></summary>
 
-| Plugin Version  | Compatible CSI Version                                                              | Min K8s | Recommended K8s |
-| --------------- | ----------------------------------------------------------------------------------- | ------- | --------------- |
-| <= v0.0.14beta  | [v1.3.0](https://github.com/container-storage-interface/spec/releases/tag/v1.3.0)   | 1.16    | 1.22            |
-| v0.0.15         | [v1.5.0](https://github.com/container-storage-interface/spec/releases/tag/v1.5.0)   | 1.20    | 1.23            |
-| v0.1.0 – v1.3.0 | [v1.5.0](https://github.com/container-storage-interface/spec/releases/tag/v1.5.0)   | 1.20    | 1.23            |
-| v0.1.0 – v1.6.x | [v1.8.0](https://github.com/container-storage-interface/spec/releases/tag/v1.8.0)   | 1.20    | 1.30            |
-| v1.7.x - v1.8.x | [v1.10.0](https://github.com/container-storage-interface/spec/releases/tag/v1.10.0) | 1.20    | 1.31            |
-| v1.9.x          | [v1.10.0](https://github.com/container-storage-interface/spec/releases/tag/v1.10.0) | 1.20    | 1.32            |
+| Plugin Version  | Compatible CSI Version                                                              | Minimum K8s version |
+| --------------- | ----------------------------------------------------------------------------------- | ------------------- |
+| <= v0.0.14beta  | [v1.3.0](https://github.com/container-storage-interface/spec/releases/tag/v1.3.0)   | 1.16                |
+| v0.0.15         | [v1.5.0](https://github.com/container-storage-interface/spec/releases/tag/v1.5.0)   | 1.20                |
+| v0.1.0 – v1.3.0 | [v1.5.0](https://github.com/container-storage-interface/spec/releases/tag/v1.5.0)   | 1.20                |
+| v0.1.0 – v1.6.x | [v1.8.0](https://github.com/container-storage-interface/spec/releases/tag/v1.8.0)   | 1.20                |
+| v1.7.x - v1.8.x | [v1.10.0](https://github.com/container-storage-interface/spec/releases/tag/v1.10.0) | 1.20                |
+| v1.9.x          | [v1.10.0](https://github.com/container-storage-interface/spec/releases/tag/v1.10.0) | 1.20                |
+| v1.10.x         | [v1.12.0](https://github.com/container-storage-interface/spec/releases/tag/v1.12.0) | 1.25                |
 
 </details>
 
@@ -65,22 +66,74 @@ The **Outscale Block Storage Unit (BSU) CSI Driver** implements the Container St
 
 ## ✨ Features
 
-**Implemented CSI gRPCs**
+The CSI driver is based on two services:
 
-* **Controller**: `CreateVolume`, `DeleteVolume`, `ControllerPublishVolume`, `ControllerUnpublishVolume`, `ControllerGetCapabilities`, `ControllerExpandVolume`, `ControllerModifyVolume`, `ValidateVolumeCapabilities`, `CreateSnapshot`, `DeleteSnapshot`, `ListSnapshots`
-* **Node**: `NodeStageVolume`, `NodeUnstageVolume`, `NodePublishVolume`, `NodeUnpublishVolume`, `NodeExpandVolume`, `NodeGetCapabilities`, `NodeGetInfo`, `NodeGetVolumeStats`
-* **Identity**: `GetPluginInfo`, `GetPluginCapabilities`, `Probe`
+* **Controller service**: runs as a `Deployment` on control-plane nodes; calls the Outscale API to create/modify/attach/detach/delete volumes and snapshots,
+* **Node service**: runs as a `DaemonSet` on all nodes requiring volumes; mounts, formats and resize filesystems.
 
-**Not implemented**
+The following CSI capabilities are supported by the driver:
 
-* **Controller**: `GetCapacity`, `ListVolumes`, `ControllerGetVolume`
-* **Node**: —
-* **Identity**: —
+<details>
+<summary><strong>Plugin capabilities</strong></summary>
 
-**Additional behavior**
+| Service | Support | Comments |
+| ---------- | ------- | -------- |
+| CONTROLLER_SERVICE | ✅ | implements the controller service, handling calls the Outscale API to create/modify/attach/detach/delete volumes and snapshots |
+| VOLUME_ACCESSIBILITY_CONSTRAINTS | ✅ | There are constraints limiting which volumes can be mounted on a specific node (e.g. belonging to the same subregion) |
+| GROUP_CONTROLLER_SERVICE | ❌ | Volume and snapshot groups are not supported |
+| SNAPSHOT_METADATA_SERVICE | ❌ | Snapshot metadata are not available |
 
-* **ControllerExpandVolume**: supports both cold (detached) and hot (attached) volume resize.
-* **ControllerModifyVolume**: update `volumeType` and `iopsPerGB` via VolumeAttributeClasses on both cold and hot volumes.
+| VolumeExpansion | Support | Comments |
+| ---------- | ------- | -------- |
+| ONLINE | ✅ | Volumes can be resized while mounted |
+
+</details>
+
+<details>
+<summary><strong>Controller capabilities</strong></summary>
+
+| Capability | Support | Comments |
+| ---------- | ------- | -------- |
+| CREATE_DELETE_VOLUME | ✅ | Volumes can be created |
+| PUBLISH_UNPUBLISH_VOLUME | ✅ | Volumes need to be published on nodes |
+| LIST_VOLUMES | ❌ | Volumes cannot be listed |
+| GET_CAPACITY | ❌ | Total storage capacity is unknown |
+| CREATE_DELETE_SNAPSHOT | ✅ | Snapshots can be created and used as a source for new volumes |
+| LIST_SNAPSHOTS | ✅ | Snapshots can be listed |
+| CLONE_VOLUME | ❌ | Volumes cannot be cloned |
+| PUBLISH_READONLY | ❌ | Volumes cannot be published as read-only |
+| EXPAND_VOLUME | ✅ | Volumes can be resized |
+| LIST_VOLUMES_PUBLISHED_NODES | ❌ | LIST_VOLUME/GET_VOLUME additional capability |
+| VOLUME_CONDITION | ❌ | The volume condition is not known |
+| GET_VOLUME (alpha) | ❌ | The status of a volume is not reported |
+| SINGLE_NODE_MULTI_WRITER | ❌ | Volumes cannot be accessed from multiple sources |
+| MODIFY_VOLUME | ✅ | Volumes can be modified |
+| GET_SNAPSHOT (alpha) | ❌ | The status of a snapshot is not reported |
+
+**Notes**
+
+* **EXPAND_VOLUME**: offline (cold/detached) and online (hot/attached) volumes can be resized.
+* **MODIFY_VOLUME**: `volumeType` and `iopsPerGB` can be updated via VolumeAttributeClasses on both offline and online volumes.
+
+</details>
+
+<details>
+<summary><strong>Node capabilities</strong></summary>
+
+| Capability | Support | Comments |
+| ---------- | ------- | -------- |
+| STAGE_UNSTAGE_VOLUME | ✅ | Volumes need to be staged on a node |
+| GET_VOLUME_STATS | ✅ | The status of a volume is not reported |
+| EXPAND_VOLUME | ✅ | Volumes can be resized |
+| VOLUME_CONDITION | ❌ | The volume condition is not known |
+| SINGLE_NODE_MULTI_WRITER | ❌ | Volumes cannot be accessed from multiple sources |
+| VOLUME_MOUNT_GROUP | ❌ | Volumes mount groups are not supported |
+
+**Notes**
+
+* **EXPAND_VOLUME**: offline (cold/detached) and online (hot/attached) volumes can be resized.
+
+</details>
 
 ---
 

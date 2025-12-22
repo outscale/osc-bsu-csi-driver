@@ -32,12 +32,12 @@ func TestRoundUpBytes(t *testing.T) {
 
 func TestRoundUpGiB(t *testing.T) {
 	actual := RoundUpGiB(1)
-	assert.Equal(t, int32(1), actual)
+	assert.Equal(t, 1, actual)
 }
 
 func TestBytesToGiB(t *testing.T) {
 	actual := BytesToGiB(5 * GiB)
-	assert.Equal(t, int32(5), actual)
+	assert.Equal(t, 5, actual)
 }
 
 func TestGiBToBytes(t *testing.T) {

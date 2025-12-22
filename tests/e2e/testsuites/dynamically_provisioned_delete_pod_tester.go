@@ -15,7 +15,7 @@ limitations under the License.
 package testsuites
 
 import (
-	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/ginkgo/v2" //nolint
 	"github.com/outscale/osc-bsu-csi-driver/tests/e2e/driver"
 	v1 "k8s.io/api/core/v1"
 	clientset "k8s.io/client-go/kubernetes"

@@ -199,7 +199,7 @@ sidecars:
     workerThreads: 100
   snapshotter:
     image: registry.k8s.io/sig-storage/csi-snapshotter
-    tag: "v8.3.0"
+    tag: "v8.4.0"
     # -- Port of the metrics endpoint
     metricsPort: "8091"
     additionalArgs: []

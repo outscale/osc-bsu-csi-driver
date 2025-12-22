@@ -49,8 +49,3 @@ const (
 	// LuksPassphraseKey represents the passphrase LUKS
 	LuksPassphraseKey = "key"
 )
-
-// constants for default command line flag values
-const (
-	DefaultCSIEndpoint = "unix://tmp/csi.sock"
-)

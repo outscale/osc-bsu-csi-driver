@@ -74,17 +74,17 @@ func TestGetOptions(t *testing.T) {
 		if withServerOptions {
 			endpointFlag := flagSet.Lookup(endpointFlagName)
 			require.NotNil(t, endpointFlag)
-			require.Equal(t, endpoint, options.ServerOptions.Endpoint)
+			require.Equal(t, endpoint, options.Endpoint)
 		}
 
 		if withControllerOptions {
 			extraVolumeTagsFlag := flagSet.Lookup(extraVolumeTagsFlagName)
 			require.NotNil(t, extraVolumeTagsFlag)
-			require.Equal(t, extraVolumeTags, options.ControllerOptions.ExtraVolumeTags)
+			require.Equal(t, extraVolumeTags, options.ExtraVolumeTags)
 
 			extraSnapshotTagsFlag := flagSet.Lookup(extraSnapshotTagsFlagName)
 			require.NotNil(t, extraSnapshotTagsFlag)
-			require.Equal(t, extraSnapshotTags, options.ControllerOptions.ExtraSnapshotTags)
+			require.Equal(t, extraSnapshotTags, options.ExtraSnapshotTags)
 		}
 
 		return options

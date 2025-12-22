@@ -291,8 +291,8 @@ func (t *TestPersistentVolumeClaim) ValidateProvisionedPersistentVolume() {
 	By("checking the PV")
 	expectedAccessModes := t.requestedPersistentVolumeClaim.Spec.AccessModes
 	Expect(t.persistentVolume.Spec.AccessModes).To(Equal(expectedAccessModes))
-	Expect(t.persistentVolume.Spec.ClaimRef.Name).To(Equal(t.persistentVolumeClaim.ObjectMeta.Name))
-	Expect(t.persistentVolume.Spec.ClaimRef.Namespace).To(Equal(t.persistentVolumeClaim.ObjectMeta.Namespace))
+	Expect(t.persistentVolume.Spec.ClaimRef.Name).To(Equal(t.persistentVolumeClaim.Name))
+	Expect(t.persistentVolume.Spec.ClaimRef.Namespace).To(Equal(t.persistentVolumeClaim.Namespace))
 	// If storageClass is nil, PV was pre-provisioned with these values already set
 	if t.storageClass != nil {
 		Expect(t.persistentVolume.Spec.PersistentVolumeReclaimPolicy).To(Equal(*t.storageClass.ReclaimPolicy))
@@ -389,7 +389,7 @@ func (t *TestPersistentVolumeClaim) DeleteBoundPersistentVolume() {
 func (t *TestPersistentVolumeClaim) DeleteBackingVolume(cloud osccloud.Cloud) {
 	volumeID := t.persistentVolume.Spec.CSI.VolumeHandle
 	By(fmt.Sprintf("deleting BSU volume %q", volumeID))
-	ok, err := cloud.DeleteDisk(context.Background(), volumeID)
+	ok, err := cloud.DeleteVolume(context.Background(), volumeID)
 	if err != nil || !ok {
 		Fail(fmt.Sprintf("could not delete volume %q: %v", volumeID, err))
 	}

@@ -19,6 +19,7 @@ import (
 
 	volumesnapshotv1 "github.com/kubernetes-csi/external-snapshotter/client/v8/apis/volumesnapshot/v1"
 	bsucsidriver "github.com/outscale/osc-bsu-csi-driver/pkg/driver"
+	"github.com/outscale/osc-sdk-go/v3/pkg/osc"
 	v1 "k8s.io/api/core/v1"
 	storagev1 "k8s.io/api/storage/v1"
 	storagev1beta1 "k8s.io/api/storage/v1beta1"
@@ -102,9 +103,9 @@ func (d *bsuCSIDriver) GetPersistentVolume(volumeID string, fsType string, size 
 }
 
 // GetParameters returns the parameters specific for this driver
-func GetParameters(volumeType, fsType, iops string, encrypted bool, secretName, secretNamespace string) map[string]string {
+func GetParameters(volumeType osc.VolumeType, fsType, iops string, encrypted bool, secretName, secretNamespace string) map[string]string {
 	parameters := map[string]string{
-		bsucsidriver.VolumeTypeKey:  volumeType,
+		bsucsidriver.VolumeTypeKey:  string(volumeType),
 		"csi.storage.k8s.io/fstype": fsType,
 	}
 
@@ -128,17 +129,13 @@ func GetParameters(volumeType, fsType, iops string, encrypted bool, secretName, 
 }
 
 // MinimumSizeForVolumeType returns the minimum disk size for each volumeType
-func MinimumSizeForVolumeType(volumeType string) string {
+func MinimumSizeForVolumeType(volumeType osc.VolumeType) string {
 	switch volumeType {
-	case "st1":
-		return "500Gi"
-	case "sc1":
-		return "500Gi"
-	case "gp2":
+	case osc.VolumeTypeGp2:
 		return "1Gi"
-	case "io1":
+	case osc.VolumeTypeIo1:
 		return "4Gi"
-	case "standard":
+	case osc.VolumeTypeStandard:
 		return "10Gi"
 	default:
 		return "1Gi"
@@ -147,8 +144,8 @@ func MinimumSizeForVolumeType(volumeType string) string {
 
 // IOPSPerGBForVolumeType returns 25 for io1 volumeType
 // Otherwise returns an empty string
-func IOPSPerGBForVolumeType(volumeType string) string {
-	if volumeType == "io1" {
+func IOPSPerGBForVolumeType(volumeType osc.VolumeType) string {
+	if volumeType == osc.VolumeTypeIo1 {
 		// Minimum disk size is 4, minimum IOPS is 100
 		return "25"
 	}
@@ -166,7 +163,7 @@ func (d *bsuCSIDriver) GetPassphraseSecret(name string, passphrase string) *v1.S
 	}
 }
 
-func (d *bsuCSIDriver) GetVolumeAttributesClass(namespace, name, volumeType, iopsPerGB string) *storagev1beta1.VolumeAttributesClass {
+func (d *bsuCSIDriver) GetVolumeAttributesClass(namespace, name string, volumeType osc.VolumeType, iopsPerGB string) *storagev1beta1.VolumeAttributesClass {
 	return &storagev1beta1.VolumeAttributesClass{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
@@ -174,7 +171,7 @@ func (d *bsuCSIDriver) GetVolumeAttributesClass(namespace, name, volumeType, iop
 		},
 		DriverName: d.driverName,
 		Parameters: map[string]string{
-			bsucsidriver.VolumeTypeKey: volumeType,
+			bsucsidriver.VolumeTypeKey: string(volumeType),
 			bsucsidriver.IopsPerGBKey:  iopsPerGB,
 		},
 	}

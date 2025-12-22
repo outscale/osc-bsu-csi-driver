@@ -17,20 +17,18 @@ limitations under the License.
 package devicemanager
 
 import (
-	"errors"
 	"fmt"
 	"strings"
 	"sync"
 
-	osc "github.com/outscale/osc-sdk-go/v2"
-
+	"github.com/outscale/osc-sdk-go/v3/pkg/osc"
 	"k8s.io/klog/v2"
 )
 
 const devPreffix = "/dev/xvd"
 
 type Device struct {
-	Instance          osc.Vm
+	Instance          *osc.Vm
 	Path              string
 	VolumeID          string
 	IsAlreadyAssigned bool
@@ -53,22 +51,14 @@ func (d *Device) Taint() {
 	d.isTainted = true
 }
 
-func IsNilDevice(d Device) bool {
-	return !d.Instance.HasVmId()
-}
-
-func IsNilVm(vm osc.Vm) bool {
-	return !vm.HasVmId()
-}
-
 type DeviceManager interface {
 	// NewDevice retrieves the device if the device is already assigned.
 	// Otherwise it creates a new device with next available device name
 	// and mark it as unassigned device.
-	NewDevice(instance osc.Vm, volumeID string) (device Device, err error)
+	NewDevice(instance *osc.Vm, volumeID string) (device Device, err error)
 
 	// GetDevice returns the device already assigned to the volume.
-	GetDevice(instance osc.Vm, volumeID string) (device Device)
+	GetDevice(instance *osc.Vm, volumeID string) (device Device)
 }
 
 type deviceManager struct {
@@ -116,13 +106,9 @@ func NewDeviceManager() DeviceManager {
 	}
 }
 
-func (d *deviceManager) NewDevice(instance osc.Vm, volumeID string) (Device, error) {
+func (d *deviceManager) NewDevice(instance *osc.Vm, volumeID string) (Device, error) {
 	d.mux.Lock()
 	defer d.mux.Unlock()
-
-	if IsNilVm(instance) {
-		return Device{}, errors.New("instance is nil")
-	}
 
 	// Get device names being attached and already attached to this instance
 	inUse := d.getDeviceNamesInUse(instance)
@@ -148,7 +134,7 @@ func (d *deviceManager) NewDevice(instance osc.Vm, volumeID string) (Device, err
 	return d.newBlockDevice(instance, volumeID, devPreffix+name, false), nil
 }
 
-func (d *deviceManager) GetDevice(instance osc.Vm, volumeID string) Device {
+func (d *deviceManager) GetDevice(instance *osc.Vm, volumeID string) Device {
 	d.mux.Lock()
 	defer d.mux.Unlock()
 
@@ -161,7 +147,7 @@ func (d *deviceManager) GetDevice(instance osc.Vm, volumeID string) Device {
 	return d.newBlockDevice(instance, volumeID, "", false)
 }
 
-func (d *deviceManager) newBlockDevice(instance osc.Vm, volumeID string, path string, isAlreadyAssigned bool) Device {
+func (d *deviceManager) newBlockDevice(instance *osc.Vm, volumeID string, path string, isAlreadyAssigned bool) Device {
 	device := Device{
 		Instance:          instance,
 		Path:              path,
@@ -212,19 +198,19 @@ func (d *deviceManager) release(device Device) error {
 
 // getDeviceNamesInUse returns the device to volume ID mapping
 // the mapping includes both already attached and being attached volumes
-func (d *deviceManager) getDeviceNamesInUse(instance osc.Vm) map[string]string {
-	nodeID := instance.GetVmId()
+func (d *deviceManager) getDeviceNamesInUse(instance *osc.Vm) map[string]string {
+	nodeID := instance.VmId
 	inUse := map[string]string{}
-	for _, blockDevice := range instance.GetBlockDeviceMappings() {
-		name := blockDevice.GetDeviceName()
+	for _, blockDevice := range instance.BlockDeviceMappings {
+		name := blockDevice.DeviceName
 		// trims /dev/sd or /dev/xvd from device name
 		name = strings.TrimPrefix(name, "/dev/sd")
 		name = strings.TrimPrefix(name, "/dev/xvd")
 
 		if len(name) < 1 || len(name) > 2 {
-			klog.Warningf("Unexpected BSU DeviceName: %q", *blockDevice.DeviceName)
+			klog.Warningf("Unexpected BSU DeviceName: %q", blockDevice.DeviceName)
 		}
-		inUse[name] = blockDevice.Bsu.GetVolumeId()
+		inUse[name] = blockDevice.Bsu.VolumeId
 	}
 
 	// klog.V(5).Infof("DeviceNameInUse: APIDevice: %v, CacheDevice: %v", inUse, d.inFlight.GetNames(nodeID))
@@ -244,9 +230,6 @@ func (d *deviceManager) getPath(inUse map[string]string, volumeID string) string
 	return ""
 }
 
-func getInstanceID(instance osc.Vm) (string, error) {
-	if IsNilVm(instance) {
-		return "", errors.New("can't get ID from a nil instance")
-	}
-	return instance.GetVmId(), nil
+func getInstanceID(instance *osc.Vm) (string, error) {
+	return instance.VmId, nil
 }

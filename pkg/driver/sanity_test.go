@@ -109,7 +109,7 @@ type fakeCloudProvider struct {
 }
 
 type fakeDisk struct {
-	cloud.Disk
+	cloud.Volume
 	tags map[string]string
 }
 
@@ -136,15 +136,15 @@ func (c *fakeCloudProvider) Start(ctx context.Context) {}
 
 func (c *fakeCloudProvider) CheckCredentials(ctx context.Context) error { return nil }
 
-func (c *fakeCloudProvider) CreateDisk(ctx context.Context, volumeName string, diskOptions *cloud.DiskOptions) (cloud.Disk, error) {
+func (c *fakeCloudProvider) CreateDisk(ctx context.Context, volumeName string, diskOptions *cloud.VolumeOptions) (cloud.Volume, error) {
 	if len(diskOptions.SnapshotID) > 0 {
 		if _, ok := c.snapshots[diskOptions.SnapshotID]; !ok {
-			return cloud.Disk{}, cloud.ErrNotFound
+			return cloud.Volume{}, cloud.ErrNotFound
 		}
 	}
 	id := c.id.Add(1)
 	d := &fakeDisk{
-		Disk: cloud.Disk{
+		Volume: cloud.Volume{
 			VolumeID:         fmt.Sprintf("vol-%06d", id),
 			CapacityGiB:      util.BytesToGiB(diskOptions.CapacityBytes),
 			AvailabilityZone: diskOptions.AvailabilityZone,
@@ -153,7 +153,7 @@ func (c *fakeCloudProvider) CreateDisk(ctx context.Context, volumeName string, d
 		tags: diskOptions.Tags,
 	}
 	c.disks[d.VolumeID] = d
-	return d.Disk, nil
+	return d.Volume, nil
 }
 
 func (c *fakeCloudProvider) DeleteDisk(ctx context.Context, volumeID string) (bool, error) {
@@ -175,7 +175,7 @@ func (c *fakeCloudProvider) WaitForAttachmentState(ctx context.Context, volumeID
 	return nil
 }
 
-func (c *fakeCloudProvider) CheckCreatedDisk(ctx context.Context, name string, capacityBytes int64) (cloud.Disk, error) {
+func (c *fakeCloudProvider) CheckCreatedDisk(ctx context.Context, name string, capacityBytes int64) (cloud.Volume, error) {
 	var disks []*fakeDisk
 	for _, d := range c.disks {
 		for key, value := range d.tags {
@@ -185,21 +185,21 @@ func (c *fakeCloudProvider) CheckCreatedDisk(ctx context.Context, name string, c
 		}
 	}
 	if len(disks) > 1 {
-		return cloud.Disk{}, cloud.ErrMultiDisks
+		return cloud.Volume{}, cloud.ErrMultiDisks
 	} else if len(disks) == 1 {
-		if capacityBytes != int64(disks[0].Disk.CapacityGiB)*util.GiB {
-			return cloud.Disk{}, cloud.ErrDiskExistsDiffSize
+		if capacityBytes != int64(disks[0].Volume.CapacityGiB)*util.GiB {
+			return cloud.Volume{}, cloud.ErrDiskExistsDiffSize
 		}
-		return disks[0].Disk, nil
+		return disks[0].Volume, nil
 	}
-	return cloud.Disk{}, nil
+	return cloud.Volume{}, nil
 }
 
-func (c *fakeCloudProvider) GetDiskByID(ctx context.Context, volumeID string) (cloud.Disk, error) {
+func (c *fakeCloudProvider) GetDiskByID(ctx context.Context, volumeID string) (cloud.Volume, error) {
 	if d, found := c.disks[volumeID]; found {
-		return d.Disk, nil
+		return d.Volume, nil
 	}
-	return cloud.Disk{}, cloud.ErrNotFound
+	return cloud.Volume{}, cloud.ErrNotFound
 }
 
 func (c *fakeCloudProvider) IsExistInstance(ctx context.Context, nodeID string) bool {

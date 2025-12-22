@@ -46,8 +46,8 @@ func TestCreateDisk(t *testing.T) {
 		name                  string
 		volumeName            string
 		firstState, nextState string
-		diskOptions           *DiskOptions
-		expDisk               *Disk
+		diskOptions           *VolumeOptions
+		expDisk               *Volume
 		expErr                error
 		expCreateVolumeErr    error
 		expDescVolumeErr      error
@@ -55,12 +55,12 @@ func TestCreateDisk(t *testing.T) {
 		{
 			name:       "fail: no provided zone",
 			volumeName: "vol-test-name",
-			diskOptions: &DiskOptions{
+			diskOptions: &VolumeOptions{
 				CapacityBytes:    util.GiBToBytes(1),
 				Tags:             map[string]string{VolumeNameTagKey: "vol-test"},
 				AvailabilityZone: "",
 			},
-			expDisk: &Disk{
+			expDisk: &Volume{
 				VolumeID:         "vol-test",
 				CapacityGiB:      1,
 				AvailabilityZone: defaultZone,
@@ -70,12 +70,12 @@ func TestCreateDisk(t *testing.T) {
 		{
 			name:       "success: normal with provided zone",
 			volumeName: "vol-test-name",
-			diskOptions: &DiskOptions{
+			diskOptions: &VolumeOptions{
 				CapacityBytes:    util.GiBToBytes(1),
 				Tags:             map[string]string{VolumeNameTagKey: "vol-test"},
 				AvailabilityZone: expZone,
 			},
-			expDisk: &Disk{
+			expDisk: &Volume{
 				VolumeID:         "vol-test",
 				CapacityGiB:      1,
 				AvailabilityZone: expZone,
@@ -87,14 +87,14 @@ func TestCreateDisk(t *testing.T) {
 		{
 			name:       "success: normal with encrypted volume",
 			volumeName: "vol-test-name",
-			diskOptions: &DiskOptions{
+			diskOptions: &VolumeOptions{
 				CapacityBytes:    util.GiBToBytes(1),
 				Tags:             map[string]string{VolumeNameTagKey: "vol-test"},
 				AvailabilityZone: expZone,
 				Encrypted:        true,
 				KmsKeyID:         "arn:aws:kms:us-east-1:012345678910:key/abcd1234-a123-456a-a12b-a123b4cd56ef",
 			},
-			expDisk: &Disk{
+			expDisk: &Volume{
 				VolumeID:         "vol-test",
 				CapacityGiB:      1,
 				AvailabilityZone: expZone,
@@ -104,7 +104,7 @@ func TestCreateDisk(t *testing.T) {
 		{
 			name:       "fail: CreateVolume returned CreateVolume error",
 			volumeName: "vol-test-name-error",
-			diskOptions: &DiskOptions{
+			diskOptions: &VolumeOptions{
 				CapacityBytes:    util.GiBToBytes(1),
 				Tags:             map[string]string{VolumeNameTagKey: "vol-test"},
 				AvailabilityZone: expZone,
@@ -116,7 +116,7 @@ func TestCreateDisk(t *testing.T) {
 			name:       "fail: CreateVolume returned a DescribeVolumes error",
 			volumeName: "vol-test-name-error",
 			firstState: "creating",
-			diskOptions: &DiskOptions{
+			diskOptions: &VolumeOptions{
 				CapacityBytes:    util.GiBToBytes(1),
 				Tags:             map[string]string{VolumeNameTagKey: "vol-test"},
 				AvailabilityZone: expZone,
@@ -127,13 +127,13 @@ func TestCreateDisk(t *testing.T) {
 		{
 			name:       "success: normal from snapshot",
 			volumeName: "vol-test-name",
-			diskOptions: &DiskOptions{
+			diskOptions: &VolumeOptions{
 				CapacityBytes:    util.GiBToBytes(1),
 				Tags:             map[string]string{VolumeNameTagKey: "vol-test"},
 				AvailabilityZone: expZone,
 				SnapshotID:       "snapshot-test",
 			},
-			expDisk: &Disk{
+			expDisk: &Volume{
 				VolumeID:         "vol-test",
 				CapacityGiB:      1,
 				AvailabilityZone: expZone,
@@ -226,7 +226,7 @@ func TestCreateDisk(t *testing.T) {
 			mockOscInterface.EXPECT().ReadVolumes(gomock.Eq(ctx), gomock.Any()).Return(osc.ReadVolumesResponse{}, &http.Response{StatusCode: 429}, errors.New("throttled")),
 		)
 
-		vol, err := c.CreateDisk(ctx, volName, &DiskOptions{
+		vol, err := c.CreateDisk(ctx, volName, &VolumeOptions{
 			AvailabilityZone: "az",
 			VolumeType:       "gp2",
 			CapacityBytes:    util.GiBToBytes(4),

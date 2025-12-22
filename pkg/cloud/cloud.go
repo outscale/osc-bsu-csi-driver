@@ -29,7 +29,9 @@ import (
 
 	dm "github.com/outscale/osc-bsu-csi-driver/pkg/cloud/devicemanager"
 	"github.com/outscale/osc-bsu-csi-driver/pkg/util"
-	osc "github.com/outscale/osc-sdk-go/v2"
+	"github.com/outscale/osc-sdk-go/v2"
+	"github.com/outscale/osc-sdk-go/v3/pkg/osc"
+	"github.com/outscale/osc-sdk-go/v3/pkg/profile"
 	"k8s.io/klog/v2"
 )
 
@@ -112,8 +114,8 @@ var (
 	ErrMultiVMs = errors.New("Multiple VMs with the same ID found")
 )
 
-// Disk represents a BSU volume
-type Disk struct {
+// Volume represents a BSU volume
+type Volume struct {
 	VolumeID         string
 	CapacityGiB      int32
 	AvailabilityZone string
@@ -122,8 +124,8 @@ type Disk struct {
 	IOPSPerGB        int32
 }
 
-// DiskOptions represents parameters to create an BSU volume
-type DiskOptions struct {
+// VolumeOptions represents parameters to create an BSU volume
+type VolumeOptions struct {
 	CapacityBytes    int64
 	Tags             map[string]string
 	VolumeType       string
@@ -173,15 +175,15 @@ type Cloud interface {
 	Start(ctx context.Context)
 	CheckCredentials(ctx context.Context) error
 
-	CreateDisk(ctx context.Context, volumeName string, diskOptions *DiskOptions) (disk Disk, err error)
+	CreateDisk(ctx context.Context, volumeName string, diskOptions *VolumeOptions) (disk Volume, err error)
 	DeleteDisk(ctx context.Context, volumeID string) (success bool, err error)
 	AttachDisk(ctx context.Context, volumeID string, nodeID string) (devicePath string, err error)
 	DetachDisk(ctx context.Context, volumeID string, nodeID string) (err error)
 	ResizeDisk(ctx context.Context, volumeID string, reqSize int64) (newSize int64, err error)
 	UpdateDisk(ctx context.Context, volumeID string, volumeType string, iopsPerGB int32) (err error)
 	WaitForAttachmentState(ctx context.Context, volumeID, state string) error
-	CheckCreatedDisk(ctx context.Context, name string, capacityBytes int64) (disk Disk, err error)
-	GetDiskByID(ctx context.Context, volumeID string) (disk Disk, err error)
+	CheckCreatedDisk(ctx context.Context, name string, capacityBytes int64) (disk Volume, err error)
+	GetDiskByID(ctx context.Context, volumeID string) (disk Volume, err error)
 	IsExistInstance(ctx context.Context, nodeID string) (success bool)
 	CreateSnapshot(ctx context.Context, volumeID string, snapshotOptions *SnapshotOptions) (snapshot Snapshot, err error)
 	DeleteSnapshot(ctx context.Context, snapshotID string) (success bool, err error)
@@ -262,10 +264,9 @@ func (client *OscClient) UpdateVolume(ctx context.Context, localVarOptionals osc
 var _ OscInterface = &OscClient{}
 
 type cloud struct {
-	region  string
-	dm      dm.DeviceManager
-	client  OscInterface
-	backoff BackoffPolicyer
+	region string
+	dm     dm.DeviceManager
+	client osc.ClientInterface
 
 	snapshotWatcher *ResourceWatcher[osc.Snapshot]
 	volumeWatcher   *ResourceWatcher[osc.Volume]
@@ -297,9 +298,11 @@ func WithBackoffPolicy(p BackoffPolicyer) CloudOption {
 // NewCloud returns a new instance of Outscale cloud using the default backoff policy.
 // It panics if session is invalid
 func NewCloud(region string, opts ...CloudOption) (Cloud, error) {
-	client := &OscClient{}
+	cfg, err := profile.NewProfileFromStrandardConfiguration("", "")
+	client := &osc.NewAPIClient(cfg)
 	// Set User-Agent with name and version of the CSI driver
 	version := util.GetVersion()
+
 	configEnv := osc.NewConfigEnv()
 	config, err := configEnv.Configuration()
 	if err != nil {
@@ -389,7 +392,7 @@ func (c *cloud) CheckCredentials(ctx context.Context) error {
 	}
 }
 
-func IsNilDisk(disk Disk) bool {
+func IsNilDisk(disk Volume) bool {
 	return disk.VolumeID == ""
 }
 
@@ -412,7 +415,7 @@ func iops(iopsPerGB, capacityGiB int32) int32 {
 	return iops
 }
 
-func (c *cloud) CreateDisk(ctx context.Context, volumeName string, diskOptions *DiskOptions) (Disk, error) {
+func (c *cloud) CreateDisk(ctx context.Context, volumeName string, diskOptions *VolumeOptions) (Volume, error) {
 	var (
 		createType string
 		request    osc.CreateVolumeRequest
@@ -435,7 +438,7 @@ func (c *cloud) CreateDisk(ctx context.Context, volumeName string, diskOptions *
 	case "":
 		createType = DefaultVolumeType
 	default:
-		return Disk{}, fmt.Errorf("invalid Outscale VolumeType %q", diskOptions.VolumeType)
+		return Volume{}, fmt.Errorf("invalid Outscale VolumeType %q", diskOptions.VolumeType)
 	}
 
 	request.SetVolumeType(createType)
@@ -454,7 +457,7 @@ func (c *cloud) CreateDisk(ctx context.Context, volumeName string, diskOptions *
 
 	// NOT SUPPORTED YET BY Outscale API
 	if len(diskOptions.KmsKeyID) > 0 {
-		return Disk{}, errors.New("Encryption is not supported yet by Outscale API")
+		return Volume{}, errors.New("Encryption is not supported yet by Outscale API")
 	}
 
 	snapshotID := diskOptions.SnapshotID
@@ -473,21 +476,21 @@ func (c *cloud) CreateDisk(ctx context.Context, volumeName string, diskOptions *
 
 	waitErr := c.backoff.ExponentialBackoff(ctx, createVolumeCallBack)
 	if waitErr != nil {
-		return Disk{}, fmt.Errorf("could not create volume: %w", waitErr)
+		return Volume{}, fmt.Errorf("could not create volume: %w", waitErr)
 	}
 
 	if !creation.HasVolume() {
-		return Disk{}, errors.New("volume is empty when returned by CreateVolume")
+		return Volume{}, errors.New("volume is empty when returned by CreateVolume")
 	}
 
 	volumeID := creation.Volume.GetVolumeId()
 	if len(volumeID) == 0 {
-		return Disk{}, errors.New("volume ID was not returned by CreateVolume")
+		return Volume{}, errors.New("volume ID was not returned by CreateVolume")
 	}
 
 	size := creation.Volume.GetSize()
 	if size == 0 {
-		return Disk{}, errors.New("disk size was not returned by CreateVolume")
+		return Volume{}, errors.New("disk size was not returned by CreateVolume")
 	}
 
 	requestTag := osc.CreateTagsRequest{
@@ -504,14 +507,14 @@ func (c *cloud) CreateDisk(ctx context.Context, volumeName string, diskOptions *
 	// If this fails, a duplicate volume is created, we need to try harder/longer, especially on TCP errors.
 	waitErr = c.backoff.With(RetryOnErrors(), Steps(20)).ExponentialBackoff(ctx, createTagsCallBack)
 	if waitErr != nil {
-		return Disk{}, fmt.Errorf("unable to add tags: %w", waitErr)
+		return Volume{}, fmt.Errorf("unable to add tags: %w", waitErr)
 	}
 
 	if err := c.waitForNewVolume(ctx, creation.Volume); err != nil {
-		return Disk{}, fmt.Errorf("unable to fetch newly created volume: %w", err)
+		return Volume{}, fmt.Errorf("unable to fetch newly created volume: %w", err)
 	}
 
-	return Disk{
+	return Volume{
 		CapacityGiB: size, VolumeID: volumeID, AvailabilityZone: zone, SnapshotID: snapshotID,
 		VolumeType: creation.Volume.GetVolumeType(), IOPSPerGB: creation.Volume.GetIops() / creation.Volume.GetSize(),
 	}, nil
@@ -707,7 +710,7 @@ func (c *cloud) WaitForAttachmentState(ctx context.Context, volumeID, state stri
 }
 
 // FIXME: as the code also checks size, either the name should not be Get or the size should be checked by caller.
-func (c *cloud) CheckCreatedDisk(ctx context.Context, name string, capacityBytes int64) (Disk, error) {
+func (c *cloud) CheckCreatedDisk(ctx context.Context, name string, capacityBytes int64) (Volume, error) {
 	request := osc.ReadVolumesRequest{
 		Filters: &osc.FiltersVolume{
 			TagKeys:   &[]string{VolumeNameTagKey},
@@ -717,18 +720,18 @@ func (c *cloud) CheckCreatedDisk(ctx context.Context, name string, capacityBytes
 
 	volume, err := c.getVolume(ctx, request, true)
 	if err != nil {
-		return Disk{}, err
+		return Volume{}, err
 	}
 
 	if volume.GetSize() != util.BytesToGiB(capacityBytes) {
-		return Disk{}, ErrDiskExistsDiffSize
+		return Volume{}, ErrDiskExistsDiffSize
 	}
 
 	if err := c.waitForNewVolume(ctx, volume); err != nil {
-		return Disk{}, fmt.Errorf("unable to fetch created volume: %w", err)
+		return Volume{}, fmt.Errorf("unable to fetch created volume: %w", err)
 	}
 
-	return Disk{
+	return Volume{
 		VolumeID:         volume.GetVolumeId(),
 		CapacityGiB:      volume.GetSize(),
 		AvailabilityZone: volume.GetSubregionName(),
@@ -738,7 +741,7 @@ func (c *cloud) CheckCreatedDisk(ctx context.Context, name string, capacityBytes
 	}, nil
 }
 
-func (c *cloud) GetDiskByID(ctx context.Context, volumeID string) (Disk, error) {
+func (c *cloud) GetDiskByID(ctx context.Context, volumeID string) (Volume, error) {
 	request := osc.ReadVolumesRequest{
 		Filters: &osc.FiltersVolume{
 			VolumeIds: &[]string{volumeID},
@@ -747,10 +750,10 @@ func (c *cloud) GetDiskByID(ctx context.Context, volumeID string) (Disk, error) 
 
 	volume, err := c.getVolume(ctx, request, true)
 	if err != nil {
-		return Disk{}, err
+		return Volume{}, err
 	}
 
-	return Disk{
+	return Volume{
 		VolumeID:         volume.GetVolumeId(),
 		CapacityGiB:      volume.GetSize(),
 		AvailabilityZone: volume.GetSubregionName(),

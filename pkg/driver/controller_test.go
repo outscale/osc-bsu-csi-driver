@@ -171,7 +171,7 @@ func TestCreateVolume(t *testing.T) {
 
 		ctx := context.Background()
 
-		mockDisk := cloud.Disk{
+		mockDisk := cloud.Volume{
 			VolumeID:         req.Name,
 			AvailabilityZone: expZone,
 			CapacityGiB:      util.BytesToGiB(stdVolSize),
@@ -181,7 +181,7 @@ func TestCreateVolume(t *testing.T) {
 		defer mockCtl.Finish()
 
 		mockCloud := mocks.NewMockCloud(mockCtl)
-		mockCloud.EXPECT().CheckCreatedDisk(gomock.Eq(ctx), gomock.Eq(req.Name), gomock.Eq(stdVolSize)).Return(cloud.Disk{}, cloud.ErrNotFound)
+		mockCloud.EXPECT().CheckCreatedDisk(gomock.Eq(ctx), gomock.Eq(req.Name), gomock.Eq(stdVolSize)).Return(cloud.Volume{}, cloud.ErrNotFound)
 		mockCloud.EXPECT().CreateDisk(gomock.Eq(ctx), gomock.Eq(req.Name), gomock.Any()).Return(mockDisk, nil)
 
 		oscDriver := controllerService{
@@ -209,7 +209,7 @@ func TestCreateVolume(t *testing.T) {
 
 		ctx := context.Background()
 
-		mockDisk := cloud.Disk{
+		mockDisk := cloud.Volume{
 			VolumeID:         req.Name,
 			AvailabilityZone: expZone,
 			CapacityGiB:      util.BytesToGiB(stdVolSize),
@@ -220,7 +220,7 @@ func TestCreateVolume(t *testing.T) {
 		defer mockCtl.Finish()
 
 		mockCloud := mocks.NewMockCloud(mockCtl)
-		mockCloud.EXPECT().CheckCreatedDisk(gomock.Eq(ctx), gomock.Eq(req.Name), gomock.Eq(stdVolSize)).Return(cloud.Disk{}, cloud.ErrNotFound)
+		mockCloud.EXPECT().CheckCreatedDisk(gomock.Eq(ctx), gomock.Eq(req.Name), gomock.Eq(stdVolSize)).Return(cloud.Volume{}, cloud.ErrNotFound)
 		mockCloud.EXPECT().CreateDisk(gomock.Eq(ctx), gomock.Eq(req.Name), gomock.Any()).Return(mockDisk, nil)
 
 		oscDriver := controllerService{
@@ -255,7 +255,7 @@ func TestCreateVolume(t *testing.T) {
 
 		ctx := context.Background()
 
-		mockDisk := cloud.Disk{
+		mockDisk := cloud.Volume{
 			VolumeID:         req.Name,
 			AvailabilityZone: expZone,
 			CapacityGiB:      util.BytesToGiB(stdVolSize),
@@ -300,7 +300,7 @@ func TestCreateVolume(t *testing.T) {
 
 		ctx := context.Background()
 
-		mockDisk := cloud.Disk{
+		mockDisk := cloud.Volume{
 			VolumeID:         req.Name,
 			AvailabilityZone: expZone,
 			CapacityGiB:      util.BytesToGiB(stdVolSize),
@@ -370,7 +370,7 @@ func TestCreateVolume(t *testing.T) {
 
 		ctx := context.Background()
 
-		mockDisk := cloud.Disk{
+		mockDisk := cloud.Volume{
 			VolumeID:         req.Name,
 			AvailabilityZone: expZone,
 			CapacityGiB:      util.BytesToGiB(stdVolSize),
@@ -380,7 +380,7 @@ func TestCreateVolume(t *testing.T) {
 		defer mockCtl.Finish()
 
 		mockCloud := mocks.NewMockCloud(mockCtl)
-		mockCloud.EXPECT().CheckCreatedDisk(gomock.Eq(ctx), gomock.Eq(req.Name), gomock.Eq(stdVolSize)).Return(cloud.Disk{}, cloud.ErrNotFound)
+		mockCloud.EXPECT().CheckCreatedDisk(gomock.Eq(ctx), gomock.Eq(req.Name), gomock.Eq(stdVolSize)).Return(cloud.Volume{}, cloud.ErrNotFound)
 		mockCloud.EXPECT().CreateDisk(gomock.Eq(ctx), gomock.Eq(req.Name), gomock.Any()).Return(mockDisk, nil)
 
 		oscDriver := controllerService{
@@ -418,7 +418,7 @@ func TestCreateVolume(t *testing.T) {
 
 		ctx := context.Background()
 
-		mockDisk := cloud.Disk{
+		mockDisk := cloud.Volume{
 			VolumeID:         req.Name,
 			AvailabilityZone: expZone,
 		}
@@ -430,7 +430,7 @@ func TestCreateVolume(t *testing.T) {
 		defer mockCtl.Finish()
 
 		mockCloud := mocks.NewMockCloud(mockCtl)
-		mockCloud.EXPECT().CheckCreatedDisk(gomock.Eq(ctx), gomock.Eq(req.Name), gomock.Eq(volSizeBytes)).Return(cloud.Disk{}, cloud.ErrNotFound)
+		mockCloud.EXPECT().CheckCreatedDisk(gomock.Eq(ctx), gomock.Eq(req.Name), gomock.Eq(volSizeBytes)).Return(cloud.Volume{}, cloud.ErrNotFound)
 		mockCloud.EXPECT().CreateDisk(gomock.Eq(ctx), gomock.Eq(req.Name), gomock.Any()).Return(mockDisk, nil)
 
 		oscDriver := controllerService{
@@ -444,7 +444,7 @@ func TestCreateVolume(t *testing.T) {
 		require.NoError(t, err)
 
 		// Subsequent failure
-		mockCloud.EXPECT().CheckCreatedDisk(gomock.Eq(ctx), gomock.Eq(extraReq.Name), gomock.Eq(extraVolSizeBytes)).Return(cloud.Disk{}, cloud.ErrDiskExistsDiffSize)
+		mockCloud.EXPECT().CheckCreatedDisk(gomock.Eq(ctx), gomock.Eq(extraReq.Name), gomock.Eq(extraVolSizeBytes)).Return(cloud.Volume{}, cloud.ErrDiskExistsDiffSize)
 		_, err = oscDriver.CreateVolume(ctx, extraReq)
 		require.Error(t, err)
 		status, _ := status.FromError(err)
@@ -465,7 +465,7 @@ func TestCreateVolume(t *testing.T) {
 
 		ctx := context.Background()
 
-		mockDisk := cloud.Disk{
+		mockDisk := cloud.Volume{
 			VolumeID:         req.Name,
 			AvailabilityZone: expZone,
 			CapacityGiB:      util.BytesToGiB(cloud.DefaultVolumeSize),
@@ -475,7 +475,7 @@ func TestCreateVolume(t *testing.T) {
 		defer mockCtl.Finish()
 
 		mockCloud := mocks.NewMockCloud(mockCtl)
-		mockCloud.EXPECT().CheckCreatedDisk(gomock.Eq(ctx), gomock.Eq(req.Name), gomock.Eq(cloud.DefaultVolumeSize)).Return(cloud.Disk{}, cloud.ErrNotFound)
+		mockCloud.EXPECT().CheckCreatedDisk(gomock.Eq(ctx), gomock.Eq(req.Name), gomock.Eq(cloud.DefaultVolumeSize)).Return(cloud.Volume{}, cloud.ErrNotFound)
 		mockCloud.EXPECT().CreateDisk(gomock.Eq(ctx), gomock.Eq(req.Name), gomock.Any()).Return(mockDisk, nil)
 
 		oscDriver := controllerService{
@@ -505,7 +505,7 @@ func TestCreateVolume(t *testing.T) {
 
 		ctx := context.Background()
 
-		mockDisk := cloud.Disk{
+		mockDisk := cloud.Volume{
 			VolumeID:         req.Name,
 			AvailabilityZone: expZone,
 			CapacityGiB:      util.BytesToGiB(expVol.CapacityBytes),
@@ -515,7 +515,7 @@ func TestCreateVolume(t *testing.T) {
 		defer mockCtl.Finish()
 
 		mockCloud := mocks.NewMockCloud(mockCtl)
-		mockCloud.EXPECT().CheckCreatedDisk(gomock.Eq(ctx), gomock.Eq(req.Name), gomock.Eq(expVol.CapacityBytes)).Return(cloud.Disk{}, cloud.ErrNotFound)
+		mockCloud.EXPECT().CheckCreatedDisk(gomock.Eq(ctx), gomock.Eq(req.Name), gomock.Eq(expVol.CapacityBytes)).Return(cloud.Volume{}, cloud.ErrNotFound)
 		mockCloud.EXPECT().CreateDisk(gomock.Eq(ctx), gomock.Eq(req.Name), gomock.Any()).Return(mockDisk, nil)
 
 		oscDriver := controllerService{
@@ -545,7 +545,7 @@ func TestCreateVolume(t *testing.T) {
 
 		ctx := context.Background()
 
-		mockDisk := cloud.Disk{
+		mockDisk := cloud.Volume{
 			VolumeID:         req.Name,
 			AvailabilityZone: expZone,
 			CapacityGiB:      util.BytesToGiB(stdVolSize),
@@ -555,7 +555,7 @@ func TestCreateVolume(t *testing.T) {
 		defer mockCtl.Finish()
 
 		mockCloud := mocks.NewMockCloud(mockCtl)
-		mockCloud.EXPECT().CheckCreatedDisk(gomock.Eq(ctx), gomock.Eq(req.Name), gomock.Eq(stdVolSize)).Return(cloud.Disk{}, cloud.ErrNotFound)
+		mockCloud.EXPECT().CheckCreatedDisk(gomock.Eq(ctx), gomock.Eq(req.Name), gomock.Eq(stdVolSize)).Return(cloud.Volume{}, cloud.ErrNotFound)
 		mockCloud.EXPECT().CreateDisk(gomock.Eq(ctx), gomock.Eq(req.Name), gomock.Any()).Return(mockDisk, nil)
 
 		oscDriver := controllerService{
@@ -578,7 +578,7 @@ func TestCreateVolume(t *testing.T) {
 
 		ctx := context.Background()
 
-		mockDisk := cloud.Disk{
+		mockDisk := cloud.Volume{
 			VolumeID:         req.Name,
 			AvailabilityZone: expZone,
 			CapacityGiB:      util.BytesToGiB(stdVolSize),
@@ -588,7 +588,7 @@ func TestCreateVolume(t *testing.T) {
 		defer mockCtl.Finish()
 
 		mockCloud := mocks.NewMockCloud(mockCtl)
-		mockCloud.EXPECT().CheckCreatedDisk(gomock.Eq(ctx), gomock.Eq(req.Name), gomock.Eq(stdVolSize)).Return(cloud.Disk{}, cloud.ErrNotFound)
+		mockCloud.EXPECT().CheckCreatedDisk(gomock.Eq(ctx), gomock.Eq(req.Name), gomock.Eq(stdVolSize)).Return(cloud.Volume{}, cloud.ErrNotFound)
 		mockCloud.EXPECT().CreateDisk(gomock.Eq(ctx), gomock.Eq(req.Name), gomock.Any()).Return(mockDisk, nil)
 
 		oscDriver := controllerService{
@@ -611,7 +611,7 @@ func TestCreateVolume(t *testing.T) {
 
 		ctx := context.Background()
 
-		mockDisk := cloud.Disk{
+		mockDisk := cloud.Volume{
 			VolumeID:         req.Name,
 			AvailabilityZone: expZone,
 			CapacityGiB:      util.BytesToGiB(stdVolSize),
@@ -621,7 +621,7 @@ func TestCreateVolume(t *testing.T) {
 		defer mockCtl.Finish()
 
 		mockCloud := mocks.NewMockCloud(mockCtl)
-		mockCloud.EXPECT().CheckCreatedDisk(gomock.Eq(ctx), gomock.Eq(req.Name), gomock.Eq(stdVolSize)).Return(cloud.Disk{}, cloud.ErrNotFound)
+		mockCloud.EXPECT().CheckCreatedDisk(gomock.Eq(ctx), gomock.Eq(req.Name), gomock.Eq(stdVolSize)).Return(cloud.Volume{}, cloud.ErrNotFound)
 		mockCloud.EXPECT().CreateDisk(gomock.Eq(ctx), gomock.Eq(req.Name), gomock.Any()).Return(mockDisk, nil)
 
 		oscDriver := controllerService{
@@ -644,7 +644,7 @@ func TestCreateVolume(t *testing.T) {
 
 		ctx := context.Background()
 
-		mockDisk := cloud.Disk{
+		mockDisk := cloud.Volume{
 			VolumeID:         req.Name,
 			AvailabilityZone: expZone,
 			CapacityGiB:      util.BytesToGiB(stdVolSize),
@@ -654,7 +654,7 @@ func TestCreateVolume(t *testing.T) {
 		defer mockCtl.Finish()
 
 		mockCloud := mocks.NewMockCloud(mockCtl)
-		mockCloud.EXPECT().CheckCreatedDisk(gomock.Eq(ctx), gomock.Eq(req.Name), gomock.Eq(stdVolSize)).Return(cloud.Disk{}, cloud.ErrNotFound)
+		mockCloud.EXPECT().CheckCreatedDisk(gomock.Eq(ctx), gomock.Eq(req.Name), gomock.Eq(stdVolSize)).Return(cloud.Volume{}, cloud.ErrNotFound)
 		mockCloud.EXPECT().CreateDisk(gomock.Eq(ctx), gomock.Eq(req.Name), gomock.Any()).Return(mockDisk, nil)
 
 		oscDriver := controllerService{
@@ -678,7 +678,7 @@ func TestCreateVolume(t *testing.T) {
 
 		ctx := context.Background()
 
-		mockDisk := cloud.Disk{
+		mockDisk := cloud.Volume{
 			VolumeID:         req.Name,
 			AvailabilityZone: expZone,
 			CapacityGiB:      util.BytesToGiB(stdVolSize),
@@ -688,7 +688,7 @@ func TestCreateVolume(t *testing.T) {
 		defer mockCtl.Finish()
 
 		mockCloud := mocks.NewMockCloud(mockCtl)
-		mockCloud.EXPECT().CheckCreatedDisk(gomock.Eq(ctx), gomock.Eq(req.Name), gomock.Eq(stdVolSize)).Return(cloud.Disk{}, cloud.ErrNotFound)
+		mockCloud.EXPECT().CheckCreatedDisk(gomock.Eq(ctx), gomock.Eq(req.Name), gomock.Eq(stdVolSize)).Return(cloud.Volume{}, cloud.ErrNotFound)
 		mockCloud.EXPECT().CreateDisk(gomock.Eq(ctx), gomock.Eq(req.Name), gomock.Any()).Return(mockDisk, nil)
 
 		oscDriver := controllerService{
@@ -718,7 +718,7 @@ func TestCreateVolume(t *testing.T) {
 
 		ctx := context.Background()
 
-		mockDisk := cloud.Disk{
+		mockDisk := cloud.Volume{
 			VolumeID:         req.Name,
 			AvailabilityZone: expZone,
 			CapacityGiB:      util.BytesToGiB(stdVolSize),
@@ -728,7 +728,7 @@ func TestCreateVolume(t *testing.T) {
 		defer mockCtl.Finish()
 
 		mockCloud := mocks.NewMockCloud(mockCtl)
-		mockCloud.EXPECT().CheckCreatedDisk(gomock.Eq(ctx), gomock.Eq(req.Name), gomock.Eq(stdVolSize)).Return(cloud.Disk{}, cloud.ErrNotFound)
+		mockCloud.EXPECT().CheckCreatedDisk(gomock.Eq(ctx), gomock.Eq(req.Name), gomock.Eq(stdVolSize)).Return(cloud.Volume{}, cloud.ErrNotFound)
 		mockCloud.EXPECT().CreateDisk(gomock.Eq(ctx), gomock.Eq(req.Name), gomock.Any()).Return(mockDisk, nil)
 
 		oscDriver := controllerService{
@@ -760,7 +760,7 @@ func TestCreateVolume(t *testing.T) {
 		defer mockCtl.Finish()
 
 		mockCloud := mocks.NewMockCloud(mockCtl)
-		mockCloud.EXPECT().CheckCreatedDisk(gomock.Eq(ctx), gomock.Eq(req.Name), gomock.Eq(stdVolSize)).Return(cloud.Disk{}, cloud.ErrNotFound)
+		mockCloud.EXPECT().CheckCreatedDisk(gomock.Eq(ctx), gomock.Eq(req.Name), gomock.Eq(stdVolSize)).Return(cloud.Volume{}, cloud.ErrNotFound)
 
 		oscDriver := controllerService{
 			cloud:         mockCloud,
@@ -813,7 +813,7 @@ func TestCreateVolume(t *testing.T) {
 
 		ctx := context.Background()
 
-		mockDisk := cloud.Disk{
+		mockDisk := cloud.Volume{
 			VolumeID:         req.Name,
 			AvailabilityZone: expZone,
 			CapacityGiB:      util.BytesToGiB(stdVolSize),
@@ -823,7 +823,7 @@ func TestCreateVolume(t *testing.T) {
 		defer mockCtl.Finish()
 
 		mockCloud := mocks.NewMockCloud(mockCtl)
-		mockCloud.EXPECT().CheckCreatedDisk(gomock.Eq(ctx), gomock.Eq(req.Name), gomock.Eq(stdVolSize)).Return(cloud.Disk{}, cloud.ErrNotFound)
+		mockCloud.EXPECT().CheckCreatedDisk(gomock.Eq(ctx), gomock.Eq(req.Name), gomock.Eq(stdVolSize)).Return(cloud.Volume{}, cloud.ErrNotFound)
 		mockCloud.EXPECT().CreateDisk(gomock.Eq(ctx), gomock.Eq(req.Name), gomock.Any()).Return(mockDisk, nil)
 
 		oscDriver := controllerService{
@@ -861,13 +861,13 @@ func TestCreateVolume(t *testing.T) {
 
 		ctx := context.Background()
 
-		mockDisk := cloud.Disk{
+		mockDisk := cloud.Volume{
 			VolumeID:         req.Name,
 			AvailabilityZone: expZone,
 			CapacityGiB:      util.BytesToGiB(stdVolSize),
 		}
 
-		diskOptions := &cloud.DiskOptions{
+		diskOptions := &cloud.VolumeOptions{
 			CapacityBytes: stdVolSize,
 			Tags: map[string]string{
 				cloud.VolumeNameTagKey: volumeName,
@@ -879,7 +879,7 @@ func TestCreateVolume(t *testing.T) {
 		defer mockCtl.Finish()
 
 		mockCloud := mocks.NewMockCloud(mockCtl)
-		mockCloud.EXPECT().CheckCreatedDisk(gomock.Eq(ctx), gomock.Eq(req.Name), gomock.Eq(stdVolSize)).Return(cloud.Disk{}, cloud.ErrNotFound)
+		mockCloud.EXPECT().CheckCreatedDisk(gomock.Eq(ctx), gomock.Eq(req.Name), gomock.Eq(stdVolSize)).Return(cloud.Volume{}, cloud.ErrNotFound)
 		mockCloud.EXPECT().CreateDisk(gomock.Eq(ctx), gomock.Eq(req.Name), gomock.Eq(diskOptions)).Return(mockDisk, nil)
 
 		oscDriver := controllerService{
@@ -913,9 +913,9 @@ func TestCreateVolume(t *testing.T) {
 		defer mockCtl.Finish()
 
 		mockCloud := mocks.NewMockCloud(mockCtl)
-		mockCloud.EXPECT().CheckCreatedDisk(gomock.Any(), gomock.Eq(req.Name), gomock.Eq(stdVolSize)).Return(cloud.Disk{}, cloud.ErrNotFound)
+		mockCloud.EXPECT().CheckCreatedDisk(gomock.Any(), gomock.Eq(req.Name), gomock.Eq(stdVolSize)).Return(cloud.Volume{}, cloud.ErrNotFound)
 		mockCloud.EXPECT().CreateDisk(gomock.Any(), gomock.Eq(req.Name), gomock.Any()).
-			Return(cloud.Disk{}, cloud.NewOAPIError(osc.Errors{Code: ptr.To("10018"), Type: ptr.To("TooManyResources (QuotaExceeded)")}))
+			Return(cloud.Volume{}, cloud.NewOAPIError(osc.Errors{Code: ptr.To("10018"), Type: ptr.To("TooManyResources (QuotaExceeded)")}))
 
 		oscDriver := controllerService{
 			cloud:         mockCloud,
@@ -1695,7 +1695,7 @@ func TestControllerPublishVolume(t *testing.T) {
 
 				mockCloud := mocks.NewMockCloud(mockCtl)
 				mockCloud.EXPECT().IsExistInstance(gomock.Eq(ctx), gomock.Eq(req.NodeId)).Return(true)
-				mockCloud.EXPECT().GetDiskByID(gomock.Eq(ctx), gomock.Any()).Return(cloud.Disk{}, nil)
+				mockCloud.EXPECT().GetDiskByID(gomock.Eq(ctx), gomock.Any()).Return(cloud.Volume{}, nil)
 				mockCloud.EXPECT().AttachDisk(gomock.Eq(ctx), gomock.Any(), gomock.Eq(req.NodeId)).Return(expDevicePath, nil)
 
 				oscDriver := controllerService{
@@ -1921,7 +1921,7 @@ func TestControllerPublishVolume(t *testing.T) {
 
 				mockCloud := mocks.NewMockCloud(mockCtl)
 				mockCloud.EXPECT().IsExistInstance(gomock.Eq(ctx), gomock.Eq(req.NodeId)).Return(true)
-				mockCloud.EXPECT().GetDiskByID(gomock.Eq(ctx), gomock.Any()).Return(cloud.Disk{}, cloud.ErrNotFound)
+				mockCloud.EXPECT().GetDiskByID(gomock.Eq(ctx), gomock.Any()).Return(cloud.Volume{}, cloud.ErrNotFound)
 
 				oscDriver := controllerService{
 					cloud:         mockCloud,
@@ -1957,7 +1957,7 @@ func TestControllerPublishVolume(t *testing.T) {
 
 				mockCloud := mocks.NewMockCloud(mockCtl)
 				mockCloud.EXPECT().IsExistInstance(gomock.Eq(ctx), gomock.Eq(req.NodeId)).Return(true)
-				mockCloud.EXPECT().GetDiskByID(gomock.Eq(ctx), gomock.Any()).Return(cloud.Disk{}, nil)
+				mockCloud.EXPECT().GetDiskByID(gomock.Eq(ctx), gomock.Any()).Return(cloud.Volume{}, nil)
 				mockCloud.EXPECT().AttachDisk(gomock.Eq(ctx), gomock.Any(), gomock.Eq(req.NodeId)).Return("", cloud.ErrAlreadyExists)
 
 				oscDriver := controllerService{
@@ -2009,7 +2009,7 @@ func TestControllerPublishVolume(t *testing.T) {
 
 				mockCloud := mocks.NewMockCloud(mockCtl)
 				mockCloud.EXPECT().IsExistInstance(gomock.Eq(ctx), gomock.Eq(req.NodeId)).Return(true)
-				mockCloud.EXPECT().GetDiskByID(gomock.Eq(ctx), gomock.Any()).Return(cloud.Disk{}, nil)
+				mockCloud.EXPECT().GetDiskByID(gomock.Eq(ctx), gomock.Any()).Return(cloud.Volume{}, nil)
 				mockCloud.EXPECT().AttachDisk(gomock.Eq(ctx), gomock.Any(), gomock.Eq(req.NodeId)).Return(expDevicePath, nil)
 
 				oscDriver := controllerService{

@@ -221,7 +221,7 @@ func (d *controllerService) CreateVolume(ctx context.Context, req *csi.CreateVol
 		volumeTags[k] = v
 	}
 
-	opts := &cloud.DiskOptions{
+	opts := &cloud.VolumeOptions{
 		CapacityBytes:    volSizeBytes,
 		Tags:             volumeTags,
 		VolumeType:       volumeType,
@@ -548,7 +548,7 @@ func pickAvailabilityZone(requirement *csi.TopologyRequirement) string {
 	return ""
 }
 
-func newCreateVolumeResponse(disk cloud.Disk, volumeContextExtra map[string]string) *csi.CreateVolumeResponse {
+func newCreateVolumeResponse(disk cloud.Volume, volumeContextExtra map[string]string) *csi.CreateVolumeResponse {
 	var src *csi.VolumeContentSource
 	if disk.SnapshotID != "" {
 		src = &csi.VolumeContentSource{

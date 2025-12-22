@@ -57,10 +57,10 @@ func (mr *MockCloudMockRecorder) AttachDisk(ctx, volumeID, nodeID any) *gomock.C
 }
 
 // CheckCreatedDisk mocks base method.
-func (m *MockCloud) CheckCreatedDisk(ctx context.Context, name string, capacityBytes int64) (cloud.Disk, error) {
+func (m *MockCloud) CheckCreatedDisk(ctx context.Context, name string, capacityBytes int64) (cloud.Volume, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CheckCreatedDisk", ctx, name, capacityBytes)
-	ret0, _ := ret[0].(cloud.Disk)
+	ret0, _ := ret[0].(cloud.Volume)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -101,10 +101,10 @@ func (mr *MockCloudMockRecorder) CheckCredentials(ctx any) *gomock.Call {
 }
 
 // CreateDisk mocks base method.
-func (m *MockCloud) CreateDisk(ctx context.Context, volumeName string, diskOptions *cloud.DiskOptions) (cloud.Disk, error) {
+func (m *MockCloud) CreateDisk(ctx context.Context, volumeName string, diskOptions *cloud.VolumeOptions) (cloud.Volume, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CreateDisk", ctx, volumeName, diskOptions)
-	ret0, _ := ret[0].(cloud.Disk)
+	ret0, _ := ret[0].(cloud.Volume)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -175,10 +175,10 @@ func (mr *MockCloudMockRecorder) DetachDisk(ctx, volumeID, nodeID any) *gomock.C
 }
 
 // GetDiskByID mocks base method.
-func (m *MockCloud) GetDiskByID(ctx context.Context, volumeID string) (cloud.Disk, error) {
+func (m *MockCloud) GetDiskByID(ctx context.Context, volumeID string) (cloud.Volume, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetDiskByID", ctx, volumeID)
-	ret0, _ := ret[0].(cloud.Disk)
+	ret0, _ := ret[0].(cloud.Volume)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

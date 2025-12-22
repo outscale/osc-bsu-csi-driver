@@ -78,7 +78,7 @@ var _ = Describe("[bsu-csi-e2e] [single-az] Pre-Provisioned", func() {
 			Skip(fmt.Sprintf("env %q not set", awsAvailabilityZonesEnv))
 		}
 
-		diskOptions := &osccloud.DiskOptions{
+		diskOptions := &osccloud.VolumeOptions{
 			CapacityBytes:    defaultDiskSizeBytes,
 			VolumeType:       defaultVolumeType,
 			AvailabilityZone: availabilityZone,

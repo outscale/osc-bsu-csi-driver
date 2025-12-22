@@ -64,12 +64,10 @@ func TestNodeStageVolume(t *testing.T) {
 				mockCtl := gomock.NewController(t)
 				defer mockCtl.Finish()
 
-				mockMetadata := mocks.NewMockMetadataService(mockCtl)
 				mockMounter := mocks.NewMockMounter(mockCtl)
 
 				oscDriver := &nodeService{
 					driverOptions: &DriverOptions{},
-					metadata:      mockMetadata,
 					mounter:       mockMounter,
 					inFlight:      internal.NewInFlight(),
 				}
@@ -100,12 +98,10 @@ func TestNodeStageVolume(t *testing.T) {
 				mockCtl := gomock.NewController(t)
 				defer mockCtl.Finish()
 
-				mockMetadata := mocks.NewMockMetadataService(mockCtl)
 				mockMounter := mocks.NewMockMounter(mockCtl)
 
 				oscDriver := nodeService{
 					driverOptions: &DriverOptions{},
-					metadata:      mockMetadata,
 					mounter:       mockMounter,
 					inFlight:      internal.NewInFlight(),
 				}
@@ -134,12 +130,10 @@ func TestNodeStageVolume(t *testing.T) {
 				mockCtl := gomock.NewController(t)
 				defer mockCtl.Finish()
 
-				mockMetadata := mocks.NewMockMetadataService(mockCtl)
 				mockMounter := mocks.NewMockMounter(mockCtl)
 
 				oscDriver := nodeService{
 					driverOptions: &DriverOptions{},
-					metadata:      mockMetadata,
 					mounter:       mockMounter,
 					inFlight:      internal.NewInFlight(),
 				}
@@ -180,12 +174,10 @@ func TestNodeStageVolume(t *testing.T) {
 				mockCtl := gomock.NewController(t)
 				defer mockCtl.Finish()
 
-				mockMetadata := mocks.NewMockMetadataService(mockCtl)
 				mockMounter := mocks.NewMockMounter(mockCtl)
 
 				oscDriver := nodeService{
 					driverOptions: &DriverOptions{},
-					metadata:      mockMetadata,
 					mounter:       mockMounter,
 					inFlight:      internal.NewInFlight(),
 				}
@@ -225,12 +217,10 @@ func TestNodeStageVolume(t *testing.T) {
 				mockCtl := gomock.NewController(t)
 				defer mockCtl.Finish()
 
-				mockMetadata := mocks.NewMockMetadataService(mockCtl)
 				mockMounter := mocks.NewMockMounter(mockCtl)
 
 				oscDriver := nodeService{
 					driverOptions: &DriverOptions{},
-					metadata:      mockMetadata,
 					mounter:       mockMounter,
 					inFlight:      internal.NewInFlight(),
 				}
@@ -271,12 +261,10 @@ func TestNodeStageVolume(t *testing.T) {
 				mockCtl := gomock.NewController(t)
 				defer mockCtl.Finish()
 
-				mockMetadata := mocks.NewMockMetadataService(mockCtl)
 				mockMounter := mocks.NewMockMounter(mockCtl)
 
 				oscDriver := nodeService{
 					driverOptions: &DriverOptions{},
-					metadata:      mockMetadata,
 					mounter:       mockMounter,
 					inFlight:      internal.NewInFlight(),
 				}
@@ -297,12 +285,10 @@ func TestNodeStageVolume(t *testing.T) {
 				mockCtl := gomock.NewController(t)
 				defer mockCtl.Finish()
 
-				mockMetadata := mocks.NewMockMetadataService(mockCtl)
 				mockMounter := mocks.NewMockMounter(mockCtl)
 
 				oscDriver := nodeService{
 					driverOptions: &DriverOptions{},
-					metadata:      mockMetadata,
 					mounter:       mockMounter,
 					inFlight:      internal.NewInFlight(),
 				}
@@ -328,12 +314,10 @@ func TestNodeStageVolume(t *testing.T) {
 				mockCtl := gomock.NewController(t)
 				defer mockCtl.Finish()
 
-				mockMetadata := mocks.NewMockMetadataService(mockCtl)
 				mockMounter := mocks.NewMockMounter(mockCtl)
 
 				oscDriver := nodeService{
 					driverOptions: &DriverOptions{},
-					metadata:      mockMetadata,
 					mounter:       mockMounter,
 					inFlight:      internal.NewInFlight(),
 				}
@@ -355,12 +339,10 @@ func TestNodeStageVolume(t *testing.T) {
 				mockCtl := gomock.NewController(t)
 				defer mockCtl.Finish()
 
-				mockMetadata := mocks.NewMockMetadataService(mockCtl)
 				mockMounter := mocks.NewMockMounter(mockCtl)
 
 				oscDriver := nodeService{
 					driverOptions: &DriverOptions{},
-					metadata:      mockMetadata,
 					mounter:       mockMounter,
 					inFlight:      internal.NewInFlight(),
 				}
@@ -380,12 +362,10 @@ func TestNodeStageVolume(t *testing.T) {
 				mockCtl := gomock.NewController(t)
 				defer mockCtl.Finish()
 
-				mockMetadata := mocks.NewMockMetadataService(mockCtl)
 				mockMounter := mocks.NewMockMounter(mockCtl)
 
 				oscDriver := nodeService{
 					driverOptions: &DriverOptions{},
-					metadata:      mockMetadata,
 					mounter:       mockMounter,
 					inFlight:      internal.NewInFlight(),
 				}
@@ -410,12 +390,10 @@ func TestNodeStageVolume(t *testing.T) {
 				mockCtl := gomock.NewController(t)
 				defer mockCtl.Finish()
 
-				mockMetadata := mocks.NewMockMetadataService(mockCtl)
 				mockMounter := mocks.NewMockMounter(mockCtl)
 
 				oscDriver := nodeService{
 					driverOptions: &DriverOptions{},
-					metadata:      mockMetadata,
 					mounter:       mockMounter,
 					inFlight:      internal.NewInFlight(),
 				}
@@ -435,11 +413,9 @@ func TestNodeStageVolume(t *testing.T) {
 				mockCtl := gomock.NewController(t)
 				defer mockCtl.Finish()
 
-				mockMetadata := mocks.NewMockMetadataService(mockCtl)
 				mockMounter := mocks.NewMockMounter(mockCtl)
 
 				oscDriver := &nodeService{
-					metadata: mockMetadata,
 					mounter:  mockMounter,
 					inFlight: internal.NewInFlight(),
 				}
@@ -468,12 +444,10 @@ func TestNodeStageVolume(t *testing.T) {
 				mockCtl := gomock.NewController(t)
 				defer mockCtl.Finish()
 
-				mockMetadata := mocks.NewMockMetadataService(mockCtl)
 				mockMounter := mocks.NewMockMounter(mockCtl)
 
 				oscDriver := nodeService{
 					driverOptions: &DriverOptions{},
-					metadata:      mockMetadata,
 					mounter:       mockMounter,
 					inFlight:      internal.NewInFlight(),
 				}
@@ -513,12 +487,10 @@ func TestNodeStageVolume(t *testing.T) {
 				mockCtl := gomock.NewController(t)
 				defer mockCtl.Finish()
 
-				mockMetadata := mocks.NewMockMetadataService(mockCtl)
 				mockMounter := mocks.NewMockMounter(mockCtl)
 
 				oscDriver := nodeService{
 					driverOptions: &DriverOptions{},
-					metadata:      mockMetadata,
 					mounter:       mockMounter,
 					inFlight:      internal.NewInFlight(),
 				}
@@ -571,14 +543,12 @@ func TestNodeStageVolume(t *testing.T) {
 				mockCtl := gomock.NewController(t)
 				defer mockCtl.Finish()
 
-				mockMetadata := mocks.NewMockMetadataService(mockCtl)
 				mockMounter := mocks.NewMockMounter(mockCtl)
 
 				oscDriver := nodeService{
 					driverOptions: &DriverOptions{
 						luksOpenFlags: []string{"--foo", "--bar"},
 					},
-					metadata: mockMetadata,
 					mounter:  mockMounter,
 					inFlight: internal.NewInFlight(),
 				}
@@ -631,12 +601,10 @@ func TestNodeStageVolume(t *testing.T) {
 				mockCtl := gomock.NewController(t)
 				defer mockCtl.Finish()
 
-				mockMetadata := mocks.NewMockMetadataService(mockCtl)
 				mockMounter := mocks.NewMockMounter(mockCtl)
 
 				oscDriver := nodeService{
 					driverOptions: &DriverOptions{},
-					metadata:      mockMetadata,
 					mounter:       mockMounter,
 					inFlight:      internal.NewInFlight(),
 				}
@@ -692,12 +660,10 @@ func TestNodeStageVolume(t *testing.T) {
 				mockCtl := gomock.NewController(t)
 				defer mockCtl.Finish()
 
-				mockMetadata := mocks.NewMockMetadataService(mockCtl)
 				mockMounter := mocks.NewMockMounter(mockCtl)
 
 				oscDriver := nodeService{
 					driverOptions: &DriverOptions{},
-					metadata:      mockMetadata,
 					mounter:       mockMounter,
 					inFlight:      internal.NewInFlight(),
 				}
@@ -740,12 +706,10 @@ func TestNodeStageVolume(t *testing.T) {
 				mockCtl := gomock.NewController(t)
 				defer mockCtl.Finish()
 
-				mockMetadata := mocks.NewMockMetadataService(mockCtl)
 				mockMounter := mocks.NewMockMounter(mockCtl)
 
 				oscDriver := nodeService{
 					driverOptions: &DriverOptions{},
-					metadata:      mockMetadata,
 					mounter:       mockMounter,
 					inFlight:      internal.NewInFlight(),
 				}
@@ -813,11 +777,9 @@ func TestNodeUnstageVolume(t *testing.T) {
 				mockCtl := gomock.NewController(t)
 				defer mockCtl.Finish()
 
-				mockMetadata := mocks.NewMockMetadataService(mockCtl)
 				mockMounter := mocks.NewMockMounter(mockCtl)
 
 				oscDriver := &nodeService{
-					metadata: mockMetadata,
 					mounter:  mockMounter,
 					inFlight: internal.NewInFlight(),
 				}
@@ -841,11 +803,9 @@ func TestNodeUnstageVolume(t *testing.T) {
 				mockCtl := gomock.NewController(t)
 				defer mockCtl.Finish()
 
-				mockMetadata := mocks.NewMockMetadataService(mockCtl)
 				mockMounter := mocks.NewMockMounter(mockCtl)
 
 				oscDriver := &nodeService{
-					metadata: mockMetadata,
 					mounter:  mockMounter,
 					inFlight: internal.NewInFlight(),
 				}
@@ -866,11 +826,9 @@ func TestNodeUnstageVolume(t *testing.T) {
 				mockCtl := gomock.NewController(t)
 				defer mockCtl.Finish()
 
-				mockMetadata := mocks.NewMockMetadataService(mockCtl)
 				mockMounter := mocks.NewMockMounter(mockCtl)
 
 				oscDriver := &nodeService{
-					metadata: mockMetadata,
 					mounter:  mockMounter,
 					inFlight: internal.NewInFlight(),
 				}
@@ -894,11 +852,9 @@ func TestNodeUnstageVolume(t *testing.T) {
 				mockCtl := gomock.NewController(t)
 				defer mockCtl.Finish()
 
-				mockMetadata := mocks.NewMockMetadataService(mockCtl)
 				mockMounter := mocks.NewMockMounter(mockCtl)
 
 				oscDriver := &nodeService{
-					metadata: mockMetadata,
 					mounter:  mockMounter,
 					inFlight: internal.NewInFlight(),
 				}
@@ -917,11 +873,9 @@ func TestNodeUnstageVolume(t *testing.T) {
 				mockCtl := gomock.NewController(t)
 				defer mockCtl.Finish()
 
-				mockMetadata := mocks.NewMockMetadataService(mockCtl)
 				mockMounter := mocks.NewMockMounter(mockCtl)
 
 				oscDriver := &nodeService{
-					metadata: mockMetadata,
 					mounter:  mockMounter,
 					inFlight: internal.NewInFlight(),
 				}
@@ -939,11 +893,9 @@ func TestNodeUnstageVolume(t *testing.T) {
 				mockCtl := gomock.NewController(t)
 				defer mockCtl.Finish()
 
-				mockMetadata := mocks.NewMockMetadataService(mockCtl)
 				mockMounter := mocks.NewMockMounter(mockCtl)
 
 				oscDriver := &nodeService{
-					metadata: mockMetadata,
 					mounter:  mockMounter,
 					inFlight: internal.NewInFlight(),
 				}
@@ -965,11 +917,9 @@ func TestNodeUnstageVolume(t *testing.T) {
 				mockCtl := gomock.NewController(t)
 				defer mockCtl.Finish()
 
-				mockMetadata := mocks.NewMockMetadataService(mockCtl)
 				mockMounter := mocks.NewMockMounter(mockCtl)
 
 				oscDriver := &nodeService{
-					metadata: mockMetadata,
 					mounter:  mockMounter,
 					inFlight: internal.NewInFlight(),
 				}
@@ -1016,11 +966,9 @@ func TestNodePublishVolume(t *testing.T) {
 				mockCtl := gomock.NewController(t)
 				defer mockCtl.Finish()
 
-				mockMetadata := mocks.NewMockMetadataService(mockCtl)
 				mockMounter := mocks.NewMockMounter(mockCtl)
 
 				oscDriver := &nodeService{
-					metadata: mockMetadata,
 					mounter:  mockMounter,
 					inFlight: internal.NewInFlight(),
 				}
@@ -1047,11 +995,9 @@ func TestNodePublishVolume(t *testing.T) {
 				mockCtl := gomock.NewController(t)
 				defer mockCtl.Finish()
 
-				mockMetadata := mocks.NewMockMetadataService(mockCtl)
 				mockMounter := mocks.NewMockMounter(mockCtl)
 
 				oscDriver := &nodeService{
-					metadata: mockMetadata,
 					mounter:  mockMounter,
 					inFlight: internal.NewInFlight(),
 				}
@@ -1077,11 +1023,9 @@ func TestNodePublishVolume(t *testing.T) {
 				mockCtl := gomock.NewController(t)
 				defer mockCtl.Finish()
 
-				mockMetadata := mocks.NewMockMetadataService(mockCtl)
 				mockMounter := mocks.NewMockMounter(mockCtl)
 
 				oscDriver := &nodeService{
-					metadata: mockMetadata,
 					mounter:  mockMounter,
 					inFlight: internal.NewInFlight(),
 				}
@@ -1117,11 +1061,9 @@ func TestNodePublishVolume(t *testing.T) {
 				mockCtl := gomock.NewController(t)
 				defer mockCtl.Finish()
 
-				mockMetadata := mocks.NewMockMetadataService(mockCtl)
 				mockMounter := mocks.NewMockMounter(mockCtl)
 
 				oscDriver := &nodeService{
-					metadata: mockMetadata,
 					mounter:  mockMounter,
 					inFlight: internal.NewInFlight(),
 				}
@@ -1149,11 +1091,9 @@ func TestNodePublishVolume(t *testing.T) {
 				mockCtl := gomock.NewController(t)
 				defer mockCtl.Finish()
 
-				mockMetadata := mocks.NewMockMetadataService(mockCtl)
 				mockMounter := mocks.NewMockMounter(mockCtl)
 
 				oscDriver := &nodeService{
-					metadata: mockMetadata,
 					mounter:  mockMounter,
 					inFlight: internal.NewInFlight(),
 				}
@@ -1193,11 +1133,9 @@ func TestNodePublishVolume(t *testing.T) {
 				mockCtl := gomock.NewController(t)
 				defer mockCtl.Finish()
 
-				mockMetadata := mocks.NewMockMetadataService(mockCtl)
 				mockMounter := mocks.NewMockMounter(mockCtl)
 
 				oscDriver := &nodeService{
-					metadata: mockMetadata,
 					mounter:  mockMounter,
 					inFlight: internal.NewInFlight(),
 				}
@@ -1236,11 +1174,9 @@ func TestNodePublishVolume(t *testing.T) {
 				mockCtl := gomock.NewController(t)
 				defer mockCtl.Finish()
 
-				mockMetadata := mocks.NewMockMetadataService(mockCtl)
 				mockMounter := mocks.NewMockMounter(mockCtl)
 
 				oscDriver := &nodeService{
-					metadata: mockMetadata,
 					mounter:  mockMounter,
 					inFlight: internal.NewInFlight(),
 				}
@@ -1269,11 +1205,9 @@ func TestNodePublishVolume(t *testing.T) {
 				mockCtl := gomock.NewController(t)
 				defer mockCtl.Finish()
 
-				mockMetadata := mocks.NewMockMetadataService(mockCtl)
 				mockMounter := mocks.NewMockMounter(mockCtl)
 
 				oscDriver := &nodeService{
-					metadata: mockMetadata,
 					mounter:  mockMounter,
 					inFlight: internal.NewInFlight(),
 				}
@@ -1305,11 +1239,9 @@ func TestNodePublishVolume(t *testing.T) {
 				mockCtl := gomock.NewController(t)
 				defer mockCtl.Finish()
 
-				mockMetadata := mocks.NewMockMetadataService(mockCtl)
 				mockMounter := mocks.NewMockMounter(mockCtl)
 
 				oscDriver := &nodeService{
-					metadata: mockMetadata,
 					mounter:  mockMounter,
 					inFlight: internal.NewInFlight(),
 				}
@@ -1331,11 +1263,9 @@ func TestNodePublishVolume(t *testing.T) {
 				mockCtl := gomock.NewController(t)
 				defer mockCtl.Finish()
 
-				mockMetadata := mocks.NewMockMetadataService(mockCtl)
 				mockMounter := mocks.NewMockMounter(mockCtl)
 
 				oscDriver := &nodeService{
-					metadata: mockMetadata,
 					mounter:  mockMounter,
 					inFlight: internal.NewInFlight(),
 				}
@@ -1357,11 +1287,9 @@ func TestNodePublishVolume(t *testing.T) {
 				mockCtl := gomock.NewController(t)
 				defer mockCtl.Finish()
 
-				mockMetadata := mocks.NewMockMetadataService(mockCtl)
 				mockMounter := mocks.NewMockMounter(mockCtl)
 
 				oscDriver := &nodeService{
-					metadata: mockMetadata,
 					mounter:  mockMounter,
 					inFlight: internal.NewInFlight(),
 				}
@@ -1383,11 +1311,9 @@ func TestNodePublishVolume(t *testing.T) {
 				mockCtl := gomock.NewController(t)
 				defer mockCtl.Finish()
 
-				mockMetadata := mocks.NewMockMetadataService(mockCtl)
 				mockMounter := mocks.NewMockMounter(mockCtl)
 
 				oscDriver := &nodeService{
-					metadata: mockMetadata,
 					mounter:  mockMounter,
 					inFlight: internal.NewInFlight(),
 				}
@@ -1408,11 +1334,9 @@ func TestNodePublishVolume(t *testing.T) {
 				mockCtl := gomock.NewController(t)
 				defer mockCtl.Finish()
 
-				mockMetadata := mocks.NewMockMetadataService(mockCtl)
 				mockMounter := mocks.NewMockMounter(mockCtl)
 
 				oscDriver := &nodeService{
-					metadata: mockMetadata,
 					mounter:  mockMounter,
 					inFlight: internal.NewInFlight(),
 				}
@@ -1453,11 +1377,9 @@ func TestNodeUnpublishVolume(t *testing.T) {
 				mockCtl := gomock.NewController(t)
 				defer mockCtl.Finish()
 
-				mockMetadata := mocks.NewMockMetadataService(mockCtl)
 				mockMounter := mocks.NewMockMounter(mockCtl)
 
 				oscDriver := &nodeService{
-					metadata: mockMetadata,
 					mounter:  mockMounter,
 					inFlight: internal.NewInFlight(),
 				}
@@ -1479,11 +1401,9 @@ func TestNodeUnpublishVolume(t *testing.T) {
 				mockCtl := gomock.NewController(t)
 				defer mockCtl.Finish()
 
-				mockMetadata := mocks.NewMockMetadataService(mockCtl)
 				mockMounter := mocks.NewMockMounter(mockCtl)
 
 				oscDriver := &nodeService{
-					metadata: mockMetadata,
 					mounter:  mockMounter,
 					inFlight: internal.NewInFlight(),
 				}
@@ -1504,11 +1424,9 @@ func TestNodeUnpublishVolume(t *testing.T) {
 				mockCtl := gomock.NewController(t)
 				defer mockCtl.Finish()
 
-				mockMetadata := mocks.NewMockMetadataService(mockCtl)
 				mockMounter := mocks.NewMockMounter(mockCtl)
 
 				oscDriver := &nodeService{
-					metadata: mockMetadata,
 					mounter:  mockMounter,
 					inFlight: internal.NewInFlight(),
 				}
@@ -1527,11 +1445,9 @@ func TestNodeUnpublishVolume(t *testing.T) {
 				mockCtl := gomock.NewController(t)
 				defer mockCtl.Finish()
 
-				mockMetadata := mocks.NewMockMetadataService(mockCtl)
 				mockMounter := mocks.NewMockMounter(mockCtl)
 
 				oscDriver := &nodeService{
-					metadata: mockMetadata,
 					mounter:  mockMounter,
 					inFlight: internal.NewInFlight(),
 				}
@@ -1562,7 +1478,6 @@ func TestNodeGetVolumeStats(t *testing.T) {
 				mockCtl := gomock.NewController(t)
 				defer mockCtl.Finish()
 
-				mockMetadata := mocks.NewMockMetadataService(mockCtl)
 				mockMounter := mocks.NewMockMounter(mockCtl)
 				VolumePath := t.TempDir()
 				err := os.MkdirAll(VolumePath, 0750)
@@ -1572,7 +1487,6 @@ func TestNodeGetVolumeStats(t *testing.T) {
 
 				oscDriver := nodeService{
 					driverOptions: &DriverOptions{},
-					metadata:      mockMetadata,
 					mounter:       mockMounter,
 					inFlight:      internal.NewInFlight(),
 				}
@@ -1591,7 +1505,6 @@ func TestNodeGetVolumeStats(t *testing.T) {
 				mockCtl := gomock.NewController(t)
 				defer mockCtl.Finish()
 
-				mockMetadata := mocks.NewMockMetadataService(mockCtl)
 				mockMounter := mocks.NewMockMounter(mockCtl)
 				VolumePath := "/test"
 
@@ -1599,7 +1512,6 @@ func TestNodeGetVolumeStats(t *testing.T) {
 
 				oscDriver := nodeService{
 					driverOptions: &DriverOptions{},
-					metadata:      mockMetadata,
 					mounter:       mockMounter,
 					inFlight:      internal.NewInFlight(),
 				}
@@ -1618,7 +1530,6 @@ func TestNodeGetVolumeStats(t *testing.T) {
 				mockCtl := gomock.NewController(t)
 				defer mockCtl.Finish()
 
-				mockMetadata := mocks.NewMockMetadataService(mockCtl)
 				mockMounter := mocks.NewMockMounter(mockCtl)
 				VolumePath := "/test"
 
@@ -1626,7 +1537,6 @@ func TestNodeGetVolumeStats(t *testing.T) {
 
 				oscDriver := nodeService{
 					driverOptions: &DriverOptions{},
-					metadata:      mockMetadata,
 					mounter:       mockMounter,
 					inFlight:      internal.NewInFlight(),
 				}
@@ -1645,7 +1555,6 @@ func TestNodeGetVolumeStats(t *testing.T) {
 				mockCtl := gomock.NewController(t)
 				defer mockCtl.Finish()
 
-				mockMetadata := mocks.NewMockMetadataService(mockCtl)
 				mockMounter := mocks.NewMockMounter(mockCtl)
 				VolumePath := "/test"
 
@@ -1653,7 +1562,6 @@ func TestNodeGetVolumeStats(t *testing.T) {
 
 				oscDriver := nodeService{
 					driverOptions: &DriverOptions{},
-					metadata:      mockMetadata,
 					mounter:       mockMounter,
 					inFlight:      internal.NewInFlight(),
 				}
@@ -1677,11 +1585,9 @@ func TestNodeGetCapabilities(t *testing.T) {
 	mockCtl := gomock.NewController(t)
 	defer mockCtl.Finish()
 
-	mockMetadata := mocks.NewMockMetadataService(mockCtl)
 	mockMounter := mocks.NewMockMounter(mockCtl)
 
 	oscDriver := nodeService{
-		metadata: mockMetadata,
 		mounter:  mockMounter,
 		inFlight: internal.NewInFlight(),
 	}
@@ -1717,41 +1623,118 @@ func TestNodeGetCapabilities(t *testing.T) {
 
 func TestNodeGetInfo(t *testing.T) {
 	testCases := []struct {
-		name             string
-		instanceID       string
-		instanceType     string
-		availabilityZone string
-		osMounted        []string
-		kubeMounted      []mount.MountPoint
-		expMaxVolumes    int64
+		name          string
+		instanceID    string
+		instanceType  string
+		subRegion     string
+		osMounted     []string
+		mounted       []mount.MountPoint
+		expMaxVolumes int64
 	}{
 		{
-			name:             "success normal",
-			instanceID:       "i-123456789abcdef01",
-			instanceType:     "tinav6.c1r6p2",
-			availabilityZone: "us-west-2b",
-			osMounted:        []string{"/dev/sda1"},
-			expMaxVolumes:    39,
-		},
-		{
-			name:             "success normal with 1 mounted volume by the OS",
-			instanceID:       "i-123456789abcdef01",
-			instanceType:     "tinav6.c1r6p2",
-			availabilityZone: "us-west-2b",
-			osMounted:        []string{"/dev/sda1", "/dev/sdb"},
-			expMaxVolumes:    38,
-		},
-		{
-			name:             "success normal with 1 mounted volume by the kube",
-			instanceID:       "i-123456789abcdef01",
-			instanceType:     "tinav6.c1r6p2",
-			availabilityZone: "us-west-2b",
-			osMounted:        []string{"/dev/sda1", "/dev/sdb"},
-			kubeMounted: []mount.MountPoint{
-				{Device: "/dev/xvdb", Path: "/var/lib/kubelet/plugins/kubernetes.io/csi/bsu.csi.outscale.com/foo/globalmount"},
-				{Device: "/dev/xvdb", Path: "/var/lib/kubelet/pods/a122745a-1db3-4aa8-a9e9-c63a46323606/volumes/kubernetes.io~csi/pvc-foo/mount"},
+			name:         "default mounts, no pvc",
+			instanceID:   "i-123456789abcdef01",
+			instanceType: "tinav6.c1r6p2",
+			subRegion:    "us-west-2b",
+			mounted: []mount.MountPoint{
+				{Device: "overlay", Path: "/"},
+				{Device: "proc", Path: "/proc"},
+				{Device: "sysfs", Path: "/sys"},
+				{Device: "cgroup", Path: "/sys/fs/cgroup"},
+				{Device: "/dev/vda1", Path: "/csi"},
+				{Device: "udev", Path: "/dev"},
+				{Device: "devpts", Path: "/dev/pts"},
+				{Device: "tmpfs", Path: "/dev/shm"},
+				{Device: "hugetlbfs", Path: "/dev/hugepages"},
+				{Device: "mqueue", Path: "/dev/mqueue"},
+				{Device: "/dev/vda1", Path: "/etc/hosts"},
+				{Device: "/dev/vda1", Path: "/dev/termination-log"},
+				{Device: "/dev/vda1", Path: "/etc/hostname"},
+				{Device: "/dev/vda1", Path: "/etc/resolv.conf"},
+				{Device: "shm", Path: "/dev/shm"},
+				{Device: "/dev/vda1", Path: "/var/lib/kubelet"},
 			},
 			expMaxVolumes: 39,
+		},
+		{
+			name:         "1 OS mounted volume on xvdb, no PVC",
+			instanceID:   "i-123456789abcdef01",
+			instanceType: "tinav6.c1r6p2",
+			subRegion:    "us-west-2b",
+			mounted: []mount.MountPoint{
+				{Device: "overlay", Path: "/"},
+				{Device: "proc", Path: "/proc"},
+				{Device: "sysfs", Path: "/sys"},
+				{Device: "cgroup", Path: "/sys/fs/cgroup"},
+				{Device: "/dev/vda1", Path: "/csi"},
+				{Device: "udev", Path: "/dev"},
+				{Device: "devpts", Path: "/dev/pts"},
+				{Device: "tmpfs", Path: "/dev/shm"},
+				{Device: "hugetlbfs", Path: "/dev/hugepages"},
+				{Device: "mqueue", Path: "/dev/mqueue"},
+				{Device: "/dev/vda1", Path: "/etc/hosts"},
+				{Device: "/dev/vda1", Path: "/dev/termination-log"},
+				{Device: "/dev/vda1", Path: "/etc/hostname"},
+				{Device: "/dev/vda1", Path: "/etc/resolv.conf"},
+				{Device: "shm", Path: "/dev/shm"},
+				{Device: "/dev/vda1", Path: "/var/lib/kubelet"},
+				{Device: "/dev/xvdb", Path: "/data"},
+			},
+			expMaxVolumes: 38,
+		},
+		{
+			name:         "1 OS mounted volume on sdb, no PVC",
+			instanceID:   "i-123456789abcdef01",
+			instanceType: "tinav6.c1r6p2",
+			subRegion:    "us-west-2b",
+			mounted: []mount.MountPoint{
+				{Device: "overlay", Path: "/"},
+				{Device: "proc", Path: "/proc"},
+				{Device: "sysfs", Path: "/sys"},
+				{Device: "cgroup", Path: "/sys/fs/cgroup"},
+				{Device: "/dev/vda1", Path: "/csi"},
+				{Device: "udev", Path: "/dev"},
+				{Device: "devpts", Path: "/dev/pts"},
+				{Device: "tmpfs", Path: "/dev/shm"},
+				{Device: "hugetlbfs", Path: "/dev/hugepages"},
+				{Device: "mqueue", Path: "/dev/mqueue"},
+				{Device: "/dev/vda1", Path: "/etc/hosts"},
+				{Device: "/dev/vda1", Path: "/dev/termination-log"},
+				{Device: "/dev/vda1", Path: "/etc/hostname"},
+				{Device: "/dev/vda1", Path: "/etc/resolv.conf"},
+				{Device: "shm", Path: "/dev/shm"},
+				{Device: "/dev/vda1", Path: "/var/lib/kubelet"},
+				{Device: "/dev/sdb", Path: "/data"},
+			},
+			expMaxVolumes: 38,
+		},
+		{
+			name:         "1 OS mounted volume on xvdb, 1 PVC",
+			instanceID:   "i-123456789abcdef01",
+			instanceType: "tinav6.c1r6p2",
+			subRegion:    "us-west-2b",
+			mounted: []mount.MountPoint{
+				{Device: "overlay", Path: "/"},
+				{Device: "proc", Path: "/proc"},
+				{Device: "sysfs", Path: "/sys"},
+				{Device: "cgroup", Path: "/sys/fs/cgroup"},
+				{Device: "/dev/vda1", Path: "/csi"},
+				{Device: "udev", Path: "/dev"},
+				{Device: "devpts", Path: "/dev/pts"},
+				{Device: "tmpfs", Path: "/dev/shm"},
+				{Device: "hugetlbfs", Path: "/dev/hugepages"},
+				{Device: "mqueue", Path: "/dev/mqueue"},
+				{Device: "/dev/vda1", Path: "/etc/hosts"},
+				{Device: "/dev/vda1", Path: "/dev/termination-log"},
+				{Device: "/dev/vda1", Path: "/etc/hostname"},
+				{Device: "/dev/vda1", Path: "/etc/resolv.conf"},
+				{Device: "shm", Path: "/dev/shm"},
+				{Device: "/dev/vda1", Path: "/var/lib/kubelet"},
+				{Device: "/dev/xvdb", Path: "/data"},
+				{Device: "/dev/xvdc", Path: "/var/lib/kubelet/plugins/kubernetes.io/csi/bsu.csi.outscale.com/foo/globalmount"},
+				{Device: "/dev/xvdc", Path: "/var/lib/kubelet/pods/foo/volumes/kubernetes.io~csi/pvc-foo/mount"},
+			},
+			expMaxVolumes: 38,
 		},
 	}
 	for _, tc := range testCases {
@@ -1759,23 +1742,19 @@ func TestNodeGetInfo(t *testing.T) {
 			mockCtl := gomock.NewController(t)
 			defer mockCtl.Finish()
 
-			mockMetadata := mocks.NewMockMetadataService(mockCtl)
-			mockMetadata.EXPECT().GetInstanceID().Return(tc.instanceID)
-			mockMetadata.EXPECT().GetAvailabilityZone().Return(tc.availabilityZone)
-			mockMetadata.EXPECT().GetMountedDevices().Return(tc.osMounted)
-
 			mockMounter := mocks.NewMockMounter(mockCtl)
-			mockMounter.EXPECT().List().Return(tc.kubeMounted, nil)
+			mockMounter.EXPECT().List().Return(tc.mounted, nil)
 
 			oscDriver := &nodeService{
-				metadata: mockMetadata,
-				mounter:  mockMounter,
-				inFlight: internal.NewInFlight(),
+				mounter:    mockMounter,
+				instanceID: tc.instanceID,
+				subRegion:  tc.subRegion,
+				inFlight:   internal.NewInFlight(),
 			}
 
 			limit, err := oscDriver.getVolumesLimit()
 			require.NoError(t, err)
-			assert.Equal(t, int64(tc.expMaxVolumes), limit)
+			assert.Equal(t, tc.expMaxVolumes, limit)
 			oscDriver.maxVolumes = limit
 
 			resp, err := oscDriver.NodeGetInfo(context.TODO(), &csi.NodeGetInfoRequest{})
@@ -1784,7 +1763,7 @@ func TestNodeGetInfo(t *testing.T) {
 			assert.Equal(t, tc.instanceID, resp.GetNodeId(), "Invalid node ID")
 
 			at := resp.GetAccessibleTopology()
-			assert.Equal(t, tc.availabilityZone, at.Segments[TopologyKey], "Invalid topology")
+			assert.Equal(t, tc.subRegion, at.Segments[TopologyKey], "Invalid topology")
 
 			assert.Equal(t, tc.expMaxVolumes, resp.GetMaxVolumesPerNode(), "Invalid max volumes per node")
 		})

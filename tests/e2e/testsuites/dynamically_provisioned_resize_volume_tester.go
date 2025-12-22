@@ -23,16 +23,15 @@ import (
 	"strings"
 	"time"
 
+	. "github.com/onsi/ginkgo/v2" //nolint
 	"github.com/outscale/osc-bsu-csi-driver/pkg/util"
 	"github.com/outscale/osc-bsu-csi-driver/tests/e2e/driver"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	clientset "k8s.io/client-go/kubernetes"
 	"k8s.io/kubernetes/test/e2e/framework"
 	e2epodoutput "k8s.io/kubernetes/test/e2e/framework/pod/output"
-
-	. "github.com/onsi/ginkgo/v2"
-	clientset "k8s.io/client-go/kubernetes"
 )
 
 // DynamicallyProvisionedResizeVolumeTest will provision required StorageClass(es), PVC(s) and Pod(s)
@@ -133,7 +132,7 @@ func waitForMountToResize(tpod *TestPod, desiredSize resource.Quantity, timeout 
 		blocks, err := strconv.Atoi(strings.Fields(res)[8])
 		_, _ = fmt.Fprintf(GinkgoWriter, "FS size: %dMB\n", blocks)
 		framework.ExpectNoError(err)
-		if int32(math.Round(float64(blocks)/1024)) == szG {
+		if int(math.Round(float64(blocks)/1024)) == szG {
 			By(fmt.Sprintf("Mount is updated to %dMB", blocks))
 			return nil
 		}

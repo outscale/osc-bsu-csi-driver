@@ -9,6 +9,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/outscale/goutils/sdk/ptr"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
@@ -20,7 +21,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/apimachinery/pkg/util/yaml"
-	"k8s.io/utils/ptr"
 )
 
 func getHelmSpecs(t *testing.T, vars ...string) []runtime.Object {
@@ -30,7 +30,7 @@ func getHelmSpecs(t *testing.T, vars ...string) []runtime.Object {
 		args = append(args, "--set", strings.Join(vars, ","))
 	}
 	args = append(args, ".")
-	cmd := exec.Command("helm", args...)
+	cmd := exec.CommandContext(t.Context(), "helm", args...)
 	stdout, err := cmd.StdoutPipe()
 	require.NoError(t, err, "helm stdout")
 	err = cmd.Start()

@@ -14,6 +14,7 @@ import (
 	reflect "reflect"
 
 	cloud "github.com/outscale/osc-bsu-csi-driver/pkg/cloud"
+	osc "github.com/outscale/osc-sdk-go/v3/pkg/osc"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -41,41 +42,26 @@ func (m *MockCloud) EXPECT() *MockCloudMockRecorder {
 	return m.recorder
 }
 
-// AttachDisk mocks base method.
-func (m *MockCloud) AttachDisk(ctx context.Context, volumeID, nodeID string) (string, error) {
+// AttachVolume mocks base method.
+func (m *MockCloud) AttachVolume(ctx context.Context, volumeID, nodeID string) (string, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AttachDisk", ctx, volumeID, nodeID)
+	ret := m.ctrl.Call(m, "AttachVolume", ctx, volumeID, nodeID)
 	ret0, _ := ret[0].(string)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// AttachDisk indicates an expected call of AttachDisk.
-func (mr *MockCloudMockRecorder) AttachDisk(ctx, volumeID, nodeID any) *gomock.Call {
+// AttachVolume indicates an expected call of AttachVolume.
+func (mr *MockCloudMockRecorder) AttachVolume(ctx, volumeID, nodeID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AttachDisk", reflect.TypeOf((*MockCloud)(nil).AttachDisk), ctx, volumeID, nodeID)
-}
-
-// CheckCreatedDisk mocks base method.
-func (m *MockCloud) CheckCreatedDisk(ctx context.Context, name string, capacityBytes int64) (cloud.Disk, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CheckCreatedDisk", ctx, name, capacityBytes)
-	ret0, _ := ret[0].(cloud.Disk)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// CheckCreatedDisk indicates an expected call of CheckCreatedDisk.
-func (mr *MockCloudMockRecorder) CheckCreatedDisk(ctx, name, capacityBytes any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CheckCreatedDisk", reflect.TypeOf((*MockCloud)(nil).CheckCreatedDisk), ctx, name, capacityBytes)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AttachVolume", reflect.TypeOf((*MockCloud)(nil).AttachVolume), ctx, volumeID, nodeID)
 }
 
 // CheckCreatedSnapshot mocks base method.
-func (m *MockCloud) CheckCreatedSnapshot(ctx context.Context, name string) (cloud.Snapshot, error) {
+func (m *MockCloud) CheckCreatedSnapshot(ctx context.Context, name string) (*cloud.Snapshot, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CheckCreatedSnapshot", ctx, name)
-	ret0, _ := ret[0].(cloud.Snapshot)
+	ret0, _ := ret[0].(*cloud.Snapshot)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -86,63 +72,49 @@ func (mr *MockCloudMockRecorder) CheckCreatedSnapshot(ctx, name any) *gomock.Cal
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CheckCreatedSnapshot", reflect.TypeOf((*MockCloud)(nil).CheckCreatedSnapshot), ctx, name)
 }
 
-// CheckCredentials mocks base method.
-func (m *MockCloud) CheckCredentials(ctx context.Context) error {
+// CheckCreatedVolume mocks base method.
+func (m *MockCloud) CheckCreatedVolume(ctx context.Context, name string) (*cloud.Volume, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CheckCredentials", ctx)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// CheckCredentials indicates an expected call of CheckCredentials.
-func (mr *MockCloudMockRecorder) CheckCredentials(ctx any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CheckCredentials", reflect.TypeOf((*MockCloud)(nil).CheckCredentials), ctx)
-}
-
-// CreateDisk mocks base method.
-func (m *MockCloud) CreateDisk(ctx context.Context, volumeName string, diskOptions *cloud.DiskOptions) (cloud.Disk, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CreateDisk", ctx, volumeName, diskOptions)
-	ret0, _ := ret[0].(cloud.Disk)
+	ret := m.ctrl.Call(m, "CheckCreatedVolume", ctx, name)
+	ret0, _ := ret[0].(*cloud.Volume)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// CreateDisk indicates an expected call of CreateDisk.
-func (mr *MockCloudMockRecorder) CreateDisk(ctx, volumeName, diskOptions any) *gomock.Call {
+// CheckCreatedVolume indicates an expected call of CheckCreatedVolume.
+func (mr *MockCloudMockRecorder) CheckCreatedVolume(ctx, name any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateDisk", reflect.TypeOf((*MockCloud)(nil).CreateDisk), ctx, volumeName, diskOptions)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CheckCreatedVolume", reflect.TypeOf((*MockCloud)(nil).CheckCreatedVolume), ctx, name)
 }
 
 // CreateSnapshot mocks base method.
-func (m *MockCloud) CreateSnapshot(ctx context.Context, volumeID string, snapshotOptions *cloud.SnapshotOptions) (cloud.Snapshot, error) {
+func (m *MockCloud) CreateSnapshot(ctx context.Context, name, volumeID string, snapshotOptions *cloud.SnapshotOptions) (*cloud.Snapshot, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CreateSnapshot", ctx, volumeID, snapshotOptions)
-	ret0, _ := ret[0].(cloud.Snapshot)
+	ret := m.ctrl.Call(m, "CreateSnapshot", ctx, name, volumeID, snapshotOptions)
+	ret0, _ := ret[0].(*cloud.Snapshot)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // CreateSnapshot indicates an expected call of CreateSnapshot.
-func (mr *MockCloudMockRecorder) CreateSnapshot(ctx, volumeID, snapshotOptions any) *gomock.Call {
+func (mr *MockCloudMockRecorder) CreateSnapshot(ctx, name, volumeID, snapshotOptions any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateSnapshot", reflect.TypeOf((*MockCloud)(nil).CreateSnapshot), ctx, volumeID, snapshotOptions)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateSnapshot", reflect.TypeOf((*MockCloud)(nil).CreateSnapshot), ctx, name, volumeID, snapshotOptions)
 }
 
-// DeleteDisk mocks base method.
-func (m *MockCloud) DeleteDisk(ctx context.Context, volumeID string) (bool, error) {
+// CreateVolume mocks base method.
+func (m *MockCloud) CreateVolume(ctx context.Context, volumeName string, volumeOptions *cloud.VolumeOptions) (*cloud.Volume, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DeleteDisk", ctx, volumeID)
-	ret0, _ := ret[0].(bool)
+	ret := m.ctrl.Call(m, "CreateVolume", ctx, volumeName, volumeOptions)
+	ret0, _ := ret[0].(*cloud.Volume)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// DeleteDisk indicates an expected call of DeleteDisk.
-func (mr *MockCloudMockRecorder) DeleteDisk(ctx, volumeID any) *gomock.Call {
+// CreateVolume indicates an expected call of CreateVolume.
+func (mr *MockCloudMockRecorder) CreateVolume(ctx, volumeName, volumeOptions any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteDisk", reflect.TypeOf((*MockCloud)(nil).DeleteDisk), ctx, volumeID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateVolume", reflect.TypeOf((*MockCloud)(nil).CreateVolume), ctx, volumeName, volumeOptions)
 }
 
 // DeleteSnapshot mocks base method.
@@ -160,40 +132,54 @@ func (mr *MockCloudMockRecorder) DeleteSnapshot(ctx, snapshotID any) *gomock.Cal
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteSnapshot", reflect.TypeOf((*MockCloud)(nil).DeleteSnapshot), ctx, snapshotID)
 }
 
-// DetachDisk mocks base method.
-func (m *MockCloud) DetachDisk(ctx context.Context, volumeID, nodeID string) error {
+// DeleteVolume mocks base method.
+func (m *MockCloud) DeleteVolume(ctx context.Context, volumeID string) (bool, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DetachDisk", ctx, volumeID, nodeID)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// DetachDisk indicates an expected call of DetachDisk.
-func (mr *MockCloudMockRecorder) DetachDisk(ctx, volumeID, nodeID any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DetachDisk", reflect.TypeOf((*MockCloud)(nil).DetachDisk), ctx, volumeID, nodeID)
-}
-
-// GetDiskByID mocks base method.
-func (m *MockCloud) GetDiskByID(ctx context.Context, volumeID string) (cloud.Disk, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetDiskByID", ctx, volumeID)
-	ret0, _ := ret[0].(cloud.Disk)
+	ret := m.ctrl.Call(m, "DeleteVolume", ctx, volumeID)
+	ret0, _ := ret[0].(bool)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetDiskByID indicates an expected call of GetDiskByID.
-func (mr *MockCloudMockRecorder) GetDiskByID(ctx, volumeID any) *gomock.Call {
+// DeleteVolume indicates an expected call of DeleteVolume.
+func (mr *MockCloudMockRecorder) DeleteVolume(ctx, volumeID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetDiskByID", reflect.TypeOf((*MockCloud)(nil).GetDiskByID), ctx, volumeID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteVolume", reflect.TypeOf((*MockCloud)(nil).DeleteVolume), ctx, volumeID)
+}
+
+// DetachVolume mocks base method.
+func (m *MockCloud) DetachVolume(ctx context.Context, volumeID, nodeID string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DetachVolume", ctx, volumeID, nodeID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DetachVolume indicates an expected call of DetachVolume.
+func (mr *MockCloudMockRecorder) DetachVolume(ctx, volumeID, nodeID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DetachVolume", reflect.TypeOf((*MockCloud)(nil).DetachVolume), ctx, volumeID, nodeID)
+}
+
+// ExistsInstance mocks base method.
+func (m *MockCloud) ExistsInstance(ctx context.Context, nodeID string) bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ExistsInstance", ctx, nodeID)
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// ExistsInstance indicates an expected call of ExistsInstance.
+func (mr *MockCloudMockRecorder) ExistsInstance(ctx, nodeID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ExistsInstance", reflect.TypeOf((*MockCloud)(nil).ExistsInstance), ctx, nodeID)
 }
 
 // GetSnapshotByID mocks base method.
-func (m *MockCloud) GetSnapshotByID(ctx context.Context, snapshotID string) (cloud.Snapshot, error) {
+func (m *MockCloud) GetSnapshotByID(ctx context.Context, snapshotID string) (*cloud.Snapshot, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetSnapshotByID", ctx, snapshotID)
-	ret0, _ := ret[0].(cloud.Snapshot)
+	ret0, _ := ret[0].(*cloud.Snapshot)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -204,22 +190,23 @@ func (mr *MockCloudMockRecorder) GetSnapshotByID(ctx, snapshotID any) *gomock.Ca
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSnapshotByID", reflect.TypeOf((*MockCloud)(nil).GetSnapshotByID), ctx, snapshotID)
 }
 
-// IsExistInstance mocks base method.
-func (m *MockCloud) IsExistInstance(ctx context.Context, nodeID string) bool {
+// GetVolumeByID mocks base method.
+func (m *MockCloud) GetVolumeByID(ctx context.Context, volumeID string) (*cloud.Volume, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "IsExistInstance", ctx, nodeID)
-	ret0, _ := ret[0].(bool)
-	return ret0
+	ret := m.ctrl.Call(m, "GetVolumeByID", ctx, volumeID)
+	ret0, _ := ret[0].(*cloud.Volume)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
-// IsExistInstance indicates an expected call of IsExistInstance.
-func (mr *MockCloudMockRecorder) IsExistInstance(ctx, nodeID any) *gomock.Call {
+// GetVolumeByID indicates an expected call of GetVolumeByID.
+func (mr *MockCloudMockRecorder) GetVolumeByID(ctx, volumeID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsExistInstance", reflect.TypeOf((*MockCloud)(nil).IsExistInstance), ctx, nodeID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetVolumeByID", reflect.TypeOf((*MockCloud)(nil).GetVolumeByID), ctx, volumeID)
 }
 
 // ListSnapshots mocks base method.
-func (m *MockCloud) ListSnapshots(ctx context.Context, volumeID string, maxResults int32, nextToken string) (cloud.ListSnapshotsResponse, error) {
+func (m *MockCloud) ListSnapshots(ctx context.Context, volumeID string, maxResults int, nextToken string) (cloud.ListSnapshotsResponse, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ListSnapshots", ctx, volumeID, maxResults, nextToken)
 	ret0, _ := ret[0].(cloud.ListSnapshotsResponse)
@@ -233,19 +220,19 @@ func (mr *MockCloudMockRecorder) ListSnapshots(ctx, volumeID, maxResults, nextTo
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListSnapshots", reflect.TypeOf((*MockCloud)(nil).ListSnapshots), ctx, volumeID, maxResults, nextToken)
 }
 
-// ResizeDisk mocks base method.
-func (m *MockCloud) ResizeDisk(ctx context.Context, volumeID string, reqSize int64) (int64, error) {
+// ResizeVolume mocks base method.
+func (m *MockCloud) ResizeVolume(ctx context.Context, volumeID string, reqSize int64) (int64, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ResizeDisk", ctx, volumeID, reqSize)
+	ret := m.ctrl.Call(m, "ResizeVolume", ctx, volumeID, reqSize)
 	ret0, _ := ret[0].(int64)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// ResizeDisk indicates an expected call of ResizeDisk.
-func (mr *MockCloudMockRecorder) ResizeDisk(ctx, volumeID, reqSize any) *gomock.Call {
+// ResizeVolume indicates an expected call of ResizeVolume.
+func (mr *MockCloudMockRecorder) ResizeVolume(ctx, volumeID, reqSize any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ResizeDisk", reflect.TypeOf((*MockCloud)(nil).ResizeDisk), ctx, volumeID, reqSize)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ResizeVolume", reflect.TypeOf((*MockCloud)(nil).ResizeVolume), ctx, volumeID, reqSize)
 }
 
 // Start mocks base method.
@@ -260,22 +247,22 @@ func (mr *MockCloudMockRecorder) Start(ctx any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Start", reflect.TypeOf((*MockCloud)(nil).Start), ctx)
 }
 
-// UpdateDisk mocks base method.
-func (m *MockCloud) UpdateDisk(ctx context.Context, volumeID, volumeType string, iopsPerGB int32) error {
+// UpdateVolume mocks base method.
+func (m *MockCloud) UpdateVolume(ctx context.Context, volumeID string, volumeType osc.VolumeType, iopsPerGB int) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpdateDisk", ctx, volumeID, volumeType, iopsPerGB)
+	ret := m.ctrl.Call(m, "UpdateVolume", ctx, volumeID, volumeType, iopsPerGB)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// UpdateDisk indicates an expected call of UpdateDisk.
-func (mr *MockCloudMockRecorder) UpdateDisk(ctx, volumeID, volumeType, iopsPerGB any) *gomock.Call {
+// UpdateVolume indicates an expected call of UpdateVolume.
+func (mr *MockCloudMockRecorder) UpdateVolume(ctx, volumeID, volumeType, iopsPerGB any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateDisk", reflect.TypeOf((*MockCloud)(nil).UpdateDisk), ctx, volumeID, volumeType, iopsPerGB)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateVolume", reflect.TypeOf((*MockCloud)(nil).UpdateVolume), ctx, volumeID, volumeType, iopsPerGB)
 }
 
 // WaitForAttachmentState mocks base method.
-func (m *MockCloud) WaitForAttachmentState(ctx context.Context, volumeID, state string) error {
+func (m *MockCloud) WaitForAttachmentState(ctx context.Context, volumeID string, state osc.LinkedVolumeState) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "WaitForAttachmentState", ctx, volumeID, state)
 	ret0, _ := ret[0].(error)

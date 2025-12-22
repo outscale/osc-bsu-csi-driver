@@ -23,6 +23,7 @@ import (
 	"strings"
 
 	csi "github.com/container-storage-interface/spec/lib/go/csi"
+	"github.com/outscale/osc-bsu-csi-driver/cmd/options"
 	"github.com/outscale/osc-bsu-csi-driver/pkg/util"
 	"google.golang.org/grpc"
 	klog "k8s.io/klog/v2"
@@ -73,37 +74,39 @@ type DriverOptions struct {
 	endpoint          string
 	extraVolumeTags   map[string]string
 	extraSnapshotTags map[string]string
+	cloudOptions      options.CloudOptions
 
 	// Node options
 	luksOpenFlags []string
 }
 
-func NewDriver(options ...func(*DriverOptions)) (*Driver, error) {
+func NewDriver(ctx context.Context, opts ...func(*DriverOptions)) (*Driver, error) {
 	driverOptions := DriverOptions{
 		mode:     AllMode,
-		endpoint: DefaultCSIEndpoint,
+		endpoint: options.DefaultCSIEndpoint,
 	}
-	for _, option := range options {
+	for _, option := range opts {
 		option(&driverOptions)
 	}
 
 	if err := ValidateDriverOptions(&driverOptions); err != nil {
-		return nil, fmt.Errorf("Invalid driver options: %w", err)
+		return nil, fmt.Errorf("invalid driver options: %w", err)
 	}
 
 	driver := Driver{
 		options: &driverOptions,
 	}
 
+	var err error
 	// no need to test for invalid modes, as ValidateDriverOptions has already done it.
 	if driverOptions.mode.HasController() {
-		driver.controllerService = newControllerService(&driverOptions)
+		driver.controllerService = newControllerService(ctx, &driverOptions)
 	}
 	if driverOptions.mode.HasNode() {
-		driver.nodeService = newNodeService(&driverOptions)
+		driver.nodeService, err = newNodeService(ctx, &driverOptions)
 	}
 
-	return &driver, nil
+	return &driver, err
 }
 
 func (d *Driver) checkTools() error {
@@ -131,7 +134,7 @@ func (d *Driver) checkTools() error {
 
 	return nil
 }
-func (d *Driver) Run() error {
+func (d *Driver) Run(ctx context.Context) error {
 	version := util.GetVersion().DriverVersion
 	klog.V(3).InfoS(fmt.Sprintf("Driver: %v Version: %v", DriverName, version))
 	klog.V(1).InfoS("Running in mode: " + string(d.options.mode))
@@ -140,7 +143,10 @@ func (d *Driver) Run() error {
 	if err != nil {
 		return err
 	}
-	listener, err := net.Listen(scheme, addr)
+	ctx, cancel := context.WithCancel(ctx)
+	d.cancel = cancel
+	var lc net.ListenConfig
+	listener, err := lc.Listen(ctx, scheme, addr)
 	if err != nil {
 		return err
 	}
@@ -155,8 +161,6 @@ func (d *Driver) Run() error {
 
 	if d.options.mode.HasController() {
 		csi.RegisterControllerServer(d.srv, d)
-		ctx, cancel := context.WithCancel(context.Background())
-		d.cancel = cancel
 		if err := d.controllerService.Start(ctx); err != nil { //nolint:staticcheck
 			return err
 		}
@@ -204,5 +208,11 @@ func WithLuksOpenFlags(flags []string) func(*DriverOptions) {
 func WithMode(mode Mode) func(*DriverOptions) {
 	return func(o *DriverOptions) {
 		o.mode = mode
+	}
+}
+
+func WithCloudOptions(opts options.CloudOptions) func(*DriverOptions) {
+	return func(o *DriverOptions) {
+		o.cloudOptions = opts
 	}
 }

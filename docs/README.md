@@ -58,6 +58,7 @@ The **Outscale Block Storage Unit (BSU) CSI Driver** implements the Container St
 | v0.1.0 – v1.6.x | [v1.8.0](https://github.com/container-storage-interface/spec/releases/tag/v1.8.0)   | 1.20    | 1.30            |
 | v1.7.x - v1.8.x | [v1.10.0](https://github.com/container-storage-interface/spec/releases/tag/v1.10.0) | 1.20    | 1.31            |
 | v1.9.x          | [v1.10.0](https://github.com/container-storage-interface/spec/releases/tag/v1.10.0) | 1.20    | 1.32            |
+| v1.10.x          | [v1.12.0](https://github.com/container-storage-interface/spec/releases/tag/v1.12.0) | 1.25    | 1.34            |
 
 </details>
 
@@ -65,22 +66,52 @@ The **Outscale Block Storage Unit (BSU) CSI Driver** implements the Container St
 
 ## ✨ Features
 
-**Implemented CSI gRPCs**
+The following capabilities are supported by the CSI driver :
 
-* **Controller**: `CreateVolume`, `DeleteVolume`, `ControllerPublishVolume`, `ControllerUnpublishVolume`, `ControllerGetCapabilities`, `ControllerExpandVolume`, `ControllerModifyVolume`, `ValidateVolumeCapabilities`, `CreateSnapshot`, `DeleteSnapshot`, `ListSnapshots`
-* **Node**: `NodeStageVolume`, `NodeUnstageVolume`, `NodePublishVolume`, `NodeUnpublishVolume`, `NodeExpandVolume`, `NodeGetCapabilities`, `NodeGetInfo`, `NodeGetVolumeStats`
-* **Identity**: `GetPluginInfo`, `GetPluginCapabilities`, `Probe`
+<details>
+<summary><strong>Controller capabilities</strong></summary>
 
-**Not implemented**
+| Capability | Support | Comments |
+| ---------- | ------- | -------- |
+| CREATE_DELETE_VOLUME | ✅ | Volumes can be created |
+| PUBLISH_UNPUBLISH_VOLUME | ✅ | Volumes can be published on nodes |
+| LIST_VOLUMES | ❌ | Volumes cannot be listed |
+| GET_CAPACITY | ❌ | Total storage capacity is unknown |
+| CREATE_DELETE_SNAPSHOT | ✅ | Snapshots can be created and used as a source for new volumes |
+| CLONE_VOLUME | ❌ | Volumes cannot be cloned |
+| PUBLISH_READONLY | ❌ | Volumes cannot be published as read-only |
+| EXPAND_VOLUME | ✅ | Volumes can be resized |
+| LIST_VOLUMES_PUBLISHED_NODES | ❌ | LIST_VOLUME/GET_VOLUME flag |
+| VOLUME_CONDITION | ❌ | The volume condition is not known |
+| GET_VOLUME | ❌ | The status of a volume is not reported |
+| SINGLE_NODE_MULTI_WRITER | ❌ | Volumes cannot be accessed from multiple sources |
+| MODIFY_VOLUME | ✅ | Volumes can be modified |
+| GET_SNAPSHOT | ❌ | The status of a snapshot is not reported |
 
-* **Controller**: `GetCapacity`, `ListVolumes`, `ControllerGetVolume`
-* **Node**: —
-* **Identity**: —
+**Notes**
 
-**Additional behavior**
+* **EXPAND_VOLUME**: cold (detached) and hot (attached) volumes can be resized.
+* **MODIFY_VOLUME**: `volumeType` and `iopsPerGB` can be updated via VolumeAttributeClasses on both cold and hot volumes.
 
-* **ControllerExpandVolume**: supports both cold (detached) and hot (attached) volume resize.
-* **ControllerModifyVolume**: update `volumeType` and `iopsPerGB` via VolumeAttributeClasses on both cold and hot volumes.
+</details>
+
+<details>
+<summary><strong>Node capabilities</strong></summary>
+
+| Capability | Support | Comments |
+| ---------- | ------- | -------- |
+| STAGE_UNSTAGE_VOLUME | ✅ | Volumes can be staged on a node |
+| GET_VOLUME_STATS | ❌ | The status of a volume is not reported |
+| EXPAND_VOLUME | ✅ | Volumes can be resized |
+| VOLUME_CONDITION | ❌ | The volume condition is not known |
+| SINGLE_NODE_MULTI_WRITER | ❌ | Volumes cannot be accessed from multiple sources |
+| VOLUME_MOUNT_GROUP | ❌ | Volumes mount groups are not supported |
+
+**Notes**
+
+* **EXPAND_VOLUME**: cold (detached) and hot (attached) volumes can be resized.
+
+</details>
 
 ---
 

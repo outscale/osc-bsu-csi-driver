@@ -19,6 +19,7 @@ import (
 
 	. "github.com/onsi/ginkgo/v2" //nolint
 	"github.com/outscale/osc-bsu-csi-driver/tests/e2e/driver"
+	"github.com/outscale/osc-sdk-go/v3/pkg/osc"
 	v1 "k8s.io/api/core/v1"
 	storagev1 "k8s.io/api/storage/v1"
 	clientset "k8s.io/client-go/kubernetes"
@@ -32,7 +33,7 @@ type PodDetails struct {
 }
 
 type VolumeDetails struct {
-	VolumeType            string
+	VolumeType            osc.VolumeType
 	FSType                string
 	IopsPerGB             string
 	Encrypted             bool
@@ -179,7 +180,7 @@ func (volume *VolumeDetails) SetupDynamicPersistentVolumeClaim(client clientset.
 	return tpvc, cleanupFuncs
 }
 
-func (volume *VolumeDetails) SetupVolumeAttributesClass(client clientset.Interface, namespace *v1.Namespace, name, volumeType, iopsPerGB string, csiDriver driver.DynamicPVTestDriver) (*TestVolumeAttributesClass, []func()) {
+func (volume *VolumeDetails) SetupVolumeAttributesClass(client clientset.Interface, namespace *v1.Namespace, name string, volumeType osc.VolumeType, iopsPerGB string, csiDriver driver.DynamicPVTestDriver) (*TestVolumeAttributesClass, []func()) {
 	var cleanupFuncs []func()
 	By("setting up the VolumeAttributesClass")
 	vac := csiDriver.GetVolumeAttributesClass(namespace.Name, name, volumeType, iopsPerGB)

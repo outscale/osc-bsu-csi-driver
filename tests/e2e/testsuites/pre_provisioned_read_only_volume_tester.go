@@ -17,13 +17,12 @@ package testsuites
 import (
 	"fmt"
 
+	. "github.com/onsi/ginkgo/v2" //nolint
+	. "github.com/onsi/gomega"    //nolint
 	"github.com/outscale/osc-bsu-csi-driver/tests/e2e/driver"
 	v1 "k8s.io/api/core/v1"
 	clientset "k8s.io/client-go/kubernetes"
 	"k8s.io/kubernetes/test/e2e/framework"
-
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
 )
 
 // PreProvisionedReadOnlyVolumeTest will provision required PV(s), PVC(s) and Pod(s)

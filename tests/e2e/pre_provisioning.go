@@ -22,11 +22,15 @@ import (
 	"strings"
 
 	. "github.com/onsi/ginkgo/v2"
+	"github.com/outscale/goutils/k8s/sdk"
+	"github.com/outscale/osc-bsu-csi-driver/cmd/options"
 	osccloud "github.com/outscale/osc-bsu-csi-driver/pkg/cloud"
 	bsucsidriver "github.com/outscale/osc-bsu-csi-driver/pkg/driver"
 	"github.com/outscale/osc-bsu-csi-driver/pkg/util"
 	"github.com/outscale/osc-bsu-csi-driver/tests/e2e/driver"
 	"github.com/outscale/osc-bsu-csi-driver/tests/e2e/testsuites"
+	"github.com/outscale/osc-sdk-go/v3/pkg/osc"
+	"github.com/rs/xid"
 	v1 "k8s.io/api/core/v1"
 	clientset "k8s.io/client-go/kubernetes"
 	"k8s.io/kubernetes/test/e2e/framework"
@@ -35,9 +39,9 @@ import (
 
 const (
 	defaultDiskSize         = 4
-	defaultVolumeType       = osccloud.VolumeTypeGP2
+	defaultVolumeType       = osc.VolumeTypeGp2
 	awsAvailabilityZonesEnv = "AWS_AVAILABILITY_ZONES"
-	dummyVolumeName         = "pre-provisioned"
+	dummyVolumeNamePrefix   = "pre-provisioned"
 )
 
 var (
@@ -65,12 +69,11 @@ var _ = Describe("[bsu-csi-e2e] [single-az] Pre-Provisioned", func() {
 		ns = f.Namespace
 		bsuDriver = driver.InitBsuCSIDriver()
 
-		var availabilityZone, region string
+		var availabilityZone string
 		switch {
 		case os.Getenv(awsAvailabilityZonesEnv) != "":
 			availabilityZones := strings.Split(os.Getenv(awsAvailabilityZonesEnv), ",")
 			availabilityZone = availabilityZones[rand.Intn(len(availabilityZones))] //nolint: gosec
-			region = availabilityZone[0 : len(availabilityZone)-1]
 		case os.Getenv("OSC_REGION") != "":
 			region := os.Getenv("OSC_REGION")
 			availabilityZone = region + "a"
@@ -78,22 +81,23 @@ var _ = Describe("[bsu-csi-e2e] [single-az] Pre-Provisioned", func() {
 			Skip(fmt.Sprintf("env %q not set", awsAvailabilityZonesEnv))
 		}
 
-		diskOptions := &osccloud.DiskOptions{
-			CapacityBytes:    defaultDiskSizeBytes,
-			VolumeType:       defaultVolumeType,
-			AvailabilityZone: availabilityZone,
-			Tags:             map[string]string{osccloud.VolumeNameTagKey: dummyVolumeName},
+		diskOptions := &osccloud.VolumeOptions{
+			CapacityBytes: defaultDiskSizeBytes,
+			VolumeType:    defaultVolumeType,
+			SubRegion:     availabilityZone,
+			Tags:          map[string]string{"csi-e2e-test": "true"},
 		}
 		var err error
-		cloud, err = osccloud.NewCloud(region, osccloud.WithoutMetadata())
+		var ctx context.Context
+		ctx, cancel = context.WithCancel(context.Background())
+		cloud, err = osccloud.NewCloud(ctx, options.CloudOptions{SDKOptions: sdk.Options{RetryCount: 20}})
 		if err != nil {
 			Fail(fmt.Sprintf("could not get NewCloud: %v", err))
 		}
-		var ctx context.Context
-		ctx, cancel = context.WithCancel(context.Background())
 		cloud.Start(ctx)
 		By("Provisioning volume")
-		disk, err := cloud.CreateDisk(context.Background(), "", diskOptions)
+		volumeName := dummyVolumeNamePrefix + xid.New().String()
+		disk, err := cloud.CreateVolume(ctx, volumeName, diskOptions)
 		if err != nil {
 			Fail(fmt.Sprintf("could not provision a volume: %v", err))
 		}
@@ -105,12 +109,12 @@ var _ = Describe("[bsu-csi-e2e] [single-az] Pre-Provisioned", func() {
 	AfterEach(func() {
 		if !skipManuallyDeletingVolume {
 			By("Waiting until volume is detached")
-			err := cloud.WaitForAttachmentState(context.Background(), volumeID, "detached")
+			err := cloud.WaitForAttachmentState(context.Background(), volumeID, osc.LinkedVolumeStateDetached)
 			if err != nil {
 				Fail(fmt.Sprintf("could not detach volume %q: %v", volumeID, err))
 			}
 			By("Deleting volume")
-			ok, err := cloud.DeleteDisk(context.Background(), volumeID)
+			ok, err := cloud.DeleteVolume(context.Background(), volumeID)
 			if err != nil || !ok {
 				Fail(fmt.Sprintf("could not delete volume %q: %v", volumeID, err))
 			}

@@ -21,9 +21,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
-
+	. "github.com/onsi/ginkgo/v2" //nolint
+	. "github.com/onsi/gomega"    //nolint
 	"k8s.io/kubernetes/test/e2e/framework"
 	frameworkconfig "k8s.io/kubernetes/test/e2e/framework/config"
 )

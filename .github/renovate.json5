@@ -2,5 +2,27 @@
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
     "github>outscale/oks-tools-team//renovate/default.json5#initial"
+  ],
+  "packageRules": [
+    {
+      "matchManagers": [
+        "gomod"
+      ],
+      "matchPackageNames": [
+        "k8s.io/**",
+        "sigs.k8s.io/**",
+        "github.com/kubernetes-csi/**"
+      ],
+      "allowedVersions": "v{{ major }}.{{ minor }}"
+    },
+    {
+      "matchManagers": [
+        "dockerfile"
+      ],
+      "matchPackageNames": [
+        "debian"
+      ],
+      "allowedVersions": "v{{ major }}"
+    }
   ]
 }

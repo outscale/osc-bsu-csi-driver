@@ -25,7 +25,7 @@ require (
 	k8s.io/kubernetes v1.32.8
 	k8s.io/mount-utils v0.32.8
 	k8s.io/pod-security-admission v0.32.8
-	k8s.io/utils v0.0.0-20250604170112-4c0f3b243397
+	k8s.io/utils v0.0.0-20251222233032-718f0e51e6d2
 )
 
 require (

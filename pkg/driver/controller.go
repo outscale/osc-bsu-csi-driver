@@ -19,8 +19,6 @@ package driver
 import (
 	"context"
 	"errors"
-	"fmt"
-	"os"
 	"slices"
 	"strconv"
 	"strings"
@@ -69,20 +67,8 @@ var (
 
 // newControllerService creates a new controller service
 // it panics if failed to create the service
-func newControllerService(driverOptions *DriverOptions) controllerService {
-	region := os.Getenv("OSC_REGION")
-	if region == "" {
-		region = os.Getenv("AWS_REGION")
-	}
-	if region == "" {
-		metadata, err := NewMetadataFunc()
-		if err != nil {
-			panic(err)
-		}
-		region = metadata.GetRegion()
-	}
-
-	cloud, err := NewCloudFunc(region)
+func newControllerService(ctx context.Context, driverOptions *DriverOptions) controllerService {
+	cloud, err := NewCloudFunc(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -96,9 +82,6 @@ func newControllerService(driverOptions *DriverOptions) controllerService {
 func (c *controllerService) Start(ctx context.Context) error {
 	if c.cloud == nil {
 		return nil
-	}
-	if err := c.cloud.CheckCredentials(ctx); err != nil {
-		return fmt.Errorf("init cloud: %w", err)
 	}
 	c.cloud.Start(ctx)
 	return nil
@@ -124,13 +107,13 @@ func (d *controllerService) CreateVolume(ctx context.Context, req *csi.CreateVol
 		return nil, status.Error(codes.InvalidArgument, "Volume capabilities not supported")
 	}
 
-	disk, err := d.cloud.CheckCreatedDisk(ctx, volName, volSizeBytes)
+	vol, err := d.cloud.CheckCreatedVolume(ctx, volName, volSizeBytes)
 	if err != nil {
 		switch {
 		case errors.Is(err, cloud.ErrNotFound):
-		case errors.Is(err, cloud.ErrMultiDisks):
+		case errors.Is(err, cloud.ErrMultiVolumes):
 			return nil, status.Error(codes.Internal, err.Error())
-		case errors.Is(err, cloud.ErrDiskExistsDiffSize):
+		case errors.Is(err, cloud.ErrVolumeExistsDiffSize):
 			return nil, status.Error(codes.AlreadyExists, err.Error())
 		default:
 			return nil, status.Error(codes.Internal, err.Error())
@@ -204,11 +187,11 @@ func (d *controllerService) CreateVolume(ctx context.Context, req *csi.CreateVol
 	}
 
 	// volume exists already
-	if !cloud.IsNilDisk(disk) {
-		if disk.SnapshotID != snapshotID {
+	if vol != nil {
+		if vol.SnapshotID != nil && *vol.SnapshotID != snapshotID {
 			return nil, status.Errorf(codes.AlreadyExists, "Volume already exists, but was restored from a different snapshot than %s", snapshotID)
 		}
-		return newCreateVolumeResponse(disk, volumeContextExtra), nil
+		return newCreateVolumeResponse(vol, volumeContextExtra), nil
 	}
 
 	// create a new volume
@@ -225,18 +208,18 @@ func (d *controllerService) CreateVolume(ctx context.Context, req *csi.CreateVol
 		CapacityBytes:    volSizeBytes,
 		Tags:             volumeTags,
 		VolumeType:       volumeType,
-		IOPSPerGB:        int32(iopsPerGB),
+		IOPSPerGB:        int(iopsPerGB),
 		AvailabilityZone: zone,
 		Encrypted:        isEncrypted,
 		KmsKeyID:         kmsKeyID,
 		SnapshotID:       snapshotID,
 	}
 
-	disk, err = d.cloud.CreateDisk(ctx, volName, opts)
+	vol, err = d.cloud.CreateVolume(ctx, volName, opts)
 	if err != nil {
 		return nil, status.Errorf(cloud.GRPCCode(err), "Could not create volume %q: %v", volName, err)
 	}
-	return newCreateVolumeResponse(disk, volumeContextExtra), nil
+	return newCreateVolumeResponse(vol, volumeContextExtra), nil
 }
 
 func (d *controllerService) DeleteVolume(ctx context.Context, req *csi.DeleteVolumeRequest) (*csi.DeleteVolumeResponse, error) {
@@ -245,7 +228,7 @@ func (d *controllerService) DeleteVolume(ctx context.Context, req *csi.DeleteVol
 		return nil, status.Error(codes.InvalidArgument, "Volume ID not provided")
 	}
 
-	if _, err := d.cloud.DeleteDisk(ctx, volumeID); err != nil {
+	if _, err := d.cloud.DeleteVolume(ctx, volumeID); err != nil {
 		if errors.Is(err, cloud.ErrNotFound) {
 			klog.FromContext(ctx).V(3).Info("Volume already deleted")
 			return &csi.DeleteVolumeResponse{}, nil
@@ -277,15 +260,15 @@ func (d *controllerService) ControllerPublishVolume(ctx context.Context, req *cs
 		return nil, status.Error(codes.InvalidArgument, "Volume capability not supported")
 	}
 
-	if !d.cloud.IsExistInstance(ctx, nodeID) {
+	if !d.cloud.ExistsInstance(ctx, nodeID) {
 		return nil, status.Errorf(codes.NotFound, "Instance %q not found", nodeID)
 	}
 
-	if _, err := d.cloud.GetDiskByID(ctx, volumeID); err != nil {
+	if _, err := d.cloud.GetVolumeByID(ctx, volumeID); err != nil {
 		return nil, status.Errorf(cloud.GRPCCode(err), "Could not get volume with ID %q: %v", volumeID, err)
 	}
 
-	devicePath, err := d.cloud.AttachDisk(ctx, volumeID, nodeID)
+	devicePath, err := d.cloud.AttachVolume(ctx, volumeID, nodeID)
 	if err != nil {
 		return nil, status.Errorf(cloud.GRPCCode(err), "Could not attach volume %q to node %q: %v", volumeID, nodeID, err)
 	}
@@ -310,7 +293,7 @@ func (d *controllerService) ControllerUnpublishVolume(ctx context.Context, req *
 		return nil, status.Error(codes.InvalidArgument, "Node ID not provided")
 	}
 
-	if err := d.cloud.DetachDisk(ctx, volumeID, nodeID); err != nil {
+	if err := d.cloud.DetachVolume(ctx, volumeID, nodeID); err != nil {
 		if errors.Is(err, cloud.ErrNotFound) {
 			return &csi.ControllerUnpublishVolumeResponse{}, nil
 		}
@@ -346,7 +329,7 @@ func (d *controllerService) ValidateVolumeCapabilities(ctx context.Context, req 
 		return nil, status.Error(codes.InvalidArgument, "Volume capabilities not provided")
 	}
 
-	if _, err := d.cloud.GetDiskByID(ctx, volumeID); err != nil {
+	if _, err := d.cloud.GetVolumeByID(ctx, volumeID); err != nil {
 		return nil, status.Errorf(cloud.GRPCCode(err), "Could not get volume with ID %q: %v", volumeID, err)
 	}
 
@@ -376,7 +359,7 @@ func (d *controllerService) ControllerExpandVolume(ctx context.Context, req *csi
 		return nil, status.Error(codes.InvalidArgument, "After round-up, volume size exceeds the limit specified")
 	}
 
-	actualSize, err := d.cloud.ResizeDisk(ctx, volumeID, newSize)
+	actualSize, err := d.cloud.ResizeVolume(ctx, volumeID, newSize)
 	if err != nil {
 		return nil, status.Errorf(cloud.GRPCCode(err), "Could not resize volume %q: %v", volumeID, err)
 	}
@@ -413,7 +396,7 @@ func (d *controllerService) ControllerModifyVolume(ctx context.Context, req *csi
 		}
 	}
 
-	err := d.cloud.UpdateDisk(ctx, volumeID, volumeType, int32(iopsPerGB))
+	err := d.cloud.UpdateVolume(ctx, volumeID, volumeType, int(iopsPerGB))
 	if err != nil {
 		return nil, status.Errorf(cloud.GRPCCode(err), "Could not modify volume %q: %v", volumeID, err)
 	}
@@ -502,7 +485,7 @@ func (d *controllerService) ListSnapshots(ctx context.Context, req *csi.ListSnap
 			return nil, status.Errorf(cloud.GRPCCode(err), "Could not get snapshot ID %q: %v", snapshotID, err)
 		}
 		response := newListSnapshotsResponse(cloud.ListSnapshotsResponse{
-			Snapshots: []cloud.Snapshot{snapshot},
+			Snapshots: []cloud.Snapshot{*snapshot},
 		})
 		return response, nil
 	}
@@ -511,7 +494,7 @@ func (d *controllerService) ListSnapshots(ctx context.Context, req *csi.ListSnap
 	nextToken := req.GetStartingToken()
 	maxEntries := req.GetMaxEntries()
 
-	cloudSnapshots, err := d.cloud.ListSnapshots(ctx, volumeID, maxEntries, nextToken)
+	cloudSnapshots, err := d.cloud.ListSnapshots(ctx, volumeID, int(maxEntries), nextToken)
 	if err != nil {
 		return nil, status.Errorf(cloud.GRPCCode(err), "Could not list snapshots: %v", err)
 	}
@@ -548,13 +531,13 @@ func pickAvailabilityZone(requirement *csi.TopologyRequirement) string {
 	return ""
 }
 
-func newCreateVolumeResponse(disk cloud.Volume, volumeContextExtra map[string]string) *csi.CreateVolumeResponse {
+func newCreateVolumeResponse(vol *cloud.Volume, volumeContextExtra map[string]string) *csi.CreateVolumeResponse {
 	var src *csi.VolumeContentSource
-	if disk.SnapshotID != "" {
+	if vol.SnapshotID != nil {
 		src = &csi.VolumeContentSource{
 			Type: &csi.VolumeContentSource_Snapshot{
 				Snapshot: &csi.VolumeContentSource_SnapshotSource{
-					SnapshotId: disk.SnapshotID,
+					SnapshotId: *vol.SnapshotID,
 				},
 			},
 		}
@@ -562,12 +545,12 @@ func newCreateVolumeResponse(disk cloud.Volume, volumeContextExtra map[string]st
 
 	return &csi.CreateVolumeResponse{
 		Volume: &csi.Volume{
-			VolumeId:      disk.VolumeID,
-			CapacityBytes: util.GiBToBytes(disk.CapacityGiB),
+			VolumeId:      vol.VolumeID,
+			CapacityBytes: util.GiBToBytes(vol.CapacityGiB),
 			VolumeContext: volumeContextExtra,
 			AccessibleTopology: []*csi.Topology{
 				{
-					Segments: map[string]string{TopologyKey: disk.AvailabilityZone},
+					Segments: map[string]string{TopologyKey: vol.AvailabilityZone},
 				},
 			},
 			ContentSource: src,
@@ -575,7 +558,7 @@ func newCreateVolumeResponse(disk cloud.Volume, volumeContextExtra map[string]st
 	}
 }
 
-func newCreateSnapshotResponse(snapshot cloud.Snapshot) *csi.CreateSnapshotResponse {
+func newCreateSnapshotResponse(snapshot *cloud.Snapshot) *csi.CreateSnapshotResponse {
 	ts := timestamppb.New(snapshot.CreationTime)
 	return &csi.CreateSnapshotResponse{
 		Snapshot: &csi.Snapshot{

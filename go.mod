@@ -1,6 +1,6 @@
 module github.com/outscale/osc-bsu-csi-driver
 
-go 1.25.0
+go 1.25.3
 
 require (
 	github.com/aws/aws-sdk-go v1.55.8
@@ -9,6 +9,7 @@ require (
 	github.com/kubernetes-csi/external-snapshotter/client/v8 v8.2.0
 	github.com/onsi/ginkgo/v2 v2.27.3
 	github.com/onsi/gomega v1.38.3
+	github.com/outscale/goutils/k8s v0.0.0-20251223100125-04172f975b21
 	github.com/outscale/osc-sdk-go/v2 v2.31.0
 	github.com/outscale/osc-sdk-go/v3 v3.0.0-beta.2
 	github.com/rs/xid v1.6.0
@@ -28,6 +29,8 @@ require (
 	k8s.io/pod-security-admission v0.32.8
 	k8s.io/utils v0.0.0-20250604170112-4c0f3b243397
 )
+
+replace github.com/outscale/goutils/k8s => ../goutils/k8s
 
 require (
 	cel.dev/expr v0.24.0 // indirect
@@ -102,12 +105,14 @@ require (
 	github.com/opencontainers/runc v1.2.1 // indirect
 	github.com/opencontainers/runtime-spec v1.2.1 // indirect
 	github.com/opencontainers/selinux v1.11.1 // indirect
+	github.com/outscale/goutils/sdk v0.0.0-20251223100125-04172f975b21 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	github.com/prometheus/client_golang v1.19.1 // indirect
 	github.com/prometheus/client_model v0.6.1 // indirect
 	github.com/prometheus/common v0.55.0 // indirect
 	github.com/prometheus/procfs v0.15.1 // indirect
+	github.com/samber/lo v1.52.0 // indirect
 	github.com/sirupsen/logrus v1.9.3 // indirect
 	github.com/spf13/cobra v1.8.1 // indirect
 	github.com/stoewer/go-strcase v1.3.0 // indirect

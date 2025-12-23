@@ -389,7 +389,7 @@ func (t *TestPersistentVolumeClaim) DeleteBoundPersistentVolume() {
 func (t *TestPersistentVolumeClaim) DeleteBackingVolume(cloud osccloud.Cloud) {
 	volumeID := t.persistentVolume.Spec.CSI.VolumeHandle
 	By(fmt.Sprintf("deleting BSU volume %q", volumeID))
-	ok, err := cloud.DeleteDisk(context.Background(), volumeID)
+	ok, err := cloud.DeleteVolume(context.Background(), volumeID)
 	if err != nil || !ok {
 		Fail(fmt.Sprintf("could not delete volume %q: %v", volumeID, err))
 	}

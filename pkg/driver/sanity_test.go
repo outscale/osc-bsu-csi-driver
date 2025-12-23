@@ -14,6 +14,7 @@ import (
 	"github.com/outscale/osc-bsu-csi-driver/pkg/driver/internal"
 	"github.com/outscale/osc-bsu-csi-driver/pkg/driver/luks"
 	"github.com/outscale/osc-bsu-csi-driver/pkg/util"
+	"github.com/outscale/osc-sdk-go/v3/pkg/osc"
 	"k8s.io/utils/exec"
 	exectesting "k8s.io/utils/exec/testing"
 	"k8s.io/utils/mount"
@@ -63,7 +64,7 @@ func TestSanity(t *testing.T) {
 		}
 	}()
 	go func() {
-		if err := drv.Run(); err != nil {
+		if err := drv.Run(context.Background()); err != nil {
 			panic(fmt.Sprintf("%v", err))
 		}
 	}()
@@ -100,15 +101,15 @@ func checkPath(targetPath string) (sanity.PathKind, error) {
 type fakeCloudProvider struct {
 	id atomic.Uint64
 
-	disks map[string]*fakeDisk
+	volumes map[string]*fakeVolume
 	// snapshots contains mapping from snapshot ID to snapshot
 	snapshots map[string]*fakeSnapshot
 	pub       map[string]string
-	tokens    map[string]int32
+	tokens    map[string]int
 	m         *cloud.Metadata
 }
 
-type fakeDisk struct {
+type fakeVolume struct {
 	cloud.Volume
 	tags map[string]string
 }
@@ -120,10 +121,10 @@ type fakeSnapshot struct {
 
 func newFakeCloudProvider() *fakeCloudProvider {
 	return &fakeCloudProvider{
-		disks:     make(map[string]*fakeDisk),
+		volumes:   make(map[string]*fakeVolume),
 		snapshots: make(map[string]*fakeSnapshot),
 		pub:       make(map[string]string),
-		tokens:    make(map[string]int32),
+		tokens:    make(map[string]int),
 		m: &cloud.Metadata{
 			InstanceID:       "instanceID",
 			Region:           "region",
@@ -134,50 +135,48 @@ func newFakeCloudProvider() *fakeCloudProvider {
 
 func (c *fakeCloudProvider) Start(ctx context.Context) {}
 
-func (c *fakeCloudProvider) CheckCredentials(ctx context.Context) error { return nil }
-
-func (c *fakeCloudProvider) CreateDisk(ctx context.Context, volumeName string, diskOptions *cloud.VolumeOptions) (cloud.Volume, error) {
+func (c *fakeCloudProvider) CreateVolume(ctx context.Context, volumeName string, diskOptions *cloud.VolumeOptions) (cloud.Volume, error) {
 	if len(diskOptions.SnapshotID) > 0 {
 		if _, ok := c.snapshots[diskOptions.SnapshotID]; !ok {
 			return cloud.Volume{}, cloud.ErrNotFound
 		}
 	}
 	id := c.id.Add(1)
-	d := &fakeDisk{
+	d := &fakeVolume{
 		Volume: cloud.Volume{
 			VolumeID:         fmt.Sprintf("vol-%06d", id),
 			CapacityGiB:      util.BytesToGiB(diskOptions.CapacityBytes),
 			AvailabilityZone: diskOptions.AvailabilityZone,
-			SnapshotID:       diskOptions.SnapshotID,
+			SnapshotID:       &diskOptions.SnapshotID,
 		},
 		tags: diskOptions.Tags,
 	}
-	c.disks[d.VolumeID] = d
+	c.volumes[d.VolumeID] = d
 	return d.Volume, nil
 }
 
-func (c *fakeCloudProvider) DeleteDisk(ctx context.Context, volumeID string) (bool, error) {
-	delete(c.disks, volumeID)
+func (c *fakeCloudProvider) DeleteVolume(ctx context.Context, volumeID string) (bool, error) {
+	delete(c.volumes, volumeID)
 	return true, nil
 }
 
-func (c *fakeCloudProvider) AttachDisk(ctx context.Context, volumeID, nodeID string) (string, error) {
+func (c *fakeCloudProvider) AttachVolume(ctx context.Context, volumeID, nodeID string) (string, error) {
 	c.pub[volumeID] = nodeID
 	return "/tmp", nil
 }
 
-func (c *fakeCloudProvider) DetachDisk(ctx context.Context, volumeID, nodeID string) error {
+func (c *fakeCloudProvider) DetachVolume(ctx context.Context, volumeID, nodeID string) error {
 	delete(c.pub, volumeID)
 	return nil
 }
 
-func (c *fakeCloudProvider) WaitForAttachmentState(ctx context.Context, volumeID, state string) error {
+func (c *fakeCloudProvider) WaitForAttachmentState(ctx context.Context, volumeID string, state osc.LinkedVolumeState) error {
 	return nil
 }
 
-func (c *fakeCloudProvider) CheckCreatedDisk(ctx context.Context, name string, capacityBytes int64) (cloud.Volume, error) {
-	var disks []*fakeDisk
-	for _, d := range c.disks {
+func (c *fakeCloudProvider) CheckCreatedVolume(ctx context.Context, name string, capacityBytes int64) (cloud.Volume, error) {
+	var disks []*fakeVolume
+	for _, d := range c.volumes {
 		for key, value := range d.tags {
 			if key == cloud.VolumeNameTagKey && value == name {
 				disks = append(disks, d)
@@ -185,24 +184,24 @@ func (c *fakeCloudProvider) CheckCreatedDisk(ctx context.Context, name string, c
 		}
 	}
 	if len(disks) > 1 {
-		return cloud.Volume{}, cloud.ErrMultiDisks
+		return cloud.Volume{}, cloud.ErrMultiVolumes
 	} else if len(disks) == 1 {
 		if capacityBytes != int64(disks[0].Volume.CapacityGiB)*util.GiB {
-			return cloud.Volume{}, cloud.ErrDiskExistsDiffSize
+			return cloud.Volume{}, cloud.ErrVolumeExistsDiffSize
 		}
 		return disks[0].Volume, nil
 	}
 	return cloud.Volume{}, nil
 }
 
-func (c *fakeCloudProvider) GetDiskByID(ctx context.Context, volumeID string) (cloud.Volume, error) {
-	if d, found := c.disks[volumeID]; found {
+func (c *fakeCloudProvider) GetVolumeByID(ctx context.Context, volumeID string) (cloud.Volume, error) {
+	if d, found := c.volumes[volumeID]; found {
 		return d.Volume, nil
 	}
 	return cloud.Volume{}, cloud.ErrNotFound
 }
 
-func (c *fakeCloudProvider) IsExistInstance(ctx context.Context, nodeID string) bool {
+func (c *fakeCloudProvider) ExistsInstance(ctx context.Context, nodeID string) bool {
 	return nodeID == "instanceID"
 }
 
@@ -258,7 +257,7 @@ func (c *fakeCloudProvider) GetSnapshotByID(ctx context.Context, snapshotID stri
 	return ret.Snapshot, nil
 }
 
-func (c *fakeCloudProvider) ListSnapshots(ctx context.Context, volumeID string, maxResults int32, nextToken string) (listSnapshotsResponse cloud.ListSnapshotsResponse, err error) {
+func (c *fakeCloudProvider) ListSnapshots(ctx context.Context, volumeID string, maxResults int, nextToken string) (listSnapshotsResponse cloud.ListSnapshotsResponse, err error) {
 	var snapshots []cloud.Snapshot
 	var retToken string
 	for _, fakeSnapshot := range c.snapshots {
@@ -266,7 +265,7 @@ func (c *fakeCloudProvider) ListSnapshots(ctx context.Context, volumeID string, 
 			snapshots = append(snapshots, fakeSnapshot.Snapshot)
 		}
 	}
-	var offset int32
+	var offset int
 	if nextToken != "" {
 		offset = c.tokens[nextToken]
 		snapshots = snapshots[offset:]
@@ -284,16 +283,16 @@ func (c *fakeCloudProvider) ListSnapshots(ctx context.Context, volumeID string, 
 	}, nil
 }
 
-func (c *fakeCloudProvider) ResizeDisk(ctx context.Context, volumeID string, newSize int64) (int64, error) {
-	if d, found := c.disks[volumeID]; found {
+func (c *fakeCloudProvider) ResizeVolume(ctx context.Context, volumeID string, newSize int64) (int64, error) {
+	if d, found := c.volumes[volumeID]; found {
 		d.CapacityGiB = util.RoundUpGiB(newSize)
 		return int64(util.RoundUpGiB(newSize)) * util.GiB, nil
 	}
 	return 0, cloud.ErrNotFound
 }
 
-func (c *fakeCloudProvider) UpdateDisk(ctx context.Context, volumeID string, volumeType string, iops int32) error {
-	if _, found := c.disks[volumeID]; !found {
+func (c *fakeCloudProvider) UpdateVolume(ctx context.Context, volumeID string, volumeType string, iops int) error {
+	if _, found := c.volumes[volumeID]; !found {
 		return cloud.ErrNotFound
 	}
 	return nil
@@ -358,7 +357,7 @@ func (f *fakeMounter) ExistsPath(filename string) (bool, error) {
 	return true, nil
 }
 
-func (f *fakeMounter) GetDiskFormat(disk string) (string, error) {
+func (f *fakeMounter) GetVolumeFormat(disk string) (string, error) {
 	return "", nil
 }
 

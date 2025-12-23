@@ -39,17 +39,17 @@ func RoundUpBytes(volumeSizeBytes int64) int64 {
 
 // RoundUpGiB rounds up the volume size in bytes upto multiplications of GiB
 // in the unit of GiB
-func RoundUpGiB(volumeSizeBytes int64) int32 {
-	return int32(roundUpSize(volumeSizeBytes, GiB))
+func RoundUpGiB(volumeSizeBytes int64) int {
+	return int(roundUpSize(volumeSizeBytes, GiB))
 }
 
 // BytesToGiB converts Bytes to GiB
-func BytesToGiB(volumeSizeBytes int64) int32 {
-	return int32(volumeSizeBytes / GiB)
+func BytesToGiB(volumeSizeBytes int64) int {
+	return int(volumeSizeBytes / GiB)
 }
 
 // GiBToBytes converts GiB to Bytes
-func GiBToBytes(volumeSizeGiB int32) int64 {
+func GiBToBytes(volumeSizeGiB int) int64 {
 	return int64(volumeSizeGiB) * GiB
 }
 

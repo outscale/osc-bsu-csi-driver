@@ -204,18 +204,18 @@ func (mr *MockCloudMockRecorder) GetSnapshotByID(ctx, snapshotID any) *gomock.Ca
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSnapshotByID", reflect.TypeOf((*MockCloud)(nil).GetSnapshotByID), ctx, snapshotID)
 }
 
-// IsExistInstance mocks base method.
-func (m *MockCloud) IsExistInstance(ctx context.Context, nodeID string) bool {
+// ExistsInstance mocks base method.
+func (m *MockCloud) ExistsInstance(ctx context.Context, nodeID string) bool {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "IsExistInstance", ctx, nodeID)
+	ret := m.ctrl.Call(m, "ExistsInstance", ctx, nodeID)
 	ret0, _ := ret[0].(bool)
 	return ret0
 }
 
-// IsExistInstance indicates an expected call of IsExistInstance.
-func (mr *MockCloudMockRecorder) IsExistInstance(ctx, nodeID any) *gomock.Call {
+// ExistsInstance indicates an expected call of ExistsInstance.
+func (mr *MockCloudMockRecorder) ExistsInstance(ctx, nodeID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsExistInstance", reflect.TypeOf((*MockCloud)(nil).IsExistInstance), ctx, nodeID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ExistsInstance", reflect.TypeOf((*MockCloud)(nil).ExistsInstance), ctx, nodeID)
 }
 
 // ListSnapshots mocks base method.

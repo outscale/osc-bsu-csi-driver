@@ -220,6 +220,10 @@ github.com/opencontainers/runtime-spec v1.2.1 h1:S4k4ryNgEpxW1dzyqffOmhI1BHYcjzU
 github.com/opencontainers/runtime-spec v1.2.1/go.mod h1:jwyrGlmzljRJv/Fgzds9SsS/C5hL+LL3ko9hs6T5lQ0=
 github.com/opencontainers/selinux v1.11.1 h1:nHFvthhM0qY8/m+vfhJylliSshm8G1jJ2jDMcgULaH8=
 github.com/opencontainers/selinux v1.11.1/go.mod h1:E5dMC3VPuVvVHDYmi78qvhJp8+M586T4DlDRYpFkyec=
+github.com/outscale/goutils/sdk v0.0.0-20251222160211-a8f7310d90d4 h1:Gbis7GE0pS61ZZmanvNIfH9641A4424GKIS7mrHlnTw=
+github.com/outscale/goutils/sdk v0.0.0-20251222160211-a8f7310d90d4/go.mod h1:3eWsIE3vHag/vlFaADdpTpVheTAnZovQRPyBvjNhJhU=
+github.com/outscale/goutils/sdk v0.0.0-20251223100125-04172f975b21 h1:8/TotrcxAemYCnWVGDYONRWnJh4X5FOGoQKHvH52KQM=
+github.com/outscale/goutils/sdk v0.0.0-20251223100125-04172f975b21/go.mod h1:3eWsIE3vHag/vlFaADdpTpVheTAnZovQRPyBvjNhJhU=
 github.com/outscale/osc-sdk-go/v2 v2.31.0 h1:OcBrB5lg8lNAhCDiGpr6bEy+urLAcXP3w3UX4lQqh0g=
 github.com/outscale/osc-sdk-go/v2 v2.31.0/go.mod h1:p/ni1BHcF0i7W+ABESa6hkquWLJp2HaYxaHG1CwQEjA=
 github.com/outscale/osc-sdk-go/v3 v3.0.0-beta.2 h1:3UauJs026vpjnFXKQvn1uVrUIstF9GL8E7XDTgA+Sn0=
@@ -242,6 +246,8 @@ github.com/rogpeppe/go-internal v1.14.1/go.mod h1:MaRKkUm5W0goXpeCfT7UZI6fk/L7L7
 github.com/rs/xid v1.6.0 h1:fV591PaemRlL6JfRxGDEPl69wICngIQ3shQtzfy2gxU=
 github.com/rs/xid v1.6.0/go.mod h1:7XoLgs4eV+QndskICGsho+ADou8ySMSjJKDIan90Nz0=
 github.com/russross/blackfriday/v2 v2.1.0/go.mod h1:+Rmxgy9KzJVeS9/2gXHxylqXiyQDYRxCVz55jmeOWTM=
+github.com/samber/lo v1.52.0 h1:Rvi+3BFHES3A8meP33VPAxiBZX/Aws5RxrschYGjomw=
+github.com/samber/lo v1.52.0/go.mod h1:4+MXEGsJzbKGaUEQFKBq2xtfuznW9oz/WrgyzMzRoM0=
 github.com/sirupsen/logrus v1.9.3 h1:dueUQJ1C2q9oE3F7wvmSGAaVtTmUizReu6fjN8uqzbQ=
 github.com/sirupsen/logrus v1.9.3/go.mod h1:naHLuLoDiP4jHNo9R0sCBMtWGeIprob74mVsIT4qYEQ=
 github.com/soheilhy/cmux v0.1.5 h1:jjzc5WVemNEDTLwv9tlmemhC73tI08BNOIGwBOo10Js=

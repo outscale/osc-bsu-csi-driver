@@ -26,15 +26,15 @@ jobs:
     - name: 🔐 Set ak/sk name based on runner region
       run: .github/scripts/runneraksk.sh
     - name: ⬇️ Install kubectl
-      uses: azure/setup-kubectl@v4
+      uses: azure/setup-kubectl@776406bce94f63e41d621b960d78ee25c8b76ede # v4
       with:
         version: v1.34.2
     - name: ⬇️ Install helm
-      uses: azure/setup-helm@v4
+      uses: azure/setup-helm@1a275c3b69536ee54be43f2070a358922e12c8d4 # v4
       with:
         version: v3.19.2
     - name: ⬇️ Install Go
-      uses: actions/setup-go@v6
+      uses: actions/setup-go@4dc6199c7b1a012772edbd06daecab0f50c9053c # v6
       with:
         go-version-file: 'go.mod'
     - name: 🧹 Frieza

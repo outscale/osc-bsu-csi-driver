@@ -973,7 +973,7 @@ func TestListSnapshots(t *testing.T) {
 
 		ctx := context.Background()
 		mockOscInterface.EXPECT().ReadSnapshots(gomock.Eq(ctx), gomock.Eq(osc.ReadSnapshotsRequest{
-			NextPageToken: ptr.To("foo"),
+			NextPageToken: ptr.To([]byte("foo")),
 		})).Return(osc.ReadSnapshotsResponse{Snapshots: &oscsnapshot}, nil, nil)
 		_, err := c.ListSnapshots(ctx, "", 0, "foo")
 		require.NoError(t, err)

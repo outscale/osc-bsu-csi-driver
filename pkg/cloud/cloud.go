@@ -26,6 +26,7 @@ import (
 
 	"github.com/outscale/goutils/k8s/batch"
 	"github.com/outscale/goutils/k8s/sdk"
+	"github.com/outscale/goutils/sdk/ptr"
 	dm "github.com/outscale/osc-bsu-csi-driver/pkg/cloud/devicemanager"
 	"github.com/outscale/osc-bsu-csi-driver/pkg/util"
 	"github.com/outscale/osc-sdk-go/v3/pkg/osc"
@@ -687,7 +688,7 @@ func (c *cloud) ListSnapshots(ctx context.Context, volumeID string, maxResults i
 		req.ResultsPerPage = &maxResults
 	}
 	if nextToken != "" {
-		req.NextPageToken = &nextToken
+		req.NextPageToken = ptr.To([]byte(nextToken))
 	}
 	if len(volumeID) != 0 {
 		req.Filters = &osc.FiltersSnapshot{

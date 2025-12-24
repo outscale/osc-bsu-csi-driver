@@ -198,12 +198,9 @@ type cloud struct {
 
 var _ Cloud = &cloud{}
 
-// CloudOption defines an option for NewCloud.
-type CloudOption func(*cloud) error
-
 // NewCloud returns a new instance of Outscale cloud using the default backoff policy.
 // It panics if session is invalid
-func NewCloud(ctx context.Context, opts ...CloudOption) (Cloud, error) {
+func NewCloud(ctx context.Context, opts ...sdk.Options) (Cloud, error) {
 	// Set User-Agent with name and version of the CSI driver
 	version := util.GetVersion()
 	v := version.DriverVersion
@@ -211,7 +208,7 @@ func NewCloud(ctx context.Context, opts ...CloudOption) (Cloud, error) {
 		v = "dev"
 	}
 	ua := "osc-bsu-csi-driver/" + v
-	profile, client, err := sdk.NewSDKClient(ctx, ua)
+	profile, client, err := sdk.NewSDKClient(ctx, ua, opts...)
 	if err != nil {
 		return nil, fmt.Errorf("init cloud: %w", err)
 	}
@@ -221,20 +218,13 @@ func NewCloud(ctx context.Context, opts ...CloudOption) (Cloud, error) {
 	if err != nil {
 		interval = 2 * time.Second
 	}
-	c := &cloud{
+	return &cloud{
 		region:          profile.Region,
 		dm:              dm.NewDeviceManager(),
 		client:          client,
 		snapshotWatcher: batch.NewSnapshotBatcherByID(interval, client),
 		volumeWatcher:   batch.NewVolumeBatcherByID(interval, client),
-	}
-	for _, opt := range opts {
-		err := opt(c)
-		if err != nil {
-			return nil, err
-		}
-	}
-	return c, nil
+	}, nil
 }
 
 func (c *cloud) Start(ctx context.Context) {
@@ -679,7 +669,6 @@ const maxResultsLimit = 1000
 
 // ListSnapshots retrieves Outscale BSU snapshots for an optionally specified volume ID.  If maxResults is set, it will return up to maxResults snapshots.  If there are more snapshots than maxResults,
 // a next token value will be returned to the client as well.  They can use this token with subsequent calls to retrieve the next page of results.
-// Pagination not supported
 func (c *cloud) ListSnapshots(ctx context.Context, volumeID string, maxResults int, nextToken string) (listSnapshotsResponse ListSnapshotsResponse, err error) {
 	if maxResults > maxResultsLimit {
 		maxResults = maxResultsLimit
@@ -706,7 +695,7 @@ func (c *cloud) ListSnapshots(ctx context.Context, volumeID string, maxResults i
 	klog.FromContext(ctx).V(5).Info(fmt.Sprintf("%d snapshots found", len(snapshots)))
 	return ListSnapshotsResponse{
 		Snapshots: snapshots,
-		NextToken: nextToken,
+		NextToken: string(*resp.NextPageToken),
 	}, nil
 }
 

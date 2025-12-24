@@ -27,13 +27,13 @@ import (
 
 	"github.com/outscale/goutils/sdk/batch"
 	"github.com/outscale/goutils/sdk/mocks_osc"
+	"github.com/outscale/goutils/sdk/ptr"
 	dm "github.com/outscale/osc-bsu-csi-driver/pkg/cloud/devicemanager"
 	"github.com/outscale/osc-bsu-csi-driver/pkg/util"
 	"github.com/outscale/osc-sdk-go/v3/pkg/osc"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
-	"k8s.io/utils/ptr"
 )
 
 const (

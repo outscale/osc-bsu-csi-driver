@@ -56,19 +56,10 @@ type controllerService struct {
 	csi.UnimplementedControllerServer
 }
 
-var (
-	// NewMetadataFunc is a variable for the cloud.NewMetadata function that can
-	// be overwritten in unit tests.
-	NewMetadataFunc = cloud.NewMetadata
-	// NewCloudFunc is a variable for the cloud.NewCloud function that can
-	// be overwritten in unit tests.
-	NewCloudFunc = cloud.NewCloud
-)
-
 // newControllerService creates a new controller service
 // it panics if failed to create the service
 func newControllerService(ctx context.Context, driverOptions *DriverOptions) controllerService {
-	cloud, err := NewCloudFunc(ctx)
+	cloud, err := cloud.NewCloud(ctx, driverOptions.sdkOptions)
 	if err != nil {
 		panic(err)
 	}

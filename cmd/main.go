@@ -30,11 +30,12 @@ func main() {
 
 	ctx := context.Background()
 	drv, err := driver.NewDriver(ctx,
+		driver.WithMode(options.DriverMode),
 		driver.WithEndpoint(options.ServerOptions.Endpoint),
 		driver.WithExtraVolumeTags(options.ControllerOptions.ExtraVolumeTags),
 		driver.WithExtraSnapshotTags(options.ControllerOptions.ExtraSnapshotTags),
 		driver.WithLuksOpenFlags(options.NodeOptions.LuksOpenFlags),
-		driver.WithMode(options.DriverMode),
+		driver.WithSDKOptions(options.ControllerOptions.SDKOptions),
 	)
 	if err != nil {
 		klog.Fatalln(err)

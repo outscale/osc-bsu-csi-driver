@@ -23,6 +23,7 @@ import (
 	"strings"
 
 	csi "github.com/container-storage-interface/spec/lib/go/csi"
+	"github.com/outscale/goutils/k8s/sdk"
 	"github.com/outscale/osc-bsu-csi-driver/pkg/util"
 	"google.golang.org/grpc"
 	klog "k8s.io/klog/v2"
@@ -73,6 +74,7 @@ type DriverOptions struct {
 	endpoint          string
 	extraVolumeTags   map[string]string
 	extraSnapshotTags map[string]string
+	sdkOptions        sdk.Options
 
 	// Node options
 	luksOpenFlags []string
@@ -205,5 +207,11 @@ func WithLuksOpenFlags(flags []string) func(*DriverOptions) {
 func WithMode(mode Mode) func(*DriverOptions) {
 	return func(o *DriverOptions) {
 		o.mode = mode
+	}
+}
+
+func WithSDKOptions(opts sdk.Options) func(*DriverOptions) {
+	return func(o *DriverOptions) {
+		o.sdkOptions = opts
 	}
 }

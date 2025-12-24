@@ -679,7 +679,7 @@ func (c *cloud) ListSnapshots(ctx context.Context, volumeID string, maxResults i
 		req.ResultsPerPage = &maxResults
 	}
 	if nextToken != "" {
-		req.NextPageToken = ptr.To([]byte(nextToken))
+		req.NextPageToken = ptr.To([]byte(nextToken)) // FIXME
 	}
 	if len(volumeID) != 0 {
 		req.Filters = &osc.FiltersSnapshot{
@@ -691,12 +691,14 @@ func (c *cloud) ListSnapshots(ctx context.Context, volumeID string, maxResults i
 	if err != nil {
 		return ListSnapshotsResponse{}, fmt.Errorf("error listing snapshots: %w", err)
 	}
-	snapshots := lo.Map(*resp.Snapshots, func(s osc.Snapshot, _ int) Snapshot { return *oscSnapshotResponseToStruct(&s) })
-	klog.FromContext(ctx).V(5).Info(fmt.Sprintf("%d snapshots found", len(snapshots)))
-	return ListSnapshotsResponse{
-		Snapshots: snapshots,
-		NextToken: string(*resp.NextPageToken),
-	}, nil
+	r := ListSnapshotsResponse{
+		Snapshots: lo.Map(*resp.Snapshots, func(s osc.Snapshot, _ int) Snapshot { return *oscSnapshotResponseToStruct(&s) }),
+	}
+	if resp.NextPageToken != nil {
+		r.NextToken = string(*resp.NextPageToken)
+	}
+	klog.FromContext(ctx).V(5).Info(fmt.Sprintf("%d snapshots returned", len(r.Snapshots)))
+	return r, nil
 }
 
 func oscSnapshotResponseToStruct(s *osc.Snapshot) *Snapshot {

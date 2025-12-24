@@ -19,7 +19,7 @@ package devicemanager
 import (
 	"testing"
 
-	osc "github.com/outscale/osc-sdk-go/v2"
+	"github.com/outscale/osc-sdk-go/v3/pkg/osc"
 )
 
 func TestNewDevice(t *testing.T) {
@@ -58,18 +58,10 @@ func TestNewDevice(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			// Should fail if instance is nil
-			dev1, err := dm.NewDevice((osc.Vm{}), tc.volumeID)
-			if err == nil {
-				t.Fatalf("Expected error when nil instance is passed in, got nothing")
-			}
-			if !IsNilDevice(dev1) {
-				t.Fatalf("Expected nil device, got %v", dev1)
-			}
-
 			fakeInstance := newFakeInstance(tc.instanceID, tc.existingVolumeID, tc.existingDevicePath)
 
 			// Should create valid Device with valid path
-			dev1, err = dm.NewDevice(fakeInstance, tc.volumeID)
+			dev1, err := dm.NewDevice(fakeInstance, tc.volumeID)
 			assertDevice(t, dev1, false, err)
 
 			// Devices with same instance and volume should have same paths
@@ -183,13 +175,13 @@ func TestReleaseDevice(t *testing.T) {
 	}
 }
 
-func newFakeInstance(instanceID, volumeID, devicePath string) osc.Vm {
-	return osc.Vm{
-		VmId: &instanceID,
-		BlockDeviceMappings: &[]osc.BlockDeviceMappingCreated{
+func newFakeInstance(instanceID, volumeID, devicePath string) *osc.Vm {
+	return &osc.Vm{
+		VmId: instanceID,
+		BlockDeviceMappings: []osc.BlockDeviceMappingCreated{
 			{
-				DeviceName: &devicePath,
-				Bsu:        &osc.BsuCreated{VolumeId: &volumeID},
+				DeviceName: devicePath,
+				Bsu:        osc.BsuCreated{VolumeId: volumeID},
 			},
 		},
 	}
@@ -198,10 +190,6 @@ func newFakeInstance(instanceID, volumeID, devicePath string) osc.Vm {
 func assertDevice(t *testing.T, d Device, assigned bool, err error) {
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
-	}
-
-	if IsNilDevice(d) {
-		t.Fatalf("Expected valid device, got nil")
 	}
 
 	if d.IsAlreadyAssigned != assigned {

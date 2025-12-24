@@ -19,7 +19,6 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"math/rand"
 	"os"
 	"strconv"
 	"strings"
@@ -41,19 +40,19 @@ import (
 	admissionapi "k8s.io/pod-security-admission/api"
 )
 
-const OSC_REGION = "OSC_REGION"
-
 var _ = Describe("[bsu-csi-e2e] [single-az] Dynamic Provisioning", func() {
 	f := framework.NewDefaultFramework("bsu")
 	f.NamespacePodSecurityEnforceLevel = admissionapi.LevelPrivileged
 
 	var (
+		ctx       context.Context
 		cs        clientset.Interface
 		ns        *v1.Namespace
 		bsuDriver driver.PVTestDriver
 	)
 
 	BeforeEach(func() {
+		ctx = context.Background()
 		cs = f.ClientSet
 		ns = f.Namespace
 		bsuDriver = driver.InitBsuCSIDriver()
@@ -407,10 +406,7 @@ var _ = Describe("[bsu-csi-e2e] [single-az] Dynamic Provisioning", func() {
 				ReclaimPolicy: &reclaimPolicy,
 			},
 		}
-		availabilityZones := strings.Split(os.Getenv(awsAvailabilityZonesEnv), ",")
-		availabilityZone := availabilityZones[rand.Intn(len(availabilityZones))] //nolint: gosec
-		region := availabilityZone[0 : len(availabilityZone)-1]
-		cloud, err := osccloud.NewCloud(region, osccloud.WithoutMetadata())
+		cloud, err := osccloud.NewCloud(ctx)
 		if err != nil {
 			Fail(fmt.Sprintf("could not get NewCloud: %v", err))
 		}
@@ -602,13 +598,8 @@ var _ = Describe("[bsu-csi-e2e] [single-az] Dynamic Provisioning", func() {
 
 		tpvc.WaitForBound()
 
-		if os.Getenv(OSC_REGION) == "" {
-			Skip(fmt.Sprintf("env %q not set", OSC_REGION))
-		}
-
 		By("Create the cloud")
-
-		oscCloud, err := osccloud.NewCloud(os.Getenv(OSC_REGION), osccloud.WithoutMetadata())
+		oscCloud, err := osccloud.NewCloud(ctx)
 		framework.ExpectNoError(err, "Error while creating a cloud configuration")
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
@@ -619,7 +610,7 @@ var _ = Describe("[bsu-csi-e2e] [single-az] Dynamic Provisioning", func() {
 
 		pv := tpvc.GetPersistentVolume()
 		for i := 1; i < 100; i++ {
-			_, err := oscCloud.DeleteDisk(context.Background(), pv.Spec.CSI.VolumeHandle)
+			_, err := oscCloud.DeleteVolume(context.Background(), pv.Spec.CSI.VolumeHandle)
 			if errors.Is(err, osccloud.ErrNotFound) {
 				break
 			}
@@ -707,11 +698,6 @@ var _ = Describe("[bsu-csi-e2e] [single-az] Snapshot", func() {
 		}
 
 		pvc := tpvc.WaitForBound()
-
-		if os.Getenv(OSC_REGION) == "" {
-			Skip(fmt.Sprintf("env %q not set", OSC_REGION))
-		}
-
 		By("Create the Snapshot")
 		tvsc, cleanup := testsuites.CreateVolumeSnapshotClass(snapshotrcs, ns, bsuDriver)
 		defer cleanup()
@@ -720,10 +706,10 @@ var _ = Describe("[bsu-csi-e2e] [single-az] Snapshot", func() {
 		tvsc.ReadyToUse(snapshot)
 
 		By("Create the cloud")
-		oscCloud, err := osccloud.NewCloud(os.Getenv(OSC_REGION), osccloud.WithoutMetadata())
-		framework.ExpectNoError(err, "Error while creating a cloud configuration")
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
+		oscCloud, err := osccloud.NewCloud(ctx)
+		framework.ExpectNoError(err, "Error while creating a cloud configuration")
 		oscCloud.Start(ctx)
 
 		By("Retrieve the snapshot")
@@ -906,15 +892,13 @@ var _ = Describe("[bsu-csi-e2e] [single-az] Updating iops/volumeType using Volum
 		ns = f.Namespace
 		bsuDriver = driver.InitBsuCSIDriver()
 
-		region := os.Getenv("OSC_REGION")
 		var err error
-		cloud, err = osccloud.NewCloud(region, osccloud.WithoutMetadata())
+		var ctx context.Context
+		ctx, cancel = context.WithCancel(context.Background())
+		cloud, err = osccloud.NewCloud(ctx)
 		if err != nil {
 			Fail(fmt.Sprintf("could not get NewCloud: %v", err))
 		}
-		var ctx context.Context
-		ctx, cancel = context.WithCancel(context.Background())
-		defer cancel()
 		cloud.Start(ctx)
 	})
 

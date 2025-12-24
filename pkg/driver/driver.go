@@ -23,6 +23,7 @@ import (
 	"strings"
 
 	csi "github.com/container-storage-interface/spec/lib/go/csi"
+	"github.com/outscale/goutils/k8s/sdk"
 	"github.com/outscale/osc-bsu-csi-driver/pkg/util"
 	"google.golang.org/grpc"
 	klog "k8s.io/klog/v2"
@@ -73,12 +74,13 @@ type DriverOptions struct {
 	endpoint          string
 	extraVolumeTags   map[string]string
 	extraSnapshotTags map[string]string
+	sdkOptions        sdk.Options
 
 	// Node options
 	luksOpenFlags []string
 }
 
-func NewDriver(options ...func(*DriverOptions)) (*Driver, error) {
+func NewDriver(ctx context.Context, options ...func(*DriverOptions)) (*Driver, error) {
 	driverOptions := DriverOptions{
 		mode:     AllMode,
 		endpoint: DefaultCSIEndpoint,
@@ -97,7 +99,7 @@ func NewDriver(options ...func(*DriverOptions)) (*Driver, error) {
 
 	// no need to test for invalid modes, as ValidateDriverOptions has already done it.
 	if driverOptions.mode.HasController() {
-		driver.controllerService = newControllerService(&driverOptions)
+		driver.controllerService = newControllerService(ctx, &driverOptions)
 	}
 	if driverOptions.mode.HasNode() {
 		driver.nodeService = newNodeService(&driverOptions)
@@ -131,7 +133,7 @@ func (d *Driver) checkTools() error {
 
 	return nil
 }
-func (d *Driver) Run() error {
+func (d *Driver) Run(ctx context.Context) error {
 	version := util.GetVersion().DriverVersion
 	klog.V(3).InfoS(fmt.Sprintf("Driver: %v Version: %v", DriverName, version))
 	klog.V(1).InfoS("Running in mode: " + string(d.options.mode))
@@ -140,7 +142,10 @@ func (d *Driver) Run() error {
 	if err != nil {
 		return err
 	}
-	listener, err := net.Listen(scheme, addr)
+	ctx, cancel := context.WithCancel(context.Background())
+	d.cancel = cancel
+	var lc net.ListenConfig
+	listener, err := lc.Listen(ctx, scheme, addr)
 	if err != nil {
 		return err
 	}
@@ -155,8 +160,6 @@ func (d *Driver) Run() error {
 
 	if d.options.mode.HasController() {
 		csi.RegisterControllerServer(d.srv, d)
-		ctx, cancel := context.WithCancel(context.Background())
-		d.cancel = cancel
 		if err := d.controllerService.Start(ctx); err != nil { //nolint:staticcheck
 			return err
 		}
@@ -204,5 +207,11 @@ func WithLuksOpenFlags(flags []string) func(*DriverOptions) {
 func WithMode(mode Mode) func(*DriverOptions) {
 	return func(o *DriverOptions) {
 		o.mode = mode
+	}
+}
+
+func WithSDKOptions(opts sdk.Options) func(*DriverOptions) {
+	return func(o *DriverOptions) {
+		o.sdkOptions = opts
 	}
 }

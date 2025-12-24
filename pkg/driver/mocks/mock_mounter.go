@@ -274,17 +274,17 @@ func (mr *MockMounterMockRecorder) LuksClose(deviceName any) *gomock.Call {
 }
 
 // LuksFormat mocks base method.
-func (m *MockMounter) LuksFormat(devicePath, passphrase string, context luks.LuksContext) error {
+func (m *MockMounter) LuksFormat(devicePath, passphrase string, arg2 luks.LuksContext) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "LuksFormat", devicePath, passphrase, context)
+	ret := m.ctrl.Call(m, "LuksFormat", devicePath, passphrase, arg2)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // LuksFormat indicates an expected call of LuksFormat.
-func (mr *MockMounterMockRecorder) LuksFormat(devicePath, passphrase, context any) *gomock.Call {
+func (mr *MockMounterMockRecorder) LuksFormat(devicePath, passphrase, arg2 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "LuksFormat", reflect.TypeOf((*MockMounter)(nil).LuksFormat), devicePath, passphrase, context)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "LuksFormat", reflect.TypeOf((*MockMounter)(nil).LuksFormat), devicePath, passphrase, arg2)
 }
 
 // LuksOpen mocks base method.

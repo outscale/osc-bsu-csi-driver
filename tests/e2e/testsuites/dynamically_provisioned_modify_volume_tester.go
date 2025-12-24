@@ -106,7 +106,7 @@ func (t *DynamicallyProvisionedModifyVolumeTest) WaitForPvToModify(client client
 			continue
 		}
 		if newPv.Spec.CSI != nil {
-			dsk, err := t.Cloud.GetDiskByID(context.TODO(), newPv.Spec.CSI.VolumeHandle)
+			dsk, err := t.Cloud.GetVolumeByID(context.TODO(), newPv.Spec.CSI.VolumeHandle)
 			if err != nil {
 				continue
 			}

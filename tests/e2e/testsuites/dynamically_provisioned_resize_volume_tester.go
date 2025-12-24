@@ -133,7 +133,7 @@ func waitForMountToResize(tpod *TestPod, desiredSize resource.Quantity, timeout 
 		blocks, err := strconv.Atoi(strings.Fields(res)[8])
 		_, _ = fmt.Fprintf(GinkgoWriter, "FS size: %dMB\n", blocks)
 		framework.ExpectNoError(err)
-		if int32(math.Round(float64(blocks)/1024)) == szG {
+		if int(math.Round(float64(blocks)/1024)) == szG {
 			By(fmt.Sprintf("Mount is updated to %dMB", blocks))
 			return nil
 		}

@@ -212,7 +212,9 @@ func NewCloud(ctx context.Context, opts ...CloudOption) (Cloud, error) {
 	}
 	ua := "osc-bsu-csi-driver/" + v
 	profile, client, err := sdk.NewSDKClient(ctx, ua)
-
+	if err != nil {
+		return nil, fmt.Errorf("init cloud: %w", err)
+	}
 	klog.V(1).InfoS("Region: " + profile.Region)
 
 	interval, err := time.ParseDuration(util.Getenv("READ_STATUS_INTERVAL", "2s"))

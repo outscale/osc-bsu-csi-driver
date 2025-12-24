@@ -9,7 +9,7 @@ require (
 	github.com/kubernetes-csi/external-snapshotter/client/v8 v8.2.0
 	github.com/onsi/ginkgo/v2 v2.27.3
 	github.com/onsi/gomega v1.38.3
-	github.com/outscale/goutils/k8s v0.0.0-20251223100125-04172f975b21
+	github.com/outscale/goutils/k8s v0.0.0-20251223154309-ef670c3f377e
 	github.com/outscale/goutils/sdk v0.0.0-20251223100125-04172f975b21
 	github.com/outscale/osc-sdk-go/v3 v3.0.0-beta.2
 	github.com/rs/xid v1.6.0
@@ -31,7 +31,7 @@ require (
 	k8s.io/utils v0.0.0-20250604170112-4c0f3b243397
 )
 
-replace github.com/outscale/goutils/k8s => ../goutils/k8s
+// replace github.com/outscale/goutils/k8s => ../goutils/k8s
 
 require (
 	cel.dev/expr v0.24.0 // indirect

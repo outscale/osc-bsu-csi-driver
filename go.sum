@@ -155,6 +155,8 @@ github.com/opencontainers/go-digest v1.0.0 h1:apOUWs51W5PlhuyGyz9FCeeBIOUDA/6nW8
 github.com/opencontainers/go-digest v1.0.0/go.mod h1:0JzlMkj0TRzQZfJkVvzbP0HBR3IKzErnv2BNG4W4MAM=
 github.com/opencontainers/selinux v1.11.1 h1:nHFvthhM0qY8/m+vfhJylliSshm8G1jJ2jDMcgULaH8=
 github.com/opencontainers/selinux v1.11.1/go.mod h1:E5dMC3VPuVvVHDYmi78qvhJp8+M586T4DlDRYpFkyec=
+github.com/outscale/goutils/k8s v0.0.0-20251223154309-ef670c3f377e h1:jNSo029UWAcQqoiudrL4i1IzXZhlBfrEnqEXKiIWWUw=
+github.com/outscale/goutils/k8s v0.0.0-20251223154309-ef670c3f377e/go.mod h1:Y6YjTivYwzERmte5pi8okNYZyo8NYnJpR+jxkviKy+w=
 github.com/outscale/goutils/sdk v0.0.0-20251223100125-04172f975b21 h1:8/TotrcxAemYCnWVGDYONRWnJh4X5FOGoQKHvH52KQM=
 github.com/outscale/goutils/sdk v0.0.0-20251223100125-04172f975b21/go.mod h1:3eWsIE3vHag/vlFaADdpTpVheTAnZovQRPyBvjNhJhU=
 github.com/outscale/osc-sdk-go/v3 v3.0.0-beta.2 h1:3UauJs026vpjnFXKQvn1uVrUIstF9GL8E7XDTgA+Sn0=

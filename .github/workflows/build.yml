@@ -46,8 +46,6 @@ jobs:
         go-version-file: 'go.mod'
     - name: 🧪 Test
       run: make test
-    - name: 🧪 Sanity test
-      run: make test-sanity
   docs:
     runs-on: ubuntu-22.04
     steps:

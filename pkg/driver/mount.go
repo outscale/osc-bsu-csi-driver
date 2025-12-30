@@ -45,11 +45,11 @@ type NodeMounter struct {
 
 func newNodeMounter() Mounter {
 	return &NodeMounter{
-		mount.SafeFormatAndMount{
+		SafeFormatAndMount: mount.SafeFormatAndMount{
 			Interface: mount.New(""),
 			Exec:      exec.New(),
 		},
-		exec.New(),
+		Interface: exec.New(),
 	}
 }
 

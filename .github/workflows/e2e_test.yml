@@ -18,8 +18,33 @@ permissions:
   contents: read
 
 jobs:
+  sanity:
+    runs-on: [self-hosted, linux]
+    steps:
+    - name: ⬇️ Checkout repository
+      uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
+    - name: 🔐 Set ak/sk name based on runner region
+      run: .github/scripts/runneraksk.sh
+    - name: ⬇️ Install Go
+      uses: actions/setup-go@v6
+      with:
+        go-version-file: 'go.mod'
+    - name: 🧹 Frieza
+      uses: outscale/frieza-github-actions/frieza-clean@master
+      with:
+        access_key: ${{ secrets[env.OSC_ACCESS_KEY_NAME] }}
+        secret_key: ${{ secrets[env.OSC_SECRET_KEY_NAME] }}
+        region: ${{ env.OSC_REGION }}
+    - name: 🧪 Sanity test
+      run:
+        make test-sanity
+      env:
+        OSC_ACCESS_KEY: ${{ secrets[env.OSC_ACCESS_KEY_NAME] }}
+        OSC_SECRET_KEY: ${{ secrets[env.OSC_SECRET_KEY_NAME] }}
+        OSC_REGION: ${{ env.OSC_REGION }}
   e2e:
     runs-on: [self-hosted, linux]
+    needs: [sanity]
     steps:
     - name: ⬇️ Checkout repository
       uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6

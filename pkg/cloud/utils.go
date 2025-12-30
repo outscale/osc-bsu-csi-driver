@@ -47,3 +47,11 @@ func GRPCCode(err error) codes.Code {
 		return codes.Internal
 	}
 }
+
+func hasErrorCode(err error, code string) bool {
+	oerr := osc.AsErrorResponse(err)
+	if oerr == nil {
+		return false
+	}
+	return oerr.GetCode() == code
+}

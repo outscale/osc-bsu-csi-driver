@@ -84,13 +84,6 @@ var (
 	// volumes are found with the same volume name.
 	ErrMultiVolumes = errors.New("multiple volumes with the same name")
 
-	// ErrVolumeExistsDiffSize is returned if a Volume with a given
-	// name, but different size, is found.
-	ErrVolumeExistsDiffSize = errors.New("there is already a volume with the same name but a different size")
-
-	// ErrAlreadyExists is returned when a resource already exists.
-	ErrAlreadyExists = errors.New("resource already exists")
-
 	// ErrNotFound is returned when a resource is not found.
 	ErrNotFound = errors.New("resource was not found")
 
@@ -276,7 +269,11 @@ func (c *cloud) CreateVolume(ctx context.Context, name string, opts *VolumeOptio
 	request.SubregionName = zone
 
 	resp, err := c.client.CreateVolume(ctx, request)
-	if err != nil {
+	switch {
+	case osc.IsNotFound(err):
+		// the source snapshot does not exist
+		return nil, ErrNotFound
+	case err != nil:
 		return nil, fmt.Errorf("create volume: %w", err)
 	}
 
@@ -340,6 +337,8 @@ func (c *cloud) DeleteVolume(ctx context.Context, volumeID string) (bool, error)
 		VolumeId: volumeID,
 	})
 	switch {
+	case hasErrorCode(err, "4105"): // InvalidParameterValue, Reason = The provided value 'vol-xxx' is malformed.
+		return false, ErrNotFound
 	case osc.IsNotFound(err):
 		return false, ErrNotFound
 	case err != nil:
@@ -603,6 +602,8 @@ func (c *cloud) DeleteSnapshot(ctx context.Context, snapshotID string) (success 
 		SnapshotId: snapshotID,
 	})
 	switch {
+	case hasErrorCode(err, "4105"): // InvalidParameterValue, Reason = The provided value 'snap-xxx' is malformed.
+		return false, ErrNotFound
 	case osc.IsNotFound(err):
 		return false, ErrNotFound
 	case err != nil:
@@ -811,18 +812,30 @@ func (c *cloud) UpdateVolume(ctx context.Context, volumeID string, volumeType os
 			VolumeIds: &[]string{volumeID},
 		},
 	}
-	volume, err := c.getVolume(ctx, request)
+	vol, err := c.getVolume(ctx, request)
 	if err != nil {
 		return err
 	}
 
-	iops := iops(iopsPerGB, volume.Size)
-	logger.V(4).Info(fmt.Sprintf("Updating type to %s and iops to %d", volumeType, iops))
-	_, err = c.client.UpdateVolume(ctx, osc.UpdateVolumeRequest{
-		VolumeId:   volumeID,
-		VolumeType: &volumeType,
-		Iops:       &iops,
-	})
+	iops := iops(iopsPerGB, vol.Size)
+	req := osc.UpdateVolumeRequest{
+		VolumeId: volumeID,
+	}
+	update := false
+	if volumeType != "" && volumeType != vol.VolumeType {
+		req.VolumeType = &volumeType
+		update = true
+	}
+	if iops != vol.Iops {
+		req.Iops = &iops
+		update = true
+	}
+	if !update {
+		logger.V(4).Info("No update applied")
+		return nil
+	}
+	logger.V(4).Info(fmt.Sprintf("Updating type to %q and iops to %d", volumeType, iops))
+	_, err = c.client.UpdateVolume(ctx, req)
 	if err != nil {
 		return fmt.Errorf("modify volume: %w", err)
 	}

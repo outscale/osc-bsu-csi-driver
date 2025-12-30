@@ -67,11 +67,11 @@ verify:
 
 .PHONY: test
 test:
-	go test -v -race -skip ^TestSanity ./pkg/... ./helm/osc-bsu-csi-driver/...
+	go test -v -race ./pkg/... ./helm/osc-bsu-csi-driver/...
 
 .PHONY: test-sanity
 test-sanity:
-	go test -v -race -run ^TestSanity ./pkg/driver -ginkgo.v -ginkgo.show-node-events
+	go test -v -race ./tests/sanity/... -ginkgo.v -ginkgo.show-node-events
 
 .PHONY: dockerlint
 dockerlint:

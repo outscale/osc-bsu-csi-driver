@@ -78,6 +78,9 @@ type DriverOptions struct {
 
 	// Node options
 	luksOpenFlags []string
+
+	// overriden services
+	mounter Mounter
 }
 
 func NewDriver(ctx context.Context, opts ...func(*DriverOptions)) (*Driver, error) {
@@ -214,5 +217,11 @@ func WithMode(mode Mode) func(*DriverOptions) {
 func WithCloudOptions(opts options.CloudOptions) func(*DriverOptions) {
 	return func(o *DriverOptions) {
 		o.cloudOptions = opts
+	}
+}
+
+func WithMounter(mounter Mounter) func(*DriverOptions) {
+	return func(o *DriverOptions) {
+		o.mounter = mounter
 	}
 }

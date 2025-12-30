@@ -34,6 +34,7 @@ require (
 // 	github.com/outscale/goutils/k8s => ../goutils/k8s
 // 	github.com/outscale/goutils/sdk => ../goutils/sdk
 // )
+replace github.com/kubernetes-csi/csi-test/v5 v5.4.0 => github.com/outscale/kubernetes-csi-test/v5 v5.4.0-outscale
 
 require (
 	cel.dev/expr v0.24.0 // indirect

@@ -68,7 +68,7 @@ The **Outscale Block Storage Unit (BSU) CSI Driver** implements the Container St
 
 The CSI driver is based on two services:
 
-* **Controller service**: runs as a `Deployment` on control-plane nodes; calls the Outscale API to create/modify/attach/detach/delete volumes and snapshots,
+* **Controller service**: runs as a `Deployment` on control-plane nodes; calls the Outscale API to create, modify, attach/detach and delete volumes and snapshots,
 * **Node service**: runs as a `DaemonSet` on all nodes requiring volumes; mounts, formats and resize filesystems.
 
 The following CSI capabilities are supported by the driver:

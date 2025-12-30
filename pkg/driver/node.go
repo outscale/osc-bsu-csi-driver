@@ -86,8 +86,11 @@ type nodeService struct {
 func newNodeService(ctx context.Context, driverOptions *DriverOptions) (nodeService, error) {
 	srv := nodeService{
 		driverOptions: driverOptions,
-		mounter:       newNodeMounter(),
+		mounter:       driverOptions.mounter,
 		inFlight:      internal.NewInFlight(),
+	}
+	if srv.mounter == nil {
+		srv.mounter = newNodeMounter()
 	}
 	var err error
 	srv.instanceID, err = metadata.GetInstanceID(ctx)

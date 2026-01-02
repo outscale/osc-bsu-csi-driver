@@ -115,7 +115,7 @@ Kubernetes: `>=1.20`
 | sidecars.snapshotter.image | string | `"registry.k8s.io/sig-storage/csi-snapshotter"` |  |
 | sidecars.snapshotter.metricsPort | string | `"8091"` | Port of the metrics endpoint |
 | sidecars.snapshotter.resources | object | `{}` | Sidecar resources. If not set, the top-level resources will be used. |
-| sidecars.snapshotter.tag | string | `"v8.3.0"` |  |
+| sidecars.snapshotter.tag | string | `"v8.4.0"` |  |
 | sidecars.snapshotter.workerThreads | int | `100` |  |
 | sidecars.timeout | string | `"5m"` | Timeout for sidecars calls to the CSI driver |
 

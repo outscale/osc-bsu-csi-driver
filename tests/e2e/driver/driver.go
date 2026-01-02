@@ -16,6 +16,7 @@ package driver
 
 import (
 	volumesnapshotv1 "github.com/kubernetes-csi/external-snapshotter/client/v8/apis/volumesnapshot/v1"
+	"github.com/outscale/osc-sdk-go/v3/pkg/osc"
 	v1 "k8s.io/api/core/v1"
 	storagev1 "k8s.io/api/storage/v1"
 	storagev1beta1 "k8s.io/api/storage/v1beta1"
@@ -42,7 +43,7 @@ type DynamicPVTestDriver interface {
 	GetPassphraseSecret(name string, passphrase string) *v1.Secret
 
 	// GetVolumeAttributesClass returns a StorageClass dynamic provision Persistent Volume
-	GetVolumeAttributesClass(namespace, name, volumeType, iopsPerGB string) *storagev1beta1.VolumeAttributesClass
+	GetVolumeAttributesClass(namespace, name string, volumeType osc.VolumeType, iopsPerGB string) *storagev1beta1.VolumeAttributesClass
 }
 
 // PreProvisionedVolumeTestDriver represents an interface for a CSI driver that supports pre-provisioned volume

@@ -17,14 +17,12 @@ package testsuites
 import (
 	"fmt"
 
+	. "github.com/onsi/ginkgo/v2" //nolint
+	. "github.com/onsi/gomega"    //nolint
 	"github.com/outscale/osc-bsu-csi-driver/tests/e2e/driver"
 	v1 "k8s.io/api/core/v1"
-	"k8s.io/kubernetes/test/e2e/framework"
-
 	clientset "k8s.io/client-go/kubernetes"
-
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
+	"k8s.io/kubernetes/test/e2e/framework"
 )
 
 const expectedReadOnlyLog = "Read-only file system"

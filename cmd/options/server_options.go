@@ -17,8 +17,12 @@ limitations under the License.
 package options
 
 import (
-	"github.com/outscale/osc-bsu-csi-driver/pkg/driver"
 	"github.com/spf13/pflag"
+)
+
+// constants for default command line flag values
+const (
+	DefaultCSIEndpoint = "unix://tmp/csi.sock"
 )
 
 // ServerOptions contains options and configuration settings for the driver server.
@@ -28,5 +32,5 @@ type ServerOptions struct {
 }
 
 func (s *ServerOptions) AddFlags(fs *pflag.FlagSet) {
-	fs.StringVar(&s.Endpoint, "endpoint", driver.DefaultCSIEndpoint, "Endpoint for the CSI driver server")
+	fs.StringVar(&s.Endpoint, "endpoint", DefaultCSIEndpoint, "Endpoint for the CSI driver server")
 }

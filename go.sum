@@ -155,6 +155,8 @@ github.com/outscale/kubernetes-csi-test/v5 v5.4.0-outscale h1:WB9CqCemzvwM7VIf3J
 github.com/outscale/kubernetes-csi-test/v5 v5.4.0-outscale/go.mod h1:anAJKFUb/SdHhIHECgSKxC5LSiLzib+1I6mrWF5Hve8=
 github.com/outscale/osc-sdk-go/v3 v3.0.0-beta.2.0.20251224132622-ff629d43222d h1:cnB+kT/CC1LmjTuVnKyAAZX/TZ9ZnGQeG2UEykLfcuU=
 github.com/outscale/osc-sdk-go/v3 v3.0.0-beta.2.0.20251224132622-ff629d43222d/go.mod h1:+UWiUEbhmj8HUyhoGjmve0WKDezaEirKskWoYk5euTc=
+github.com/outscale/osc-sdk-go/v3 v3.0.0-beta.3 h1:Pvt/buq59di5j6acnUAFWBG0LUFa6kBn6GYrx9bt+0Y=
+github.com/outscale/osc-sdk-go/v3 v3.0.0-beta.3/go.mod h1:+UWiUEbhmj8HUyhoGjmve0WKDezaEirKskWoYk5euTc=
 github.com/pkg/errors v0.9.1 h1:FEBLx1zS214owpjy7qsBeixbURkuhQAwrK5UwLGTwt4=
 github.com/pkg/errors v0.9.1/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINEl0=
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=

@@ -10,7 +10,7 @@ require (
 	github.com/onsi/gomega v1.38.3
 	github.com/outscale/goutils/k8s v0.0.0-20251230125904-cf90f7c6a4a4
 	github.com/outscale/goutils/sdk v0.0.0-20251230125904-cf90f7c6a4a4
-	github.com/outscale/osc-sdk-go/v3 v3.0.0-beta.2.0.20251224132622-ff629d43222d
+	github.com/outscale/osc-sdk-go/v3 v3.0.0-beta.3
 	github.com/rs/xid v1.6.0
 	github.com/samber/lo v1.52.0
 	github.com/spf13/pflag v1.0.10

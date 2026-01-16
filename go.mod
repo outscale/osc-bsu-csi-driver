@@ -7,7 +7,7 @@ require (
 	github.com/kubernetes-csi/csi-test/v5 v5.4.0
 	github.com/kubernetes-csi/external-snapshotter/client/v8 v8.4.0
 	github.com/onsi/ginkgo/v2 v2.27.3
-	github.com/onsi/gomega v1.38.3
+	github.com/onsi/gomega v1.39.0
 	github.com/outscale/goutils/k8s v0.0.0-20251230125904-cf90f7c6a4a4
 	github.com/outscale/goutils/sdk v0.0.0-20251230125904-cf90f7c6a4a4
 	github.com/outscale/osc-sdk-go/v3 v3.0.0-beta.2.0.20251224132622-ff629d43222d

@@ -1,5 +1,32 @@
 # Changelog
 
+## [v1.10.0-alpha.1] - 2026-01-21
+
+The CSI driver has switched to a new Outscale SDK with a better handling of API errors, backoff and throttling, and is based on the 1.12 CSI specification.
+It includes fixes for CSI edge cases, and no new feature.
+
+### 🛠️ Changed / Refactoring
+* ♻️ refacto: switch to SDKv3/CSI 1.12 by @jfbus in https://github.com/outscale/osc-bsu-csi-driver/pull/1082
+* ✅ tests(sanity): use real API calls in sanity tests by @jfbus in https://github.com/outscale/osc-bsu-csi-driver/pull/1085
+### 📝 Documentation
+* 📄 fix licenses, CoC, CONTRIBUTING by @jfbus in https://github.com/outscale/osc-bsu-csi-driver/pull/1059
+### 📦 Dependency updates
+* ⬆️ deps(gomod): update module google.golang.org/protobuf to v1.36.11 by @Open-Source-Bot in https://github.com/outscale/osc-bsu-csi-driver/pull/1071
+* ⬆️ deps(gomod): update module github.com/onsi/ginkgo/v2 to v2.27.3 by @Open-Source-Bot in https://github.com/outscale/osc-bsu-csi-driver/pull/1074
+* ⬆️ deps(gomod): update module golang.org/x/sys to v0.39.0 by @Open-Source-Bot in https://github.com/outscale/osc-bsu-csi-driver/pull/1079
+* ⬆️ deps(gomod): update module github.com/stretchr/testify to v1.11.1 by @Open-Source-Bot in https://github.com/outscale/osc-bsu-csi-driver/pull/1078
+* ⬆️ deps(dockerfile): update golang docker tag to v1.25.5 by @Open-Source-Bot in https://github.com/outscale/osc-bsu-csi-driver/pull/1066
+* ⬆️ deps(gomod): update module github.com/spf13/pflag to v1.0.10 by @Open-Source-Bot in https://github.com/outscale/osc-bsu-csi-driver/pull/1067
+* ⬆️ deps(gomod): update module google.golang.org/grpc to v1.77.0 by @Open-Source-Bot in https://github.com/outscale/osc-bsu-csi-driver/pull/1080
+* ⬆️ deps(gomod): update module github.com/onsi/gomega to v1.38.3 by @Open-Source-Bot in https://github.com/outscale/osc-bsu-csi-driver/pull/1075
+* ⬆️ deps(gomod): update module google.golang.org/grpc to v1.78.0 by @Open-Source-Bot in https://github.com/outscale/osc-bsu-csi-driver/pull/1083
+* ⬆️ deps(dockerfile): update golang:1.25.5-bookworm docker digest to 2c7c656 by @Open-Source-Bot in https://github.com/outscale/osc-bsu-csi-driver/pull/1084
+* ⬆️ deps(gomod): update kubernetes packages to v0.34.3 by @Open-Source-Bot in https://github.com/outscale/osc-bsu-csi-driver/pull/1086
+* ⬆️ deps(gomod): update module k8s.io/kubernetes to v1.34.3 by @Open-Source-Bot in https://github.com/outscale/osc-bsu-csi-driver/pull/1087
+* ⬆️ deps(gomod): update module golang.org/x/sys to v0.40.0 by @Open-Source-Bot in https://github.com/outscale/osc-bsu-csi-driver/pull/1090
+* ⬆️ deps(gomod): update github.com/outscale/goutils/k8s digest to be82506 by @Open-Source-Bot in https://github.com/outscale/osc-bsu-csi-driver/pull/1098
+* ⬆️ deps(dockerfile): update golang docker tag to v1.25.6 by @Open-Source-Bot in https://github.com/outscale/osc-bsu-csi-driver/pull/1100
+
 ## [v2.0.0-helm] - 2025-12-11
 
 > Helm chart rewrite. See [migration guide](./helm/osc-bsu-csi-driver/migration.md) for more information.

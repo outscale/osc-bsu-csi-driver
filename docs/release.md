@@ -24,7 +24,7 @@ git push origin $HELM_VERSION
 2. Update `docs/README.md`
  - Update the version of the plugin
  - Update the CSI spec version
- - Update the kubernetes minimal and recommended version
+ - Update the kubernetes minimal version
 3. Open a pull request with the above changes and merge it once approved.
 4. Tag and push the container release:
 ```shell

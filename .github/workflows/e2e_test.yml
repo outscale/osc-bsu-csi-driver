@@ -22,7 +22,7 @@ jobs:
     runs-on: [self-hosted, linux]
     steps:
     - name: ⬇️ Checkout repository
-      uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
     - name: 🔐 Set ak/sk name based on runner region
       run: .github/scripts/runneraksk.sh
     - name: ⬇️ Install Go
@@ -47,7 +47,7 @@ jobs:
     needs: [sanity]
     steps:
     - name: ⬇️ Checkout repository
-      uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
     - name: 🔐 Set ak/sk name based on runner region
       run: .github/scripts/runneraksk.sh
     - name: ⬇️ Install kubectl

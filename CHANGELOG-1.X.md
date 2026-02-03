@@ -1,5 +1,9 @@
 # Changelog
 
+## [v1.10.0-beta.1] - 2026-02-04
+
+No changes since v1.10.0-alpha.1
+
 ## [v1.10.0-alpha.1] - 2026-01-21
 
 The CSI driver has switched to a new Outscale SDK with a better handling of API errors, backoff and throttling, and is based on the 1.12 CSI specification.

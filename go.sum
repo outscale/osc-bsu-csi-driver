@@ -10,6 +10,8 @@ github.com/armon/go-socks5 v0.0.0-20160902184237-e75332964ef5 h1:0CwZNZbxp69SHPd
 github.com/armon/go-socks5 v0.0.0-20160902184237-e75332964ef5/go.mod h1:wHh0iHkYZB8zMSxRWpUBQtwG5a7fFgvEO+odwuTv2gs=
 github.com/aws/smithy-go/aws-http-auth v1.0.0 h1:xbNL/wG6i2dyIAEkPk1wh54oU20ECBFDoL6DbZ/QCTU=
 github.com/aws/smithy-go/aws-http-auth v1.0.0/go.mod h1:DzLPJwVyEMYYoczyVkFTH0O/ZDOGQeD0KL09Dc/5jGc=
+github.com/aws/smithy-go/aws-http-auth v1.1.1 h1:xQ7oOn+T0+5Pnsqhb9t7YA2JZDevKZKWuz10yFrFj2w=
+github.com/aws/smithy-go/aws-http-auth v1.1.1/go.mod h1:VuNQchCzFzzAchHl9tgHtgwNK1N2MJC8To7YOPt02Zw=
 github.com/benbjohnson/clock v1.3.0 h1:ip6w0uFQkncKQ979AypyG0ER7mqUSBdKLOgAle/AT8A=
 github.com/benbjohnson/clock v1.3.0/go.mod h1:J11/hYXuz8f4ySSvYwY0FKfm+ezbsZBKZxNJlLklBHA=
 github.com/beorn7/perks v1.0.1 h1:VlbKKnNfV8bJzeqoa4cOKqO6bYr3WgKZxO8Z16+hsOM=
@@ -163,6 +165,8 @@ github.com/outscale/osc-sdk-go/v3 v3.0.0-beta.2.0.20251224132622-ff629d43222d h1
 github.com/outscale/osc-sdk-go/v3 v3.0.0-beta.2.0.20251224132622-ff629d43222d/go.mod h1:+UWiUEbhmj8HUyhoGjmve0WKDezaEirKskWoYk5euTc=
 github.com/outscale/osc-sdk-go/v3 v3.0.0-beta.3 h1:Pvt/buq59di5j6acnUAFWBG0LUFa6kBn6GYrx9bt+0Y=
 github.com/outscale/osc-sdk-go/v3 v3.0.0-beta.3/go.mod h1:+UWiUEbhmj8HUyhoGjmve0WKDezaEirKskWoYk5euTc=
+github.com/outscale/osc-sdk-go/v3 v3.0.0-beta.4 h1:dU4wMtDGNw4sJnEMJuAG2eLz7jRQwVlExo/QOcxxjJc=
+github.com/outscale/osc-sdk-go/v3 v3.0.0-beta.4/go.mod h1:VvDgeJ0jmQ88FPWiEcmA5V3FkQ3WyQnoO0kwrXVAgBA=
 github.com/pkg/errors v0.9.1 h1:FEBLx1zS214owpjy7qsBeixbURkuhQAwrK5UwLGTwt4=
 github.com/pkg/errors v0.9.1/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINEl0=
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=

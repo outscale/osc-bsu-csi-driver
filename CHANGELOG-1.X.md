@@ -1,5 +1,9 @@
 # Changelog
 
+## [v1.10.0-rc.1] - 2026-02-11
+
+No changes since v1.10.0-beta.1
+
 ## [v1.10.0-beta.1] - 2026-02-04
 
 No changes since v1.10.0-alpha.1

@@ -4,7 +4,7 @@
 
 1. In [CHANGELOG-1.x.md](CHANGELOG-1.x.md), add a new vX.Y.Z-helm version
 2. Update the chart and driver versions in `helm/osc-bsu-csi-driver/Chart.yaml`
-3. Update the driver version in `helm/osc-bsu-csi-driver/values.yaml`
+3. Update the driver version in `helm/osc-bsu-csi-driver/values.yaml` and `helm/osc-bsu-csi-driver/helm_test.go`
 4. Generate helm docs:
 ```shell
 make helm-docs

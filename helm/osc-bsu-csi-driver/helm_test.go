@@ -95,7 +95,7 @@ func TestHelmTemplate_Deployment(t *testing.T) {
 		assert.Equal(t, int32(2), *dep.Spec.Replicas)
 		require.Len(t, dep.Spec.Template.Spec.Containers, 6)
 		manager := dep.Spec.Template.Spec.Containers[0]
-		assert.Equal(t, "outscale/osc-bsu-csi-driver:v1.9.0", manager.Image)
+		assert.Equal(t, "outscale/osc-bsu-csi-driver:v1.10.0", manager.Image)
 		assert.Equal(t, []string{
 			"controller",
 			"--endpoint=$(CSI_ENDPOINT)",
@@ -403,7 +403,7 @@ func TestHelmTemplate_DaemonSet(t *testing.T) {
 		dep := getDaemonSet(t)
 		require.Len(t, dep.Spec.Template.Spec.Containers, 3)
 		manager := dep.Spec.Template.Spec.Containers[0]
-		assert.Equal(t, "outscale/osc-bsu-csi-driver:v1.9.0", manager.Image)
+		assert.Equal(t, "outscale/osc-bsu-csi-driver:v1.10.0", manager.Image)
 		assert.Equal(t, []string{
 			"node",
 			"--endpoint=$(CSI_ENDPOINT)",

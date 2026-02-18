@@ -171,7 +171,8 @@ check-helm-docs:
 helm-package:
 # Copy docs into the archive for ArtfactHub, symlink does not work with helm-git
 	cp CHANGELOG-1.X.md helm/osc-bsu-csi-driver/CHANGELOG.md
-	cp docs/README.md LICENSE helm/osc-bsu-csi-driver/
+	cp docs/README.md helm/osc-bsu-csi-driver/
+	cp LICENSES/BSD-3-Clause.txt helm/osc-bsu-csi-driver/LICENSE
 	helm package helm/osc-bsu-csi-driver -d out-helm
 	rm helm/osc-bsu-csi-driver/CHANGELOG.md helm/osc-bsu-csi-driver/README.md helm/osc-bsu-csi-driver/LICENSE
 

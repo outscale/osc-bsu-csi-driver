@@ -32,3 +32,6 @@ vendor/
 # environment
 .trivyscan
 .env
+
+# Helm package
+out-helm/

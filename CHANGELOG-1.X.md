@@ -1,5 +1,9 @@
 # Changelog
 
+## [v2.0.1-helm] - 2025-12-18
+
+Bump CSI driver to v1.10.0 and Snapshot exporter to v0.2.0
+
 ## [v1.10.0] - 2026-02-18
 
 The CSI driver has switched to a new Outscale SDK with a better handling of API errors, backoff and throttling, and is based on the 1.12 CSI specification.

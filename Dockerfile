@@ -1,4 +1,4 @@
-ARG GOLANG_IMAGE_TAG=1.25.6-bookworm@sha256:f4490d7b261d73af4543c46ac6597d7d101b6e1755bcdd8c5159fda7046b6b3e
+ARG GOLANG_IMAGE_TAG=1.26.0-bookworm@sha256:2a0ba12e116687098780d3ce700f9ce3cb340783779646aafbabed748fa6677c
 # Tools are taken from Debian 12
 ARG TOOLS_IMAGE_TAG=12@sha256:34e7f0ae7c10a61bfbef6e1b2ed205d9b47bb12e90c50696f729a5c7a01cf1f2
 # Distroless debug is used to get a busybox shell

@@ -12,7 +12,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package e2e
+package e2e_test
 
 import (
 	"flag"
@@ -35,7 +35,7 @@ func init() {
 	// it does not fall back to defaults
 	if os.Getenv(kubeconfigEnvVar) == "" {
 		kubeconfig := filepath.Join(os.Getenv("HOME"), ".kube", "config")
-		os.Setenv(kubeconfigEnvVar, kubeconfig)
+		_ = os.Setenv(kubeconfigEnvVar, kubeconfig)
 	}
 	framework.AfterReadingAllFlags(&framework.TestContext)
 
@@ -51,7 +51,7 @@ func TestE2E(t *testing.T) {
 	// Run tests through the Ginkgo runner with output to console + JUnit for Jenkins
 	var r []Reporter
 	if framework.TestContext.ReportDir != "" {
-		if err := os.MkdirAll(framework.TestContext.ReportDir, 0750); err != nil {
+		if err := os.MkdirAll(framework.TestContext.ReportDir, 0o750); err != nil {
 			log.Fatalf("Failed creating report directory: %v", err)
 		}
 	}

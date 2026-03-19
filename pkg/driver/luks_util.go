@@ -74,7 +74,7 @@ func IsLuksMapping(exec k8sExec.Interface, devicePath string) (bool, string, err
 		}
 
 		isLuksMapping := false
-		for _, statusLine := range strings.Split(string(out), "\n") {
+		for statusLine := range strings.SplitSeq(string(out), "\n") {
 			if strings.Contains(statusLine, "type:") && strings.Contains(strings.ToLower(statusLine), "luks2") {
 				isLuksMapping = true
 			}

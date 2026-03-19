@@ -1210,8 +1210,8 @@ func newDescribeInstancesOutput(nodeID string) *osc.ReadVmsResponse {
 
 func TestResizeVolume(t *testing.T) {
 	volumeId := "vol-test"
-	var existingVolumeSize = 1
-	var modifiedVolumeSize = 2
+	existingVolumeSize := 1
+	modifiedVolumeSize := 2
 	defaultZoneVar := defaultZone
 	state := osc.VolumeStateAvailable
 	testCases := []struct {

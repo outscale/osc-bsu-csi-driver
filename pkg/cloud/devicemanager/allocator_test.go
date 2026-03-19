@@ -24,22 +24,17 @@ func TestNameAllocator(t *testing.T) {
 	existingNames := map[string]string{}
 	allocator := nameAllocator{}
 
-	tests := []struct {
-		expectedName string
-	}{
-		{"b"}, {"c"}, {"d"}, {"e"}, {"f"}, {"g"}, {"h"}, {"i"}, {"j"},
-		{"k"}, {"l"}, {"m"}, {"n"}, {"o"}, {"p"}, {"q"}, {"r"}, {"s"}, {"t"},
-		{"u"}, {"v"}, {"w"}, {"x"}, {"y"}, {"z"},
-	}
+	expectedNames := "bcdefghijklmnopqrstuvwxyz"
 
-	for _, test := range tests {
-		t.Run(test.expectedName, func(t *testing.T) {
+	for i := range expectedNames {
+		expectedName := expectedNames[i : i+1]
+		t.Run(expectedName, func(t *testing.T) {
 			actual, err := allocator.GetNext(existingNames)
 			if err != nil {
-				t.Errorf("test %q: unexpected error: %v", test.expectedName, err)
+				t.Errorf("test %q: unexpected error: %v", expectedName, err)
 			}
-			if actual != test.expectedName {
-				t.Errorf("test %q: expected %q, got %q", test.expectedName, test.expectedName, actual)
+			if actual != expectedName {
+				t.Errorf("test %q: expected %q, got %q", expectedName, expectedName, actual)
 			}
 			existingNames[actual] = ""
 		})
@@ -50,7 +45,7 @@ func TestNameAllocatorError(t *testing.T) {
 	allocator := nameAllocator{}
 	existingNames := map[string]string{}
 
-	for i := 0; i < 52; i++ {
+	for range 52 {
 		name, _ := allocator.GetNext(existingNames)
 		existingNames[name] = ""
 	}

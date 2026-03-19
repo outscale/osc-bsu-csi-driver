@@ -24,6 +24,7 @@ import (
 )
 
 func getHelmSpecs(t *testing.T, vars ...string) []runtime.Object {
+	t.Helper()
 	vars = append(vars, "cloud.credentials.create=true", "cloud.credentials.accessKey=foo", "cloud.credentials.secretKey=bar")
 	args := []string{"template", "--debug"}
 	if len(vars) > 0 {
@@ -81,7 +82,8 @@ func TestHelmTemplate(t *testing.T) {
 }
 
 func TestHelmTemplate_Deployment(t *testing.T) {
-	var getDeployment = func(t *testing.T, vars ...string) *appsv1.Deployment {
+	getDeployment := func(t *testing.T, vars ...string) *appsv1.Deployment {
+		t.Helper()
 		specs := getHelmSpecs(t, vars...)
 		for _, obj := range specs {
 			if dep, ok := obj.(*appsv1.Deployment); ok {
@@ -390,7 +392,8 @@ func TestHelmTemplate_Deployment(t *testing.T) {
 }
 
 func TestHelmTemplate_DaemonSet(t *testing.T) {
-	var getDaemonSet = func(t *testing.T, vars ...string) *appsv1.DaemonSet {
+	getDaemonSet := func(t *testing.T, vars ...string) *appsv1.DaemonSet {
+		t.Helper()
 		specs := getHelmSpecs(t, vars...)
 		for _, obj := range specs {
 			if dep, ok := obj.(*appsv1.DaemonSet); ok {
@@ -501,7 +504,8 @@ func TestHelmTemplate_DaemonSet(t *testing.T) {
 		)
 		require.Len(t, dep.Spec.Template.Spec.Containers, 3)
 		assert.Equal(t, []string{
-			"node", "--endpoint=$(CSI_ENDPOINT)", "--v=3", "--luks-open-flags=--perf-no_read_workqueue", "--luks-open-flags=--perf-no_write_workqueue"},
+			"node", "--endpoint=$(CSI_ENDPOINT)", "--v=3", "--luks-open-flags=--perf-no_read_workqueue", "--luks-open-flags=--perf-no_write_workqueue",
+		},
 			dep.Spec.Template.Spec.Containers[0].Args)
 	})
 

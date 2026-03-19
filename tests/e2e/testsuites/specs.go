@@ -70,9 +70,7 @@ const (
 	APIVersionv1              = "v1"
 )
 
-var (
-	SnapshotAPIGroup = "snapshot.storage.k8s.io"
-)
+var SnapshotAPIGroup = "snapshot.storage.k8s.io"
 
 type VolumeMountDetails struct {
 	NameGenerate      string
@@ -122,7 +120,7 @@ func (pod *PodDetails) SetupWithPreProvisionedVolumes(client clientset.Interface
 }
 
 func (pod *PodDetails) SetupDeployment(client clientset.Interface, namespace *v1.Namespace, csiDriver driver.DynamicPVTestDriver, customImage ...string) (*TestDeployment, []func()) {
-	cleanupFuncs := make([]func(), 0)
+	cleanupFuncs := make([]func(), 0, 3)
 	volume := pod.Volumes[0]
 	By("setting up the StorageClass")
 	storageClass := csiDriver.GetDynamicProvisionStorageClass(driver.GetParameters(volume.VolumeType, volume.FSType, volume.IopsPerGB, volume.Encrypted, volume.SecretName, volume.SecretNamespace), volume.MountOptions, volume.ReclaimPolicy, volume.AllowVolumeExpansion, volume.VolumeBindingMode, volume.AllowedTopologyValues, namespace.Name)
@@ -142,7 +140,7 @@ func (pod *PodDetails) SetupDeployment(client clientset.Interface, namespace *v1
 }
 
 func (volume *VolumeDetails) SetupDynamicPersistentVolumeClaim(client clientset.Interface, namespace *v1.Namespace, csiDriver driver.DynamicPVTestDriver) (*TestPersistentVolumeClaim, []func()) {
-	cleanupFuncs := make([]func(), 0)
+	cleanupFuncs := make([]func(), 0, 3)
 	By("setting up the StorageClass")
 	storageClass := csiDriver.GetDynamicProvisionStorageClass(driver.GetParameters(volume.VolumeType, volume.FSType, volume.IopsPerGB, volume.Encrypted, volume.SecretName, volume.SecretNamespace), volume.MountOptions, volume.ReclaimPolicy, volume.AllowVolumeExpansion, volume.VolumeBindingMode, volume.AllowedTopologyValues, namespace.Name)
 	tsc := NewTestStorageClass(client, storageClass)
@@ -181,7 +179,7 @@ func (volume *VolumeDetails) SetupDynamicPersistentVolumeClaim(client clientset.
 }
 
 func (volume *VolumeDetails) SetupVolumeAttributesClass(client clientset.Interface, namespace *v1.Namespace, name string, volumeType osc.VolumeType, iopsPerGB string, csiDriver driver.DynamicPVTestDriver) (*TestVolumeAttributesClass, []func()) {
-	var cleanupFuncs []func()
+	cleanupFuncs := make([]func(), 0, 1)
 	By("setting up the VolumeAttributesClass")
 	vac := csiDriver.GetVolumeAttributesClass(namespace.Name, name, volumeType, iopsPerGB)
 	tvac := NewTestVolumeAttributesClass(client, vac)
@@ -191,7 +189,7 @@ func (volume *VolumeDetails) SetupVolumeAttributesClass(client clientset.Interfa
 }
 
 func (volume *VolumeDetails) SetupPreProvisionedPersistentVolumeClaim(client clientset.Interface, namespace *v1.Namespace, csiDriver driver.PreProvisionedVolumeTestDriver) (*TestPersistentVolumeClaim, []func()) {
-	cleanupFuncs := make([]func(), 0)
+	cleanupFuncs := make([]func(), 0, 2)
 	By("setting up the PV")
 	pv := csiDriver.GetPersistentVolume(volume.VolumeID, volume.FSType, volume.ClaimSize, volume.ReclaimPolicy, namespace.Name)
 	fmt.Printf("Debug pv := csiDriver.GetPersistentVolume:::: %+v\n", pv)

@@ -34,6 +34,7 @@ func TestGetOptions(t *testing.T) {
 		withControllerOptions bool,
 		withNodeOptions bool,
 	) *Options {
+		t.Helper()
 		flagSet := pflag.NewFlagSet("test-flagset", pflag.ContinueOnError)
 
 		endpointFlagName := "endpoint"

@@ -14,12 +14,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package internal
+package internal_test
 
 import (
 	"testing"
 
 	"github.com/container-storage-interface/spec/lib/go/csi"
+	"github.com/outscale/osc-bsu-csi-driver/pkg/driver/internal"
 	"github.com/outscale/osc-bsu-csi-driver/pkg/util"
 )
 
@@ -196,7 +197,7 @@ func TestInFlight(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			db := NewInFlight()
+			db := internal.NewInFlight()
 			for _, r := range tc.requests {
 				var resp bool
 				if r.delete {

@@ -35,9 +35,7 @@ import (
 	"k8s.io/klog/v2"
 )
 
-var (
-	ValidVolumeTypes = []osc.VolumeType{osc.VolumeTypeIo1, osc.VolumeTypeGp2, osc.VolumeTypeStandard}
-)
+var ValidVolumeTypes = []osc.VolumeType{osc.VolumeTypeIo1, osc.VolumeTypeGp2, osc.VolumeTypeStandard}
 
 // Outscale provisioning limits.
 // Source: https://docs.outscale.com/en/userguide/About-Volumes.html#_volume_types_and_iops
@@ -215,18 +213,11 @@ func (c *cloud) Start(ctx context.Context) {
 }
 
 func iops(iopsPerGB, capacityGiB int) int {
-	if iopsPerGB > MaxIopsPerGb {
-		iopsPerGB = 300
-	}
-
-	iops := capacityGiB * iopsPerGB
-	if iops < MinTotalIOPS {
-		iops = MinTotalIOPS
-	}
-	if iops > MaxTotalIOPS {
-		iops = MaxTotalIOPS
-	}
-	return iops
+	iopsPerGB = min(iopsPerGB, MaxIopsPerGb)
+	return min(
+		max(capacityGiB*iopsPerGB, MinTotalIOPS),
+		MaxTotalIOPS,
+	)
 }
 
 func (c *cloud) CreateVolume(ctx context.Context, name string, opts *VolumeOptions) (*Volume, error) {

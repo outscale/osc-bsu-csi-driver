@@ -56,18 +56,14 @@ const (
 	defaultMaxBSUVolumes = 40
 )
 
-var (
-	ValidFSTypes = []string{FSTypeExt2, FSTypeExt3, FSTypeExt4, FSTypeXfs}
-)
+var ValidFSTypes = []string{FSTypeExt2, FSTypeExt3, FSTypeExt4, FSTypeXfs}
 
-var (
-	// nodeCaps represents the capability of node service.
-	nodeCaps = []csi.NodeServiceCapability_RPC_Type{
-		csi.NodeServiceCapability_RPC_STAGE_UNSTAGE_VOLUME,
-		csi.NodeServiceCapability_RPC_EXPAND_VOLUME,
-		csi.NodeServiceCapability_RPC_GET_VOLUME_STATS,
-	}
-)
+// nodeCaps represents the capability of node service.
+var nodeCaps = []csi.NodeServiceCapability_RPC_Type{
+	csi.NodeServiceCapability_RPC_STAGE_UNSTAGE_VOLUME,
+	csi.NodeServiceCapability_RPC_EXPAND_VOLUME,
+	csi.NodeServiceCapability_RPC_GET_VOLUME_STATS,
+}
 
 // nodeService represents the node service of CSI driver
 type nodeService struct {
@@ -813,12 +809,7 @@ func getEnvMaxVolume() int64 {
 // slice already contains a mount option. This is used to prevent
 // passing duplicate option to the mount command.
 func hasMountOption(options []string, opt string) bool {
-	for _, o := range options {
-		if o == opt {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(options, opt)
 }
 
 // checkMountTarget checks if target is mounted. It does NOT return an error if target

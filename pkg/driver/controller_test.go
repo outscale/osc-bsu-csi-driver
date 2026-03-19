@@ -781,7 +781,7 @@ func TestDeleteVolume(t *testing.T) {
 	}{
 		{
 			name: "success normal",
-			testFunc: func(t *testing.T) {
+			testFunc: func(t *testing.T) { //nolint
 				req := &csi.DeleteVolumeRequest{
 					VolumeId: "vol-test",
 				}
@@ -812,7 +812,7 @@ func TestDeleteVolume(t *testing.T) {
 		},
 		{
 			name: "success invalid volume id",
-			testFunc: func(t *testing.T) {
+			testFunc: func(t *testing.T) { //nolint
 				req := &csi.DeleteVolumeRequest{
 					VolumeId: "invalid-volume-name",
 				}
@@ -843,7 +843,7 @@ func TestDeleteVolume(t *testing.T) {
 		},
 		{
 			name: "fail delete disk",
-			testFunc: func(t *testing.T) {
+			testFunc: func(t *testing.T) { //nolint
 				req := &csi.DeleteVolumeRequest{
 					VolumeId: "test-vol",
 				}

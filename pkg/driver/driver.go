@@ -79,7 +79,7 @@ type DriverOptions struct {
 	// Node options
 	luksOpenFlags []string
 
-	// overriden services
+	// overridden services
 	mounter Mounter
 }
 
@@ -137,6 +137,7 @@ func (d *Driver) checkTools() error {
 
 	return nil
 }
+
 func (d *Driver) Run(ctx context.Context) error {
 	version := util.GetVersion().DriverVersion
 	klog.V(3).InfoS(fmt.Sprintf("Driver: %v Version: %v", DriverName, version))

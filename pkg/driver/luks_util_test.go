@@ -1,4 +1,4 @@
-package driver
+package driver_test
 
 import (
 	"fmt"
@@ -6,6 +6,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/outscale/osc-bsu-csi-driver/pkg/driver"
 	"github.com/outscale/osc-bsu-csi-driver/pkg/driver/luks"
 	"github.com/outscale/osc-bsu-csi-driver/pkg/driver/mocks"
 	"github.com/stretchr/testify/assert"
@@ -13,8 +14,7 @@ import (
 	"go.uber.org/mock/gomock"
 )
 
-var (
-	ValidStatus = `/dev/mapper/fake_crypt is active and is in use.
+var ValidStatus = `/dev/mapper/fake_crypt is active and is in use.
 	type:    LUKS2
 	cipher:  aes-xts-plain64
 	keysize: 512 bits
@@ -24,7 +24,6 @@ var (
 	offset:  4096 sectors
 	size:    234369024 sectors
 	mode:    read/write`
-)
 
 func TestIsLuks(t *testing.T) {
 	mockCtl := gomock.NewController(t)
@@ -34,14 +33,14 @@ func TestIsLuks(t *testing.T) {
 	mockRun := mocks.NewMockCmd(mockCtl)
 	mockRun.EXPECT().Run().Return(fmt.Errorf("error"))
 	mockCommand.EXPECT().Command(gomock.Eq("cryptsetup"), gomock.Eq("isLuks"), gomock.Eq(devicePath)).Return(mockRun)
-	assert.False(t, IsLuks(mockCommand, devicePath))
+	assert.False(t, driver.IsLuks(mockCommand, devicePath))
 
 	// Check when it is luks device
 	mockCommand = mocks.NewMockInterface(mockCtl)
 	mockRun = mocks.NewMockCmd(mockCtl)
 	mockCommand.EXPECT().Command(gomock.Eq("cryptsetup"), gomock.Eq("isLuks"), gomock.Eq(devicePath)).Return(mockRun)
 	mockRun.EXPECT().Run().Return(nil)
-	assert.True(t, IsLuks(mockCommand, devicePath))
+	assert.True(t, driver.IsLuks(mockCommand, devicePath))
 }
 
 func TestLuksFormat(t *testing.T) {
@@ -67,7 +66,7 @@ func TestLuksFormat(t *testing.T) {
 	).Return(mockRun)
 	mockRun.EXPECT().CombinedOutput().Return([]byte{}, nil)
 	mockRun.EXPECT().SetStdin(gomock.Any()).Return()
-	require.NoError(t, LuksFormat(mockCommand, devicePath, passphrase, context))
+	require.NoError(t, driver.LuksFormat(mockCommand, devicePath, passphrase, context))
 
 	// Check luksformat with Cipher
 	context.Cipher = "OneContext"
@@ -84,7 +83,7 @@ func TestLuksFormat(t *testing.T) {
 	).Return(mockRun)
 	mockRun.EXPECT().CombinedOutput().Return([]byte{}, nil)
 	mockRun.EXPECT().SetStdin(gomock.Any()).Return()
-	require.NoError(t, LuksFormat(mockCommand, devicePath, passphrase, context))
+	require.NoError(t, driver.LuksFormat(mockCommand, devicePath, passphrase, context))
 
 	// Check luksformat with Cipher and Hash
 	context.Cipher = "OneContext"
@@ -103,7 +102,7 @@ func TestLuksFormat(t *testing.T) {
 	).Return(mockRun)
 	mockRun.EXPECT().CombinedOutput().Return([]byte{}, nil)
 	mockRun.EXPECT().SetStdin(gomock.Any()).Return()
-	require.NoError(t, LuksFormat(mockCommand, devicePath, passphrase, context))
+	require.NoError(t, driver.LuksFormat(mockCommand, devicePath, passphrase, context))
 
 	// Check luksformat with Cipher, Hash and KeySize
 	context.Cipher = "OneContext"
@@ -124,7 +123,7 @@ func TestLuksFormat(t *testing.T) {
 	).Return(mockRun)
 	mockRun.EXPECT().CombinedOutput().Return([]byte{}, nil)
 	mockRun.EXPECT().SetStdin(gomock.Any()).Return()
-	require.NoError(t, LuksFormat(mockCommand, devicePath, passphrase, context))
+	require.NoError(t, driver.LuksFormat(mockCommand, devicePath, passphrase, context))
 }
 
 func TestCheckLuksPassphrase(t *testing.T) {
@@ -146,7 +145,7 @@ func TestCheckLuksPassphrase(t *testing.T) {
 		gomock.Eq(devicePath),
 	).Return(mockRun)
 
-	require.NoError(t, CheckLuksPassphrase(mockCommand, devicePath, passphrase))
+	require.NoError(t, driver.CheckLuksPassphrase(mockCommand, devicePath, passphrase))
 
 	// Check when it is luks device
 	mockCommand = mocks.NewMockInterface(mockCtl)
@@ -163,7 +162,7 @@ func TestCheckLuksPassphrase(t *testing.T) {
 		gomock.Eq(devicePath),
 	).Return(mockRun)
 
-	require.Error(t, CheckLuksPassphrase(mockCommand, devicePath, passphrase))
+	require.Error(t, driver.CheckLuksPassphrase(mockCommand, devicePath, passphrase))
 }
 
 func TestLuksOpen(t *testing.T) {
@@ -186,7 +185,7 @@ func TestLuksOpen(t *testing.T) {
 		).Return(mockRun)
 		mockRun.EXPECT().SetStdin(gomock.Any()).Return()
 		mockRun.EXPECT().CombinedOutput().Return([]byte{}, nil)
-		ok, err := LuksOpen(mockStat, devicePath, "fake_crypt", passphrase)
+		ok, err := driver.LuksOpen(mockStat, devicePath, "fake_crypt", passphrase)
 		require.NoError(t, err)
 		assert.True(t, ok)
 	})
@@ -208,7 +207,7 @@ func TestLuksOpen(t *testing.T) {
 		).Return(mockRun)
 		mockRun.EXPECT().SetStdin(gomock.Any()).Return()
 		mockRun.EXPECT().CombinedOutput().Return([]byte{}, nil)
-		ok, err := LuksOpen(mockStat, devicePath, "fake_crypt", passphrase, "-option1", "-option2")
+		ok, err := driver.LuksOpen(mockStat, devicePath, "fake_crypt", passphrase, "-option1", "-option2")
 		require.NoError(t, err)
 		assert.True(t, ok)
 	})
@@ -216,7 +215,7 @@ func TestLuksOpen(t *testing.T) {
 	t.Run("Opening an already opened volume (idempotency)", func(t *testing.T) {
 		mockStat := mocks.NewMockMounter(mockCtl)
 		mockStat.EXPECT().ExistsPath("/dev/mapper/fake_crypt").Return(true, nil)
-		ok, err := LuksOpen(mockStat, devicePath, "fake_crypt", passphrase)
+		ok, err := driver.LuksOpen(mockStat, devicePath, "fake_crypt", passphrase)
 		require.NoError(t, err)
 		assert.True(t, ok)
 	})
@@ -236,7 +235,7 @@ func TestLuksOpen(t *testing.T) {
 		).Return(mockRun)
 		mockRun.EXPECT().SetStdin(gomock.Any()).Return()
 		mockRun.EXPECT().CombinedOutput().Return([]byte{}, fmt.Errorf("error"))
-		ok, err := LuksOpen(mockStat, devicePath, "fake_crypt", passphrase)
+		ok, err := driver.LuksOpen(mockStat, devicePath, "fake_crypt", passphrase)
 		require.Error(t, err)
 		assert.False(t, ok)
 	})
@@ -257,7 +256,7 @@ func TestIsLuksMapping(t *testing.T) {
 	).Return(mockRun)
 
 	mockRun.EXPECT().CombinedOutput().Return([]byte(ValidStatus), nil)
-	ok, mappingName, err := IsLuksMapping(mockCommand, devicePath)
+	ok, mappingName, err := driver.IsLuksMapping(mockCommand, devicePath)
 	require.NoError(t, err)
 	assert.True(t, ok)
 	assert.Equal(t, "fake_crypt", mappingName)
@@ -274,7 +273,7 @@ func TestIsLuksMapping(t *testing.T) {
 	).Return(mockRun)
 
 	mockRun.EXPECT().CombinedOutput().Return([]byte("/dev/mapper/fake_crypt is inactive"), nil)
-	ok, mappingName, err = IsLuksMapping(mockCommand, devicePath)
+	ok, mappingName, err = driver.IsLuksMapping(mockCommand, devicePath)
 	require.NoError(t, err)
 	assert.False(t, ok)
 	assert.Equal(t, "fake_crypt", mappingName)
@@ -283,7 +282,7 @@ func TestIsLuksMapping(t *testing.T) {
 	mockCommand = mocks.NewMockInterface(mockCtl)
 	devicePath = "/dev/notmapper/fake_crypt"
 
-	ok, mappingName, err = IsLuksMapping(mockCommand, devicePath)
+	ok, mappingName, err = driver.IsLuksMapping(mockCommand, devicePath)
 	require.NoError(t, err)
 	assert.False(t, ok)
 	assert.Equal(t, "", mappingName)
@@ -320,7 +319,7 @@ func TestLuksResize(t *testing.T) {
 	mockRun.EXPECT().CombinedOutput().Return([]byte(""), nil)
 
 	// Call LuksResize with the mock command and passphrase
-	require.NoError(t, LuksResize(mockCommand, devicePath, passphrase))
+	require.NoError(t, driver.LuksResize(mockCommand, devicePath, passphrase))
 
 	// Check failure case
 	mockCommand = mocks.NewMockInterface(mockCtl)
@@ -342,7 +341,7 @@ func TestLuksResize(t *testing.T) {
 	// Expect CombinedOutput to return an error
 	mockRun.EXPECT().CombinedOutput().Return([]byte(""), fmt.Errorf("Error"))
 
-	require.Error(t, LuksResize(mockCommand, devicePath, passphrase))
+	require.Error(t, driver.LuksResize(mockCommand, devicePath, passphrase))
 }
 
 func TestLuksClose(t *testing.T) {
@@ -359,13 +358,13 @@ func TestLuksClose(t *testing.T) {
 		gomock.Eq("fake_crypt"),
 	).Return(mockRun)
 	mockRun.EXPECT().Run().Return(nil)
-	err := LuksClose(mockStat, "fake_crypt")
+	err := driver.LuksClose(mockStat, "fake_crypt")
 	require.NoError(t, err)
 
 	// Check when not opened (idempotency)
 	mockStat = mocks.NewMockMounter(mockCtl)
 	mockStat.EXPECT().ExistsPath("/dev/mapper/fake_crypt").Return(false, nil)
-	err = LuksClose(mockStat, "fake_crypt")
+	err = driver.LuksClose(mockStat, "fake_crypt")
 	require.NoError(t, err)
 
 	// Check when open failed
@@ -379,6 +378,6 @@ func TestLuksClose(t *testing.T) {
 		gomock.Eq("fake_crypt"),
 	).Return(mockRun)
 	mockRun.EXPECT().Run().Return(fmt.Errorf("error"))
-	err = LuksClose(mockStat, "fake_crypt")
+	err = driver.LuksClose(mockStat, "fake_crypt")
 	require.Error(t, err)
 }

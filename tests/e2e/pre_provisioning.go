@@ -12,7 +12,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package e2e
+package e2e_test
 
 import (
 	"context"
@@ -21,7 +21,7 @@ import (
 	"os"
 	"strings"
 
-	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/ginkgo/v2" //nolint
 	"github.com/outscale/goutils/k8s/sdk"
 	"github.com/outscale/osc-bsu-csi-driver/cmd/options"
 	osccloud "github.com/outscale/osc-bsu-csi-driver/pkg/cloud"
@@ -44,9 +44,7 @@ const (
 	dummyVolumeNamePrefix   = "pre-provisioned"
 )
 
-var (
-	defaultDiskSizeBytes int64 = util.GiBToBytes(defaultDiskSize)
-)
+var defaultDiskSizeBytes int64 = util.GiBToBytes(defaultDiskSize)
 
 var _ = Describe("[bsu-csi-e2e] [single-az] Pre-Provisioned", func() {
 	f := framework.NewDefaultFramework("bsu")

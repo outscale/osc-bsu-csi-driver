@@ -18,6 +18,7 @@ package devicemanager
 
 import (
 	"fmt"
+	"maps"
 	"strings"
 	"sync"
 
@@ -214,9 +215,7 @@ func (d *deviceManager) getDeviceNamesInUse(instance *osc.Vm) map[string]string 
 	}
 
 	// klog.V(5).Infof("DeviceNameInUse: APIDevice: %v, CacheDevice: %v", inUse, d.inFlight.GetNames(nodeID))
-	for name, volumeID := range d.inFlight.GetNames(nodeID) {
-		inUse[name] = volumeID
-	}
+	maps.Copy(inUse, d.inFlight.GetNames(nodeID))
 
 	return inUse
 }

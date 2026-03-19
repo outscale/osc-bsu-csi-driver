@@ -1,7 +1,6 @@
-package driver
+package sanity_test
 
 import (
-	"context"
 	"encoding/hex"
 	"os"
 	"path/filepath"
@@ -40,8 +39,7 @@ func TestSanity(t *testing.T) {
 		t.Fatalf("unable to setup logger: %v", err)
 	}
 
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	ctx := t.Context()
 	drv, err := driver.NewDriver(ctx,
 		driver.WithExtraSnapshotTags(map[string]string{"csi-sanity-test": "true"}),
 		driver.WithExtraVolumeTags(map[string]string{"csi-sanity-test": "true"}),
@@ -68,7 +66,7 @@ func TestSanity(t *testing.T) {
 }
 
 func createDir(targetPath string) (string, error) {
-	if err := os.MkdirAll(targetPath, 0700); err != nil {
+	if err := os.MkdirAll(targetPath, 0o700); err != nil {
 		if os.IsNotExist(err) {
 			return "", err
 		}

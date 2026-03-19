@@ -28,7 +28,7 @@ import (
 
 func stringMap(n int) map[string]string {
 	result := map[string]string{}
-	for i := 0; i < n; i++ {
+	for i := range n {
 		result[strconv.Itoa(i)] = "foo"
 	}
 	return result

@@ -15,9 +15,7 @@ func GetUpdatedParameters(params MutableParameters) map[string]string {
 		return params.GetMutableParameters()
 	default:
 		p := maps.Clone(params.GetParameters())
-		for k, v := range params.GetMutableParameters() {
-			p[k] = v
-		}
+		maps.Copy(p, params.GetMutableParameters())
 		return p
 	}
 }

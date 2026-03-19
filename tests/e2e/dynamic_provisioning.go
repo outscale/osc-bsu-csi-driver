@@ -12,7 +12,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package e2e
+package e2e_test
 
 import (
 	"context"
@@ -144,7 +144,7 @@ var _ = Describe("[bsu-csi-e2e] [single-az] Dynamic Provisioning", func() {
 				Cmd: "echo 'hello world' > /mnt/test-1/data && echo 'hello world' > /mnt/test-2/data && grep 'hello world' /mnt/test-1/data  && grep 'hello world' /mnt/test-2/data",
 			},
 		}
-		for i := 0; i < 39; i++ {
+		for range 39 {
 			pods[0].Volumes = append(pods[0].Volumes, testsuites.VolumeDetails{
 				VolumeType: osc.VolumeTypeGp2,
 				FSType:     bsucsidriver.FSTypeExt4,

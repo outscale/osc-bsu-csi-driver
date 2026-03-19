@@ -14,11 +14,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package options
+package options_test
 
 import (
 	"testing"
 
+	"github.com/outscale/osc-bsu-csi-driver/cmd/options"
 	"github.com/spf13/pflag"
 )
 
@@ -42,7 +43,7 @@ func TestControllerOptions(t *testing.T) {
 
 	for _, tc := range testCases {
 		flagSet := pflag.NewFlagSet("test-flagset", pflag.ContinueOnError)
-		controllerOptions := &ControllerOptions{}
+		controllerOptions := &options.ControllerOptions{}
 
 		t.Run(tc.name, func(t *testing.T) {
 			controllerOptions.AddFlags(flagSet)

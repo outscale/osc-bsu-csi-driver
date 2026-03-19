@@ -1480,7 +1480,7 @@ func TestNodeGetVolumeStats(t *testing.T) {
 
 				mockMounter := mocks.NewMockMounter(mockCtl)
 				VolumePath := t.TempDir()
-				err := os.MkdirAll(VolumePath, 0750)
+				err := os.MkdirAll(VolumePath, 0o750)
 				require.NoError(t, err)
 
 				mockMounter.EXPECT().ExistsPath(VolumePath).Return(true, nil)

@@ -128,7 +128,7 @@ func (t *DynamicallyProvisionedStatsPodTest) Run(client clientset.Interface, nam
 	By("checking volume stats using /metrics ")
 	metrics_kubelet_volume_stats := ""
 	df_stats := ""
-	for i := 0; i < 20; i++ {
+	for range 20 {
 		// Retrieve stats using /metrics
 		cmd := []string{
 			"wget",

@@ -14,19 +14,21 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package util
+package util_test
 
 import (
 	"fmt"
 	"reflect"
 	"runtime"
 	"testing"
+
+	"github.com/outscale/osc-bsu-csi-driver/pkg/util"
 )
 
 func TestGetVersion(t *testing.T) {
-	version := GetVersion()
+	version := util.GetVersion()
 
-	expected := VersionInfo{
+	expected := util.VersionInfo{
 		DriverVersion: "",
 		BuildDate:     "",
 		GoVersion:     runtime.Version(),
@@ -40,7 +42,7 @@ func TestGetVersion(t *testing.T) {
 }
 
 func TestGetVersionJSON(t *testing.T) {
-	version, err := GetVersionJSON()
+	version, err := util.GetVersionJSON()
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}

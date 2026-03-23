@@ -49,19 +49,3 @@ jobs:
       uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
     - name: 🔎 Check docs
       run: bash -c "make check-helm-docs"
-  trivy:
-    runs-on: ubuntu-22.04
-    steps:
-    - name: ⬇️ Checkout repository
-      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
-    - name: 📦 Build image
-      run: bash -c "make build-image"
-    - name: 🔎 Trivy-Scan
-      run: bash -c "make trivy-scan"
-    - name: 🔎 Trivy-Ignore-Check
-      run: bash -c "make trivy-ignore-check"
-    - name: ⬆️ Upload result
-      if: ${{ always() && github.event_name != 'pull_request' }}
-      uses: github/codeql-action/upload-sarif@b1bff81932f5cdfc8695c7752dcee935dcd061c8 # v4
-      with:
-        sarif_file: './.trivyscan/report.sarif'

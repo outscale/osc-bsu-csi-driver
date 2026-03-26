@@ -7,7 +7,7 @@ spec:
   accessModes:
     - ReadWriteOnce
   storageClassName: bsu-sc
-  volumeAttributesClass: bsu-vac
+  volumeAttributesClassName: bsu-vac
   resources:
     requests:
       storage: 4Gi

@@ -5,7 +5,7 @@ metadata:
 provisioner: bsu.csi.outscale.com
 parameters:
   iopspergb: "500"
-  volumeType: "io1"
+  type: "io1"
 ---
 kind: VolumeAttributesClass
 apiVersion: storage.k8s.io/v1beta1
@@ -14,4 +14,4 @@ metadata:
 provisioner: bsu.csi.outscale.com
 parameters:
   iopspergb: "1000"
-  volumeType: "io1"
+  type: "io1"

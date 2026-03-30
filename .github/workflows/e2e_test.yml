@@ -26,7 +26,7 @@ jobs:
     - name: 🔐 Set ak/sk name based on runner region
       run: .github/scripts/runneraksk.sh
     - name: ⬇️ Install Go
-      uses: actions/setup-go@4b73464bb391d4059bd26b0524d20df3927bd417 # v6
+      uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6
       with:
         go-version-file: 'go.mod'
     - name: 🧹 Frieza
@@ -59,7 +59,7 @@ jobs:
       with:
         version: v3.19.2
     - name: ⬇️ Install Go
-      uses: actions/setup-go@4b73464bb391d4059bd26b0524d20df3927bd417 # v6
+      uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6
       with:
         go-version-file: 'go.mod'
     - name: 🧹 Frieza

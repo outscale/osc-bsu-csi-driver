@@ -9,7 +9,7 @@ require (
 	github.com/onsi/ginkgo/v2 v2.28.1
 	github.com/onsi/gomega v1.39.1
 	github.com/outscale/goutils/k8s v0.0.2
-	github.com/outscale/goutils/sdk v0.0.2
+	github.com/outscale/goutils/sdk v0.0.3
 	github.com/outscale/osc-sdk-go/v3 v3.0.0-rc.1
 	github.com/rs/xid v1.6.0
 	github.com/samber/lo v1.53.0

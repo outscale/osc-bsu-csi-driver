@@ -177,6 +177,8 @@ github.com/outscale/goutils/sdk v0.0.0-20260113165558-ff2de7ab6a67 h1:bpkVNbhCWA
 github.com/outscale/goutils/sdk v0.0.0-20260113165558-ff2de7ab6a67/go.mod h1:dVTeuVYvXjyRSKJk0AtY8flbPpEVeR3WMFU1x3VwrCk=
 github.com/outscale/goutils/sdk v0.0.2 h1:btnhPmo2Sitm3PDtE4bBeuFpF0B4YEHUc91NT7rsVPM=
 github.com/outscale/goutils/sdk v0.0.2/go.mod h1:2Ae3lIQmdOC+n/VnOABrzS+kpjq/Hm0PJQhABpiFW8M=
+github.com/outscale/goutils/sdk v0.0.3 h1:LnMuNUhQW8YgKDFH9vHTtstND3igHDbHDHPsaFsKFZ0=
+github.com/outscale/goutils/sdk v0.0.3/go.mod h1:2Ae3lIQmdOC+n/VnOABrzS+kpjq/Hm0PJQhABpiFW8M=
 github.com/outscale/kubernetes-csi-test/v5 v5.4.0-outscale h1:WB9CqCemzvwM7VIf3JYL4Y+gnFWCS/pisVBCNWmIqnQ=
 github.com/outscale/kubernetes-csi-test/v5 v5.4.0-outscale/go.mod h1:anAJKFUb/SdHhIHECgSKxC5LSiLzib+1I6mrWF5Hve8=
 github.com/outscale/osc-sdk-go/v3 v3.0.0-beta.2.0.20251224132622-ff629d43222d h1:cnB+kT/CC1LmjTuVnKyAAZX/TZ9ZnGQeG2UEykLfcuU=

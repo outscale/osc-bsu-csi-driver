@@ -35,6 +35,7 @@ jobs:
         access_key: ${{ secrets[env.OSC_ACCESS_KEY_NAME] }}
         secret_key: ${{ secrets[env.OSC_SECRET_KEY_NAME] }}
         region: ${{ env.OSC_REGION }}
+        exclude_resource_types: access_key
     - name: 🧪 Sanity test
       run:
         make test-sanity
@@ -99,7 +100,7 @@ jobs:
         kubectl apply -f https://raw.githubusercontent.com/kubernetes-csi/external-snapshotter/release-8.3/client/config/crd/snapshot.storage.k8s.io_volumesnapshots.yaml
         kubectl apply -f https://raw.githubusercontent.com/kubernetes-csi/external-snapshotter/release-8.3/deploy/kubernetes/snapshot-controller/rbac-snapshot-controller.yaml
         kubectl apply -f https://raw.githubusercontent.com/kubernetes-csi/external-snapshotter/release-8.3/deploy/kubernetes/snapshot-controller/setup-snapshot-controller.yaml
-        make helm_deploy 
+        make helm_deploy
       env:
         KUBECONFIG: "${{ github.workspace }}/${{ steps.caposc.outputs.KUBECONFIG }}"
         OSC_ACCESS_KEY: ${{ secrets[env.OSC_ACCESS_KEY_NAME] }}

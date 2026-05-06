@@ -10,7 +10,7 @@ require (
 	github.com/onsi/gomega v1.40.0
 	github.com/outscale/goutils/k8s v0.0.2
 	github.com/outscale/goutils/sdk v0.0.2
-	github.com/outscale/osc-sdk-go/v3 v3.0.0-rc.1
+	github.com/outscale/osc-sdk-go/v3 v3.0.0-rc.2
 	github.com/rs/xid v1.6.0
 	github.com/samber/lo v1.53.0
 	github.com/spf13/pflag v1.0.10
@@ -80,7 +80,7 @@ require (
 	github.com/modern-go/reflect2 v1.0.3-0.20250322232337-35a7c28c31ee // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
 	github.com/mxk/go-flowrate v0.0.0-20140419014527-cca7078d478f // indirect
-	github.com/oapi-codegen/runtime v1.2.0 // indirect
+	github.com/oapi-codegen/runtime v1.3.1 // indirect
 	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/opencontainers/selinux v1.11.1 // indirect
 	github.com/pkg/errors v0.9.1 // indirect

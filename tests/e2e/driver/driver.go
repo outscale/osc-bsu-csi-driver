@@ -43,7 +43,7 @@ type DynamicPVTestDriver interface {
 	GetPassphraseSecret(name string, passphrase string) *v1.Secret
 
 	// GetVolumeAttributesClass returns a StorageClass dynamic provision Persistent Volume
-	GetVolumeAttributesClass(namespace, name string, volumeType osc.VolumeType, iopsPerGB string) *storagev1beta1.VolumeAttributesClass
+	GetVolumeAttributesClass(namespace, name string, volumeType osc.VolumeType, iops bool, iopsPerGB string) *storagev1beta1.VolumeAttributesClass
 }
 
 // PreProvisionedVolumeTestDriver represents an interface for a CSI driver that supports pre-provisioned volume

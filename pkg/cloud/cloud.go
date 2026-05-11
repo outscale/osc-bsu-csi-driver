@@ -98,6 +98,7 @@ type Volume struct {
 	SnapshotID       *string
 	VolumeType       osc.VolumeType
 	IOPSPerGB        int
+	IOPS             int
 }
 
 // VolumeOptions represents parameters to create an BSU volume
@@ -106,6 +107,7 @@ type VolumeOptions struct {
 	Tags          map[string]string
 	VolumeType    osc.VolumeType
 	IOPSPerGB     int
+	IOPS          int
 	SubRegion     string
 	Encrypted     bool
 	// KmsKeyID represents a fully qualified resource name to the key to use for encryption.
@@ -150,7 +152,7 @@ type Cloud interface {
 	AttachVolume(ctx context.Context, volumeID string, nodeID string) (devicePath string, err error)
 	DetachVolume(ctx context.Context, volumeID string, nodeID string) (err error)
 	ResizeVolume(ctx context.Context, volumeID string, reqSize int64) (newSize int64, err error)
-	UpdateVolume(ctx context.Context, volumeID string, volumeType osc.VolumeType, iopsPerGB int) (err error)
+	UpdateVolume(ctx context.Context, volumeID string, volumeType osc.VolumeType, iops, iopsPerGB int) (err error)
 	WaitForAttachmentState(ctx context.Context, volumeID string, state osc.LinkedVolumeState) error
 	CheckCreatedVolume(ctx context.Context, name string) (vol *Volume, err error)
 	GetVolumeByID(ctx context.Context, volumeID string) (vol *Volume, err error)
@@ -212,7 +214,7 @@ func (c *cloud) Start(ctx context.Context) {
 	go c.volumeWatcher.Run(ctx)
 }
 
-func iops(iopsPerGB, capacityGiB int) int {
+func computeIOPS(iopsPerGB, capacityGiB int) int {
 	iopsPerGB = min(iopsPerGB, MaxIopsPerGb)
 	return min(
 		max(capacityGiB*iopsPerGB, MinTotalIOPS),
@@ -243,8 +245,12 @@ func (c *cloud) CreateVolume(ctx context.Context, name string, opts *VolumeOptio
 		createType = opts.VolumeType
 	case osc.VolumeTypeIo1:
 		createType = osc.VolumeTypeIo1
-		iops := iops(opts.IOPSPerGB, capacityGiB)
-		request.Iops = &iops
+		if opts.IOPS > 0 {
+			request.Iops = &opts.IOPS
+		} else {
+			iops := computeIOPS(opts.IOPSPerGB, capacityGiB)
+			request.Iops = &iops
+		}
 	case "":
 		createType = DefaultVolumeType
 	default:
@@ -289,7 +295,7 @@ func (c *cloud) CreateVolume(ctx context.Context, name string, opts *VolumeOptio
 
 	return &Volume{
 		CapacityGiB: vol.Size, VolumeID: vol.VolumeId, AvailabilityZone: zone, SnapshotID: vol.SnapshotId,
-		VolumeType: vol.VolumeType, IOPSPerGB: vol.Iops / vol.Size,
+		VolumeType: vol.VolumeType, IOPSPerGB: vol.Iops / vol.Size, IOPS: vol.Iops,
 	}, nil
 }
 
@@ -490,6 +496,7 @@ func (c *cloud) CheckCreatedVolume(ctx context.Context, name string) (*Volume, e
 		SnapshotID:       vol.SnapshotId,
 		VolumeType:       vol.VolumeType,
 		IOPSPerGB:        vol.Iops / vol.Size,
+		IOPS:             vol.Iops,
 	}, nil
 }
 
@@ -509,6 +516,7 @@ func (c *cloud) GetVolumeByID(ctx context.Context, volumeID string) (*Volume, er
 		SnapshotID:       vol.SnapshotId,
 		VolumeType:       vol.VolumeType,
 		IOPSPerGB:        vol.Iops / vol.Size,
+		IOPS:             vol.Iops,
 	}, nil
 }
 
@@ -796,7 +804,7 @@ func (c *cloud) waitForResize(ctx context.Context, volumeID string, newSizeGiB i
 }
 
 // UpdateVolume updates the type and iops of a volume.
-func (c *cloud) UpdateVolume(ctx context.Context, volumeID string, volumeType osc.VolumeType, iopsPerGB int) (err error) {
+func (c *cloud) UpdateVolume(ctx context.Context, volumeID string, volumeType osc.VolumeType, iops, iopsPerGB int) (err error) {
 	logger := klog.FromContext(ctx)
 	request := osc.ReadVolumesRequest{
 		Filters: &osc.FiltersVolume{
@@ -808,7 +816,9 @@ func (c *cloud) UpdateVolume(ctx context.Context, volumeID string, volumeType os
 		return err
 	}
 
-	iops := iops(iopsPerGB, vol.Size)
+	if iops == 0 {
+		iops = computeIOPS(iopsPerGB, vol.Size)
+	}
 	req := osc.UpdateVolumeRequest{
 		VolumeId: volumeID,
 	}

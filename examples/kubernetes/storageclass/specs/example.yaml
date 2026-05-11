@@ -7,7 +7,7 @@ volumeBindingMode: WaitForFirstConsumer
 parameters:
   csi.storage.k8s.io/fstype: xfs
   type: io1
-  iopsPerGB: "50"
+  iops: "1000"
 allowedTopologies:
 - matchLabelExpressions:
   - key: topology.bsu.csi.outscale.com/zone

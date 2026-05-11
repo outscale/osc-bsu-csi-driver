@@ -103,7 +103,7 @@ func (d *controllerService) CreateVolume(ctx context.Context, req *csi.CreateVol
 
 	var (
 		volumeType         osc.VolumeType
-		iopsPerGB          int64
+		iops, iopsPerGB    int64
 		isEncrypted        bool
 		kmsKeyID           string
 		luksCipher         string
@@ -118,6 +118,11 @@ func (d *controllerService) CreateVolume(ctx context.Context, req *csi.CreateVol
 			klog.FromContext(ctx).V(2).Info(`"fstype" is deprecated, please use "csi.storage.k8s.io/fstype" instead`)
 		case VolumeTypeKey:
 			volumeType = osc.VolumeType(value)
+		case IopsKey:
+			iops, err = strconv.ParseInt(value, 10, 32)
+			if err != nil {
+				return nil, status.Errorf(codes.InvalidArgument, "Could not parse invalid iops: %v", err)
+			}
 		case IopsPerGBKey:
 			iopsPerGB, err = strconv.ParseInt(value, 10, 32)
 			if err != nil {
@@ -190,6 +195,7 @@ func (d *controllerService) CreateVolume(ctx context.Context, req *csi.CreateVol
 		CapacityBytes: volSizeBytes,
 		Tags:          d.driverOptions.extraVolumeTags,
 		VolumeType:    volumeType,
+		IOPS:          int(iops),
 		IOPSPerGB:     int(iopsPerGB),
 		SubRegion:     zone,
 		Encrypted:     isEncrypted,
@@ -355,14 +361,20 @@ func (d *controllerService) ControllerModifyVolume(ctx context.Context, req *csi
 	}
 
 	var (
-		volumeType osc.VolumeType
-		iopsPerGB  int64
+		volumeType      osc.VolumeType
+		iops, iopsPerGB int64
 	)
 
 	for key, value := range req.GetMutableParameters() {
 		switch strings.ToLower(key) {
 		case VolumeTypeKey:
 			volumeType = osc.VolumeType(value)
+		case IopsKey:
+			var err error
+			iops, err = strconv.ParseInt(value, 10, 32)
+			if err != nil {
+				return nil, status.Errorf(codes.InvalidArgument, "Invalid iops value: %v", err)
+			}
 		case IopsPerGBKey:
 			var err error
 			iopsPerGB, err = strconv.ParseInt(value, 10, 32)
@@ -374,7 +386,7 @@ func (d *controllerService) ControllerModifyVolume(ctx context.Context, req *csi
 		}
 	}
 
-	err := d.cloud.UpdateVolume(ctx, volumeID, volumeType, int(iopsPerGB))
+	err := d.cloud.UpdateVolume(ctx, volumeID, volumeType, int(iops), int(iopsPerGB))
 	if err != nil {
 		return nil, status.Errorf(cloud.GRPCCode(err), "Could not modify volume %q: %v", volumeID, err)
 	}

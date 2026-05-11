@@ -15,14 +15,14 @@ metadata:
 provisioner: bsu.csi.outscale.com
 parameters:
   type: io1
-  iopsPerGB: "10"
+  iops: "1000"
   csi.storage.k8s.io/fstype: ext4
 ```
 
 * `type`: `standard`, `gp2`, `io1`. See
   [Outscale docs](https://docs.outscale.com/en/userguide/About-Volumes.html#AboutVolumes-VolumeTypesVolumeTypesandIOPS)
   for details. Default: `gp2`.
-* `iopsPerGB`: only for `io1` volumes. I/O operations per second per GiB. 
+* `iops`: only for `io1` volumes. Total I/O operations per second. 
   [Outscale docs](https://docs.outscale.com/en/userguide/About-Volumes.html#AboutVolumes-VolumeTypesVolumeTypesandIOPS).
-  A string is expected here, i.e. `"10"`, not `10`.
+  A string is expected here, i.e. `"1000"`, not `1000`.
 * `fsType`: fsType that is supported by kubernetes. Default: `"ext4"`.

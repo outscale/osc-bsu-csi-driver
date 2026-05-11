@@ -377,18 +377,16 @@ func TestCreateVolume(t *testing.T) {
 			t.Fatalf("Expected volume capacity bytes: %v, got: %v", expVol.GetCapacityBytes(), vol.GetCapacityBytes())
 		}
 	})
-	t.Run("success with volume type io1", func(t *testing.T) {
+	t.Run("success with volume type io1 and iops", func(t *testing.T) {
 		req := &csi.CreateVolumeRequest{
 			Name:               "vol-test",
 			CapacityRange:      stdCapRange,
 			VolumeCapabilities: stdVolCap,
 			Parameters: map[string]string{
 				VolumeTypeKey: string(osc.VolumeTypeIo1),
-				IopsPerGBKey:  "5",
+				IopsKey:       "50",
 			},
 		}
-
-		ctx := t.Context()
 
 		mockVolume := &cloud.Volume{
 			VolumeID:         req.Name,
@@ -400,15 +398,55 @@ func TestCreateVolume(t *testing.T) {
 		defer mockCtl.Finish()
 
 		mockCloud := mocks.NewMockCloud(mockCtl)
-		mockCloud.EXPECT().CheckCreatedVolume(gomock.Eq(ctx), gomock.Eq(req.Name)).Return(nil, cloud.ErrNotFound)
-		mockCloud.EXPECT().CreateVolume(gomock.Eq(ctx), gomock.Eq(req.Name), gomock.Any()).Return(mockVolume, nil)
+		mockCloud.EXPECT().CheckCreatedVolume(gomock.Any(), gomock.Eq(req.Name)).Return(nil, cloud.ErrNotFound)
+		mockCloud.EXPECT().CreateVolume(gomock.Any(), gomock.Eq(req.Name), gomock.Eq(&cloud.VolumeOptions{
+			CapacityBytes: stdVolSize,
+			VolumeType:    osc.VolumeTypeIo1,
+			IOPS:          50,
+		})).Return(mockVolume, nil)
 
 		oscDriver := controllerService{
 			cloud:         mockCloud,
 			driverOptions: &DriverOptions{},
 		}
 
-		_, err := oscDriver.CreateVolume(ctx, req)
+		_, err := oscDriver.CreateVolume(t.Context(), req)
+		require.NoError(t, err)
+	})
+	t.Run("success with volume type io1 and iopsPerGB", func(t *testing.T) {
+		req := &csi.CreateVolumeRequest{
+			Name:               "vol-test",
+			CapacityRange:      stdCapRange,
+			VolumeCapabilities: stdVolCap,
+			Parameters: map[string]string{
+				VolumeTypeKey: string(osc.VolumeTypeIo1),
+				IopsPerGBKey:  "5",
+			},
+		}
+
+		mockVolume := &cloud.Volume{
+			VolumeID:         req.Name,
+			AvailabilityZone: expZone,
+			CapacityGiB:      util.BytesToGiB(stdVolSize),
+		}
+
+		mockCtl := gomock.NewController(t)
+		defer mockCtl.Finish()
+
+		mockCloud := mocks.NewMockCloud(mockCtl)
+		mockCloud.EXPECT().CheckCreatedVolume(gomock.Any(), gomock.Eq(req.Name)).Return(nil, cloud.ErrNotFound)
+		mockCloud.EXPECT().CreateVolume(gomock.Any(), gomock.Eq(req.Name), gomock.Eq(&cloud.VolumeOptions{
+			CapacityBytes: stdVolSize,
+			VolumeType:    osc.VolumeTypeIo1,
+			IOPSPerGB:     5,
+		})).Return(mockVolume, nil)
+
+		oscDriver := controllerService{
+			cloud:         mockCloud,
+			driverOptions: &DriverOptions{},
+		}
+
+		_, err := oscDriver.CreateVolume(t.Context(), req)
 		require.NoError(t, err)
 	})
 	t.Run("success with volume type sc1", func(t *testing.T) {

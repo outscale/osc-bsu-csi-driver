@@ -4,7 +4,7 @@ metadata:
   name: bsu-vac
 provisioner: bsu.csi.outscale.com
 parameters:
-  iopspergb: "500"
+  iops: "1000"
   type: "io1"
 ---
 kind: VolumeAttributesClass
@@ -13,5 +13,5 @@ metadata:
   name: bsu-vac-after
 provisioner: bsu.csi.outscale.com
 parameters:
-  iopspergb: "1000"
+  iops: "2000"
   type: "io1"

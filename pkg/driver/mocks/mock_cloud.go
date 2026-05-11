@@ -248,17 +248,17 @@ func (mr *MockCloudMockRecorder) Start(ctx any) *gomock.Call {
 }
 
 // UpdateVolume mocks base method.
-func (m *MockCloud) UpdateVolume(ctx context.Context, volumeID string, volumeType osc.VolumeType, iopsPerGB int) error {
+func (m *MockCloud) UpdateVolume(ctx context.Context, volumeID string, volumeType osc.VolumeType, iops, iopsPerGB int) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpdateVolume", ctx, volumeID, volumeType, iopsPerGB)
+	ret := m.ctrl.Call(m, "UpdateVolume", ctx, volumeID, volumeType, iops, iopsPerGB)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // UpdateVolume indicates an expected call of UpdateVolume.
-func (mr *MockCloudMockRecorder) UpdateVolume(ctx, volumeID, volumeType, iopsPerGB any) *gomock.Call {
+func (mr *MockCloudMockRecorder) UpdateVolume(ctx, volumeID, volumeType, iops, iopsPerGB any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateVolume", reflect.TypeOf((*MockCloud)(nil).UpdateVolume), ctx, volumeID, volumeType, iopsPerGB)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateVolume", reflect.TypeOf((*MockCloud)(nil).UpdateVolume), ctx, volumeID, volumeType, iops, iopsPerGB)
 }
 
 // WaitForAttachmentState mocks base method.

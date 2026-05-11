@@ -9,7 +9,7 @@ parameters:
   encrypted: 'true'
   luks-cipher: aes-xts-plain64
   type: io1
-  iopsPerGB: '50'
+  iops: '500'
   csi.storage.k8s.io/node-stage-secret-name: luks-key
   csi.storage.k8s.io/node-stage-secret-namespace: encryption
   csi.storage.k8s.io/node-expand-secret-name: luks-key

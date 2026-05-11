@@ -40,13 +40,17 @@ type DynamicallyProvisionedModifyVolumeTest struct {
 	Pod       PodDetails
 	Cloud     cloud.Cloud
 	Online    bool
+	IOPS      bool
 }
 
 func (t *DynamicallyProvisionedModifyVolumeTest) Run(client clientset.Interface, namespace *v1.Namespace) {
 	volume := t.Pod.Volumes[0]
 	baseType := osc.VolumeTypeGp2
 	baseIops := "100"
-	tvac, _ := volume.SetupVolumeAttributesClass(client, namespace, volume.VolumeAttributeClass, baseType, baseIops, t.CSIDriver)
+	if t.IOPS {
+		baseIops = "400"
+	}
+	tvac, _ := volume.SetupVolumeAttributesClass(client, namespace, volume.VolumeAttributeClass, baseType, t.IOPS, baseIops, t.CSIDriver)
 	defer tvac.Cleanup()
 	tpvc, _ := volume.SetupDynamicPersistentVolumeClaim(client, namespace, t.CSIDriver)
 	defer tpvc.Cleanup()
@@ -72,7 +76,10 @@ func (t *DynamicallyProvisionedModifyVolumeTest) Run(client clientset.Interface,
 	updatedName := volume.VolumeAttributeClass + "-new"
 	updatedType := osc.VolumeTypeIo1
 	updatedIops := "200"
-	ntvac, _ := volume.SetupVolumeAttributesClass(client, namespace, updatedName, updatedType, updatedIops, t.CSIDriver)
+	if t.IOPS {
+		updatedIops = "600"
+	}
+	ntvac, _ := volume.SetupVolumeAttributesClass(client, namespace, updatedName, updatedType, t.IOPS, updatedIops, t.CSIDriver)
 	defer ntvac.Cleanup()
 	pvc.Spec.VolumeAttributesClassName = &updatedName
 	_, err := client.CoreV1().PersistentVolumeClaims(namespace.Name).Update(context.TODO(), pvc, metav1.UpdateOptions{})
@@ -111,8 +118,13 @@ func (t *DynamicallyProvisionedModifyVolumeTest) WaitForPvToModify(client client
 			if err != nil {
 				continue
 			}
-			By(fmt.Sprintf("volumeType %q iops %d", dsk.VolumeType, dsk.IOPSPerGB))
-			if dsk.VolumeType != desiredType || strconv.FormatInt(int64(dsk.IOPSPerGB), 10) != desiredIops {
+			By(fmt.Sprintf("volumeType %q (expected %q) iops %d perGB %d (expected %s)", dsk.VolumeType, desiredType, dsk.IOPS, dsk.IOPSPerGB, desiredIops))
+			switch {
+			case dsk.VolumeType != desiredType:
+				continue
+			case t.IOPS && strconv.Itoa(dsk.IOPS) != desiredIops:
+				continue
+			case !t.IOPS && strconv.Itoa(dsk.IOPSPerGB) != desiredIops:
 				continue
 			}
 			return nil

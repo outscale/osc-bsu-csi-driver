@@ -28,6 +28,9 @@ const (
 	// VolumeTypeKey represents key for volume type
 	VolumeTypeKey = "type"
 
+	// Iops represents key for IOPS
+	IopsKey = "iops"
+
 	// IopsPerGBKey represents key for IOPS per GB
 	IopsPerGBKey = "iopspergb"
 

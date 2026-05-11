@@ -178,10 +178,10 @@ func (volume *VolumeDetails) SetupDynamicPersistentVolumeClaim(client clientset.
 	return tpvc, cleanupFuncs
 }
 
-func (volume *VolumeDetails) SetupVolumeAttributesClass(client clientset.Interface, namespace *v1.Namespace, name string, volumeType osc.VolumeType, iopsPerGB string, csiDriver driver.DynamicPVTestDriver) (*TestVolumeAttributesClass, []func()) {
+func (volume *VolumeDetails) SetupVolumeAttributesClass(client clientset.Interface, namespace *v1.Namespace, name string, volumeType osc.VolumeType, iops bool, iopsPerGB string, csiDriver driver.DynamicPVTestDriver) (*TestVolumeAttributesClass, []func()) {
 	cleanupFuncs := make([]func(), 0, 1)
 	By("setting up the VolumeAttributesClass")
-	vac := csiDriver.GetVolumeAttributesClass(namespace.Name, name, volumeType, iopsPerGB)
+	vac := csiDriver.GetVolumeAttributesClass(namespace.Name, name, volumeType, iops, iopsPerGB)
 	tvac := NewTestVolumeAttributesClass(client, vac)
 	_ = tvac.Create()
 	cleanupFuncs = append(cleanupFuncs, tvac.Cleanup)

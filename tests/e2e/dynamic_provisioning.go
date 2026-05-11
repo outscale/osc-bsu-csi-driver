@@ -910,7 +910,33 @@ var _ = Describe("[bsu-csi-e2e] [single-az] Updating iops/volumeType using Volum
 		cancel()
 	})
 
-	It("should create a volume and update iops & type (offline)", func() {
+	It("should create a volume and update iops & type (iops/offline)", func() {
+		pod := testsuites.PodDetails{
+			Cmd: "echo 'hello world' >> /mnt/test-1/data && grep 'hello world' /mnt/test-1/data && sync",
+			Volumes: []testsuites.VolumeDetails{
+				{
+					VolumeType: osc.VolumeTypeGp2,
+					FSType:     bsucsidriver.FSTypeExt4,
+					ClaimSize:  driver.MinimumSizeForVolumeType(osc.VolumeTypeIo1),
+					VolumeMount: testsuites.VolumeMountDetails{
+						NameGenerate:      "test-volume-",
+						MountPathGenerate: "/mnt/test-",
+					},
+					VolumeAttributeClass: "test-volumeattributeclass",
+				},
+			},
+		}
+
+		test := testsuites.DynamicallyProvisionedModifyVolumeTest{
+			CSIDriver: bsuDriver,
+			Pod:       pod,
+			Cloud:     cloud,
+			IOPS:      true,
+		}
+		test.Run(cs, ns)
+	})
+
+	It("should create a volume and update iops & type (iopsPerGB/offline)", func() {
 		pod := testsuites.PodDetails{
 			Cmd: "echo 'hello world' >> /mnt/test-1/data && grep 'hello world' /mnt/test-1/data && sync",
 			Volumes: []testsuites.VolumeDetails{
@@ -935,7 +961,7 @@ var _ = Describe("[bsu-csi-e2e] [single-az] Updating iops/volumeType using Volum
 		test.Run(cs, ns)
 	})
 
-	It("should create a volume and update iops & type (online)", func() {
+	It("should create a volume and update iops & type (iops/online)", func() {
 		pod := testsuites.PodDetails{
 			Cmd: "while true; do echo $(date -u) >> /mnt/test-1/data; sleep 1; done",
 			Volumes: []testsuites.VolumeDetails{
@@ -957,6 +983,7 @@ var _ = Describe("[bsu-csi-e2e] [single-az] Updating iops/volumeType using Volum
 			Pod:       pod,
 			Cloud:     cloud,
 			Online:    true,
+			IOPS:      true,
 		}
 		test.Run(cs, ns)
 	})

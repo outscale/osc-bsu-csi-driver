@@ -163,7 +163,20 @@ func (d *bsuCSIDriver) GetPassphraseSecret(name string, passphrase string) *v1.S
 	}
 }
 
-func (d *bsuCSIDriver) GetVolumeAttributesClass(namespace, name string, volumeType osc.VolumeType, iopsPerGB string) *storagev1beta1.VolumeAttributesClass {
+func (d *bsuCSIDriver) GetVolumeAttributesClass(namespace, name string, volumeType osc.VolumeType, iops bool, iopsPerGB string) *storagev1beta1.VolumeAttributesClass {
+	if iops {
+		return &storagev1beta1.VolumeAttributesClass{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      name,
+				Namespace: namespace,
+			},
+			DriverName: d.driverName,
+			Parameters: map[string]string{
+				bsucsidriver.VolumeTypeKey: string(volumeType),
+				bsucsidriver.IopsKey:       iopsPerGB,
+			},
+		}
+	}
 	return &storagev1beta1.VolumeAttributesClass{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,

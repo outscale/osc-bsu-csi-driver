@@ -113,7 +113,7 @@ The following CSI capabilities are supported by the driver:
 **Notes**
 
 * **EXPAND_VOLUME**: offline (cold/detached) and online (hot/attached) volumes can be resized.
-* **MODIFY_VOLUME**: `volumeType` and `iopsPerGB` can be updated via VolumeAttributeClasses on both offline and online volumes.
+* **MODIFY_VOLUME**: `volumeType`, `iops` and `iopsPerGB` can be updated via VolumeAttributeClasses on both offline and online volumes.
 
 </details>
 
@@ -163,7 +163,8 @@ These parameters are passed via the StorageClass to `CreateVolumeRequest.paramet
 | ------------------------------------------------ | ------------------------ | ------- | ------------------------------------------------------------------ |
 | `csi.storage.k8s.io/fstype`                      | `xfs`, `ext2/3/4`        | `ext4`  | Filesystem to format the volume with.                              |
 | `type`                                           | `io1`, `gp2`, `standard` | `gp2`   | BSU volume type.                                                   |
-| `iopsPerGB`                                      | integer                  | —       | Required when `type=io1`; IOPS per GiB.                            |
+| `iops`                                      | integer                  | —       | Either `iops` or `iopsPerGB` is required when `type=io1`; total IOPS.                            |
+| `iopsPerGB`                                      | integer                  | —       | Either `iops` or `iopsPerGB` is required when `type=io1`; IOPS per GiB.                            |
 | `encrypted`                                      | `true`, `false`          | `false` | Enable LUKS encryption.                                            |
 | `csi.storage.k8s.io/node-stage-secret-name`      | string                   | —       | Name of the node-stage secret (see CSI docs).                      |
 | `csi.storage.k8s.io/node-stage-secret-namespace` | string                   | —       | Namespace of the node-stage secret (see CSI docs).                 |

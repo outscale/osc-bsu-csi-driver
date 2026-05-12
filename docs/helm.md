@@ -86,7 +86,7 @@ Kubernetes: `>=1.20`
 | sidecars.exporter.image | string | `"outscale/csi-snapshot-exporter"` |  |
 | sidecars.exporter.metricsPort | string | `"8093"` | Port of the metrics endpoint |
 | sidecars.exporter.resources | object | `{}` | Sidecar resources. If not set, the top-level resources will be used. |
-| sidecars.exporter.tag | string | `"v0.2.0"` |  |
+| sidecars.exporter.tag | string | `"v0.3.0"` |  |
 | sidecars.kubeAPI.QPS | int | `20` | Maximum allowed number of queries per second to the Kubernetes API |
 | sidecars.kubeAPI.burst | int | `100` | Allowed burst over QPS |
 | sidecars.leaderElection | object | `{"leaseDuration":null,"renewDeadline":null,"retryPeriod":null}` | leaderElection config for all sidecars |

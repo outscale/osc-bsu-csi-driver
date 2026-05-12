@@ -414,6 +414,11 @@ func TestHelmTemplate_DaemonSet(t *testing.T) {
 		}, manager.Args)
 		assert.Equal(t, []corev1.EnvVar{
 			{Name: "CSI_ENDPOINT", Value: "unix:/csi/csi.sock"},
+			{Name: "NODE_NAME", ValueFrom: &corev1.EnvVarSource{
+				FieldRef: &corev1.ObjectFieldSelector{
+					FieldPath: "spec.nodeName",
+				},
+			}},
 		}, manager.Env)
 		assert.Equal(t, corev1.ResourceRequirements{
 			Requests: nil,
@@ -435,6 +440,11 @@ func TestHelmTemplate_DaemonSet(t *testing.T) {
 		manager := dep.Spec.Template.Spec.Containers[0]
 		assert.Equal(t, []corev1.EnvVar{
 			{Name: "CSI_ENDPOINT", Value: "unix:/csi/csi.sock"},
+			{Name: "NODE_NAME", ValueFrom: &corev1.EnvVarSource{
+				FieldRef: &corev1.ObjectFieldSelector{
+					FieldPath: "spec.nodeName",
+				},
+			}},
 			{Name: "MAX_BSU_VOLUMES", Value: "39"},
 		}, manager.Env)
 		assert.Equal(t, corev1.ResourceRequirements{

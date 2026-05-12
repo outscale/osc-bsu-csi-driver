@@ -25,6 +25,7 @@ import (
 
 	"github.com/container-storage-interface/spec/lib/go/csi"
 	"github.com/outscale/osc-bsu-csi-driver/pkg/driver/internal"
+	"github.com/outscale/osc-bsu-csi-driver/pkg/driver/k8s"
 	"github.com/outscale/osc-bsu-csi-driver/pkg/driver/luks"
 	"github.com/outscale/osc-bsu-csi-driver/pkg/driver/mocks"
 	"github.com/stretchr/testify/assert"
@@ -32,9 +33,15 @@ import (
 	"go.uber.org/mock/gomock"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/kubernetes/fake"
 	exec "k8s.io/utils/exec"
 	"k8s.io/utils/mount"
 )
+
+const nodeName = "node-foo"
 
 func TestNodeStageVolume(t *testing.T) {
 	var (
@@ -1626,6 +1633,8 @@ func TestNodeGetInfo(t *testing.T) {
 		name          string
 		instanceID    string
 		instanceType  string
+		env           string
+		node          *corev1.Node
 		subRegion     string
 		osMounted     []string
 		mounted       []mount.MountPoint
@@ -1736,26 +1745,135 @@ func TestNodeGetInfo(t *testing.T) {
 			},
 			expMaxVolumes: 38,
 		},
+		{
+			name:         "Overridden by env",
+			instanceID:   "i-123456789abcdef01",
+			instanceType: "tinav6.c1r6p2",
+			subRegion:    "us-west-2b",
+			env:          "12",
+			mounted: []mount.MountPoint{
+				{Device: "overlay", Path: "/"},
+				{Device: "proc", Path: "/proc"},
+				{Device: "sysfs", Path: "/sys"},
+				{Device: "cgroup", Path: "/sys/fs/cgroup"},
+				{Device: "/dev/vda1", Path: "/csi"},
+				{Device: "udev", Path: "/dev"},
+				{Device: "devpts", Path: "/dev/pts"},
+				{Device: "tmpfs", Path: "/dev/shm"},
+				{Device: "hugetlbfs", Path: "/dev/hugepages"},
+				{Device: "mqueue", Path: "/dev/mqueue"},
+				{Device: "/dev/vda1", Path: "/etc/hosts"},
+				{Device: "/dev/vda1", Path: "/dev/termination-log"},
+				{Device: "/dev/vda1", Path: "/etc/hostname"},
+				{Device: "/dev/vda1", Path: "/etc/resolv.conf"},
+				{Device: "shm", Path: "/dev/shm"},
+				{Device: "/dev/vda1", Path: "/var/lib/kubelet"},
+				{Device: "/dev/xvdb", Path: "/data"},
+				{Device: "/dev/xvdc", Path: "/var/lib/kubelet/plugins/kubernetes.io/csi/bsu.csi.outscale.com/foo/globalmount"},
+				{Device: "/dev/xvdc", Path: "/var/lib/kubelet/pods/foo/volumes/kubernetes.io~csi/pvc-foo/mount"},
+			},
+			expMaxVolumes: 12,
+		},
+		{
+			name:         "Overridden by label, label has priority over env",
+			instanceID:   "i-123456789abcdef01",
+			instanceType: "tinav6.c1r6p2",
+			subRegion:    "us-west-2b",
+			env:          "12",
+			node: &corev1.Node{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						NodeLimitAnnotation: "10",
+					},
+				},
+			},
+			mounted: []mount.MountPoint{
+				{Device: "overlay", Path: "/"},
+				{Device: "proc", Path: "/proc"},
+				{Device: "sysfs", Path: "/sys"},
+				{Device: "cgroup", Path: "/sys/fs/cgroup"},
+				{Device: "/dev/vda1", Path: "/csi"},
+				{Device: "udev", Path: "/dev"},
+				{Device: "devpts", Path: "/dev/pts"},
+				{Device: "tmpfs", Path: "/dev/shm"},
+				{Device: "hugetlbfs", Path: "/dev/hugepages"},
+				{Device: "mqueue", Path: "/dev/mqueue"},
+				{Device: "/dev/vda1", Path: "/etc/hosts"},
+				{Device: "/dev/vda1", Path: "/dev/termination-log"},
+				{Device: "/dev/vda1", Path: "/etc/hostname"},
+				{Device: "/dev/vda1", Path: "/etc/resolv.conf"},
+				{Device: "shm", Path: "/dev/shm"},
+				{Device: "/dev/vda1", Path: "/var/lib/kubelet"},
+				{Device: "/dev/xvdb", Path: "/data"},
+				{Device: "/dev/xvdc", Path: "/var/lib/kubelet/plugins/kubernetes.io/csi/bsu.csi.outscale.com/foo/globalmount"},
+				{Device: "/dev/xvdc", Path: "/var/lib/kubelet/pods/foo/volumes/kubernetes.io~csi/pvc-foo/mount"},
+			},
+			expMaxVolumes: 10,
+		},
+		{
+			name:         "Invalid label values are ignored",
+			instanceID:   "i-123456789abcdef01",
+			instanceType: "tinav6.c1r6p2",
+			subRegion:    "us-west-2b",
+			env:          "12",
+			node: &corev1.Node{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						NodeLimitAnnotation: "255",
+					},
+				},
+			},
+			mounted: []mount.MountPoint{
+				{Device: "overlay", Path: "/"},
+				{Device: "proc", Path: "/proc"},
+				{Device: "sysfs", Path: "/sys"},
+				{Device: "cgroup", Path: "/sys/fs/cgroup"},
+				{Device: "/dev/vda1", Path: "/csi"},
+				{Device: "udev", Path: "/dev"},
+				{Device: "devpts", Path: "/dev/pts"},
+				{Device: "tmpfs", Path: "/dev/shm"},
+				{Device: "hugetlbfs", Path: "/dev/hugepages"},
+				{Device: "mqueue", Path: "/dev/mqueue"},
+				{Device: "/dev/vda1", Path: "/etc/hosts"},
+				{Device: "/dev/vda1", Path: "/dev/termination-log"},
+				{Device: "/dev/vda1", Path: "/etc/hostname"},
+				{Device: "/dev/vda1", Path: "/etc/resolv.conf"},
+				{Device: "shm", Path: "/dev/shm"},
+				{Device: "/dev/vda1", Path: "/var/lib/kubelet"},
+				{Device: "/dev/xvdb", Path: "/data"},
+				{Device: "/dev/xvdc", Path: "/var/lib/kubelet/plugins/kubernetes.io/csi/bsu.csi.outscale.com/foo/globalmount"},
+				{Device: "/dev/xvdc", Path: "/var/lib/kubelet/pods/foo/volumes/kubernetes.io~csi/pvc-foo/mount"},
+			},
+			expMaxVolumes: 12,
+		},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
+			t.Setenv(MaxVolumesEnv, tc.env)
 			mockCtl := gomock.NewController(t)
 			defer mockCtl.Finish()
 
 			mockMounter := mocks.NewMockMounter(mockCtl)
-			mockMounter.EXPECT().List().Return(tc.mounted, nil)
+			mockMounter.EXPECT().List().Return(tc.mounted, nil).MaxTimes(1)
+
+			node := tc.node
+			if node == nil {
+				node = &corev1.Node{}
+			}
+			node.Name = nodeName
+			savedGetClient := k8s.GetClient
+			defer func() { k8s.GetClient = savedGetClient }()
+			k8s.GetClient = func() (kubernetes.Interface, error) {
+				return fake.NewSimpleClientset(node), nil
+			}
 
 			oscDriver := &nodeService{
 				mounter:    mockMounter,
 				instanceID: tc.instanceID,
 				subRegion:  tc.subRegion,
+				nodeName:   nodeName,
 				inFlight:   internal.NewInFlight(),
 			}
-
-			limit, err := oscDriver.getVolumesLimit()
-			require.NoError(t, err)
-			assert.Equal(t, tc.expMaxVolumes, limit)
-			oscDriver.maxVolumes = limit
 
 			resp, err := oscDriver.NodeGetInfo(context.TODO(), &csi.NodeGetInfoRequest{})
 			require.NoError(t, err)

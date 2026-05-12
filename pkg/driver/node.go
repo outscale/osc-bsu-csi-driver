@@ -29,10 +29,12 @@ import (
 	csi "github.com/container-storage-interface/spec/lib/go/csi"
 	"github.com/outscale/goutils/sdk/metadata"
 	"github.com/outscale/osc-bsu-csi-driver/pkg/driver/internal"
+	"github.com/outscale/osc-bsu-csi-driver/pkg/driver/k8s"
 	"github.com/outscale/osc-bsu-csi-driver/pkg/driver/luks"
 	"golang.org/x/sys/unix"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/klog/v2"
 	"k8s.io/kubernetes/pkg/volume"
 	mountutils "k8s.io/mount-utils"
@@ -54,6 +56,10 @@ const (
 	// defaultMaxBSUVolumes is the maximum number of volumes that an OSC instance can have attached, including root volume.
 	// https://docs.outscale.com/en/userguide/About-Volumes.html#_volumes_and_instances
 	defaultMaxBSUVolumes = 40
+
+	NodeLimitAnnotation = DriverName + "/maxvolumes"
+	NodeNameEnv         = "NODE_NAME"
+	MaxVolumesEnv       = "MAX_BSU_VOLUMES"
 )
 
 var ValidFSTypes = []string{FSTypeExt2, FSTypeExt3, FSTypeExt4, FSTypeXfs}
@@ -70,9 +76,10 @@ type nodeService struct {
 	driverOptions *DriverOptions
 	instanceID    string
 	subRegion     string
-	mounter       Mounter
-	maxVolumes    int64
-	inFlight      *internal.InFlight
+	nodeName      string
+
+	mounter  Mounter
+	inFlight *internal.InFlight
 
 	csi.UnimplementedNodeServer
 }
@@ -97,11 +104,8 @@ func newNodeService(ctx context.Context, driverOptions *DriverOptions) (nodeServ
 	if err != nil {
 		return nodeService{}, err
 	}
-	maxVols, err := srv.getVolumesLimit()
-	if err != nil {
-		panic(err)
-	}
-	srv.maxVolumes = maxVols
+	srv.nodeName = os.Getenv(NodeNameEnv)
+
 	return srv, nil
 }
 
@@ -592,9 +596,13 @@ func (s *nodeService) NodeGetInfo(ctx context.Context, req *csi.NodeGetInfoReque
 	topology := &csi.Topology{
 		Segments: map[string]string{TopologyKey: s.subRegion},
 	}
+	maxVolumes, err := s.getVolumesLimit(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("compute limit: %w", err)
+	}
 	return &csi.NodeGetInfoResponse{
 		NodeId:             s.instanceID,
-		MaxVolumesPerNode:  s.maxVolumes,
+		MaxVolumesPerNode:  maxVolumes,
 		AccessibleTopology: topology,
 	}, nil
 }
@@ -767,12 +775,48 @@ func findScsiVolume(findName string) (device string, err error) {
 	return resolved, nil
 }
 
+func getMaxVolumesFromNode(ctx context.Context, n *corev1.Node) (int64, bool) {
+	if n.Annotations == nil {
+		return 0, false
+	}
+	value, ok := n.Annotations[NodeLimitAnnotation]
+	if !ok {
+		return 0, false
+	}
+	limit, err := strconv.ParseInt(value, 10, 32)
+	if err != nil {
+		klog.FromContext(ctx).Error(err, "Ignoring invalid "+NodeLimitAnnotation+" annotation value", "value", value)
+		return 0, false
+	}
+	if limit <= 0 || limit >= defaultMaxBSUVolumes {
+		klog.FromContext(ctx).Info("Ignoring out of bounds "+NodeLimitAnnotation+" annotation value", "value", value)
+		return 0, false
+	}
+	return limit, true
+}
+
 // getVolumesLimit returns the limit of volumes that the node can mount (40 - OS mounted devices, including root device)
-func (s *nodeService) getVolumesLimit() (int64, error) {
+func (s *nodeService) getVolumesLimit(ctx context.Context) (int64, error) {
+	// checking labels
+	node, err := k8s.GetNode(ctx, s.nodeName)
+	switch {
+	case err != nil:
+		klog.FromContext(ctx).Error(err, "Unable to fetch node, not checking annotations", "nodeName", s.nodeName)
+	default:
+		if maxVolumes, ok := getMaxVolumesFromNode(ctx, node); ok {
+			klog.FromContext(ctx).V(3).Info("Setting limit from node annotation", "maxVolumes", maxVolumes)
+			return maxVolumes, nil
+		}
+	}
+
+	// checking env
 	maxVolumes := getEnvMaxVolume()
 	if maxVolumes > 0 {
+		klog.FromContext(ctx).V(3).Info("Setting limit from env", "maxVolumes", maxVolumes)
 		return maxVolumes, nil
 	}
+
+	// checking mounts
 	mounts, err := s.mounter.List()
 	if err != nil {
 		return -1, fmt.Errorf("unable to list mounts: %w", err)
@@ -790,11 +834,13 @@ func (s *nodeService) getVolumesLimit() (int64, error) {
 			devs = append(devs, m.Device)
 		}
 	}
-	return defaultMaxBSUVolumes - int64(len(devs)), nil
+	maxVolumes = defaultMaxBSUVolumes - int64(len(devs))
+	klog.FromContext(ctx).V(3).Info("Computed limit", "maxVolumes", maxVolumes)
+	return maxVolumes, nil
 }
 
 func getEnvMaxVolume() int64 {
-	value := os.Getenv("MAX_BSU_VOLUMES")
+	value := os.Getenv(MaxVolumesEnv)
 	if value == "" {
 		return -1
 	}

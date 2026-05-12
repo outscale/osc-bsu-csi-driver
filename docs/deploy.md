@@ -38,3 +38,25 @@ helm upgrade --install osc-bsu-csi-driver oci://docker.io/outscalehelm/osc-bsu-c
 ```shell
 kubectl get pod -n kube-system -l "app.kubernetes.io/name=osc-bsu-csi-driver"
 ```
+
+## Setting volume limits
+
+Up to 39 volumes, including PVCs and OS-level mounts, can be attached to a node.
+
+The CSI driver automatically counts how many volumes are mounted by the OS and reports the calculated volume limit to Kubernetes.
+
+If the automatic calculation is not suitable, you can set a manual limit.
+
+### Global limit
+
+The `driver.maxBsuVolumes` Helm value can be used to set a global limit. All nodes will use this value.
+
+### Per node limit (v1.11.0 and later)
+
+The `bsu.csi.outscale.com/maxvolumes` annotation can be set on nodes and its value will be used as the limit for the corresponding node.
+
+If both limits are set, the annotation limit takes precedence.
+
+### Dynamic values (v1.11.0 and later)
+
+If you activate the [`MutableCSINodeAllocatableCount` feature gate](https://kubernetes.io/blog/2025/05/02/kubernetes-1-33-mutable-csi-node-allocatable-count/), Kubernetes periodically refreshes the limit by asking the CSI driver to compute a new automatic limit and check for an updated node annotation.

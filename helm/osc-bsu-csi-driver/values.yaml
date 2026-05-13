@@ -29,6 +29,8 @@ driver:
   fsGroupPolicy: File
   # -- Maximum number of volumes that can be attached to a node, autocomputed by default (see [Docs](https://docs.outscale.com/en/userguide/About-Volumes.html))
   maxBsuVolumes: ""
+  # -- Number of slots to reserve for OS-level volumes when automatically computing maxBsuVolumes
+  reservedBsuVolumes: ""
   # -- Default filesystem for the volume if no `FsType` is set in `StorageClass`
   defaultFsType: "ext4"
   # -- Enable volume snapshots

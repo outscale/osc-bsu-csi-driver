@@ -60,6 +60,7 @@ const (
 	NodeLimitAnnotation = DriverName + "/maxvolumes"
 	NodeNameEnv         = "NODE_NAME"
 	MaxVolumesEnv       = "MAX_BSU_VOLUMES"
+	ReservedVolumesEnv  = "RESERVED_BSU_VOLUMES"
 )
 
 var ValidFSTypes = []string{FSTypeExt2, FSTypeExt3, FSTypeExt4, FSTypeXfs}
@@ -810,7 +811,7 @@ func (s *nodeService) getVolumesLimit(ctx context.Context) (int64, error) {
 	}
 
 	// checking env
-	maxVolumes := getEnvMaxVolume()
+	maxVolumes := getEnvMaxVolumes()
 	if maxVolumes > 0 {
 		klog.FromContext(ctx).V(3).Info("Setting limit from env", "maxVolumes", maxVolumes)
 		return maxVolumes, nil
@@ -834,12 +835,14 @@ func (s *nodeService) getVolumesLimit(ctx context.Context) (int64, error) {
 			devs = append(devs, m.Device)
 		}
 	}
-	maxVolumes = defaultMaxBSUVolumes - int64(len(devs))
+	// devs includes the root volume
+	// we need to reserve getEnvReservedVolumes() + the root volume
+	maxVolumes = defaultMaxBSUVolumes - max(int64(len(devs)), getEnvReservedVolumes()+1)
 	klog.FromContext(ctx).V(3).Info("Computed limit", "maxVolumes", maxVolumes)
 	return maxVolumes, nil
 }
 
-func getEnvMaxVolume() int64 {
+func getEnvMaxVolumes() int64 {
 	value := os.Getenv(MaxVolumesEnv)
 	if value == "" {
 		return -1
@@ -849,6 +852,18 @@ func getEnvMaxVolume() int64 {
 		return -1
 	}
 	return int64(maxValue)
+}
+
+func getEnvReservedVolumes() int64 {
+	value := os.Getenv(ReservedVolumesEnv)
+	if value == "" {
+		return 0
+	}
+	reservedValue, err := strconv.Atoi(value)
+	if err != nil {
+		return 0
+	}
+	return int64(reservedValue)
 }
 
 // hasMountOption returns a boolean indicating whether the given

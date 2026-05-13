@@ -41,21 +41,33 @@ kubectl get pod -n kube-system -l "app.kubernetes.io/name=osc-bsu-csi-driver"
 
 ## Setting volume limits
 
-Up to 39 volumes, including PVCs and OS-level mounts, can be attached to a node.
+Up to 39 volumes, including PVCs and host-level mounts, can be attached to a node.
 
-The CSI driver automatically counts how many volumes are mounted by the OS and reports the calculated volume limit to Kubernetes.
+The CSI driver automatically counts how many volumes are mounted by the host and reports the calculated volume limit to Kubernetes.
 
 If the automatic calculation is not suitable, you can set a manual limit.
+
+### Reserving slots for host-level mounts
+
+If you need to mount additional volumes at the host level, you may configure the `driver.reservedBsuVolumes` Helm value with the number of expected host-level mounts (excluding the root volume).
+
+The limit reported by the CSI driver will be:
+
+`39 - max(number of mounted volumes, driver.reservedBsuVolumes)`
 
 ### Global limit
 
 The `driver.maxBsuVolumes` Helm value can be used to set a global limit. All nodes will use this value.
+
+> Note: `driver.reservedBsuVolumes` is ignored when setting `driver.maxBsuVolumes`.
 
 ### Per node limit (v1.11.0 and later)
 
 The `bsu.csi.outscale.com/maxvolumes` annotation can be set on nodes and its value will be used as the limit for the corresponding node.
 
 If both limits are set, the annotation limit takes precedence.
+
+> Note: `driver.reservedBsuVolumes` is ignored when setting an annotation limit.
 
 ### Dynamic values (v1.11.0 and later)
 

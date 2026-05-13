@@ -1634,6 +1634,7 @@ func TestNodeGetInfo(t *testing.T) {
 		instanceID    string
 		instanceType  string
 		env           string
+		envReserved   string
 		node          *corev1.Node
 		subRegion     string
 		osMounted     []string
@@ -1716,6 +1717,33 @@ func TestNodeGetInfo(t *testing.T) {
 				{Device: "/dev/sdb", Path: "/data"},
 			},
 			expMaxVolumes: 38,
+		},
+		{
+			name:         "1 OS mounted volume on sdb, no PVC, 2 reserved",
+			instanceID:   "i-123456789abcdef01",
+			instanceType: "tinav6.c1r6p2",
+			subRegion:    "us-west-2b",
+			envReserved:  "2",
+			mounted: []mount.MountPoint{
+				{Device: "overlay", Path: "/"},
+				{Device: "proc", Path: "/proc"},
+				{Device: "sysfs", Path: "/sys"},
+				{Device: "cgroup", Path: "/sys/fs/cgroup"},
+				{Device: "/dev/vda1", Path: "/csi"},
+				{Device: "udev", Path: "/dev"},
+				{Device: "devpts", Path: "/dev/pts"},
+				{Device: "tmpfs", Path: "/dev/shm"},
+				{Device: "hugetlbfs", Path: "/dev/hugepages"},
+				{Device: "mqueue", Path: "/dev/mqueue"},
+				{Device: "/dev/vda1", Path: "/etc/hosts"},
+				{Device: "/dev/vda1", Path: "/dev/termination-log"},
+				{Device: "/dev/vda1", Path: "/etc/hostname"},
+				{Device: "/dev/vda1", Path: "/etc/resolv.conf"},
+				{Device: "shm", Path: "/dev/shm"},
+				{Device: "/dev/vda1", Path: "/var/lib/kubelet"},
+				{Device: "/dev/sdb", Path: "/data"},
+			},
+			expMaxVolumes: 37,
 		},
 		{
 			name:         "1 OS mounted volume on xvdb, 1 PVC",
@@ -1850,6 +1878,7 @@ func TestNodeGetInfo(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Setenv(MaxVolumesEnv, tc.env)
+			t.Setenv(ReservedVolumesEnv, tc.envReserved)
 			mockCtl := gomock.NewController(t)
 			defer mockCtl.Finish()
 

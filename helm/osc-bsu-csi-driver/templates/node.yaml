@@ -72,6 +72,10 @@ spec:
             - name: MAX_BSU_VOLUMES
               value: "{{ .Values.driver.maxBsuVolumes }}"
           {{- end }}
+          {{- if .Values.driver.reservedBsuVolumes }}
+            - name: RESERVED_BSU_VOLUMES
+              value: "{{ .Values.driver.reservedBsuVolumes }}"
+          {{- end }}
           volumeMounts:
             - name: kubelet-dir
               mountPath: /var/lib/kubelet

@@ -60,6 +60,7 @@ Kubernetes: `>=1.20`
 | driver.imagePullPolicy | string | `"IfNotPresent"` | Container image pull policy |
 | driver.maxBsuVolumes | string | `""` | Maximum number of volumes that can be attached to a node, autocomputed by default (see [Docs](https://docs.outscale.com/en/userguide/About-Volumes.html)) |
 | driver.name | string | `"bsu.csi.outscale.com"` |  |
+| driver.reservedBsuVolumes | string | `""` | Number of slots to reserve for OS-level volumes when automatically computing maxBsuVolumes |
 | driver.tag | string | `"v1.10.0"` | Container image tag to deploy |
 | imagePullSecrets | list | `[]` | Specify image pull secrets |
 | logs.format | string | `"text"` | Format of logs: text or json (requires CSI driver v1.9.0 or later) |

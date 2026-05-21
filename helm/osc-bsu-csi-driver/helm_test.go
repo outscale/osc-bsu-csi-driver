@@ -64,19 +64,19 @@ func getHelmSpecs(t *testing.T, vars ...string) []runtime.Object {
 func TestHelmTemplate(t *testing.T) {
 	t.Run("The chart contains the right objects", func(t *testing.T) {
 		specs := getHelmSpecs(t, "driver.enableVolumeSnapshot=true")
-		require.Len(t, specs, 13)
+		require.Len(t, specs, 16)
 		objs := map[string]int{}
 		for _, obj := range specs {
 			objs[reflect.TypeOf(obj).String()]++
 		}
 		assert.Equal(t, map[string]int{
 			"*v1.CSIDriver":          1,
-			"*v1.ClusterRole":        4,
-			"*v1.ClusterRoleBinding": 4,
+			"*v1.ClusterRole":        5,
+			"*v1.ClusterRoleBinding": 5,
 			"*v1.DaemonSet":          1,
 			"*v1.Deployment":         1,
 			"*v1.Secret":             1,
-			"*v1.ServiceAccount":     1,
+			"*v1.ServiceAccount":     2,
 		}, objs)
 	})
 }

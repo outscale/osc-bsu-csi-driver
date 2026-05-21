@@ -782,6 +782,7 @@ func getMaxVolumesFromNode(ctx context.Context, n *corev1.Node) (int64, bool) {
 	}
 	value, ok := n.Annotations[NodeLimitAnnotation]
 	if !ok {
+		klog.FromContext(ctx).V(5).Info("No " + NodeLimitAnnotation + " annotation found")
 		return 0, false
 	}
 	limit, err := strconv.ParseInt(value, 10, 32)
@@ -798,14 +799,15 @@ func getMaxVolumesFromNode(ctx context.Context, n *corev1.Node) (int64, bool) {
 
 // getVolumesLimit returns the limit of volumes that the node can mount (40 - OS mounted devices, including root device)
 func (s *nodeService) getVolumesLimit(ctx context.Context) (int64, error) {
+	logger := klog.FromContext(ctx)
 	// checking labels
 	node, err := k8s.GetNode(ctx, s.nodeName)
 	switch {
 	case err != nil:
-		klog.FromContext(ctx).Error(err, "Unable to fetch node, not checking annotations", "nodeName", s.nodeName)
+		logger.Error(err, "Unable to fetch node, not checking annotations", "nodeName", s.nodeName)
 	default:
 		if maxVolumes, ok := getMaxVolumesFromNode(ctx, node); ok {
-			klog.FromContext(ctx).V(3).Info("Setting limit from node annotation", "maxVolumes", maxVolumes)
+			logger.V(3).Info("Setting limit from node annotation", "maxVolumes", maxVolumes)
 			return maxVolumes, nil
 		}
 	}
@@ -817,28 +819,37 @@ func (s *nodeService) getVolumesLimit(ctx context.Context) (int64, error) {
 		return maxVolumes, nil
 	}
 
-	// checking mounts
+	// count mounted devices
 	mounts, err := s.mounter.List()
 	if err != nil {
-		return -1, fmt.Errorf("unable to list mounts: %w", err)
+		return -1, fmt.Errorf("list mounts: %w", err)
 	}
 	devs := make([]string, 0, len(mounts))
 	for _, m := range mounts {
-		// skip non devices, skip PVC mounts
-		if (!strings.HasPrefix(m.Device, "/dev/xvd") &&
+		// skip non devices
+		if !strings.HasPrefix(m.Device, "/dev/xvd") &&
 			!strings.HasPrefix(m.Device, "/dev/vd") &&
-			!strings.HasPrefix(m.Device, "/dev/sd")) ||
-			strings.HasPrefix(m.Path, "/var/lib/kubelet/") {
+			!strings.HasPrefix(m.Device, "/dev/sd") {
 			continue
 		}
 		if !slices.Contains(devs, m.Device) {
 			devs = append(devs, m.Device)
 		}
 	}
+	logger.V(4).Info("Mounted volumes", "count", len(devs))
+
+	// count PVC
+	pvcs, err := k8s.CountVolumeAttachments(ctx, s.nodeName, DriverName)
+	if err != nil {
+		logger.Error(err, "Unable to count volume attachments, using default", "nodeName", s.nodeName)
+		return defaultMaxBSUVolumes - 1, nil
+	}
+	logger.V(4).Info("PVCs", "count", pvcs)
+
 	// devs includes the root volume
 	// we need to reserve getEnvReservedVolumes() + the root volume
-	maxVolumes = defaultMaxBSUVolumes - max(int64(len(devs)), getEnvReservedVolumes()+1)
-	klog.FromContext(ctx).V(3).Info("Computed limit", "maxVolumes", maxVolumes)
+	maxVolumes = defaultMaxBSUVolumes - max(int64(len(devs)-pvcs), getEnvReservedVolumes()+1)
+	logger.V(3).Info("Computed limit", "maxVolumes", maxVolumes)
 	return maxVolumes, nil
 }
 

@@ -34,7 +34,9 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	corev1 "k8s.io/api/core/v1"
+	storagev1 "k8s.io/api/storage/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/fake"
 	exec "k8s.io/utils/exec"
@@ -1635,7 +1637,7 @@ func TestNodeGetInfo(t *testing.T) {
 		instanceType  string
 		env           string
 		envReserved   string
-		node          *corev1.Node
+		objs          []runtime.Object
 		subRegion     string
 		osMounted     []string
 		mounted       []mount.MountPoint
@@ -1746,10 +1748,16 @@ func TestNodeGetInfo(t *testing.T) {
 			expMaxVolumes: 37,
 		},
 		{
-			name:         "1 OS mounted volume on xvdb, 1 PVC",
+			name:         "1 OS mounted volume on xvdb, 1 PVC on xvdc",
 			instanceID:   "i-123456789abcdef01",
 			instanceType: "tinav6.c1r6p2",
 			subRegion:    "us-west-2b",
+			objs: []runtime.Object{
+				&storagev1.VolumeAttachment{
+					Spec:   storagev1.VolumeAttachmentSpec{Attacher: DriverName, NodeName: nodeName},
+					Status: storagev1.VolumeAttachmentStatus{Attached: true},
+				},
+			},
 			mounted: []mount.MountPoint{
 				{Device: "overlay", Path: "/"},
 				{Device: "proc", Path: "/proc"},
@@ -1774,11 +1782,115 @@ func TestNodeGetInfo(t *testing.T) {
 			expMaxVolumes: 38,
 		},
 		{
+			name:         "1 OS mounted volume on xvdb, 1 volume from a PVC from another driver on the same node",
+			instanceID:   "i-123456789abcdef01",
+			instanceType: "tinav6.c1r6p2",
+			subRegion:    "us-west-2b",
+			objs: []runtime.Object{
+				&storagev1.VolumeAttachment{
+					Spec:   storagev1.VolumeAttachmentSpec{Attacher: "anotherdriver", NodeName: nodeName},
+					Status: storagev1.VolumeAttachmentStatus{Attached: true},
+				},
+			},
+			mounted: []mount.MountPoint{
+				{Device: "overlay", Path: "/"},
+				{Device: "proc", Path: "/proc"},
+				{Device: "sysfs", Path: "/sys"},
+				{Device: "cgroup", Path: "/sys/fs/cgroup"},
+				{Device: "/dev/vda1", Path: "/csi"},
+				{Device: "udev", Path: "/dev"},
+				{Device: "devpts", Path: "/dev/pts"},
+				{Device: "tmpfs", Path: "/dev/shm"},
+				{Device: "hugetlbfs", Path: "/dev/hugepages"},
+				{Device: "mqueue", Path: "/dev/mqueue"},
+				{Device: "/dev/vda1", Path: "/etc/hosts"},
+				{Device: "/dev/vda1", Path: "/dev/termination-log"},
+				{Device: "/dev/vda1", Path: "/etc/hostname"},
+				{Device: "/dev/vda1", Path: "/etc/resolv.conf"},
+				{Device: "shm", Path: "/dev/shm"},
+				{Device: "/dev/vda1", Path: "/var/lib/kubelet"},
+				{Device: "/dev/xvdb", Path: "/data"},
+				{Device: "/dev/xvdc", Path: "/var/lib/kubelet/plugins/kubernetes.io/csi/bsu.csi.outscale.com/foo/globalmount"},
+				{Device: "/dev/xvdc", Path: "/var/lib/kubelet/pods/foo/volumes/kubernetes.io~csi/pvc-foo/mount"},
+			},
+			expMaxVolumes: 37,
+		},
+		{
+			name:         "1 OS mounted volume on xvdb, 1 volume from a PVC on another node",
+			instanceID:   "i-123456789abcdef01",
+			instanceType: "tinav6.c1r6p2",
+			subRegion:    "us-west-2b",
+			objs: []runtime.Object{
+				&storagev1.VolumeAttachment{
+					Spec:   storagev1.VolumeAttachmentSpec{Attacher: DriverName, NodeName: "anothernode"},
+					Status: storagev1.VolumeAttachmentStatus{Attached: true},
+				},
+			},
+			mounted: []mount.MountPoint{
+				{Device: "overlay", Path: "/"},
+				{Device: "proc", Path: "/proc"},
+				{Device: "sysfs", Path: "/sys"},
+				{Device: "cgroup", Path: "/sys/fs/cgroup"},
+				{Device: "/dev/vda1", Path: "/csi"},
+				{Device: "udev", Path: "/dev"},
+				{Device: "devpts", Path: "/dev/pts"},
+				{Device: "tmpfs", Path: "/dev/shm"},
+				{Device: "hugetlbfs", Path: "/dev/hugepages"},
+				{Device: "mqueue", Path: "/dev/mqueue"},
+				{Device: "/dev/vda1", Path: "/etc/hosts"},
+				{Device: "/dev/vda1", Path: "/dev/termination-log"},
+				{Device: "/dev/vda1", Path: "/etc/hostname"},
+				{Device: "/dev/vda1", Path: "/etc/resolv.conf"},
+				{Device: "shm", Path: "/dev/shm"},
+				{Device: "/dev/vda1", Path: "/var/lib/kubelet"},
+				{Device: "/dev/xvdb", Path: "/data"},
+			},
+			expMaxVolumes: 38,
+		},
+		{
+			name:         "1 OS mounted volume on xvdb, 1 PVC (not attached)",
+			instanceID:   "i-123456789abcdef01",
+			instanceType: "tinav6.c1r6p2",
+			subRegion:    "us-west-2b",
+			objs: []runtime.Object{
+				&storagev1.VolumeAttachment{
+					Spec:   storagev1.VolumeAttachmentSpec{Attacher: DriverName, NodeName: nodeName},
+					Status: storagev1.VolumeAttachmentStatus{Attached: false},
+				},
+			},
+			mounted: []mount.MountPoint{
+				{Device: "overlay", Path: "/"},
+				{Device: "proc", Path: "/proc"},
+				{Device: "sysfs", Path: "/sys"},
+				{Device: "cgroup", Path: "/sys/fs/cgroup"},
+				{Device: "/dev/vda1", Path: "/csi"},
+				{Device: "udev", Path: "/dev"},
+				{Device: "devpts", Path: "/dev/pts"},
+				{Device: "tmpfs", Path: "/dev/shm"},
+				{Device: "hugetlbfs", Path: "/dev/hugepages"},
+				{Device: "mqueue", Path: "/dev/mqueue"},
+				{Device: "/dev/vda1", Path: "/etc/hosts"},
+				{Device: "/dev/vda1", Path: "/dev/termination-log"},
+				{Device: "/dev/vda1", Path: "/etc/hostname"},
+				{Device: "/dev/vda1", Path: "/etc/resolv.conf"},
+				{Device: "shm", Path: "/dev/shm"},
+				{Device: "/dev/vda1", Path: "/var/lib/kubelet"},
+				{Device: "/dev/xvdb", Path: "/data"},
+			},
+			expMaxVolumes: 38,
+		},
+		{
 			name:         "Overridden by env",
 			instanceID:   "i-123456789abcdef01",
 			instanceType: "tinav6.c1r6p2",
 			subRegion:    "us-west-2b",
 			env:          "12",
+			objs: []runtime.Object{
+				&storagev1.VolumeAttachment{
+					Spec:   storagev1.VolumeAttachmentSpec{Attacher: DriverName, NodeName: nodeName},
+					Status: storagev1.VolumeAttachmentStatus{Attached: true},
+				},
+			},
 			mounted: []mount.MountPoint{
 				{Device: "overlay", Path: "/"},
 				{Device: "proc", Path: "/proc"},
@@ -1808,11 +1920,18 @@ func TestNodeGetInfo(t *testing.T) {
 			instanceType: "tinav6.c1r6p2",
 			subRegion:    "us-west-2b",
 			env:          "12",
-			node: &corev1.Node{
-				ObjectMeta: metav1.ObjectMeta{
-					Annotations: map[string]string{
-						NodeLimitAnnotation: "10",
+			objs: []runtime.Object{
+				&corev1.Node{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: nodeName,
+						Annotations: map[string]string{
+							NodeLimitAnnotation: "10",
+						},
 					},
+				},
+				&storagev1.VolumeAttachment{
+					Spec:   storagev1.VolumeAttachmentSpec{Attacher: DriverName, NodeName: nodeName},
+					Status: storagev1.VolumeAttachmentStatus{Attached: true},
 				},
 			},
 			mounted: []mount.MountPoint{
@@ -1844,11 +1963,18 @@ func TestNodeGetInfo(t *testing.T) {
 			instanceType: "tinav6.c1r6p2",
 			subRegion:    "us-west-2b",
 			env:          "12",
-			node: &corev1.Node{
-				ObjectMeta: metav1.ObjectMeta{
-					Annotations: map[string]string{
-						NodeLimitAnnotation: "255",
+			objs: []runtime.Object{
+				&corev1.Node{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: nodeName,
+						Annotations: map[string]string{
+							NodeLimitAnnotation: "255",
+						},
 					},
+				},
+				&storagev1.VolumeAttachment{
+					Spec:   storagev1.VolumeAttachmentSpec{Attacher: DriverName, NodeName: nodeName},
+					Status: storagev1.VolumeAttachmentStatus{Attached: true},
 				},
 			},
 			mounted: []mount.MountPoint{
@@ -1885,15 +2011,16 @@ func TestNodeGetInfo(t *testing.T) {
 			mockMounter := mocks.NewMockMounter(mockCtl)
 			mockMounter.EXPECT().List().Return(tc.mounted, nil).MaxTimes(1)
 
-			node := tc.node
-			if node == nil {
-				node = &corev1.Node{}
+			objs := tc.objs
+			if len(objs) == 0 {
+				objs = append(objs, &corev1.Node{
+					ObjectMeta: metav1.ObjectMeta{Name: nodeName},
+				})
 			}
-			node.Name = nodeName
 			savedGetClient := k8s.GetClient
 			defer func() { k8s.GetClient = savedGetClient }()
 			k8s.GetClient = func() (kubernetes.Interface, error) {
-				return fake.NewSimpleClientset(node), nil
+				return fake.NewSimpleClientset(objs...), nil
 			}
 
 			oscDriver := &nodeService{

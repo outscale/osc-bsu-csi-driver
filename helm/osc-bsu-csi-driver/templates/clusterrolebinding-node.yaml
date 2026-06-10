@@ -1,14 +1,14 @@
 kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: osc-csi-node-binding
+  name: osc-csi-node-binding-v0
   labels:
     {{- include "osc-bsu-csi-driver.labels" . | nindent 4 }}
 subjects:
   - kind: ServiceAccount
-    name: osc-csi-node-sa
+    name: osc-csi-node-sa-v0
     namespace: kube-system
 roleRef:
   kind: ClusterRole
-  name: osc-csi-node-role
+  name: osc-csi-node-role-v0
   apiGroup: rbac.authorization.k8s.io

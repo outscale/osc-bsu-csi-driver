@@ -2,7 +2,7 @@
 kind: Deployment
 apiVersion: apps/v1
 metadata:
-  name: osc-csi-controller
+  name: osc-csi-controller-v0
   namespace: kube-system
   labels:
     {{- include "osc-bsu-csi-driver.labels" . | nindent 4 }}
@@ -12,12 +12,12 @@ spec:
     {{- toYaml .Values.controller.updateStrategy | nindent 4 }}
   selector:
     matchLabels:
-      app: osc-csi-controller
+      app: osc-csi-controller-v0
       {{- include "osc-bsu-csi-driver.selectorLabels" . | nindent 6 }}
   template:
     metadata:
       labels:
-        app: osc-csi-controller
+        app: osc-csi-controller-v0
         {{- include "osc-bsu-csi-driver.labels" . | nindent 8 }}
         {{- if .Values.controller.podLabels }}
           {{ toYaml .Values.controller.podLabels | nindent 8 }}
@@ -33,7 +33,7 @@ spec:
         {{- with .Values.controller.nodeSelector }}
 {{ toYaml . | indent 8 }}
         {{- end }}
-      serviceAccountName: osc-csi-controller-sa
+      serviceAccountName: osc-csi-controller-sa-v0
       priorityClassName: system-cluster-critical
       {{- with .Values.controller.affinity }}
       affinity: {{ toYaml . | nindent 8 }}
@@ -341,7 +341,7 @@ spec:
             {{- end }}
           {{- end }}
           {{- with .Values.sidecars.securityContext }}
-          securityContext:  
+          securityContext:
             {{- toYaml . | nindent 12 }}
           {{- end }}
         {{- end }}
@@ -400,7 +400,7 @@ spec:
             {{- end }}
           {{- end }}
           {{- with .Values.sidecars.securityContext }}
-          securityContext:  
+          securityContext:
             {{- toYaml . | nindent 12 }}
           {{- end }}
         - name: liveness-probe
@@ -442,7 +442,7 @@ spec:
             {{- end }}
           {{- end }}
           {{- with .Values.sidecars.securityContext }}
-          securityContext:  
+          securityContext:
             {{- toYaml . | nindent 12 }}
           {{- end }}
       volumes:

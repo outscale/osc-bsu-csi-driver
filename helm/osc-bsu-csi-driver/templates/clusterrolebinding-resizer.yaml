@@ -1,14 +1,14 @@
 kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: osc-csi-resizer-binding
+  name: osc-csi-resizer-binding-v0
   labels:
     {{- include "osc-bsu-csi-driver.labels" . | nindent 4 }}
 subjects:
   - kind: ServiceAccount
-    name: osc-csi-controller-sa
+    name: osc-csi-controller-sa-v0
     namespace: kube-system
 roleRef:
   kind: ClusterRole
-  name: osc-external-resizer-role
+  name: osc-external-resizer-role-v0
   apiGroup: rbac.authorization.k8s.io

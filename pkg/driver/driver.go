@@ -50,7 +50,7 @@ func (m Mode) HasNode() bool {
 }
 
 const (
-	DriverName     = "bsu.csi.outscale.com"
+	DriverName     = "ebs.csi.aws.com"
 	TopologyKey    = "topology." + DriverName + "/zone"
 	TopologyK8sKey = "topology.kubernetes.io/zone"
 )

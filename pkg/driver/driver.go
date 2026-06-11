@@ -49,10 +49,14 @@ func (m Mode) HasNode() bool {
 	return m == NodeMode || m == AllMode
 }
 
+var (
+	DriverName  = DefaultDriverName
+	TopologyKey = "topology." + DriverName + "/zone"
+)
+
 const (
-	DriverName     = "bsu.csi.outscale.com"
-	TopologyKey    = "topology." + DriverName + "/zone"
-	TopologyK8sKey = "topology.kubernetes.io/zone"
+	DefaultDriverName = "bsu.csi.outscale.com"
+	TopologyK8sKey    = "topology.kubernetes.io/zone"
 )
 
 type Driver struct {

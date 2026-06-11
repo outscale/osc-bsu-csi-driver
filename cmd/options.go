@@ -53,6 +53,8 @@ func GetOptions(fs *pflag.FlagSet) *Options {
 	logOptions := logs.NewOptions()
 	logsv1.AddFlags(logOptions, fs)
 
+	fs.StringVar(&driver.DriverName, "name", driver.DefaultDriverName, "Driver name")
+
 	args := os.Args[1:]
 	mode := driver.AllMode
 	controllerOptions := options.ControllerOptions{}

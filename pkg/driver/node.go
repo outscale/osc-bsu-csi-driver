@@ -57,20 +57,23 @@ const (
 	// https://docs.outscale.com/en/userguide/About-Volumes.html#_volumes_and_instances
 	defaultMaxBSUVolumes = 40
 
-	NodeLimitAnnotation = DriverName + "/maxvolumes"
-	NodeNameEnv         = "NODE_NAME"
-	MaxVolumesEnv       = "MAX_BSU_VOLUMES"
-	ReservedVolumesEnv  = "RESERVED_BSU_VOLUMES"
+	NodeNameEnv        = "NODE_NAME"
+	MaxVolumesEnv      = "MAX_BSU_VOLUMES"
+	ReservedVolumesEnv = "RESERVED_BSU_VOLUMES"
 )
 
-var ValidFSTypes = []string{FSTypeExt2, FSTypeExt3, FSTypeExt4, FSTypeXfs}
+var (
+	NodeLimitAnnotation = DriverName + "/maxvolumes"
 
-// nodeCaps represents the capability of node service.
-var nodeCaps = []csi.NodeServiceCapability_RPC_Type{
-	csi.NodeServiceCapability_RPC_STAGE_UNSTAGE_VOLUME,
-	csi.NodeServiceCapability_RPC_EXPAND_VOLUME,
-	csi.NodeServiceCapability_RPC_GET_VOLUME_STATS,
-}
+	ValidFSTypes = []string{FSTypeExt2, FSTypeExt3, FSTypeExt4, FSTypeXfs}
+
+	// nodeCaps represents the capability of node service.
+	nodeCaps = []csi.NodeServiceCapability_RPC_Type{
+		csi.NodeServiceCapability_RPC_STAGE_UNSTAGE_VOLUME,
+		csi.NodeServiceCapability_RPC_EXPAND_VOLUME,
+		csi.NodeServiceCapability_RPC_GET_VOLUME_STATS,
+	}
+)
 
 // nodeService represents the node service of CSI driver
 type nodeService struct {

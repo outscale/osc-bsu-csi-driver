@@ -24,6 +24,7 @@ import (
 	"testing"
 
 	"github.com/container-storage-interface/spec/lib/go/csi"
+	"github.com/outscale/goutils/sdk/metadata/mocks_metadata"
 	"github.com/outscale/osc-bsu-csi-driver/pkg/driver/internal"
 	"github.com/outscale/osc-bsu-csi-driver/pkg/driver/k8s"
 	"github.com/outscale/osc-bsu-csi-driver/pkg/driver/luks"
@@ -40,7 +41,6 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/fake"
 	exec "k8s.io/utils/exec"
-	"k8s.io/utils/mount"
 )
 
 const nodeName = "node-foo"
@@ -1640,110 +1640,34 @@ func TestNodeGetInfo(t *testing.T) {
 		objs          []runtime.Object
 		subRegion     string
 		osMounted     []string
-		mounted       []mount.MountPoint
+		mappings      map[string]string
 		expMaxVolumes int64
 	}{
 		{
-			name:         "default mounts, no pvc",
-			instanceID:   "i-123456789abcdef01",
-			instanceType: "tinav6.c1r6p2",
-			subRegion:    "us-west-2b",
-			mounted: []mount.MountPoint{
-				{Device: "overlay", Path: "/"},
-				{Device: "proc", Path: "/proc"},
-				{Device: "sysfs", Path: "/sys"},
-				{Device: "cgroup", Path: "/sys/fs/cgroup"},
-				{Device: "/dev/vda1", Path: "/csi"},
-				{Device: "udev", Path: "/dev"},
-				{Device: "devpts", Path: "/dev/pts"},
-				{Device: "tmpfs", Path: "/dev/shm"},
-				{Device: "hugetlbfs", Path: "/dev/hugepages"},
-				{Device: "mqueue", Path: "/dev/mqueue"},
-				{Device: "/dev/vda1", Path: "/etc/hosts"},
-				{Device: "/dev/vda1", Path: "/dev/termination-log"},
-				{Device: "/dev/vda1", Path: "/etc/hostname"},
-				{Device: "/dev/vda1", Path: "/etc/resolv.conf"},
-				{Device: "shm", Path: "/dev/shm"},
-				{Device: "/dev/vda1", Path: "/var/lib/kubelet"},
-			},
+			name:          "default mounts, no pvc",
+			instanceID:    "i-123456789abcdef01",
+			instanceType:  "tinav6.c1r6p2",
+			subRegion:     "us-west-2b",
 			expMaxVolumes: 39,
 		},
 		{
-			name:         "1 OS mounted volume on xvdb, no PVC",
+			name:         "1 OS mounted volume, no PVC",
 			instanceID:   "i-123456789abcdef01",
 			instanceType: "tinav6.c1r6p2",
 			subRegion:    "us-west-2b",
-			mounted: []mount.MountPoint{
-				{Device: "overlay", Path: "/"},
-				{Device: "proc", Path: "/proc"},
-				{Device: "sysfs", Path: "/sys"},
-				{Device: "cgroup", Path: "/sys/fs/cgroup"},
-				{Device: "/dev/vda1", Path: "/csi"},
-				{Device: "udev", Path: "/dev"},
-				{Device: "devpts", Path: "/dev/pts"},
-				{Device: "tmpfs", Path: "/dev/shm"},
-				{Device: "hugetlbfs", Path: "/dev/hugepages"},
-				{Device: "mqueue", Path: "/dev/mqueue"},
-				{Device: "/dev/vda1", Path: "/etc/hosts"},
-				{Device: "/dev/vda1", Path: "/dev/termination-log"},
-				{Device: "/dev/vda1", Path: "/etc/hostname"},
-				{Device: "/dev/vda1", Path: "/etc/resolv.conf"},
-				{Device: "shm", Path: "/dev/shm"},
-				{Device: "/dev/vda1", Path: "/var/lib/kubelet"},
-				{Device: "/dev/xvdb", Path: "/data"},
+			mappings: map[string]string{
+				"ebs0": "/dev/xvdb",
 			},
 			expMaxVolumes: 38,
 		},
 		{
-			name:         "1 OS mounted volume on sdb, no PVC",
-			instanceID:   "i-123456789abcdef01",
-			instanceType: "tinav6.c1r6p2",
-			subRegion:    "us-west-2b",
-			mounted: []mount.MountPoint{
-				{Device: "overlay", Path: "/"},
-				{Device: "proc", Path: "/proc"},
-				{Device: "sysfs", Path: "/sys"},
-				{Device: "cgroup", Path: "/sys/fs/cgroup"},
-				{Device: "/dev/vda1", Path: "/csi"},
-				{Device: "udev", Path: "/dev"},
-				{Device: "devpts", Path: "/dev/pts"},
-				{Device: "tmpfs", Path: "/dev/shm"},
-				{Device: "hugetlbfs", Path: "/dev/hugepages"},
-				{Device: "mqueue", Path: "/dev/mqueue"},
-				{Device: "/dev/vda1", Path: "/etc/hosts"},
-				{Device: "/dev/vda1", Path: "/dev/termination-log"},
-				{Device: "/dev/vda1", Path: "/etc/hostname"},
-				{Device: "/dev/vda1", Path: "/etc/resolv.conf"},
-				{Device: "shm", Path: "/dev/shm"},
-				{Device: "/dev/vda1", Path: "/var/lib/kubelet"},
-				{Device: "/dev/sdb", Path: "/data"},
-			},
-			expMaxVolumes: 38,
-		},
-		{
-			name:         "1 OS mounted volume on sdb, no PVC, 2 reserved",
+			name:         "1 OS mounted volume, no PVC, 2 reserved",
 			instanceID:   "i-123456789abcdef01",
 			instanceType: "tinav6.c1r6p2",
 			subRegion:    "us-west-2b",
 			envReserved:  "2",
-			mounted: []mount.MountPoint{
-				{Device: "overlay", Path: "/"},
-				{Device: "proc", Path: "/proc"},
-				{Device: "sysfs", Path: "/sys"},
-				{Device: "cgroup", Path: "/sys/fs/cgroup"},
-				{Device: "/dev/vda1", Path: "/csi"},
-				{Device: "udev", Path: "/dev"},
-				{Device: "devpts", Path: "/dev/pts"},
-				{Device: "tmpfs", Path: "/dev/shm"},
-				{Device: "hugetlbfs", Path: "/dev/hugepages"},
-				{Device: "mqueue", Path: "/dev/mqueue"},
-				{Device: "/dev/vda1", Path: "/etc/hosts"},
-				{Device: "/dev/vda1", Path: "/dev/termination-log"},
-				{Device: "/dev/vda1", Path: "/etc/hostname"},
-				{Device: "/dev/vda1", Path: "/etc/resolv.conf"},
-				{Device: "shm", Path: "/dev/shm"},
-				{Device: "/dev/vda1", Path: "/var/lib/kubelet"},
-				{Device: "/dev/sdb", Path: "/data"},
+			mappings: map[string]string{
+				"ebs0": "/dev/xvdb",
 			},
 			expMaxVolumes: 37,
 		},
@@ -1758,26 +1682,9 @@ func TestNodeGetInfo(t *testing.T) {
 					Status: storagev1.VolumeAttachmentStatus{Attached: true},
 				},
 			},
-			mounted: []mount.MountPoint{
-				{Device: "overlay", Path: "/"},
-				{Device: "proc", Path: "/proc"},
-				{Device: "sysfs", Path: "/sys"},
-				{Device: "cgroup", Path: "/sys/fs/cgroup"},
-				{Device: "/dev/vda1", Path: "/csi"},
-				{Device: "udev", Path: "/dev"},
-				{Device: "devpts", Path: "/dev/pts"},
-				{Device: "tmpfs", Path: "/dev/shm"},
-				{Device: "hugetlbfs", Path: "/dev/hugepages"},
-				{Device: "mqueue", Path: "/dev/mqueue"},
-				{Device: "/dev/vda1", Path: "/etc/hosts"},
-				{Device: "/dev/vda1", Path: "/dev/termination-log"},
-				{Device: "/dev/vda1", Path: "/etc/hostname"},
-				{Device: "/dev/vda1", Path: "/etc/resolv.conf"},
-				{Device: "shm", Path: "/dev/shm"},
-				{Device: "/dev/vda1", Path: "/var/lib/kubelet"},
-				{Device: "/dev/xvdb", Path: "/data"},
-				{Device: "/dev/xvdc", Path: "/var/lib/kubelet/plugins/kubernetes.io/csi/bsu.csi.outscale.com/foo/globalmount"},
-				{Device: "/dev/xvdc", Path: "/var/lib/kubelet/pods/foo/volumes/kubernetes.io~csi/pvc-foo/mount"},
+			mappings: map[string]string{
+				"ebs0": "/dev/xvdb",
+				"ebs1": "/dev/xvdc",
 			},
 			expMaxVolumes: 38,
 		},
@@ -1792,26 +1699,9 @@ func TestNodeGetInfo(t *testing.T) {
 					Status: storagev1.VolumeAttachmentStatus{Attached: true},
 				},
 			},
-			mounted: []mount.MountPoint{
-				{Device: "overlay", Path: "/"},
-				{Device: "proc", Path: "/proc"},
-				{Device: "sysfs", Path: "/sys"},
-				{Device: "cgroup", Path: "/sys/fs/cgroup"},
-				{Device: "/dev/vda1", Path: "/csi"},
-				{Device: "udev", Path: "/dev"},
-				{Device: "devpts", Path: "/dev/pts"},
-				{Device: "tmpfs", Path: "/dev/shm"},
-				{Device: "hugetlbfs", Path: "/dev/hugepages"},
-				{Device: "mqueue", Path: "/dev/mqueue"},
-				{Device: "/dev/vda1", Path: "/etc/hosts"},
-				{Device: "/dev/vda1", Path: "/dev/termination-log"},
-				{Device: "/dev/vda1", Path: "/etc/hostname"},
-				{Device: "/dev/vda1", Path: "/etc/resolv.conf"},
-				{Device: "shm", Path: "/dev/shm"},
-				{Device: "/dev/vda1", Path: "/var/lib/kubelet"},
-				{Device: "/dev/xvdb", Path: "/data"},
-				{Device: "/dev/xvdc", Path: "/var/lib/kubelet/plugins/kubernetes.io/csi/bsu.csi.outscale.com/foo/globalmount"},
-				{Device: "/dev/xvdc", Path: "/var/lib/kubelet/pods/foo/volumes/kubernetes.io~csi/pvc-foo/mount"},
+			mappings: map[string]string{
+				"ebs0": "/dev/xvdb",
+				"ebs1": "/dev/xvdc",
 			},
 			expMaxVolumes: 37,
 		},
@@ -1826,24 +1716,8 @@ func TestNodeGetInfo(t *testing.T) {
 					Status: storagev1.VolumeAttachmentStatus{Attached: true},
 				},
 			},
-			mounted: []mount.MountPoint{
-				{Device: "overlay", Path: "/"},
-				{Device: "proc", Path: "/proc"},
-				{Device: "sysfs", Path: "/sys"},
-				{Device: "cgroup", Path: "/sys/fs/cgroup"},
-				{Device: "/dev/vda1", Path: "/csi"},
-				{Device: "udev", Path: "/dev"},
-				{Device: "devpts", Path: "/dev/pts"},
-				{Device: "tmpfs", Path: "/dev/shm"},
-				{Device: "hugetlbfs", Path: "/dev/hugepages"},
-				{Device: "mqueue", Path: "/dev/mqueue"},
-				{Device: "/dev/vda1", Path: "/etc/hosts"},
-				{Device: "/dev/vda1", Path: "/dev/termination-log"},
-				{Device: "/dev/vda1", Path: "/etc/hostname"},
-				{Device: "/dev/vda1", Path: "/etc/resolv.conf"},
-				{Device: "shm", Path: "/dev/shm"},
-				{Device: "/dev/vda1", Path: "/var/lib/kubelet"},
-				{Device: "/dev/xvdb", Path: "/data"},
+			mappings: map[string]string{
+				"ebs0": "/dev/xvdb",
 			},
 			expMaxVolumes: 38,
 		},
@@ -1858,24 +1732,8 @@ func TestNodeGetInfo(t *testing.T) {
 					Status: storagev1.VolumeAttachmentStatus{Attached: false},
 				},
 			},
-			mounted: []mount.MountPoint{
-				{Device: "overlay", Path: "/"},
-				{Device: "proc", Path: "/proc"},
-				{Device: "sysfs", Path: "/sys"},
-				{Device: "cgroup", Path: "/sys/fs/cgroup"},
-				{Device: "/dev/vda1", Path: "/csi"},
-				{Device: "udev", Path: "/dev"},
-				{Device: "devpts", Path: "/dev/pts"},
-				{Device: "tmpfs", Path: "/dev/shm"},
-				{Device: "hugetlbfs", Path: "/dev/hugepages"},
-				{Device: "mqueue", Path: "/dev/mqueue"},
-				{Device: "/dev/vda1", Path: "/etc/hosts"},
-				{Device: "/dev/vda1", Path: "/dev/termination-log"},
-				{Device: "/dev/vda1", Path: "/etc/hostname"},
-				{Device: "/dev/vda1", Path: "/etc/resolv.conf"},
-				{Device: "shm", Path: "/dev/shm"},
-				{Device: "/dev/vda1", Path: "/var/lib/kubelet"},
-				{Device: "/dev/xvdb", Path: "/data"},
+			mappings: map[string]string{
+				"ebs0": "/dev/xvdb",
 			},
 			expMaxVolumes: 38,
 		},
@@ -1891,26 +1749,9 @@ func TestNodeGetInfo(t *testing.T) {
 					Status: storagev1.VolumeAttachmentStatus{Attached: true},
 				},
 			},
-			mounted: []mount.MountPoint{
-				{Device: "overlay", Path: "/"},
-				{Device: "proc", Path: "/proc"},
-				{Device: "sysfs", Path: "/sys"},
-				{Device: "cgroup", Path: "/sys/fs/cgroup"},
-				{Device: "/dev/vda1", Path: "/csi"},
-				{Device: "udev", Path: "/dev"},
-				{Device: "devpts", Path: "/dev/pts"},
-				{Device: "tmpfs", Path: "/dev/shm"},
-				{Device: "hugetlbfs", Path: "/dev/hugepages"},
-				{Device: "mqueue", Path: "/dev/mqueue"},
-				{Device: "/dev/vda1", Path: "/etc/hosts"},
-				{Device: "/dev/vda1", Path: "/dev/termination-log"},
-				{Device: "/dev/vda1", Path: "/etc/hostname"},
-				{Device: "/dev/vda1", Path: "/etc/resolv.conf"},
-				{Device: "shm", Path: "/dev/shm"},
-				{Device: "/dev/vda1", Path: "/var/lib/kubelet"},
-				{Device: "/dev/xvdb", Path: "/data"},
-				{Device: "/dev/xvdc", Path: "/var/lib/kubelet/plugins/kubernetes.io/csi/bsu.csi.outscale.com/foo/globalmount"},
-				{Device: "/dev/xvdc", Path: "/var/lib/kubelet/pods/foo/volumes/kubernetes.io~csi/pvc-foo/mount"},
+			mappings: map[string]string{
+				"ebs0": "/dev/xvdb",
+				"ebs1": "/dev/xvdc",
 			},
 			expMaxVolumes: 12,
 		},
@@ -1934,26 +1775,9 @@ func TestNodeGetInfo(t *testing.T) {
 					Status: storagev1.VolumeAttachmentStatus{Attached: true},
 				},
 			},
-			mounted: []mount.MountPoint{
-				{Device: "overlay", Path: "/"},
-				{Device: "proc", Path: "/proc"},
-				{Device: "sysfs", Path: "/sys"},
-				{Device: "cgroup", Path: "/sys/fs/cgroup"},
-				{Device: "/dev/vda1", Path: "/csi"},
-				{Device: "udev", Path: "/dev"},
-				{Device: "devpts", Path: "/dev/pts"},
-				{Device: "tmpfs", Path: "/dev/shm"},
-				{Device: "hugetlbfs", Path: "/dev/hugepages"},
-				{Device: "mqueue", Path: "/dev/mqueue"},
-				{Device: "/dev/vda1", Path: "/etc/hosts"},
-				{Device: "/dev/vda1", Path: "/dev/termination-log"},
-				{Device: "/dev/vda1", Path: "/etc/hostname"},
-				{Device: "/dev/vda1", Path: "/etc/resolv.conf"},
-				{Device: "shm", Path: "/dev/shm"},
-				{Device: "/dev/vda1", Path: "/var/lib/kubelet"},
-				{Device: "/dev/xvdb", Path: "/data"},
-				{Device: "/dev/xvdc", Path: "/var/lib/kubelet/plugins/kubernetes.io/csi/bsu.csi.outscale.com/foo/globalmount"},
-				{Device: "/dev/xvdc", Path: "/var/lib/kubelet/pods/foo/volumes/kubernetes.io~csi/pvc-foo/mount"},
+			mappings: map[string]string{
+				"ebs0": "/dev/xvdb",
+				"ebs1": "/dev/xvdc",
 			},
 			expMaxVolumes: 10,
 		},
@@ -1977,26 +1801,9 @@ func TestNodeGetInfo(t *testing.T) {
 					Status: storagev1.VolumeAttachmentStatus{Attached: true},
 				},
 			},
-			mounted: []mount.MountPoint{
-				{Device: "overlay", Path: "/"},
-				{Device: "proc", Path: "/proc"},
-				{Device: "sysfs", Path: "/sys"},
-				{Device: "cgroup", Path: "/sys/fs/cgroup"},
-				{Device: "/dev/vda1", Path: "/csi"},
-				{Device: "udev", Path: "/dev"},
-				{Device: "devpts", Path: "/dev/pts"},
-				{Device: "tmpfs", Path: "/dev/shm"},
-				{Device: "hugetlbfs", Path: "/dev/hugepages"},
-				{Device: "mqueue", Path: "/dev/mqueue"},
-				{Device: "/dev/vda1", Path: "/etc/hosts"},
-				{Device: "/dev/vda1", Path: "/dev/termination-log"},
-				{Device: "/dev/vda1", Path: "/etc/hostname"},
-				{Device: "/dev/vda1", Path: "/etc/resolv.conf"},
-				{Device: "shm", Path: "/dev/shm"},
-				{Device: "/dev/vda1", Path: "/var/lib/kubelet"},
-				{Device: "/dev/xvdb", Path: "/data"},
-				{Device: "/dev/xvdc", Path: "/var/lib/kubelet/plugins/kubernetes.io/csi/bsu.csi.outscale.com/foo/globalmount"},
-				{Device: "/dev/xvdc", Path: "/var/lib/kubelet/pods/foo/volumes/kubernetes.io~csi/pvc-foo/mount"},
+			mappings: map[string]string{
+				"ebs0": "/dev/xvdb",
+				"ebs1": "/dev/xvdc",
 			},
 			expMaxVolumes: 12,
 		},
@@ -2008,8 +1815,10 @@ func TestNodeGetInfo(t *testing.T) {
 			mockCtl := gomock.NewController(t)
 			defer mockCtl.Finish()
 
-			mockMounter := mocks.NewMockMounter(mockCtl)
-			mockMounter.EXPECT().List().Return(tc.mounted, nil).MaxTimes(1)
+			mocks_metadata.Setup()
+			defer mocks_metadata.Teardown()
+
+			mocks_metadata.MockDevideMappings(tc.mappings)
 
 			objs := tc.objs
 			if len(objs) == 0 {
@@ -2024,7 +1833,6 @@ func TestNodeGetInfo(t *testing.T) {
 			}
 
 			oscDriver := &nodeService{
-				mounter:    mockMounter,
 				instanceID: tc.instanceID,
 				subRegion:  tc.subRegion,
 				nodeName:   nodeName,

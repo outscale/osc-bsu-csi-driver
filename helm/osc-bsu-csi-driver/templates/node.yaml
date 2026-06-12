@@ -54,6 +54,7 @@ spec:
           imagePullPolicy: {{ .Values.driver.imagePullPolicy }}
           args:
             - node
+            - --name={{ .Values.driver.name }}
             - --endpoint=$(CSI_ENDPOINT)
             - --v={{ .Values.logs.verbosity }}
             {{- if ne .Values.logs.format "text" }}
@@ -123,7 +124,7 @@ spec:
             - name: ADDRESS
               value: /csi/csi.sock
             - name: DRIVER_REG_SOCK_PATH
-              value: /var/lib/kubelet/plugins/ebs.csi.aws.com/csi.sock
+              value: /var/lib/kubelet/plugins/{{ .Values.driver.name }}/csi.sock
           volumeMounts:
             - name: plugin-dir
               mountPath: /csi
@@ -171,7 +172,7 @@ spec:
             type: Directory
         - name: plugin-dir
           hostPath:
-            path: /var/lib/kubelet/plugins/ebs.csi.aws.com/
+            path: /var/lib/kubelet/plugins/{{ .Values.driver.name }}/
             type: DirectoryOrCreate
         - name: registration-dir
           hostPath:

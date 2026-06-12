@@ -9,7 +9,7 @@ require (
 	github.com/onsi/ginkgo/v2 v2.28.3
 	github.com/onsi/gomega v1.40.0
 	github.com/outscale/goutils/k8s v0.0.2
-	github.com/outscale/goutils/sdk v0.0.2
+	github.com/outscale/goutils/sdk v0.0.4
 	github.com/outscale/osc-sdk-go/v3 v3.0.0-rc.2
 	github.com/rs/xid v1.6.0
 	github.com/samber/lo v1.53.0
@@ -32,8 +32,9 @@ require (
 
 // replace (
 // 	github.com/outscale/goutils/k8s => ../goutils/k8s
-// 	github.com/outscale/goutils/sdk => ../goutils/sdk
+//  github.com/outscale/goutils/sdk => ../goutils/sdk
 // )
+
 replace github.com/kubernetes-csi/csi-test/v5 v5.4.0 => github.com/outscale/kubernetes-csi-test/v5 v5.4.0-outscale
 
 require (
@@ -71,6 +72,7 @@ require (
 	github.com/hashicorp/go-cleanhttp v0.5.2 // indirect
 	github.com/hashicorp/go-retryablehttp v0.7.8 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
+	github.com/jarcoal/httpmock v1.4.1 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect

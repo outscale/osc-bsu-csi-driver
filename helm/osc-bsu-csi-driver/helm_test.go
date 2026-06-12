@@ -100,6 +100,7 @@ func TestHelmTemplate_Deployment(t *testing.T) {
 		assert.Equal(t, "outscale/osc-bsu-csi-driver:v1.10.0", manager.Image)
 		assert.Equal(t, []string{
 			"controller",
+			"--name=bsu.csi.outscale.com",
 			"--endpoint=$(CSI_ENDPOINT)",
 			"--v=3",
 		}, manager.Args)
@@ -409,6 +410,7 @@ func TestHelmTemplate_DaemonSet(t *testing.T) {
 		assert.Equal(t, "outscale/osc-bsu-csi-driver:v1.10.0", manager.Image)
 		assert.Equal(t, []string{
 			"node",
+			"--name=bsu.csi.outscale.com",
 			"--endpoint=$(CSI_ENDPOINT)",
 			"--v=3",
 		}, manager.Args)
@@ -514,7 +516,12 @@ func TestHelmTemplate_DaemonSet(t *testing.T) {
 		)
 		require.Len(t, dep.Spec.Template.Spec.Containers, 3)
 		assert.Equal(t, []string{
-			"node", "--endpoint=$(CSI_ENDPOINT)", "--v=3", "--luks-open-flags=--perf-no_read_workqueue", "--luks-open-flags=--perf-no_write_workqueue",
+			"node",
+			"--name=bsu.csi.outscale.com",
+			"--endpoint=$(CSI_ENDPOINT)",
+			"--v=3",
+			"--luks-open-flags=--perf-no_read_workqueue",
+			"--luks-open-flags=--perf-no_write_workqueue",
 		},
 			dep.Spec.Template.Spec.Containers[0].Args)
 	})

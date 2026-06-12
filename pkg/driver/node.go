@@ -31,6 +31,7 @@ import (
 	"github.com/outscale/osc-bsu-csi-driver/pkg/driver/internal"
 	"github.com/outscale/osc-bsu-csi-driver/pkg/driver/k8s"
 	"github.com/outscale/osc-bsu-csi-driver/pkg/driver/luks"
+	"github.com/samber/lo"
 	"golang.org/x/sys/unix"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -57,20 +58,23 @@ const (
 	// https://docs.outscale.com/en/userguide/About-Volumes.html#_volumes_and_instances
 	defaultMaxBSUVolumes = 40
 
-	NodeLimitAnnotation = DriverName + "/maxvolumes"
-	NodeNameEnv         = "NODE_NAME"
-	MaxVolumesEnv       = "MAX_BSU_VOLUMES"
-	ReservedVolumesEnv  = "RESERVED_BSU_VOLUMES"
+	NodeNameEnv        = "NODE_NAME"
+	MaxVolumesEnv      = "MAX_BSU_VOLUMES"
+	ReservedVolumesEnv = "RESERVED_BSU_VOLUMES"
 )
 
-var ValidFSTypes = []string{FSTypeExt2, FSTypeExt3, FSTypeExt4, FSTypeXfs}
+var (
+	NodeLimitAnnotation = DriverName + "/maxvolumes"
 
-// nodeCaps represents the capability of node service.
-var nodeCaps = []csi.NodeServiceCapability_RPC_Type{
-	csi.NodeServiceCapability_RPC_STAGE_UNSTAGE_VOLUME,
-	csi.NodeServiceCapability_RPC_EXPAND_VOLUME,
-	csi.NodeServiceCapability_RPC_GET_VOLUME_STATS,
-}
+	ValidFSTypes = []string{FSTypeExt2, FSTypeExt3, FSTypeExt4, FSTypeXfs}
+
+	// nodeCaps represents the capability of node service.
+	nodeCaps = []csi.NodeServiceCapability_RPC_Type{
+		csi.NodeServiceCapability_RPC_STAGE_UNSTAGE_VOLUME,
+		csi.NodeServiceCapability_RPC_EXPAND_VOLUME,
+		csi.NodeServiceCapability_RPC_GET_VOLUME_STATS,
+	}
+)
 
 // nodeService represents the node service of CSI driver
 type nodeService struct {
@@ -101,7 +105,7 @@ func newNodeService(ctx context.Context, driverOptions *DriverOptions) (nodeServ
 	if err != nil {
 		return nodeService{}, err
 	}
-	srv.subRegion, err = metadata.GetSubRegion(ctx)
+	srv.subRegion, err = metadata.GetSubregion(ctx)
 	if err != nil {
 		return nodeService{}, err
 	}
@@ -819,24 +823,13 @@ func (s *nodeService) getVolumesLimit(ctx context.Context) (int64, error) {
 		return maxVolumes, nil
 	}
 
-	// count mounted devices
-	mounts, err := s.mounter.List()
+	// count attached volumes
+	mappings, err := metadata.GetDeviceMappings(ctx)
 	if err != nil {
-		return -1, fmt.Errorf("list mounts: %w", err)
+		return -1, fmt.Errorf("list device mappings: %w", err)
 	}
-	devs := make([]string, 0, len(mounts))
-	for _, m := range mounts {
-		// skip non devices
-		if !strings.HasPrefix(m.Device, "/dev/xvd") &&
-			!strings.HasPrefix(m.Device, "/dev/vd") &&
-			!strings.HasPrefix(m.Device, "/dev/sd") {
-			continue
-		}
-		if !slices.Contains(devs, m.Device) {
-			devs = append(devs, m.Device)
-		}
-	}
-	logger.V(4).Info("Mounted volumes", "count", len(devs))
+	volumes := len(lo.UniqValues(mappings))
+	logger.V(4).Info("Attached volumes", "count", volumes)
 
 	// count PVC
 	pvcs, err := k8s.CountVolumeAttachments(ctx, s.nodeName, DriverName)
@@ -848,7 +841,7 @@ func (s *nodeService) getVolumesLimit(ctx context.Context) (int64, error) {
 
 	// devs includes the root volume
 	// we need to reserve getEnvReservedVolumes() + the root volume
-	maxVolumes = defaultMaxBSUVolumes - max(int64(len(devs)-pvcs), getEnvReservedVolumes()+1)
+	maxVolumes = defaultMaxBSUVolumes - max(int64(volumes-pvcs), getEnvReservedVolumes()+1)
 	logger.V(3).Info("Computed limit", "maxVolumes", maxVolumes)
 	return maxVolumes, nil
 }

@@ -16,43 +16,35 @@ limitations under the License.
 
 package devicemanager
 
-import "errors"
+import (
+	"errors"
+	"slices"
+)
 
-// ExistingNames is a map of assigned device names. Presence of a key with a device
-// name in the map means that the device is allocated. Value is irrelevant and
-// can be used for anything that NameAllocator user wants.  Only the relevant
-// part of device name should be in the map, e.g. "ba" for "/dev/xvdba".
-type ExistingNames map[string]string
-
-// On Outscale, we should assign new (not yet used) device names to attached volumes.
-// If we reuse a previously used name, we may get the volume "attaching" forever.
 // NameAllocator finds available device name, taking into account already
-// assigned device names from ExistingNames map. It tries to find the next
-// device name to the previously assigned one (from previous NameAllocator
-// call), so all available device names are used eventually and it minimizes
-// device name reuse.
+// assigned device names. It tries to find the next unused device name.
 type NameAllocator interface {
 	// GetNext returns a free device name or error when there is no free device
 	// name. Only the device name is returned, e.g. "ba" for "/dev/xvdba".
 	// It's up to the called to add appropriate "/dev/sd" or "/dev/xvd" prefix.
-	GetNext(existingNames ExistingNames) (name string, err error)
+	GetNext(existing []string) (name string, err error)
 }
 
 type nameAllocator struct{}
 
 var _ NameAllocator = &nameAllocator{}
 
-// GetNext gets next available device given existing names that are being used
-// This function iterate through the device names in deterministic order of:
+// GetNext gets next available device name.
+// This function iterates through the device names in deterministic order of:
 //
-//	a ... z, aa ... az
+//	b ... z, aa ... az
 //
 // and return the first one that is not used yet.
-func (d *nameAllocator) GetNext(existingNames ExistingNames) (string, error) {
-	deviceMap := [52]string{"a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z", "aa", "ab", "ac", "ad", "ae", "af", "ag", "ah", "ai", "aj", "ak", "al", "am", "an", "ao", "ap", "aq", "ar", "as", "at", "au", "av", "aw", "ax", "ay", "az"}
-	for i := 1; i < 52; i++ {
-		name := deviceMap[i]
-		if _, found := existingNames[name]; !found {
+// Note: a is reserved for the root volume.
+func (d *nameAllocator) GetNext(existing []string) (string, error) {
+	deviceMap := [51]string{"b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z", "aa", "ab", "ac", "ad", "ae", "af", "ag", "ah", "ai", "aj", "ak", "al", "am", "an", "ao", "ap", "aq", "ar", "as", "at", "au", "av", "aw", "ax", "ay", "az"}
+	for _, name := range deviceMap {
+		if !slices.Contains(existing, name) {
 			return name, nil
 		}
 	}

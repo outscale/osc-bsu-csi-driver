@@ -21,6 +21,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"slices"
 	"strings"
 	"time"
 
@@ -345,40 +346,36 @@ func (c *cloud) DeleteVolume(ctx context.Context, volumeID string) (bool, error)
 }
 
 func (c *cloud) AttachVolume(ctx context.Context, volumeID, nodeID string) (string, error) {
-	instance, err := c.getInstance(ctx, nodeID)
+	vm, err := c.getVm(ctx, nodeID)
 	if err != nil {
 		return "", err
 	}
 
-	device, err := c.dm.NewDevice(instance, volumeID)
+	device, err := c.dm.AssignDevice(ctx, vm, volumeID)
 	if err != nil {
 		return "", err
 	}
-	defer device.Release(false)
 
-	if !device.IsAlreadyAssigned {
+	if !device.Linked() {
 		request := osc.LinkVolumeRequest{
-			DeviceName: device.Path,
+			DeviceName: device.Path(),
 			VmId:       nodeID,
 			VolumeId:   volumeID,
 		}
 		_, err := c.client.LinkVolume(ctx, request)
 		if err != nil {
+			c.dm.Release(ctx, vm, volumeID)
 			return "", fmt.Errorf("attach volume: %w", err)
 		}
+		device.MarkAsLinked()
 	}
 
-	// This is the only situation where we taint the device
+	// Wait for the volume to be properly attached.
 	if err := c.waitForAttachedVolume(ctx, volumeID); err != nil {
-		device.Taint()
 		return "", err
 	}
 
-	// TODO: Double check the attachment to be 100% sure we attached the correct volume at the correct mountpoint
-	// It could happen otherwise that we see the volume attached from a previous/separate AttachVolume call,
-	// which could theoretically be against a different device (or even instance).
-
-	return device.Path, nil
+	return device.Path(), nil
 }
 
 // waitForAttachedVolume waits for volume to be attached state.
@@ -404,48 +401,43 @@ func (c *cloud) waitForAttachedVolume(ctx context.Context, volumeID string) erro
 
 func (c *cloud) DetachVolume(ctx context.Context, volumeID, nodeID string) error {
 	logger := klog.FromContext(ctx)
-	{
-		// Check if the volume is attached to VM
-		request := osc.ReadVolumesRequest{
-			Filters: &osc.FiltersVolume{
-				VolumeIds: &[]string{volumeID},
-			},
-		}
 
-		volume, err := c.getVolume(ctx, request)
-		if err == nil && volume.State == osc.VolumeStateAvailable {
-			logger.V(4).Info("Volume is already available")
-			return nil
-		}
-	}
-	instance, err := c.getInstance(ctx, nodeID)
+	vm, err := c.getVm(ctx, nodeID)
 	if err != nil {
 		return err
 	}
 
-	// TODO: check if attached
-	device := c.dm.GetDevice(instance, volumeID)
-	defer device.Release(true)
-
-	if !device.IsAlreadyAssigned {
-		logger.V(4).Info("Volume is not assigned to node")
-		return ErrNotFound
+	// Check if the volume is attached to VM
+	volume, err := c.getVolume(ctx, osc.ReadVolumesRequest{
+		Filters: &osc.FiltersVolume{
+			VolumeIds: &[]string{volumeID},
+		},
+	})
+	switch {
+	case errors.Is(err, ErrNotFound):
+		return nil
+	case err != nil:
+		return fmt.Errorf("read volume: %w", err)
+	case volume.State != osc.VolumeStateInUse:
+		logger.V(4).Info("Volume is not linked")
+		return nil
+	case !slices.ContainsFunc(volume.LinkedVolumes, func(l osc.LinkedVolume) bool {
+		return l.VmId == vm.VmId
+	}):
+		logger.V(3).Info("Volume is linked to another VM, ignoring")
+		return nil
 	}
 
 	request := osc.UnlinkVolumeRequest{
 		VolumeId: volumeID,
 	}
-
 	_, err = c.client.UnlinkVolume(ctx, request)
 	if err != nil {
 		return fmt.Errorf("detach volume: %w", err)
 	}
-
-	if err := c.waitForDetachedVolume(ctx, volumeID); err != nil {
-		return err
-	}
-
-	return nil
+	err = c.waitForDetachedVolume(ctx, volumeID)
+	c.dm.Release(ctx, vm, volumeID)
+	return err
 }
 
 // waitForDetachedVolume waits for volume to be attached state.
@@ -522,7 +514,7 @@ func (c *cloud) GetVolumeByID(ctx context.Context, volumeID string) (*Volume, er
 
 // FiXME: errors are not properly handled.
 func (c *cloud) ExistsInstance(ctx context.Context, nodeID string) bool {
-	_, err := c.getInstance(ctx, nodeID)
+	_, err := c.getVm(ctx, nodeID)
 	return err == nil
 }
 
@@ -716,7 +708,7 @@ func (c *cloud) getVolume(ctx context.Context, request osc.ReadVolumesRequest) (
 }
 
 // Pagination not supported
-func (c *cloud) getInstance(ctx context.Context, vmID string) (*osc.Vm, error) {
+func (c *cloud) getVm(ctx context.Context, vmID string) (*osc.Vm, error) {
 	resp, err := c.client.ReadVms(ctx, osc.ReadVmsRequest{
 		Filters: &osc.FiltersVm{
 			VmIds: &[]string{vmID},

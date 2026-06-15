@@ -17,218 +17,202 @@ limitations under the License.
 package devicemanager
 
 import (
-	"fmt"
-	"maps"
+	"context"
+	"errors"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/outscale/osc-sdk-go/v3/pkg/osc"
-	"k8s.io/klog/v2"
+	"github.com/samber/lo"
 )
 
-const devPreffix = "/dev/xvd"
+const (
+	devPrefix           = "/dev/xvd"
+	assignedMaxDuration = 15 * time.Minute
+	expirationDuration  = 24 * time.Hour
+)
+
+var (
+	Now         = time.Now
+	ErrNotFound = errors.New("not found")
+)
 
 type Device struct {
-	Instance          *osc.Vm
-	Path              string
-	VolumeID          string
-	IsAlreadyAssigned bool
+	vm           string
+	name         string
+	volume       string
+	fromMappings bool
+	linked       bool
 
-	isTainted   bool
-	releaseFunc func() error
+	assignedAt  time.Time
+	refreshedAt time.Time
 }
 
-func (d *Device) Release(force bool) {
-	if !d.isTainted || force {
-		if err := d.releaseFunc(); err != nil {
-			// FIXME: low level function should never log
-			klog.Errorf("Error releasing device: %v", err)
-		}
-	}
+// MarkAsLinked marks the device as successfully mounted.
+func (d *Device) MarkAsLinked() {
+	d.linked = true
 }
 
-// Taint marks the device as no longer reusable
-func (d *Device) Taint() {
-	d.isTainted = true
+func (d *Device) Linked() bool {
+	return d.linked
+}
+
+func (d *Device) Path() string {
+	return devPrefix + d.name
 }
 
 type DeviceManager interface {
-	// NewDevice retrieves the device if the device is already assigned.
-	// Otherwise it creates a new device with next available device name
-	// and mark it as unassigned device.
-	NewDevice(instance *osc.Vm, volumeID string) (device Device, err error)
+	// AssignDevice assigns a new device to a volume.
+	// If a device has already been assigned, it is returned.
+	AssignDevice(ctx context.Context, vm *osc.Vm, volumeID string) (device *Device, err error)
 
 	// GetDevice returns the device already assigned to the volume.
-	GetDevice(instance *osc.Vm, volumeID string) (device Device)
+	GetDevice(ctx context.Context, vm *osc.Vm, volumeID string) (device *Device, err error)
+
+	Release(ctx context.Context, vm *osc.Vm, volumeID string)
 }
 
 type deviceManager struct {
-	// nameAllocator assigns new device name
 	nameAllocator NameAllocator
-
-	// We keep an active list of devices we have assigned but not yet
-	// attached, to avoid a race condition where we assign a device mapping
-	// and then get a second request before we attach the volume.
-	mux      sync.Mutex
-	inFlight inFlightAttaching
+	mu            sync.Mutex
+	volumes       volumeMap
 }
 
 var _ DeviceManager = &deviceManager{}
 
-// inFlightAttaching represents the device names being currently attached to nodes.
-// A valid pseudo-representation of it would be {"nodeID": {"deviceName: "volumeID"}}.
-type inFlightAttaching map[string]map[string]string
+// volumeMap represents the device names being currently attached to nodes.
+// A valid pseudo-representation of it would be {"nodeID": {"deviceName": "volumeID"}}.
+type volumeMap map[string]*Device
 
-func (i inFlightAttaching) Add(nodeID, volumeID, name string) {
-	attaching := i[nodeID]
-	if attaching == nil {
-		attaching = make(map[string]string)
-		i[nodeID] = attaching
+func (m volumeMap) Add(d *Device) {
+	d.refreshedAt = Now()
+	m[d.volume] = d
+}
+
+func (m volumeMap) Del(volume string) {
+	delete(m, volume)
+}
+
+func (m volumeMap) Get(volume string) (*Device, bool) {
+	dev, found := m[volume]
+	return dev, found
+}
+
+// getDeviceName trims /dev/sd or /dev/xvd from device name
+func getDeviceName(path string) string {
+	name := strings.TrimPrefix(path, "/dev/sd")
+	name = strings.TrimPrefix(name, "/dev/xvd")
+	return name
+}
+
+func (m volumeMap) refresh(vm *osc.Vm) {
+	// remove all previous mappings
+	for vol, dev := range m {
+		if dev.vm != vm.VmId || !dev.fromMappings {
+			continue
+		}
+		delete(m, vol)
 	}
-	attaching[name] = volumeID
+
+	// add mappings
+	for _, blockDevice := range vm.BlockDeviceMappings {
+		name := getDeviceName(blockDevice.DeviceName)
+		if len(name) < 1 || len(name) > 2 {
+			continue
+		}
+		volume := blockDevice.Bsu.VolumeId
+		// delete devices that have been incorrectly assigned to the same name.
+		for vol, dev := range m {
+			if dev.vm == vm.VmId && dev.name == name && dev.volume != volume {
+				delete(m, vol)
+			}
+		}
+		m[volume] = &Device{
+			vm:           vm.VmId,
+			name:         name,
+			volume:       volume,
+			fromMappings: true,
+			linked:       true,
+			refreshedAt:  Now(),
+		}
+	}
+
+	// prune old entries (including for other vm, as nodes might have been deleted)
+	for vol, dev := range m {
+		if !dev.assignedAt.IsZero() && time.Since(dev.assignedAt) > assignedMaxDuration {
+			delete(m, vol)
+		}
+		if !dev.refreshedAt.IsZero() && time.Since(dev.refreshedAt) > expirationDuration {
+			delete(m, vol)
+		}
+	}
 }
 
-func (i inFlightAttaching) Del(nodeID, name string) {
-	delete(i[nodeID], name)
-}
-
-func (i inFlightAttaching) GetNames(nodeID string) map[string]string {
-	return i[nodeID]
-}
-
-func (i inFlightAttaching) GetVolume(nodeID, name string) string {
-	return i[nodeID][name]
+func (m volumeMap) GetUsedNames(vm string) []string {
+	return lo.FilterMap(lo.Values(m), func(d *Device, _ int) (string, bool) {
+		if d.vm != vm {
+			return "", false
+		}
+		return d.name, true
+	})
 }
 
 func NewDeviceManager() DeviceManager {
 	return &deviceManager{
 		nameAllocator: &nameAllocator{},
-		inFlight:      make(inFlightAttaching),
+		volumes:       make(volumeMap),
 	}
 }
 
-func (d *deviceManager) NewDevice(instance *osc.Vm, volumeID string) (Device, error) {
-	d.mux.Lock()
-	defer d.mux.Unlock()
+func (d *deviceManager) AssignDevice(ctx context.Context, vm *osc.Vm, volumeID string) (*Device, error) {
+	d.mu.Lock()
+	defer d.mu.Unlock()
 
-	// Get device names being attached and already attached to this instance
-	inUse := d.getDeviceNamesInUse(instance)
+	d.volumes.refresh(vm)
 
-	// Check if this volume is already assigned a device on this machine
-	if path := d.getPath(inUse, volumeID); path != "" {
-		return d.newBlockDevice(instance, volumeID, path, true), nil
+	// if already assigned to the right vm return the assigned device.
+	// if already present, but with another vm, it must have been a missed unlink, reassign,
+	if dev, found := d.volumes.Get(volumeID); found && dev.vm == vm.VmId {
+		return dev, nil
 	}
 
-	nodeID, err := getInstanceID(instance)
-	if err != nil {
-		return Device{}, err
-	}
-
+	// Assign a new name
+	inUse := d.volumes.GetUsedNames(vm.VmId)
 	name, err := d.nameAllocator.GetNext(inUse)
 	if err != nil {
-		return Device{}, fmt.Errorf("could not get a free device name to assign to node %s", nodeID)
+		return nil, err
 	}
 
-	// Add the chosen device and volume to the "attachments in progress" map
-	d.inFlight.Add(nodeID, volumeID, name)
+	dev := &Device{
+		name:       name,
+		vm:         vm.VmId,
+		volume:     volumeID,
+		assignedAt: Now(),
+	}
+	d.volumes.Add(dev)
 
-	return d.newBlockDevice(instance, volumeID, devPreffix+name, false), nil
+	return dev, nil
 }
 
-func (d *deviceManager) GetDevice(instance *osc.Vm, volumeID string) Device {
-	d.mux.Lock()
-	defer d.mux.Unlock()
+func (d *deviceManager) GetDevice(ctx context.Context, vm *osc.Vm, volumeID string) (*Device, error) {
+	d.mu.Lock()
+	defer d.mu.Unlock()
 
-	inUse := d.getDeviceNamesInUse(instance)
+	d.volumes.refresh(vm)
 
-	if path := d.getPath(inUse, volumeID); path != "" {
-		return d.newBlockDevice(instance, volumeID, path, true)
+	if dev, found := d.volumes.Get(volumeID); found && dev.vm == vm.VmId {
+		return dev, nil
 	}
 
-	return d.newBlockDevice(instance, volumeID, "", false)
+	return nil, ErrNotFound
 }
 
-func (d *deviceManager) newBlockDevice(instance *osc.Vm, volumeID string, path string, isAlreadyAssigned bool) Device {
-	device := Device{
-		Instance:          instance,
-		Path:              path,
-		VolumeID:          volumeID,
-		IsAlreadyAssigned: isAlreadyAssigned,
+func (d *deviceManager) Release(ctx context.Context, vm *osc.Vm, volumeID string) {
+	d.mu.Lock()
+	defer d.mu.Unlock()
 
-		isTainted: false,
+	if dev, found := d.volumes.Get(volumeID); found && dev.vm == vm.VmId {
+		d.volumes.Del(volumeID)
 	}
-	device.releaseFunc = func() error {
-		return d.release(device)
-	}
-	return device
-}
-
-func (d *deviceManager) release(device Device) error {
-	nodeID, err := getInstanceID(device.Instance)
-	if err != nil {
-		return err
-	}
-
-	d.mux.Lock()
-	defer d.mux.Unlock()
-
-	var name string
-	if len(device.Path) > 2 {
-		name = strings.TrimPrefix(device.Path, devPreffix)
-	}
-
-	existingVolumeID := d.inFlight.GetVolume(nodeID, name)
-	if len(existingVolumeID) == 0 {
-		// Attaching is not in progress, so there's nothing to release
-		return nil
-	}
-
-	if device.VolumeID != existingVolumeID {
-		// This actually can happen, because GetNext combines the inFlightAttaching map with the volumes
-		// attached to the instance (as reported by the EC2 API).  So if release comes after
-		// a 10 second poll delay, we might as well have had a concurrent request to allocate a mountpoint,
-		// which because we allocate sequentially is very likely to get the immediately freed volume.
-		return fmt.Errorf("release on device %q assigned to different volume: %q vs %q", device.Path, device.VolumeID, existingVolumeID)
-	}
-
-	// klog.V(5).Infof("Releasing in-process attachment entry: %v -> volume %s", device.Path, device.VolumeID)
-	d.inFlight.Del(nodeID, name)
-
-	return nil
-}
-
-// getDeviceNamesInUse returns the device to volume ID mapping
-// the mapping includes both already attached and being attached volumes
-func (d *deviceManager) getDeviceNamesInUse(instance *osc.Vm) map[string]string {
-	nodeID := instance.VmId
-	inUse := map[string]string{}
-	for _, blockDevice := range instance.BlockDeviceMappings {
-		name := blockDevice.DeviceName
-		// trims /dev/sd or /dev/xvd from device name
-		name = strings.TrimPrefix(name, "/dev/sd")
-		name = strings.TrimPrefix(name, "/dev/xvd")
-
-		if len(name) < 1 || len(name) > 2 {
-			klog.Warningf("Unexpected BSU DeviceName: %q", blockDevice.DeviceName)
-		}
-		inUse[name] = blockDevice.Bsu.VolumeId
-	}
-
-	// klog.V(5).Infof("DeviceNameInUse: APIDevice: %v, CacheDevice: %v", inUse, d.inFlight.GetNames(nodeID))
-	maps.Copy(inUse, d.inFlight.GetNames(nodeID))
-
-	return inUse
-}
-
-func (d *deviceManager) getPath(inUse map[string]string, volumeID string) string {
-	for name, volID := range inUse {
-		if volumeID == volID {
-			return devPreffix + name
-		}
-	}
-	return ""
-}
-
-func getInstanceID(instance *osc.Vm) (string, error) {
-	return instance.VmId, nil
 }

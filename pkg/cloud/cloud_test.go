@@ -426,7 +426,9 @@ func TestDetachVolume(t *testing.T) {
 				LinkedVolumes: nil,
 				State:         tc.initial,
 			}
-
+			if tc.initial == osc.VolumeStateInUse {
+				vol.LinkedVolumes = []osc.LinkedVolume{{VmId: tc.nodeID}}
+			}
 			// Create a Vm and add device in BSU
 			vm := newDescribeInstancesOutput(tc.nodeID)
 			devicePath := "/dev/sdb"
@@ -438,19 +440,20 @@ func TestDetachVolume(t *testing.T) {
 					},
 				},
 			}
+			mockOscInterface.EXPECT().ReadVms(gomock.Any(), gomock.Eq(osc.ReadVmsRequest{
+				Filters: &osc.FiltersVm{VmIds: &[]string{tc.nodeID}},
+			})).Return(vm, nil)
 			mockOscInterface.EXPECT().ReadVolumes(gomock.Any(), gomock.Eq(osc.ReadVolumesRequest{
 				Filters: &osc.FiltersVolume{VolumeIds: &[]string{tc.volumeID}},
 			})).Return(&osc.ReadVolumesResponse{Volumes: &[]osc.Volume{vol}}, nil)
 			if tc.initial == osc.VolumeStateInUse {
-				mockOscInterface.EXPECT().ReadVms(gomock.Any(), gomock.Eq(osc.ReadVmsRequest{
-					Filters: &osc.FiltersVm{VmIds: &[]string{tc.nodeID}},
-				})).Return(vm, nil)
 				mockOscInterface.EXPECT().UnlinkVolume(gomock.Any(), gomock.Eq(osc.UnlinkVolumeRequest{
 					VolumeId: tc.volumeID,
 				})).Return(&osc.UnlinkVolumeResponse{}, tc.expErr)
 				if tc.expErr == nil {
 					detached := vol
 					detached.State = osc.VolumeStateAvailable
+					detached.LinkedVolumes = nil
 					mockOscInterface.EXPECT().ReadVolumes(gomock.Any(), gomock.Eq(osc.ReadVolumesRequest{
 						Filters:        &osc.FiltersVolume{VolumeIds: &[]string{tc.volumeID}},
 						ResultsPerPage: ptr.To(1),
@@ -1202,9 +1205,12 @@ func newCloud(mock *mocks_osc.MockClient) *cloud {
 
 func newDescribeInstancesOutput(nodeID string) *osc.ReadVmsResponse {
 	return &osc.ReadVmsResponse{
-		Vms: &[]osc.Vm{
-			{VmId: nodeID},
-		},
+		Vms: &[]osc.Vm{{
+			VmId: nodeID,
+			BlockDeviceMappings: []osc.BlockDeviceMappingCreated{{
+				DeviceName: "/dev/sda",
+			}},
+		}},
 	}
 }
 

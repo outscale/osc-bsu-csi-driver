@@ -21,9 +21,8 @@ import (
 )
 
 func TestNameAllocator(t *testing.T) {
-	existingNames := map[string]string{}
 	allocator := nameAllocator{}
-
+	existingNames := []string{}
 	expectedNames := "bcdefghijklmnopqrstuvwxyz"
 
 	for i := range expectedNames {
@@ -36,18 +35,18 @@ func TestNameAllocator(t *testing.T) {
 			if actual != expectedName {
 				t.Errorf("test %q: expected %q, got %q", expectedName, expectedName, actual)
 			}
-			existingNames[actual] = ""
+			existingNames = append(existingNames, actual)
 		})
 	}
 }
 
 func TestNameAllocatorError(t *testing.T) {
 	allocator := nameAllocator{}
-	existingNames := map[string]string{}
+	existingNames := []string{} //nolint
 
 	for range 52 {
 		name, _ := allocator.GetNext(existingNames)
-		existingNames[name] = ""
+		existingNames = append(existingNames, name)
 	}
 	name, err := allocator.GetNext(existingNames)
 	if err == nil {

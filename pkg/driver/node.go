@@ -136,7 +136,7 @@ func (s *nodeService) NodeStageVolume(ctx context.Context, req *csi.NodeStageVol
 	}
 
 	// If the access type is block, do nothing for stage
-	if _, ok := volCap.GetAccessType().(*csi.VolumeCapability_Block); ok {
+	if volCap.GetBlock() != nil {
 		return &csi.NodeStageVolumeResponse{}, nil
 	}
 

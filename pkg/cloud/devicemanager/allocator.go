@@ -42,7 +42,7 @@ var _ NameAllocator = &nameAllocator{}
 // and return the first one that is not used yet.
 // Note: a is reserved for the root volume.
 func (d *nameAllocator) GetNext(existing []string) (string, error) {
-	deviceMap := [51]string{"b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z", "aa", "ab", "ac", "ad", "ae", "af", "ag", "ah", "ai", "aj", "ak", "al", "am", "an", "ao", "ap", "aq", "ar", "as", "at", "au", "av", "aw", "ax", "ay", "az"}
+	deviceMap := [51]string{"aa", "ab", "ac", "ad", "ae", "af", "ag", "ah", "ai", "aj", "ak", "al", "am", "an", "ao", "ap", "aq", "ar", "as", "at", "au", "av", "aw", "ax", "ay", "az", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z"}
 	for _, name := range deviceMap {
 		if !slices.Contains(existing, name) {
 			return name, nil

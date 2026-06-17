@@ -1,5 +1,53 @@
 # Changelog
 
+## [v1.11.0-rc.1] - 2026-06-17
+
+### ✨ Added
+* ✨ feat(volumes): allow setting total iops by @jfbus in https://github.com/outscale/osc-bsu-csi-driver/pull/1156
+* ✨ feat(node): dynamic annotation based volume limits by @jfbus in https://github.com/outscale/osc-bsu-csi-driver/pull/1159
+* ✨ feat(node): reserve volume slots when computing volume limit by @jfbus in https://github.com/outscale/osc-bsu-csi-driver/pull/1164
+* 🦖 config: allow setting driver name by @jfbus in https://github.com/outscale/osc-bsu-csi-driver/pull/1181
+### 🛠️ Changed / Refactoring
+* 🚨 lint: go fix + linter fixes by @jfbus in https://github.com/outscale/osc-bsu-csi-driver/pull/1128
+* ♻️ refacto: improved dynamic volume limit computation by @jfbus in https://github.com/outscale/osc-bsu-csi-driver/pull/1169
+* ♻️ refacto(NodeGetInfo): call metatada to list attached volumes by @jfbus in https://github.com/outscale/osc-bsu-csi-driver/pull/1180
+* ♻️ refacto(node): use GetBlock shortcut by @jfbus in https://github.com/outscale/osc-bsu-csi-driver/pull/1185
+### 📝 Documentation
+* 📝 examples: fix VolumeAttributeClass example by @jfbus in https://github.com/outscale/osc-bsu-csi-driver/pull/1132
+### 🐛 Fixed
+* 🧵 fix(race): race condition in ControllerPublishVolume by @jfbus in https://github.com/outscale/osc-bsu-csi-driver/pull/1184
+### 📦 Dependency updates
+* ⬆️ deps(dockerfile): update debian:12 docker digest to 34e7f0a by @Open-Source-Bot in https://github.com/outscale/osc-bsu-csi-driver/pull/1094
+* ⬆️ deps(gomod): update module github.com/onsi/ginkgo/v2 to v2.28.1 by @Open-Source-Bot in https://github.com/outscale/osc-bsu-csi-driver/pull/1104
+* ⬆️ deps(dockerfile): update golang:1.25.6-bookworm docker digest to f4490d7 by @Open-Source-Bot in https://github.com/outscale/osc-bsu-csi-driver/pull/1106
+* ⬆️ deps(gomod): update module github.com/onsi/gomega to v1.39.1 by @Open-Source-Bot in https://github.com/outscale/osc-bsu-csi-driver/pull/1092
+* ⬆️ deps(dockerfile): update debian:12 docker digest to 0a5bf4e by @Open-Source-Bot in https://github.com/outscale/osc-bsu-csi-driver/pull/1113
+* ⬆️ deps(dockerfile): update golang docker tag to v1.26.1 by @Open-Source-Bot in https://github.com/outscale/osc-bsu-csi-driver/pull/1116
+* ⬆️ deps(gomod): update module google.golang.org/grpc to v1.79.2 by @Open-Source-Bot in https://github.com/outscale/osc-bsu-csi-driver/pull/1118
+* ⬆️ deps(gomod): update module github.com/samber/lo to v1.53.0 by @Open-Source-Bot in https://github.com/outscale/osc-bsu-csi-driver/pull/1121
+* ⬆️ deps(gomod): update module golang.org/x/sys to v0.42.0 by @Open-Source-Bot in https://github.com/outscale/osc-bsu-csi-driver/pull/1117
+* ⬆️ deps: upgrade goutils/v0.0.2 sdk/v3.0.0-rc.1 by @jfbus in https://github.com/outscale/osc-bsu-csi-driver/pull/1127
+* ⬆️ deps(gomod): update module google.golang.org/grpc to v1.79.3 [security] by @Open-Source-Bot in https://github.com/outscale/osc-bsu-csi-driver/pull/1125
+* ⬆️ deps(dockerfile): update golang:1.26.1-bookworm docker digest to 8e8aa80 by @Open-Source-Bot in https://github.com/outscale/osc-bsu-csi-driver/pull/1124
+* ⬆️ deps(gomod): update k8s.io/utils digest to 28399d8 by @Open-Source-Bot in https://github.com/outscale/osc-bsu-csi-driver/pull/1089
+* ⬆️ deps(dockerfile): update golang docker tag to v1.26.2 by @Open-Source-Bot in https://github.com/outscale/osc-bsu-csi-driver/pull/1139
+* ⬆️ deps(dockerfile): update debian:12 docker digest to 1d6cd96 by @Open-Source-Bot in https://github.com/outscale/osc-bsu-csi-driver/pull/1123
+* ⬆️ deps(gomod): update kubernetes packages to v0.34.7 by @Open-Source-Bot in https://github.com/outscale/osc-bsu-csi-driver/pull/1114
+* ⬆️ deps(gomod): update module github.com/onsi/ginkgo/v2 to v2.28.3 by @Open-Source-Bot in https://github.com/outscale/osc-bsu-csi-driver/pull/1150
+* ⬆️ deps(dockerfile): update debian:12 docker digest to 85019db by @Open-Source-Bot in https://github.com/outscale/osc-bsu-csi-driver/pull/1145
+* ⬆️ deps(gomod): update module github.com/outscale/osc-sdk-go/v3 to v3.0.0-rc.2 by @Open-Source-Bot in https://github.com/outscale/osc-bsu-csi-driver/pull/1154
+* ⬆️ deps(gomod): update module google.golang.org/grpc to v1.81.0 by @Open-Source-Bot in https://github.com/outscale/osc-bsu-csi-driver/pull/1136
+* ⬆️ deps(dockerfile): update golang docker tag to v1.26.3 by @Open-Source-Bot in https://github.com/outscale/osc-bsu-csi-driver/pull/1158
+* ⬆️ deps(gomod): update module google.golang.org/grpc to v1.81.1 by @Open-Source-Bot in https://github.com/outscale/osc-bsu-csi-driver/pull/1163
+* ⬆️ deps(dockerfile): update debian:12 docker digest to ed4fcc4 by @Open-Source-Bot in https://github.com/outscale/osc-bsu-csi-driver/pull/1166
+* ⬆️ deps(dockerfile): update golang:1.26.3-bookworm docker digest to 386d475 by @Open-Source-Bot in https://github.com/outscale/osc-bsu-csi-driver/pull/1167
+* ⬆️ deps(gomod): update module golang.org/x/sys to v0.45.0 by @Open-Source-Bot in https://github.com/outscale/osc-bsu-csi-driver/pull/1138
+* ⬆️ deps(dockerfile): update golang docker tag to v1.26.4 by @Open-Source-Bot in https://github.com/outscale/osc-bsu-csi-driver/pull/1174
+* ⬆️ deps(gomod): update k8s.io/utils digest to ff6756f by @Open-Source-Bot in https://github.com/outscale/osc-bsu-csi-driver/pull/1157
+* ⬆️ deps(gomod): update module golang.org/x/sys to v0.46.0 by @Open-Source-Bot in https://github.com/outscale/osc-bsu-csi-driver/pull/1178
+* ⬆️ deps(dockerfile): update debian:12 docker digest to 49ba348 by @Open-Source-Bot in https://github.com/outscale/osc-bsu-csi-driver/pull/1179
+* ⬆️ deps(dockerfile): update golang:1.26.4-bookworm docker digest to 5f68ec6 by @Open-Source-Bot in https://github.com/outscale/osc-bsu-csi-driver/pull/1182
+
 ## [v2.0.1-helm] - 2025-12-18
 
 Bump CSI driver to v1.10.0 and Snapshot exporter to v0.2.0

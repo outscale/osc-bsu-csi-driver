@@ -13,8 +13,7 @@ make helm-docs
 6. Tag and push the Helm chart release:
 ```shell
 export HELM_VERSION=vX.Y.Z-helm
-git tag -a $HELM_VERSION -m "🔖 Helm $HELM_VERSION"
-git push origin $HELM_VERSION
+git tag -a $HELM_VERSION -m "🔖 Helm $HELM_VERSION" && git push origin $HELM_VERSION
 ```
 7. Publish the Github release
 
@@ -29,7 +28,6 @@ git push origin $HELM_VERSION
 4. Tag and push the container release:
 ```shell
 export VERSION=vX.Y.Z
-git tag -a $VERSION -m "🔖 CSI $VERSION"
-git push origin $VERSION
+git tag -a $VERSION -m "🔖 CSI $VERSION" && git push origin $VERSION
 ```
 5. Publish the Github release

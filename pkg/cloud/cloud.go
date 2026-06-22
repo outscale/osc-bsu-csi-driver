@@ -27,7 +27,6 @@ import (
 
 	"github.com/outscale/goutils/k8s/batch"
 	"github.com/outscale/goutils/k8s/sdk"
-	"github.com/outscale/goutils/sdk/ptr"
 	"github.com/outscale/osc-bsu-csi-driver/cmd/options"
 	dm "github.com/outscale/osc-bsu-csi-driver/pkg/cloud/devicemanager"
 	"github.com/outscale/osc-bsu-csi-driver/pkg/util"
@@ -658,7 +657,7 @@ func (c *cloud) ListSnapshots(ctx context.Context, volumeID string, maxResults i
 		req.NextPageToken = &nextToken
 		// when specifying NextPageToken, the API requires ResultsPerPage to be set
 		if maxResults == 0 {
-			req.ResultsPerPage = ptr.To(maxResultsLimit)
+			req.ResultsPerPage = new(maxResultsLimit)
 		}
 	}
 	if len(volumeID) != 0 {

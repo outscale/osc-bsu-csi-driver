@@ -23,7 +23,6 @@ import (
 	"time"
 
 	"github.com/container-storage-interface/spec/lib/go/csi"
-	"github.com/outscale/goutils/sdk/ptr"
 	"github.com/outscale/osc-bsu-csi-driver/pkg/cloud"
 	"github.com/outscale/osc-bsu-csi-driver/pkg/driver/mocks"
 	"github.com/outscale/osc-bsu-csi-driver/pkg/util"
@@ -107,7 +106,7 @@ func TestCreateVolume(t *testing.T) {
 			VolumeID:         req.Name,
 			AvailabilityZone: expZone,
 			CapacityGiB:      util.BytesToGiB(stdVolSize),
-			SnapshotID:       ptr.To("snapshot-id"),
+			SnapshotID:       new("snapshot-id"),
 		}
 
 		mockCtl := gomock.NewController(t)
@@ -153,7 +152,7 @@ func TestCreateVolume(t *testing.T) {
 			VolumeID:         req.Name,
 			AvailabilityZone: expZone,
 			CapacityGiB:      util.BytesToGiB(stdVolSize),
-			SnapshotID:       ptr.To("snapshot-id"),
+			SnapshotID:       new("snapshot-id"),
 		}
 
 		mockCtl := gomock.NewController(t)
@@ -198,7 +197,7 @@ func TestCreateVolume(t *testing.T) {
 			VolumeID:         req.Name,
 			AvailabilityZone: expZone,
 			CapacityGiB:      util.BytesToGiB(stdVolSize),
-			SnapshotID:       ptr.To("another-snapshot-id"),
+			SnapshotID:       new("another-snapshot-id"),
 		}
 
 		mockCtl := gomock.NewController(t)

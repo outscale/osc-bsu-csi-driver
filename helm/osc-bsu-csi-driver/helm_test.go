@@ -9,7 +9,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/outscale/goutils/sdk/ptr"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
@@ -112,7 +111,7 @@ func TestHelmTemplate_Deployment(t *testing.T) {
 						Name: "osc-csi-bsu",
 					},
 					Key:      "access_key",
-					Optional: ptr.To(true),
+					Optional: new(true),
 				},
 			}},
 			{Name: "OSC_SECRET_KEY", ValueFrom: &corev1.EnvVarSource{
@@ -121,7 +120,7 @@ func TestHelmTemplate_Deployment(t *testing.T) {
 						Name: "osc-csi-bsu",
 					},
 					Key:      "secret_key",
-					Optional: ptr.To(true),
+					Optional: new(true),
 				},
 			}},
 			{Name: "OSC_REGION", Value: "eu-west2"},
@@ -304,8 +303,8 @@ func TestHelmTemplate_Deployment(t *testing.T) {
 		assert.Equal(t, appsv1.DeploymentStrategy{
 			Type: appsv1.RecreateDeploymentStrategyType,
 			RollingUpdate: &appsv1.RollingUpdateDeployment{
-				MaxSurge:       ptr.To(intstr.FromInt(1)),
-				MaxUnavailable: ptr.To(intstr.FromString("20%")),
+				MaxSurge:       new(intstr.FromInt(1)),
+				MaxUnavailable: new(intstr.FromString("20%")),
 			},
 		},
 			dep.Spec.Strategy)
@@ -427,9 +426,9 @@ func TestHelmTemplate_DaemonSet(t *testing.T) {
 			Limits:   nil,
 		}, manager.Resources)
 		assert.Equal(t, &corev1.SecurityContext{
-			ReadOnlyRootFilesystem:   ptr.To(false),
-			Privileged:               ptr.To(true),
-			AllowPrivilegeEscalation: ptr.To(true),
+			ReadOnlyRootFilesystem:   new(false),
+			Privileged:               new(true),
+			AllowPrivilegeEscalation: new(true),
 			SeccompProfile: &corev1.SeccompProfile{
 				Type: corev1.SeccompProfileTypeUnconfined,
 			},
@@ -536,8 +535,8 @@ func TestHelmTemplate_DaemonSet(t *testing.T) {
 		assert.Equal(t, appsv1.DaemonSetUpdateStrategy{
 			Type: appsv1.OnDeleteDaemonSetStrategyType,
 			RollingUpdate: &appsv1.RollingUpdateDaemonSet{
-				MaxSurge:       ptr.To(intstr.FromInt(2)),
-				MaxUnavailable: ptr.To(intstr.FromString("20%")),
+				MaxSurge:       new(intstr.FromInt(2)),
+				MaxUnavailable: new(intstr.FromString("20%")),
 			},
 		},
 			dep.Spec.UpdateStrategy)

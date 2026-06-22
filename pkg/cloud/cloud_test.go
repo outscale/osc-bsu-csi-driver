@@ -134,7 +134,7 @@ func TestCreateVolume(t *testing.T) {
 			volOptions: &VolumeOptions{
 				CapacityBytes: util.GiBToBytes(1),
 				SubRegion:     expZone,
-				SnapshotID:    ptr.To("snapshot-test"),
+				SnapshotID:    new("snapshot-test"),
 			},
 			expVolume: &Volume{
 				VolumeID:         "vol-test",
@@ -170,9 +170,9 @@ func TestCreateVolume(t *testing.T) {
 			case tc.expErr != nil && tc.expCreateVolumeErr == nil:
 			case tc.expCreateVolumeErr != nil:
 				mockOscInterface.EXPECT().CreateVolume(gomock.Any(), gomock.Eq(osc.CreateVolumeRequest{
-					ClientToken:   ptr.To(tc.volumeName),
+					ClientToken:   new(tc.volumeName),
 					SubregionName: az,
-					Size:          ptr.To(util.BytesToGiB(tc.volOptions.CapacityBytes)),
+					Size:          new(util.BytesToGiB(tc.volOptions.CapacityBytes)),
 					SnapshotId:    tc.volOptions.SnapshotID,
 					VolumeType:    &typ,
 				})).Return(nil, tc.expCreateVolumeErr)
@@ -186,9 +186,9 @@ func TestCreateVolume(t *testing.T) {
 				nextVol := firstVol
 				nextVol.State = tc.nextState
 				mockOscInterface.EXPECT().CreateVolume(gomock.Any(), gomock.Eq(osc.CreateVolumeRequest{
-					ClientToken:   ptr.To(tc.volumeName),
+					ClientToken:   new(tc.volumeName),
 					SubregionName: az,
-					Size:          ptr.To(util.BytesToGiB(tc.volOptions.CapacityBytes)),
+					Size:          new(util.BytesToGiB(tc.volOptions.CapacityBytes)),
 					SnapshotId:    tc.volOptions.SnapshotID,
 					VolumeType:    &typ,
 				})).Return(&osc.CreateVolumeResponse{
@@ -209,7 +209,7 @@ func TestCreateVolume(t *testing.T) {
 
 					mockOscInterface.EXPECT().ReadVolumes(gomock.Any(), gomock.Eq(osc.ReadVolumesRequest{
 						Filters:        &osc.FiltersVolume{VolumeIds: &[]string{firstVol.VolumeId}},
-						ResultsPerPage: ptr.To(1),
+						ResultsPerPage: new(1),
 					})).Return(&osc.ReadVolumesResponse{Volumes: &[]osc.Volume{nextVol}}, nil).AnyTimes()
 				}
 				if tc.volOptions.SnapshotID != nil {
@@ -256,7 +256,7 @@ func TestCreateVolume(t *testing.T) {
 		mockOscInterface.EXPECT().CreateVolume(gomock.Any(), gomock.Eq(osc.CreateVolumeRequest{
 			ClientToken:   &volName,
 			SubregionName: "az",
-			Size:          ptr.To(4),
+			Size:          new(4),
 			VolumeType:    ptr.To(osc.VolumeTypeGp2),
 		})).Return(&osc.CreateVolumeResponse{
 			Volume: &firstVolume,
@@ -367,7 +367,7 @@ func TestAttachVolume(t *testing.T) {
 			if tc.expErr == nil {
 				mockOscInterface.EXPECT().ReadVolumes(gomock.Any(), gomock.Eq(osc.ReadVolumesRequest{
 					Filters:        &osc.FiltersVolume{VolumeIds: &[]string{tc.volumeID}},
-					ResultsPerPage: ptr.To(1),
+					ResultsPerPage: new(1),
 				})).Return(&osc.ReadVolumesResponse{Volumes: &[]osc.Volume{vol}}, nil)
 			}
 			devicePath, err := c.AttachVolume(ctx, tc.volumeID, tc.nodeID)
@@ -456,7 +456,7 @@ func TestDetachVolume(t *testing.T) {
 					detached.LinkedVolumes = nil
 					mockOscInterface.EXPECT().ReadVolumes(gomock.Any(), gomock.Eq(osc.ReadVolumesRequest{
 						Filters:        &osc.FiltersVolume{VolumeIds: &[]string{tc.volumeID}},
-						ResultsPerPage: ptr.To(1),
+						ResultsPerPage: new(1),
 					})).Return(&osc.ReadVolumesResponse{Volumes: &[]osc.Volume{detached}}, nil)
 				}
 			}
@@ -504,7 +504,7 @@ func TestCheckCreatedVolume(t *testing.T) {
 			name:             "success: normal with snapshotId",
 			volumeName:       "vol-test-1234",
 			volumeCapacity:   util.GiBToBytes(1),
-			snapshotId:       ptr.To("snapshot-id123"),
+			snapshotId:       new("snapshot-id123"),
 			availabilityZone: expZone,
 			expErr:           nil,
 		},
@@ -584,7 +584,7 @@ func TestGetVolumeByID(t *testing.T) {
 		{
 			name:             "success: normal with snapshotId",
 			volumeID:         "vol-test-1234",
-			snapshotId:       ptr.To("snapshot-id123"),
+			snapshotId:       new("snapshot-id123"),
 			availabilityZone: expZone,
 			found:            true,
 		},
@@ -620,7 +620,7 @@ func TestGetVolumeByID(t *testing.T) {
 			}
 			mockOscInterface.EXPECT().ReadVolumes(gomock.Any(), gomock.Eq(osc.ReadVolumesRequest{
 				Filters:        &osc.FiltersVolume{VolumeIds: &[]string{tc.volumeID}},
-				ResultsPerPage: ptr.To(1),
+				ResultsPerPage: new(1),
 			})).Return(&res, nil)
 
 			vol, err := c.GetVolumeByID(ctx, tc.volumeID)
@@ -669,7 +669,7 @@ func TestCreateSnapshot(t *testing.T) {
 
 		mockOscInterface.EXPECT().CreateSnapshot(gomock.Any(), gomock.Eq(osc.CreateSnapshotRequest{
 			ClientToken: &snapName,
-			Description: ptr.To("Created by Outscale BSU CSI driver for volume " + volumeID),
+			Description: new("Created by Outscale BSU CSI driver for volume " + volumeID),
 			VolumeId:    &volumeID,
 		})).Return(&osc.CreateSnapshotResponse{
 			Snapshot: &inQueue,
@@ -680,7 +680,7 @@ func TestCreateSnapshot(t *testing.T) {
 		})).Return(&osc.CreateTagsResponse{}, nil)
 		q := osc.ReadSnapshotsRequest{
 			Filters:        &osc.FiltersSnapshot{SnapshotIds: &[]string{snapID}},
-			ResultsPerPage: ptr.To(1),
+			ResultsPerPage: new(1),
 		}
 		mockOscInterface.EXPECT().ReadSnapshots(gomock.Any(), gomock.Eq(q)).Return(&osc.ReadSnapshotsResponse{Snapshots: &[]osc.Snapshot{completed}}, nil).After(
 			mockOscInterface.EXPECT().ReadSnapshots(gomock.Any(), gomock.Eq(q)).Return(&osc.ReadSnapshotsResponse{Snapshots: &[]osc.Snapshot{pending}}, nil).After(
@@ -721,7 +721,7 @@ func TestCreateSnapshot(t *testing.T) {
 
 		mockOscInterface.EXPECT().CreateSnapshot(gomock.Any(), gomock.Eq(osc.CreateSnapshotRequest{
 			ClientToken: &snapName,
-			Description: ptr.To("Created by Outscale BSU CSI driver for volume " + volumeID),
+			Description: new("Created by Outscale BSU CSI driver for volume " + volumeID),
 			VolumeId:    &volumeID,
 		})).Return(&osc.CreateSnapshotResponse{
 			Snapshot: &firstSnap,
@@ -899,7 +899,7 @@ func TestGetSnapshotByID(t *testing.T) {
 			}
 			mockOscInterface.EXPECT().ReadSnapshots(gomock.Any(), gomock.Eq(osc.ReadSnapshotsRequest{
 				Filters:        &osc.FiltersSnapshot{SnapshotIds: &[]string{tc.snapshotID}},
-				ResultsPerPage: ptr.To(1),
+				ResultsPerPage: new(1),
 			})).Return(&res, nil)
 
 			_, err := c.GetSnapshotByID(ctx, tc.snapshotID)
@@ -997,7 +997,7 @@ func TestListSnapshots(t *testing.T) {
 			Filters: &osc.FiltersSnapshot{
 				TagKeys: &[]string{SnapshotNameTagKey},
 			},
-			ResultsPerPage: ptr.To(10),
+			ResultsPerPage: new(10),
 		})).Return(&osc.ReadSnapshotsResponse{Snapshots: &oscsnapshot}, nil)
 		_, err := c.ListSnapshots(ctx, "", 10, "")
 		require.NoError(t, err)
@@ -1041,7 +1041,7 @@ func TestListSnapshots(t *testing.T) {
 			Filters: &osc.FiltersSnapshot{
 				TagKeys: &[]string{SnapshotNameTagKey},
 			},
-			ResultsPerPage: ptr.To(1000),
+			ResultsPerPage: new(1000),
 		})).Return(&osc.ReadSnapshotsResponse{Snapshots: &oscsnapshot}, nil)
 		_, err := c.ListSnapshots(ctx, "", 2000, "")
 		require.NoError(t, err)
@@ -1085,8 +1085,8 @@ func TestListSnapshots(t *testing.T) {
 			Filters: &osc.FiltersSnapshot{
 				TagKeys: &[]string{SnapshotNameTagKey},
 			},
-			NextPageToken:  ptr.To("foo"),
-			ResultsPerPage: ptr.To(1000),
+			NextPageToken:  new("foo"),
+			ResultsPerPage: new(1000),
 		})).Return(&osc.ReadSnapshotsResponse{Snapshots: &oscsnapshot}, nil)
 		_, err := c.ListSnapshots(ctx, "", 0, "foo")
 		require.NoError(t, err)
@@ -1130,8 +1130,8 @@ func TestListSnapshots(t *testing.T) {
 			Filters: &osc.FiltersSnapshot{
 				TagKeys: &[]string{SnapshotNameTagKey},
 			},
-			NextPageToken:  ptr.To("foo"),
-			ResultsPerPage: ptr.To(10),
+			NextPageToken:  new("foo"),
+			ResultsPerPage: new(10),
 		})).Return(&osc.ReadSnapshotsResponse{Snapshots: &oscsnapshot}, nil)
 		_, err := c.ListSnapshots(ctx, "", 10, "foo")
 		require.NoError(t, err)

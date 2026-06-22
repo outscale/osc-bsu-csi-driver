@@ -169,7 +169,7 @@ func (d *controllerService) CreateVolume(ctx context.Context, req *csi.CreateVol
 		if sourceSnapshot == nil {
 			return nil, status.Error(codes.InvalidArgument, "Error retrieving snapshot from the volumeContentSource")
 		}
-		snapshotID = ptr.To(sourceSnapshot.GetSnapshotId())
+		snapshotID = new(sourceSnapshot.GetSnapshotId())
 	}
 
 	vol, err := d.cloud.CheckCreatedVolume(ctx, volName)

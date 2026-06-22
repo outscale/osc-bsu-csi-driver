@@ -58,7 +58,7 @@ The **Outscale Block Storage Unit (BSU) CSI Driver** implements the Container St
 | v0.1.0 – v1.6.x | [v1.8.0](https://github.com/container-storage-interface/spec/releases/tag/v1.8.0)   | 1.20                |
 | v1.7.x - v1.8.x | [v1.10.0](https://github.com/container-storage-interface/spec/releases/tag/v1.10.0) | 1.20                |
 | v1.9.x          | [v1.10.0](https://github.com/container-storage-interface/spec/releases/tag/v1.10.0) | 1.20                |
-| v1.10.x         | [v1.12.0](https://github.com/container-storage-interface/spec/releases/tag/v1.12.0) | 1.25                |
+| v1.10.x and later | [v1.12.0](https://github.com/container-storage-interface/spec/releases/tag/v1.12.0) | 1.25                |
 
 </details>
 

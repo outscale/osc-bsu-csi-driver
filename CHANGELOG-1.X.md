@@ -1,5 +1,9 @@
 # Changelog
 
+## [v1.11.0] - 2026-06-23
+
+No changes since v1.11.0-rc.1
+
 ## [v1.11.0-rc.1] - 2026-06-17
 
 ### ✨ Added

@@ -163,7 +163,7 @@ helm_deploy:
 			--set logs.verbosity=5
 
 helm-docs:
-	docker run --rm --volume "$$(pwd):/helm-docs" -u "$$(id -u)" jnorwood/helm-docs:v1.11.0 --output-file ../../docs/helm.md
+	docker run --rm --volume "$$(pwd):/helm-docs" -u "$$(id -u)" jnorwood/helm-docs:v1.14.2 --output-file ../../docs/helm.md
 
 check-helm-docs:
 	./hack/verify-helm-docs

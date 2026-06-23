@@ -1,5 +1,13 @@
 # Changelog
 
+## [v2.1.0-helm] - 2025-12-18
+
+Bump CSI driver to v1.11.0 & Snapshot exporter to v0.3.0.
+
+New value: `driver.reservedBsuVolumes` (refer to the [Setting volume limits](https://github.com/outscale/osc-bsu-csi-driver/blob/main/docs/deploy.md#setting-volume-limits) documentation for more information)
+
+Note: the node driver has now a ClusterRole allowing it to access the API.
+
 ## [v1.11.0] - 2026-06-23
 
 No changes since v1.11.0-rc.1

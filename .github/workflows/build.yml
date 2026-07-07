@@ -21,31 +21,37 @@ permissions:
 
 jobs:
   lint:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     steps:
     - name: ⬇️ Checkout repository
-      uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+      uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      with:
+        persist-credentials: false
     - name: 🔎 Docker lint
       run: bash -c "make dockerlint"
     - name: 🔎 golangci-lint
-      uses: outscale/goutils/.github/actions/lint@ba9b0e7bcc1ab4b8fd2c69d8b4de17d86218f5b5 # v1
+      uses: outscale/goutils/.github/actions/lint@ba9b0e7bcc1ab4b8fd2c69d8b4de17d86218f5b5 # v1.0.0
     - name: 🔎 Reuse check
       run: make lint-reuse
   unit-test:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     steps:
     - name: ⬇️ Checkout repository
-      uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+      uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      with:
+        persist-credentials: false
     - name: ⬇️ Install Go
-      uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6
+      uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
       with:
         go-version-file: 'go.mod'
     - name: 🧪 Test
       run: make test
   docs:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     steps:
     - name: ⬇️ Checkout repository
-      uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+      uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      with:
+        persist-credentials: false
     - name: 🔎 Check docs
       run: bash -c "make check-helm-docs"

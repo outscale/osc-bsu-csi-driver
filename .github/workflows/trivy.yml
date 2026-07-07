@@ -22,18 +22,18 @@ jobs:
 
     steps:
       - name: ⬇️ Checkout repository
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
-      - name: 📦 Build   Docker Image
-        run: |
-          make build-image
-        env:
-          IMAGE_TAG: ${{ github.sha }}
+      - name: 📦 Run GoReleaser
+        uses: goreleaser/goreleaser-action@f06c13b6b1a9625abc9e6e439d9c05a8f2190e94 # v7.2.3
+        with:
+          version: 'v2.15.4'
+          args: release --clean --snapshot
 
       - name: 🔎 Trivy-Scan
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
-          image-ref: outscale/osc-bsu-csi-driver:${{ github.sha }}
+          image-ref: outscale/osc-bsu-csi-driver:${{ github.sha }}-amd64
           format: 'sarif'
           output: 'trivy-results.sarif'
           severity: 'CRITICAL,HIGH'
@@ -42,6 +42,6 @@ jobs:
 
       - name: ⬆️ Upload Trivy results
         if: ${{ github.event_name != 'pull_request' }}
-        uses: github/codeql-action/upload-sarif@8aad20d150bbac5944a9f9d289da16a4b0d87c1e # v4
+        uses: github/codeql-action/upload-sarif@54f647b7e1bb85c95cddabcd46b0c578ec92bc1a # v4.36.3
         with:
           sarif_file: 'trivy-results.sarif'

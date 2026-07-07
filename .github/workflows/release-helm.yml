@@ -4,8 +4,8 @@ on:
   push:
     tags:
     - 'v*'
-  workflow_dispatch:  
-    
+  workflow_dispatch:
+
 permissions:
   contents: write
 
@@ -15,27 +15,27 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
-          fetch-depth: 0
-      - name: Get changelog for release
-        id: changelog
-        uses: mindsers/changelog-reader-action@1faaf50aa09d5793d9a100819973df801febfb31 # v2
+          persist-credentials: false
+      - name: ⬇️ Install helm
+        uses: azure/setup-helm@9bc31f4ebc9c6b171d7bfbaa5d006ae7abdb4310 # v5.0.1
         with:
-          path: "CHANGELOG-1.X.md"
-          version: ${{ github.ref_name }}
-      - uses: azure/setup-helm@9bc31f4ebc9c6b171d7bfbaa5d006ae7abdb4310 # v5
+          version: v3.21.1
+      - name: 📦 Run GoReleaser
+        uses: goreleaser/goreleaser-action@f06c13b6b1a9625abc9e6e439d9c05a8f2190e94 # v7.2.3
         with:
-          version: v3.18.3
-      - name : Create Helm package
-        run: make helm-package
-      - name: Create Release
-        uses: softprops/action-gh-release@b4309332981a82ec1c5618f44dd2e27cc8bfbfda # v3
-        if: startsWith(github.ref, 'refs/tags/')
+          version: 'v2.15.4'
+          args: release --clean --config .goreleaser-helm.yaml
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: 🐳 Login to Docker Hub
+        uses: docker/login-action@650006c6eb7dba73a995cc03b0b2d7f5ca915bee # v4.2.0
         with:
-          tag_name: ${{ github.ref_name }}
-          name: Helm Release ${{ github.ref_name }}
-          draft: true
-          prerelease: false
-          body: ${{ steps.changelog.outputs.changes }}
-          files: out-helm/*
+          username: ${{secrets.DOCKER_USER_HELM}}
+          password: ${{secrets.DOCKER_PASSWORD_HELM}}
+      - name : ⬆️ Push to Docker Hub
+        run:
+          make helm-push
+        env:
+          DOCKER_USER: ${{secrets.DOCKER_USER_HELM}}

@@ -1,0 +1,49 @@
+# This is an example .goreleaser.yml file with some sensible defaults.
+# Make sure to check the documentation at https://goreleaser.com
+
+# The lines below are called `modelines`. See `:help modeline`
+# Feel free to remove those if you don't want/need to use them.
+# yaml-language-server: $schema=https://goreleaser.com/static/schema.json
+# vim: set ts=2 sw=2 tw=0 fo=cnqoj
+
+version: 2
+
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+    goarch:
+      - amd64
+    ldflags:
+        - "-s -w {{ if not .IsSnapshot }}-X {{ .ModulePath }}/pkg/util.driverVersion=v{{.Version}} -X {{ .ModulePath }}/pkg/util.buildDate={{.Date}}{{ end }}"
+    main: ./cmd
+
+changelog:
+  use: github-native
+
+release:
+  draft: true
+  name_template: "Release v{{.Version}}"
+
+dockers_v2:
+  - images:
+      - "outscale/osc-bsu-csi-driver"
+    tags:
+      - "v{{ .Version }}"
+      - "{{ if .IsSnapshot }}{{ .FullCommit }}{{ end }}"
+    platforms:
+      - linux/amd64
+    labels:
+      "org.opencontainers.image.description": "osc-bsu-csi-driver"
+      "org.opencontainers.image.created": "{{.Date}}"
+      "org.opencontainers.image.name": "{{.ProjectName}}"
+      "org.opencontainers.image.revision": "{{.FullCommit}}"
+      "org.opencontainers.image.version": "{{.Version}}"
+      "org.opencontainers.image.source": "{{.GitURL}}"
+    build_args:
+      VERSION: "v{{ .Version }}"

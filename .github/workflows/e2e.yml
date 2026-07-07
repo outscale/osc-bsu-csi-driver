@@ -22,15 +22,17 @@ jobs:
     runs-on: [self-hosted, linux]
     steps:
     - name: ⬇️ Checkout repository
-      uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+      uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      with:
+        persist-credentials: false
     - name: 🔐 Set ak/sk name based on runner region
       run: .github/scripts/runneraksk.sh
     - name: ⬇️ Install Go
-      uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6
+      uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
       with:
         go-version-file: 'go.mod'
     - name: 🧹 Frieza
-      uses: outscale/frieza-github-actions/frieza-clean@68ffd39d7e181f3548369e332242b329b04a3182 # master
+      uses: outscale/frieza-github-actions/frieza-clean@1d8b83bc64d2230a0c3bc9f018ba6c0c67df98e8 # v0.15.0+hotfix.0
       with:
         access_key: ${{ secrets[env.OSC_ACCESS_KEY_NAME] }}
         secret_key: ${{ secrets[env.OSC_SECRET_KEY_NAME] }}
@@ -48,30 +50,34 @@ jobs:
     needs: [sanity]
     steps:
     - name: ⬇️ Checkout repository
-      uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+      uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      with:
+        persist-credentials: false
     - name: 🔐 Set ak/sk name based on runner region
       run: .github/scripts/runneraksk.sh
     - name: ⬇️ Install kubectl
-      uses: azure/setup-kubectl@829323503d1be3d00ca8346e5391ca0b07a9ab0d # v5
+      uses: azure/setup-kubectl@829323503d1be3d00ca8346e5391ca0b07a9ab0d # v5.1.0
       with:
-        version: v1.34.2
+        version: v1.34.9
     - name: ⬇️ Install helm
-      uses: azure/setup-helm@9bc31f4ebc9c6b171d7bfbaa5d006ae7abdb4310 # v5
+      uses: azure/setup-helm@9bc31f4ebc9c6b171d7bfbaa5d006ae7abdb4310 # v5.0.1
       with:
-        version: v3.19.2
+        version: v3.21.1
     - name: ⬇️ Install Go
-      uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6
+      uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
       with:
         go-version-file: 'go.mod'
+    - name: ⬇️ Set up Docker Buildx
+      uses: docker/setup-buildx-action@d7f5e7f509e45cec5c76c4d5afdd7de93d0b3df5 # v4.1.0
     - name: 🧹 Frieza
-      uses: outscale/frieza-github-actions/frieza-clean@68ffd39d7e181f3548369e332242b329b04a3182 # master
+      uses: outscale/frieza-github-actions/frieza-clean@1d8b83bc64d2230a0c3bc9f018ba6c0c67df98e8 # v0.15.0+hotfix.0
       with:
         access_key: ${{ secrets[env.OSC_ACCESS_KEY_NAME] }}
         secret_key: ${{ secrets[env.OSC_SECRET_KEY_NAME] }}
         region: ${{ env.OSC_REGION }}
     - name: 👷 Deploy test cluster
       id: caposc
-      uses: outscale/cluster-api-provider-outscale/.github/actions/deploy_cluster@f505cfa8d2bcc452b7a733879f27307859188ed3 # v1.5
+      uses: outscale/cluster-api-provider-outscale/.github/actions/deploy_cluster@f505cfa8d2bcc452b7a733879f27307859188ed3 # v1.5.0
       with:
         RUNNER_NAME: ${{ runner.name }}
         OKS_ACCESS_KEY: ${{ secrets.OKS_ACCESS_KEY }}
@@ -84,13 +90,24 @@ jobs:
         IMAGE_NAME: ${{ vars.IMG_MANAGEMENT }}
         CCM: true
         KUSTOMIZE_PATH: "tests/e2e/capi-kustomize"
-    - name: 📦 Build & Push the Docker image
+    - name: 🐳 Login to Harbor
+      uses: docker/login-action@650006c6eb7dba73a995cc03b0b2d7f5ca915bee # v4.2.0
+      with:
+        registry: ${{ vars.REGISTRY }}
+        username: admin
+        password: ${{ secrets.HARBOR_ADMIN_PASSWORD }}
+    - name: 📦 Run GoReleaser
+      uses: goreleaser/goreleaser-action@f06c13b6b1a9625abc9e6e439d9c05a8f2190e94 # v7.2.3
+      with:
+        version: 'v2.15.4'
+        args: release --clean --snapshot
+    - name: 📦 Push the Docker image
       run: |
-        docker login ${{ vars.REGISTRY }} -u admin -p ${{ secrets.HARBOR_ADMIN_PASSWORD }}
-        make buildx-image image-tag image-push
+        make image-tag image-push
       env:
+        IMAGE: "outscale/osc-bsu-csi-driver"
+        IMAGE_TAG: "${{ github.sha }}-amd64"
         REGISTRY_IMAGE: "${{ vars.REGISTRY }}/outscale/csi"
-        IMAGE_TAG: ${{ github.sha }}
         REGISTRY_TAG: ${{ github.sha }}
     - name: 👷 Install CSI
       run: |

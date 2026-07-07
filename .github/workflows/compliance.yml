@@ -11,8 +11,11 @@ jobs:
   compliance:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+    - name: ⬇️ Checkout repository
+      uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      with:
+        persist-credentials: false
     - name: Plumber
-      uses: outscale/.github/pipeline-compliance@d1bf523f2ce3fccb0784dfd03ca3cd5e0b906be8 # main
+      uses: outscale/.github/pipeline-compliance@7c476168e128fc5886b1019a61964f45e42e2452 # v1.1.1
       with:
         github-token: ${{ secrets.PLUMBER_TOKEN }}

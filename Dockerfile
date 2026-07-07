@@ -1,26 +1,6 @@
-ARG GOLANG_IMAGE_TAG=1.26.4-bookworm@sha256:5f68ec6805843bd3981a951ffada82a26a0bd2631045c8f7dba483fa868f5ec5
-# Tools are taken from Debian 12
 ARG TOOLS_IMAGE_TAG=12@sha256:49ba348354a28e39c70beffd6cf43bdb8d55d81ce4b746b0428717d054b8bbc4
 # Distroless debug is used to get a busybox shell
 ARG RUNTIME_IMAGE_TAG=debug-dca9008b864a381b5ce97196a4d8399ac3c2fa65@sha256:ea6a51495f94a482dc431cd247bbace8f9a096ed6397005995245520ce5afcfe
-
-# Build image
-FROM golang:${GOLANG_IMAGE_TAG} AS builder
-
-# This build arg is the version to embed in the CPI binary
-ARG VERSION=${VERSION}
-
-# This build arg controls the GOPROXY setting
-ARG GOPROXY
-
-WORKDIR /build
-COPY go.mod .
-COPY go.sum .
-RUN go mod download
-COPY . .
-ENV CGO_ENABLED=0
-ENV GOPROXY=${GOPROXY:-https://proxy.golang.org}
-RUN make build
 
 # Source image for all fs binaries (mkfs, mount/umount, fsck, ...)
 FROM debian:${TOOLS_IMAGE_TAG} AS debian
@@ -29,8 +9,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends util-linux e2fs
 
 # Scratch image with all binaries & libs
 FROM scratch AS tmp
+ARG TARGETPLATFORM
 
-COPY --from=builder /build/bin/osc-bsu-csi-driver /bin/osc-bsu-csi-driver
+COPY $TARGETPLATFORM/osc-bsu-csi-driver /bin/osc-bsu-csi-driver
 COPY --from=debian /bin/sh \
         /bin/mount \
         /bin/umount /bin/

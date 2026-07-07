@@ -173,6 +173,7 @@ helm-package:
 	cp CHANGELOG-1.X.md helm/osc-bsu-csi-driver/CHANGELOG.md
 	cp docs/README.md helm/osc-bsu-csi-driver/
 	cp LICENSES/BSD-3-Clause.txt helm/osc-bsu-csi-driver/LICENSE
+	rm out-helm/*
 	helm package helm/osc-bsu-csi-driver -d out-helm
 	rm helm/osc-bsu-csi-driver/CHANGELOG.md helm/osc-bsu-csi-driver/README.md helm/osc-bsu-csi-driver/LICENSE
 

@@ -32,7 +32,7 @@ jobs:
       with:
         go-version-file: 'go.mod'
     - name: 🧹 Frieza
-      uses: outscale/frieza-github-actions/frieza-clean@1d8b83bc64d2230a0c3bc9f018ba6c0c67df98e8 # v0.15.0+hotfix.0
+      uses: outscale/frieza-github-actions/frieza-clean@7c5dfd873b09ae2d51bee91a0de8004bec3f65ef # v0.16.0+hotfix.0
       with:
         access_key: ${{ secrets[env.OSC_ACCESS_KEY_NAME] }}
         secret_key: ${{ secrets[env.OSC_SECRET_KEY_NAME] }}
@@ -70,7 +70,7 @@ jobs:
     - name: ⬇️ Set up Docker Buildx
       uses: docker/setup-buildx-action@bb05f3f5519dd87d3ba754cc423b652a5edd6d2c # v4.2.0
     - name: 🧹 Frieza
-      uses: outscale/frieza-github-actions/frieza-clean@1d8b83bc64d2230a0c3bc9f018ba6c0c67df98e8 # v0.15.0+hotfix.0
+      uses: outscale/frieza-github-actions/frieza-clean@7c5dfd873b09ae2d51bee91a0de8004bec3f65ef # v0.16.0+hotfix.0
       with:
         access_key: ${{ secrets[env.OSC_ACCESS_KEY_NAME] }}
         secret_key: ${{ secrets[env.OSC_SECRET_KEY_NAME] }}

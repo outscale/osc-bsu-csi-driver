@@ -40,7 +40,7 @@ driver:
   # -- Enable cross namespace snapshots
   enableSnapshotCrossNamespace: false
   # -- Enable volume updates using VolumeAttributesClass
-  enableVolumeAttributesClass: false
+  enableVolumeAttributesClass: true
   # Extra volume tags to attach to every dynamically provisioned volume.
   # extraVolumeTags:
   #   key1: value1
@@ -183,7 +183,7 @@ sidecars:
 
   provisioner:
     image: registry.k8s.io/sig-storage/csi-provisioner
-    tag: "v5.3.0"
+    tag: "v6.1.1"
     # -- Port of the metrics endpoint
     metricsPort: "8089"
     additionalArgs: []
@@ -192,7 +192,7 @@ sidecars:
     workerThreads: 100
   attacher:
     image: registry.k8s.io/sig-storage/csi-attacher
-    tag: "v4.10.0"
+    tag: "v4.12.0"
     # -- Port of the metrics endpoint
     metricsPort: "8090"
     additionalArgs: []
@@ -201,7 +201,7 @@ sidecars:
     workerThreads: 100
   snapshotter:
     image: registry.k8s.io/sig-storage/csi-snapshotter
-    tag: "v8.4.0"
+    tag: "v8.6.0"
     # -- Port of the metrics endpoint
     metricsPort: "8091"
     additionalArgs: []
@@ -217,7 +217,7 @@ sidecars:
     resources: {}
   resizer:
     image: registry.k8s.io/sig-storage/csi-resizer
-    tag: "v1.14.0"
+    tag: "v2.2.1"
     # -- Port of the metrics endpoint
     metricsPort: "8092"
     additionalArgs: []
@@ -229,7 +229,7 @@ sidecars:
     tag: "v2.15.0"
   exporter:
     image: outscale/csi-snapshot-exporter
-    tag: "v0.3.0"
+    tag: "v0.4.0"
     # -- Port of the metrics endpoint
     metricsPort: "8093"
     additionalArgs: []

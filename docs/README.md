@@ -62,6 +62,8 @@ The **Outscale Block Storage Unit (BSU) CSI Driver** implements the Container St
 
 </details>
 
+> Recommended Kubernetes version: >= v1.34
+
 ---
 
 ## ✨ Features

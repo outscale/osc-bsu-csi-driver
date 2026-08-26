@@ -136,7 +136,7 @@ spec:
             {{- if .Values.driver.enableSnapshotCrossNamespace }}
             - --feature-gates=CrossNamespaceVolumeDataSource=true
             {{- end}}
-            {{- if .Values.driver.enableVolumeAttributesClass }}
+            {{- if and .Values.driver.enableVolumeAttributesClass (semverCompare "<v6.0.0" .Values.sidecars.provisioner.tag)}}
             - --feature-gates=VolumeAttributesClass=true
             {{- end}}
             - --leader-election=true
@@ -363,7 +363,7 @@ spec:
             - --automaxprocs
             {{- end}}
             - --leader-election=true
-            {{- if .Values.driver.enableVolumeAttributesClass }}
+            {{- if and .Values.driver.enableVolumeAttributesClass (semverCompare "<v2.0.0" .Values.sidecars.resizer.tag)}}
             - --feature-gates=VolumeAttributesClass=true
             {{- end}}
             {{- if .Values.sidecars.leaderElection.leaseDuration }}

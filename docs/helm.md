@@ -50,7 +50,7 @@ Kubernetes: `>=1.25`
 | controller.updateStrategy | object | `{"type":"RollingUpdate"}` | Controller deployment update strategy. |
 | driver.defaultFsType | string | `"ext4"` | Default filesystem for the volume if no `FsType` is set in `StorageClass` |
 | driver.enableSnapshotCrossNamespace | bool | `false` | Enable cross namespace snapshots |
-| driver.enableVolumeAttributesClass | bool | `false` | Enable volume updates using VolumeAttributesClass |
+| driver.enableVolumeAttributesClass | bool | `true` | Enable volume updates using VolumeAttributesClass |
 | driver.enableVolumeSnapshot | bool | `false` | Enable volume snapshots |
 | driver.enableVolumeSnapshotExports | bool | `false` | Enable volume snapshots exports |
 | driver.extraSnapshotTags | object | `{}` | Add extra tags on snapshots |
@@ -80,14 +80,14 @@ Kubernetes: `>=1.25`
 | sidecars.attacher.image | string | `"registry.k8s.io/sig-storage/csi-attacher"` |  |
 | sidecars.attacher.metricsPort | string | `"8090"` | Port of the metrics endpoint |
 | sidecars.attacher.resources | object | `{}` | Sidecar resources. If not set, the top-level resources will be used. |
-| sidecars.attacher.tag | string | `"v4.10.0"` |  |
+| sidecars.attacher.tag | string | `"v4.12.0"` |  |
 | sidecars.attacher.workerThreads | int | `100` |  |
 | sidecars.automaxprocs | bool | `true` | Automatically configure GOMAXPROCS based on container allocated resources. |
 | sidecars.exporter.additionalArgs | list | `[]` |  |
 | sidecars.exporter.image | string | `"outscale/csi-snapshot-exporter"` |  |
 | sidecars.exporter.metricsPort | string | `"8093"` | Port of the metrics endpoint |
 | sidecars.exporter.resources | object | `{}` | Sidecar resources. If not set, the top-level resources will be used. |
-| sidecars.exporter.tag | string | `"v0.3.0"` |  |
+| sidecars.exporter.tag | string | `"v0.4.0"` |  |
 | sidecars.kubeAPI.QPS | int | `20` | Maximum allowed number of queries per second to the Kubernetes API |
 | sidecars.kubeAPI.burst | int | `100` | Allowed burst over QPS |
 | sidecars.leaderElection | object | `{"leaseDuration":null,"renewDeadline":null,"retryPeriod":null}` | leaderElection config for all sidecars |
@@ -102,13 +102,13 @@ Kubernetes: `>=1.25`
 | sidecars.provisioner.image | string | `"registry.k8s.io/sig-storage/csi-provisioner"` |  |
 | sidecars.provisioner.metricsPort | string | `"8089"` | Port of the metrics endpoint |
 | sidecars.provisioner.resources | object | `{}` |  |
-| sidecars.provisioner.tag | string | `"v5.3.0"` |  |
+| sidecars.provisioner.tag | string | `"v6.1.1"` |  |
 | sidecars.provisioner.workerThreads | int | `100` |  |
 | sidecars.resizer.additionalArgs | list | `[]` |  |
 | sidecars.resizer.image | string | `"registry.k8s.io/sig-storage/csi-resizer"` |  |
 | sidecars.resizer.metricsPort | string | `"8092"` | Port of the metrics endpoint |
 | sidecars.resizer.resources | object | `{}` | Sidecar resources. If not set, the top-level resources will be used. |
-| sidecars.resizer.tag | string | `"v1.14.0"` |  |
+| sidecars.resizer.tag | string | `"v2.2.1"` |  |
 | sidecars.resizer.workerThreads | int | `100` |  |
 | sidecars.resources | object | `{}` | Default sidecar resources, unless set at the sidecar level. |
 | sidecars.securityContext | object | `{"allowPrivilegeEscalation":false,"readOnlyRootFilesystem":true,"seccompProfile":{"type":"RuntimeDefault"}}` | securityContext config for all sidecars. |
@@ -116,7 +116,7 @@ Kubernetes: `>=1.25`
 | sidecars.snapshotter.image | string | `"registry.k8s.io/sig-storage/csi-snapshotter"` |  |
 | sidecars.snapshotter.metricsPort | string | `"8091"` | Port of the metrics endpoint |
 | sidecars.snapshotter.resources | object | `{}` | Sidecar resources. If not set, the top-level resources will be used. |
-| sidecars.snapshotter.tag | string | `"v8.4.0"` |  |
+| sidecars.snapshotter.tag | string | `"v8.6.0"` |  |
 | sidecars.snapshotter.workerThreads | int | `100` |  |
 | sidecars.timeout | string | `"5m"` | Timeout for sidecars calls to the CSI driver |
 

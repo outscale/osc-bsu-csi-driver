@@ -1,9 +1,7 @@
 # Configuring VolumeAttributeClass
 
 This example shows how to modify a volume using VolumeAttributeClass.
-It requires Kubernetes 1.31 or above.
-
-> Note: VolumeAttributeClass is disabled by default, it needs to be enabled by setting `enableVolumeAttributesClass` when deploying the Helm chart. 
+It requires Kubernetes 1.34 or above.
 
 ## Usage
 

@@ -77,7 +77,7 @@ jobs:
         region: ${{ env.OSC_REGION }}
     - name: 👷 Deploy test cluster
       id: caposc
-      uses: outscale/cluster-api-provider-outscale/.github/actions/deploy_cluster@847efa8eee5b18f9d3633b0ed56b69e5ebc2402a # v1.5.1
+      uses: outscale/cluster-api-provider-outscale/.github/actions/deploy_cluster@7ddc5fd22c49ce7216e9321c2fe254e2d8e5f92d # v1.5.2
       with:
         RUNNER_NAME: ${{ runner.name }}
         OKS_ACCESS_KEY: ${{ secrets.OKS_ACCESS_KEY }}

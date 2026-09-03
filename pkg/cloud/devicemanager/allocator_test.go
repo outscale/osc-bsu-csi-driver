@@ -18,6 +18,9 @@ package devicemanager
 
 import (
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestNameAllocator(t *testing.T) {
@@ -29,12 +32,8 @@ func TestNameAllocator(t *testing.T) {
 		expectedName := expectedNames[i : i+1]
 		t.Run(expectedName, func(t *testing.T) {
 			actual, err := allocator.GetNext(existingNames)
-			if err != nil {
-				t.Errorf("test %q: unexpected error: %v", expectedName, err)
-			}
-			if actual != expectedName {
-				t.Errorf("test %q: expected %q, got %q", expectedName, expectedName, actual)
-			}
+			require.NoError(t, err)
+			assert.Equal(t, expectedName, actual)
 			existingNames = append(existingNames, actual)
 		})
 	}
@@ -44,12 +43,11 @@ func TestNameAllocatorError(t *testing.T) {
 	allocator := nameAllocator{}
 	existingNames := []string{} //nolint
 
-	for range 52 {
-		name, _ := allocator.GetNext(existingNames)
+	for range 77 {
+		name, err := allocator.GetNext(existingNames)
+		require.NoError(t, err)
 		existingNames = append(existingNames, name)
 	}
 	name, err := allocator.GetNext(existingNames)
-	if err == nil {
-		t.Errorf("expected error, got device  %q", name)
-	}
+	require.Errorf(t, err, "expected error, got device %q", name)
 }

@@ -1672,6 +1672,17 @@ func TestNodeGetInfo(t *testing.T) {
 			expMaxVolumes: 37,
 		},
 		{
+			name:         "1 OS mounted volume, no PVC, 45 reserved",
+			instanceID:   "i-123456789abcdef01",
+			instanceType: "tinav6.c1r6p2",
+			subRegion:    "us-west-2b",
+			envReserved:  "45",
+			mappings: map[string]string{
+				"ebs0": "/dev/xvdb",
+			},
+			expMaxVolumes: 0,
+		},
+		{
 			name:         "1 OS mounted volume on xvdb, 1 PVC on xvdc",
 			instanceID:   "i-123456789abcdef01",
 			instanceType: "tinav6.c1r6p2",

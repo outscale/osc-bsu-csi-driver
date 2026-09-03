@@ -605,6 +605,9 @@ func (s *nodeService) NodeGetInfo(ctx context.Context, req *csi.NodeGetInfoReque
 	if err != nil {
 		return nil, fmt.Errorf("compute limit: %w", err)
 	}
+	if maxVolumes <= 0 {
+		klog.FromContext(ctx).V(1).Info("Warning: unexpected MaxVolumesPerNode value", "MaxVolumesPerNode", maxVolumes)
+	}
 	return &csi.NodeGetInfoResponse{
 		NodeId:             s.instanceID,
 		MaxVolumesPerNode:  maxVolumes,
@@ -841,7 +844,7 @@ func (s *nodeService) getVolumesLimit(ctx context.Context) (int64, error) {
 
 	// devs includes the root volume
 	// we need to reserve getEnvReservedVolumes() + the root volume
-	maxVolumes = defaultMaxBSUVolumes - max(int64(volumes-pvcs), getEnvReservedVolumes()+1)
+	maxVolumes = max(0, defaultMaxBSUVolumes-max(int64(volumes-pvcs), getEnvReservedVolumes()+1))
 	logger.V(3).Info("Computed limit", "maxVolumes", maxVolumes)
 	return maxVolumes, nil
 }

@@ -37,12 +37,16 @@ var _ NameAllocator = &nameAllocator{}
 // GetNext gets next available device name.
 // This function iterates through the device names in deterministic order of:
 //
-//	b ... z, aa ... az
+//	b ... z, aa ... az, ba ... bz
 //
 // and return the first one that is not used yet.
 // Note: a is reserved for the root volume.
 func (d *nameAllocator) GetNext(existing []string) (string, error) {
-	deviceMap := [51]string{"b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z", "aa", "ab", "ac", "ad", "ae", "af", "ag", "ah", "ai", "aj", "ak", "al", "am", "an", "ao", "ap", "aq", "ar", "as", "at", "au", "av", "aw", "ax", "ay", "az"}
+	deviceMap := [77]string{
+		"b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z",
+		"aa", "ab", "ac", "ad", "ae", "af", "ag", "ah", "ai", "aj", "ak", "al", "am", "an", "ao", "ap", "aq", "ar", "as", "at", "au", "av", "aw", "ax", "ay", "az",
+		"ba", "bb", "bc", "bd", "be", "bf", "bg", "bh", "bi", "bj", "bk", "bl", "bm", "bn", "bo", "bp", "bq", "br", "bs", "bt", "bu", "bv", "bw", "bx", "by", "bz",
+	}
 	for _, name := range deviceMap {
 		if !slices.Contains(existing, name) {
 			return name, nil

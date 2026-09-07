@@ -1,6 +1,6 @@
 module github.com/outscale/osc-bsu-csi-driver
 
-go 1.26.0
+go 1.27.0
 
 toolchain go1.27.1
 
@@ -11,12 +11,12 @@ require (
 	github.com/onsi/ginkgo/v2 v2.32.1
 	github.com/onsi/gomega v1.40.0
 	github.com/outscale/goutils/k8s v0.0.4
-	github.com/outscale/goutils/sdk v0.0.6
-	github.com/outscale/osc-sdk-go/v3 v3.0.0-rc.4
+	github.com/outscale/goutils/sdk v0.0.8
+	github.com/outscale/osc-sdk-go/v3 v3.0.0-rc.5
 	github.com/rs/xid v1.6.0
 	github.com/samber/lo v1.53.0
 	github.com/spf13/pflag v1.0.10
-	github.com/stretchr/testify v1.11.1
+	github.com/stretchr/testify v1.12.0
 	go.uber.org/mock v0.6.0
 	golang.org/x/sync v0.22.0
 	golang.org/x/sys v0.47.0
@@ -46,7 +46,7 @@ require (
 	dario.cat/mergo v1.0.2 // indirect
 	github.com/Masterminds/semver/v3 v3.4.0 // indirect
 	github.com/antlr4-go/antlr/v4 v4.13.0 // indirect
-	github.com/aws/smithy-go/aws-http-auth v1.1.2 // indirect
+	github.com/aws/smithy-go/aws-http-auth v1.2.1 // indirect
 	github.com/benbjohnson/clock v1.3.0 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/blang/semver/v4 v4.0.0 // indirect
@@ -95,7 +95,7 @@ require (
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.3-0.20250322232337-35a7c28c31ee // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
-	github.com/oapi-codegen/runtime v1.6.0 // indirect
+	github.com/oapi-codegen/runtime v1.7.0 // indirect
 	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/opencontainers/selinux v1.13.1 // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect

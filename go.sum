@@ -12,6 +12,8 @@ github.com/armon/go-socks5 v0.0.0-20160902184237-e75332964ef5 h1:0CwZNZbxp69SHPd
 github.com/armon/go-socks5 v0.0.0-20160902184237-e75332964ef5/go.mod h1:wHh0iHkYZB8zMSxRWpUBQtwG5a7fFgvEO+odwuTv2gs=
 github.com/aws/smithy-go/aws-http-auth v1.1.2 h1:GxlpOPjxAtktWUGK3QPoIiIa+qq5WNiqpewt3s/+pVo=
 github.com/aws/smithy-go/aws-http-auth v1.1.2/go.mod h1:KL46VTjVK9De3jurMqDLBkXCP9vrAvD03zQrmyzyrQ0=
+github.com/aws/smithy-go/aws-http-auth v1.2.1 h1:uRP2q0BGnhpE1/8iriH3yHVMCg6nhFNaVCDvKYPQVmQ=
+github.com/aws/smithy-go/aws-http-auth v1.2.1/go.mod h1:KL46VTjVK9De3jurMqDLBkXCP9vrAvD03zQrmyzyrQ0=
 github.com/benbjohnson/clock v1.3.0 h1:ip6w0uFQkncKQ979AypyG0ER7mqUSBdKLOgAle/AT8A=
 github.com/benbjohnson/clock v1.3.0/go.mod h1:J11/hYXuz8f4ySSvYwY0FKfm+ezbsZBKZxNJlLklBHA=
 github.com/beorn7/perks v1.0.1 h1:VlbKKnNfV8bJzeqoa4cOKqO6bYr3WgKZxO8Z16+hsOM=
@@ -161,6 +163,7 @@ github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 h1:C3w9PqII01/Oq
 github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822/go.mod h1:+n7T8mK8HuQTcFwEeznm/DIxMOiR9yIdICNftLE1DvQ=
 github.com/oapi-codegen/runtime v1.6.0 h1:7Xx+GlueD6nRuyKoCPzL434Jfi3BetbiJOrzCHp/VPU=
 github.com/oapi-codegen/runtime v1.6.0/go.mod h1:GwV7hC2hviaMzj+ITfHVRESK5J2W/GefVwIND/bMGvU=
+github.com/oapi-codegen/runtime v1.7.0/go.mod h1:GwV7hC2hviaMzj+ITfHVRESK5J2W/GefVwIND/bMGvU=
 github.com/onsi/ginkgo/v2 v2.32.1 h1:6tlvcDm/3sE8lGJbZ4+d4mO3RLy24/tQWOFzVSQNIfw=
 github.com/onsi/ginkgo/v2 v2.32.1/go.mod h1:+aXOY+vzZ5mu2iI2HpTZUPmM//oQfsNFX6gU9kNcA44=
 github.com/onsi/gomega v1.40.0 h1:Vtol0e1MghCD2ZVIilPDIg44XSL9l2QAn8ZNaljWcJc=
@@ -177,6 +180,8 @@ github.com/outscale/kubernetes-csi-test/v5 v5.4.0-outscale h1:WB9CqCemzvwM7VIf3J
 github.com/outscale/kubernetes-csi-test/v5 v5.4.0-outscale/go.mod h1:anAJKFUb/SdHhIHECgSKxC5LSiLzib+1I6mrWF5Hve8=
 github.com/outscale/osc-sdk-go/v3 v3.0.0-rc.4 h1:A/tYGv1FDtscUyGKjo9+ZMjSMLx2D8z6uatklJtzot4=
 github.com/outscale/osc-sdk-go/v3 v3.0.0-rc.4/go.mod h1:3lfuRe10qyX65byo8dmnnGAUhsThw8H14enH8d34yiI=
+github.com/outscale/osc-sdk-go/v3 v3.0.0-rc.5 h1:XP6smAeoacHJT/mTeNBMc9Y2Dqvw0fSgLOyazQN6gIY=
+github.com/outscale/osc-sdk-go/v3 v3.0.0-rc.5/go.mod h1:wtvvgi27yvHluLy4X575C1wQQORNpi8FTYcxxvCPi7M=
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
 github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 h1:Jamvg5psRIccs7FGNTlIRMkT8wgtp5eCXdBlqhYGL6U=
 github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=

@@ -1,5 +1,29 @@
 # Changelog
 
+## [v1.12.0](https://github.com/outscale/osc-bsu-csi-driver/releases/tag/v1.12.0) - 2026-09-09
+
+### 🛠️ Changed / Refactoring
+* ♻️ refacto: switch code to Go 1.26 by @jfbus in https://github.com/outscale/osc-bsu-csi-driver/pull/1194
+* 🥅 fix: handle dual drivers edge cases by @jfbus in https://github.com/outscale/osc-bsu-csi-driver/pull/1247
+### 📦 Dependency updates
+* ⬆️ deps(dockerfile): update debian:12 docker digest to 9344f8b by @Open-Source-Bot in https://github.com/outscale/osc-bsu-csi-driver/pull/1199
+* ⬆️ deps(gomod): update go toolchain directive to v1.26.5 by @Open-Source-Bot in https://github.com/outscale/osc-bsu-csi-driver/pull/1212
+* ⬆️ deps(gomod): update module github.com/outscale/goutils/sdk to v0.0.5 by @Open-Source-Bot in https://github.com/outscale/osc-bsu-csi-driver/pull/1213
+* ⬆️ deps(gomod): update module golang.org/x/sys to v0.47.0 by @Open-Source-Bot in https://github.com/outscale/osc-bsu-csi-driver/pull/1208
+* ⬆️ deps(gomod): update module github.com/outscale/osc-sdk-go/v3 to v3.0.0-rc.3 by @Open-Source-Bot in https://github.com/outscale/osc-bsu-csi-driver/pull/1215
+* ⬆️ deps(gomod): update module google.golang.org/grpc to v1.82.1 by @Open-Source-Bot in https://github.com/outscale/osc-bsu-csi-driver/pull/1206
+* ⬆️ deps(gomod): update module google.golang.org/grpc to v1.83.0 by @Open-Source-Bot in https://github.com/outscale/osc-bsu-csi-driver/pull/1224
+* ⬆️ deps(gomod): update go toolchain directive to v1.26.6 by @Open-Source-Bot in https://github.com/outscale/osc-bsu-csi-driver/pull/1228
+* ⬆️ deps(gomod): update module github.com/outscale/goutils/sdk to v0.0.6 by @Open-Source-Bot in https://github.com/outscale/osc-bsu-csi-driver/pull/1230
+* ⬆️ deps(gomod): update module github.com/outscale/goutils/k8s to v0.0.4 by @Open-Source-Bot in https://github.com/outscale/osc-bsu-csi-driver/pull/1229
+* ⬆️ deps(gomod): update module github.com/onsi/ginkgo/v2 to v2.32.1 by @Open-Source-Bot in https://github.com/outscale/osc-bsu-csi-driver/pull/1168
+* ⬆️ deps: bump kube to 1.36, bump sidecars, enable VolumeAttributesClass by @jfbus in https://github.com/outscale/osc-bsu-csi-driver/pull/1241
+* ⬆️ deps(gomod): update go toolchain directive to v1.27.1 by @Open-Source-Bot in https://github.com/outscale/osc-bsu-csi-driver/pull/1238
+* ⬆️ deps(dockerfile): update debian:12 docker digest to 6ebd97f by @Open-Source-Bot in https://github.com/outscale/osc-bsu-csi-driver/pull/1225
+* ⬆️ deps(gomod): update module google.golang.org/grpc to v1.83.2 by @Open-Source-Bot in https://github.com/outscale/osc-bsu-csi-driver/pull/1245
+* ⬆️ deps(gomod): update module github.com/outscale/goutils/sdk to v0.0.8 by @Open-Source-Bot in https://github.com/outscale/osc-bsu-csi-driver/pull/1249
+
+
 ## [v2.1.0-helm] - 2025-12-18
 
 Bump CSI driver to v1.11.0 & Snapshot exporter to v0.3.0.

@@ -96,7 +96,7 @@ func TestHelmTemplate_Deployment(t *testing.T) {
 		assert.Equal(t, int32(2), *dep.Spec.Replicas)
 		require.Len(t, dep.Spec.Template.Spec.Containers, 6)
 		manager := dep.Spec.Template.Spec.Containers[0]
-		assert.Equal(t, "outscale/osc-bsu-csi-driver:v1.11.0", manager.Image)
+		assert.Equal(t, "outscale/osc-bsu-csi-driver:v1.12.0", manager.Image)
 		assert.Equal(t, []string{
 			"controller",
 			"--name=bsu.csi.outscale.com",
@@ -136,7 +136,8 @@ func TestHelmTemplate_Deployment(t *testing.T) {
 	})
 
 	t.Run("Lgging can be configured", func(t *testing.T) {
-		dep := getDeployment(t,
+		dep := getDeployment(
+			t,
 			"driver.enableVolumeSnapshot=true",
 			"driver.enableVolumeSnapshotExports=true",
 			"logs.verbosity=5", "logs.format=json",
@@ -197,7 +198,8 @@ func TestHelmTemplate_Deployment(t *testing.T) {
 	})
 
 	t.Run("imagePullPolicy is set", func(t *testing.T) {
-		dep := getDeployment(t,
+		dep := getDeployment(
+			t,
 			"driver.enableVolumeSnapshot=true",
 			"driver.enableVolumeSnapshotExports=true",
 			"driver.imagePullPolicy=foo",
@@ -208,7 +210,8 @@ func TestHelmTemplate_Deployment(t *testing.T) {
 	})
 
 	t.Run("Sidecar resources can be set individually", func(t *testing.T) {
-		dep := getDeployment(t,
+		dep := getDeployment(
+			t,
 			"driver.enableVolumeSnapshot=true",
 			"driver.enableVolumeSnapshotExports=true",
 
@@ -295,7 +298,8 @@ func TestHelmTemplate_Deployment(t *testing.T) {
 	})
 
 	t.Run("updateStrategy can be set", func(t *testing.T) {
-		dep := getDeployment(t,
+		dep := getDeployment(
+			t,
 			"controller.updateStrategy.type=Recreate",
 			"controller.updateStrategy.rollingUpdate.maxSurge=1",
 			"controller.updateStrategy.rollingUpdate.maxUnavailable=20%",
@@ -351,7 +355,8 @@ func TestHelmTemplate_Deployment(t *testing.T) {
 	})
 
 	t.Run("Sidecar threads can be tuned", func(t *testing.T) {
-		dep := getDeployment(t,
+		dep := getDeployment(
+			t,
 			"driver.enableVolumeSnapshot=true",
 			"sidecars.provisioner.workerThreads=42",
 			"sidecars.attacher.workerThreads=43",
@@ -378,7 +383,8 @@ func TestHelmTemplate_Deployment(t *testing.T) {
 	})
 
 	t.Run("Sidecar timeout can be tuned", func(t *testing.T) {
-		dep := getDeployment(t,
+		dep := getDeployment(
+			t,
 			"driver.enableVolumeSnapshot=true",
 			"sidecars.timeout=10m",
 		)
@@ -406,7 +412,7 @@ func TestHelmTemplate_DaemonSet(t *testing.T) {
 		dep := getDaemonSet(t)
 		require.Len(t, dep.Spec.Template.Spec.Containers, 3)
 		manager := dep.Spec.Template.Spec.Containers[0]
-		assert.Equal(t, "outscale/osc-bsu-csi-driver:v1.11.0", manager.Image)
+		assert.Equal(t, "outscale/osc-bsu-csi-driver:v1.12.0", manager.Image)
 		assert.Equal(t, []string{
 			"node",
 			"--name=bsu.csi.outscale.com",
@@ -478,7 +484,8 @@ func TestHelmTemplate_DaemonSet(t *testing.T) {
 	})
 
 	t.Run("imagePullPolicy is set", func(t *testing.T) {
-		dep := getDaemonSet(t,
+		dep := getDaemonSet(
+			t,
 			"driver.imagePullPolicy=foo",
 		)
 		for _, container := range dep.Spec.Template.Spec.Containers {
@@ -510,7 +517,8 @@ func TestHelmTemplate_DaemonSet(t *testing.T) {
 	})
 
 	t.Run("Additional args can be set", func(t *testing.T) {
-		dep := getDaemonSet(t,
+		dep := getDaemonSet(
+			t,
 			"node.additionalArgs={--luks-open-flags=--perf-no_read_workqueue,--luks-open-flags=--perf-no_write_workqueue}",
 		)
 		require.Len(t, dep.Spec.Template.Spec.Containers, 3)
@@ -526,7 +534,8 @@ func TestHelmTemplate_DaemonSet(t *testing.T) {
 	})
 
 	t.Run("updateStrategy can be set", func(t *testing.T) {
-		dep := getDaemonSet(t,
+		dep := getDaemonSet(
+			t,
 			"node.updateStrategy.type=OnDelete",
 			"node.updateStrategy.rollingUpdate.maxSurge=2",
 			"node.updateStrategy.rollingUpdate.maxUnavailable=20%",
@@ -543,7 +552,8 @@ func TestHelmTemplate_DaemonSet(t *testing.T) {
 	})
 
 	t.Run("tolerations can be set", func(t *testing.T) {
-		dep := getDaemonSet(t,
+		dep := getDaemonSet(
+			t,
 			"node.tolerateAllTaints=false",
 			"node.tolerations[0].key=foo",
 			"node.tolerations[0].operator=Exists",
@@ -556,7 +566,8 @@ func TestHelmTemplate_DaemonSet(t *testing.T) {
 	})
 
 	t.Run("imagePullSecrets can be set", func(t *testing.T) {
-		dep := getDaemonSet(t,
+		dep := getDaemonSet(
+			t,
 			"imagePullSecrets[0].name=regcred",
 		)
 		require.Len(t, dep.Spec.Template.Spec.Containers, 3)

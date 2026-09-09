@@ -1,5 +1,11 @@
 # Changelog
 
+## [v2.2.0-helm](https://github.com/outscale/osc-bsu-csi-driver/releases/tag/v2.2.0-helm) - 2026-09-09
+
+### 📦 Dependency updates
+* ⬆️ deps: bump kube to 1.36, bump sidecars, enable VolumeAttributesClass by @jfbus in https://github.com/outscale/osc-bsu-csi-driver/pull/1241
+
+
 ## [v1.12.0](https://github.com/outscale/osc-bsu-csi-driver/releases/tag/v1.12.0) - 2026-09-09
 
 ### 🛠️ Changed / Refactoring

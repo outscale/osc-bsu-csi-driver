@@ -57,9 +57,6 @@ func validateTags(tags map[string]string) error {
 		if strings.HasPrefix(k, cloud.KubernetesTagKeyPrefix) {
 			return fmt.Errorf("tag key prefix '%s' is reserved", cloud.KubernetesTagKeyPrefix)
 		}
-		if strings.HasPrefix(k, cloud.OscTagKeyPrefix) {
-			return fmt.Errorf("tag key prefix '%s' is reserved", cloud.OscTagKeyPrefix)
-		}
 	}
 
 	return nil

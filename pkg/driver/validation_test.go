@@ -76,13 +76,6 @@ func TestValidateTags(t *testing.T) {
 			expErr: fmt.Errorf("tag key prefix '%s' is reserved", cloud.KubernetesTagKeyPrefix),
 		},
 		{
-			name: "invalid tag: reserved Osc key prefix",
-			tags: map[string]string{
-				cloud.OscTagKeyPrefix + "foo": "extra-tag-value",
-			},
-			expErr: fmt.Errorf("tag key prefix '%s' is reserved", cloud.OscTagKeyPrefix),
-		},
-		{
 			name:   "invalid tag: too many volume tags",
 			tags:   stringMap(cloud.MaxNumTagsPerResource + 1),
 			expErr: fmt.Errorf("too many tags (actual: %d, limit: %d)", cloud.MaxNumTagsPerResource+1, cloud.MaxNumTagsPerResource),

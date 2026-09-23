@@ -41,6 +41,8 @@ driver:
   enableSnapshotCrossNamespace: false
   # -- Enable volume updates using VolumeAttributesClass
   enableVolumeAttributesClass: true
+  # -- Update IOPS on resize (never, tag, assume, always)
+  updateIOPSOnResize: tag
   # Extra volume tags to attach to every dynamically provisioned volume.
   # extraVolumeTags:
   #   key1: value1

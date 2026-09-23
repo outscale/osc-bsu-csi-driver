@@ -62,6 +62,7 @@ Kubernetes: `>=1.25`
 | driver.name | string | `"bsu.csi.outscale.com"` |  |
 | driver.reservedBsuVolumes | string | `""` | Number of slots to reserve for OS-level volumes when automatically computing maxBsuVolumes |
 | driver.tag | string | `"v1.12.0"` | Container image tag to deploy |
+| driver.updateIOPSOnResize | string | `"tag"` | Update IOPS on resize (never, tag, assume, always) |
 | imagePullSecrets | list | `[]` | Specify image pull secrets |
 | logs.format | string | `"text"` | Format of logs: text or json (requires CSI driver v1.9.0 or later) |
 | logs.verbosity | int | `3` | Verbosity level of the plugin |

@@ -22,11 +22,13 @@ import (
 	"errors"
 	"fmt"
 	"slices"
+	"strconv"
 	"strings"
 	"time"
 
 	"github.com/outscale/goutils/k8s/batch"
 	"github.com/outscale/goutils/k8s/sdk"
+	"github.com/outscale/goutils/k8s/tags"
 	"github.com/outscale/osc-bsu-csi-driver/cmd/options"
 	dm "github.com/outscale/osc-bsu-csi-driver/pkg/cloud/devicemanager"
 	"github.com/outscale/osc-bsu-csi-driver/pkg/util"
@@ -67,14 +69,16 @@ const (
 
 // Tags
 const (
-	// VolumeNameTagKey is the key value that refers to the volume's name.
+	// VolumeNameTagKey is the tag key that refers to the volume's name.
 	VolumeNameTagKey = "CSIVolumeName"
-	// SnapshotNameTagKey is the key value that refers to the snapshot's name.
+	// SnapshotNameTagKey is the tag key that refers to the snapshot's name.
 	SnapshotNameTagKey = "CSIVolumeSnapshotName"
-	// KubernetesTagKeyPrefix is the prefix of the key value that is reserved for Kubernetes.
+	// KubernetesTagKeyPrefix is the prefix of the tag key that is reserved for Kubernetes.
 	KubernetesTagKeyPrefix = "kubernetes.io"
-	// OscTagKeyPrefix is the prefix of the key value that is reserved for Outscale.
-	OscTagKeyPrefix = "osc:"
+	// UpdateOPSOnResizeTagKey is the tag key that allows IOPS updates on resize.
+	UpdateOPSOnResizeTagKey = "CSIUpdateIOPSOnResize"
+	// IOPSPerGBTagKey is the tag key that defines IOPSPerGB
+	IOPSPerGBTagKey = "CSIIOPSPerGB"
 )
 
 var (
@@ -281,6 +285,21 @@ func (c *cloud) CreateVolume(ctx context.Context, name string, opts *VolumeOptio
 		resourceTag = append(resourceTag, osc.ResourceTag{Key: key, Value: value})
 	}
 	resourceTag = append(resourceTag, osc.ResourceTag{Key: VolumeNameTagKey, Value: name})
+	switch opts.VolumeType {
+	case osc.VolumeTypeGp2, osc.VolumeTypeStandard:
+		resourceTag = append(resourceTag, osc.ResourceTag{Key: UpdateOPSOnResizeTagKey, Value: "false"})
+	case osc.VolumeTypeIo1:
+		switch {
+		case opts.IOPS > 0:
+			resourceTag = append(resourceTag, osc.ResourceTag{Key: UpdateOPSOnResizeTagKey, Value: "false"})
+		case opts.IOPSPerGB > 0:
+			resourceTag = append(
+				resourceTag,
+				osc.ResourceTag{Key: UpdateOPSOnResizeTagKey, Value: "true"},
+				osc.ResourceTag{Key: IOPSPerGBTagKey, Value: strconv.Itoa(opts.IOPSPerGB)},
+			)
+		}
+	}
 	_, err = c.client.CreateTags(ctx, osc.CreateTagsRequest{
 		ResourceIds: []string{vol.VolumeId},
 		Tags:        resourceTag,
@@ -752,14 +771,14 @@ func (c *cloud) ResizeVolume(ctx context.Context, volumeID string, newSizeBytes 
 			VolumeIds: &[]string{volumeID},
 		},
 	}
-	volume, err := c.getVolume(ctx, request)
+	vol, err := c.getVolume(ctx, request)
 	if err != nil {
 		return 0, err
 	}
 
 	// resizes in chunks of GiB (not GB)
 	newSizeGiB := util.RoundUpGiB(newSizeBytes)
-	oldSizeGiB := volume.Size
+	oldSizeGiB := vol.Size
 
 	// Even if existing volume size is greater than user requested size, we should ensure that there are no pending
 	// volume modifications objects or volume has completed previously issued modification request.
@@ -767,16 +786,70 @@ func (c *cloud) ResizeVolume(ctx context.Context, volumeID string, newSizeBytes 
 		logger.V(4).Info(fmt.Sprintf("Volume current size (%d GiB) is greater or equal to the new size (%d GiB)", oldSizeGiB, newSizeGiB))
 		return util.GiBToBytes(oldSizeGiB), nil
 	}
-
-	logger.V(4).Info(fmt.Sprintf("Expanding volume to %dGiB", newSizeGiB))
-	_, err = c.client.UpdateVolume(ctx, osc.UpdateVolumeRequest{
+	req := osc.UpdateVolumeRequest{
 		Size:     &newSizeGiB,
 		VolumeId: volumeID,
-	})
+	}
+	newIOPS, update, err := c.checkResizeIOPS(ctx, vol, newSizeGiB)
+	if err != nil {
+		return 0, err
+	}
+	if update {
+		logger.V(4).Info(fmt.Sprintf("Updating iops to %d", newIOPS))
+		req.Iops = &newIOPS
+	}
+
+	logger.V(4).Info(fmt.Sprintf("Expanding volume to %dGiB", newSizeGiB))
+	_, err = c.client.UpdateVolume(ctx, req)
 	if err != nil {
 		return 0, fmt.Errorf("modify volume: %w", err)
 	}
 	return c.waitForResize(ctx, volumeID, newSizeGiB)
+}
+
+func (c *cloud) checkResizeIOPS(ctx context.Context, vol *osc.Volume, newSizeGiB int) (newIOPS int, update bool, err error) {
+	logger := klog.FromContext(ctx).V(5)
+	if c.opts.UpdateIOPSOnResize == options.UpdateIOPSOnResizeNever {
+		// never resize IOPS
+		logger.Info("IOPS are never updated during resizes")
+		return 0, false, nil
+	}
+	if vol.VolumeType != osc.VolumeTypeIo1 {
+		return 0, false, nil
+	}
+	updateStr, found := tags.GetValue(vol.Tags, UpdateOPSOnResizeTagKey)
+	switch {
+	case c.opts.UpdateIOPSOnResize == options.UpdateIOPSOnResizeAlways:
+		logger.Info("IOPS are always updated during resizes")
+		// always resize IOPS
+		update = true
+	case found:
+		logger.Info("Tag found", UpdateOPSOnResizeTagKey, updateStr)
+		// A CSIUpdateIOPSOnResize tag is present
+		update, err = strconv.ParseBool(updateStr)
+		if err != nil {
+			return 0, false, fmt.Errorf("%s tag is not a boolean", UpdateOPSOnResizeTagKey)
+		}
+	case c.opts.UpdateIOPSOnResize == options.UpdateIOPSOnResizeAssume:
+		logger.Info("Assume that tag is present, recomputing IOPS")
+		// Assume that a CSIUpdateIOPSOnResize tag is present
+		update = true
+	}
+	if !update {
+		return 0, false, nil
+	}
+	iopsPerGiB := 0
+	iopsPerGBStr, found := tags.GetValue(vol.Tags, IOPSPerGBTagKey)
+	if found {
+		iopsPerGiB, err = strconv.Atoi(iopsPerGBStr)
+		if err != nil {
+			return 0, false, fmt.Errorf("%s tag is not an integer", IOPSPerGBTagKey)
+		}
+	} else {
+		iopsPerGiB = vol.Iops / vol.Size
+	}
+	newIOPS = computeIOPS(iopsPerGiB, newSizeGiB)
+	return
 }
 
 func (c *cloud) waitForResize(ctx context.Context, volumeID string, newSizeGiB int) (newSize int64, err error) {

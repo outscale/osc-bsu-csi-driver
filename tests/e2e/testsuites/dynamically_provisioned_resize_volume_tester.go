@@ -24,8 +24,10 @@ import (
 	"time"
 
 	. "github.com/onsi/ginkgo/v2" //nolint
+	"github.com/outscale/osc-bsu-csi-driver/pkg/cloud"
 	"github.com/outscale/osc-bsu-csi-driver/pkg/util"
 	"github.com/outscale/osc-bsu-csi-driver/tests/e2e/driver"
+	"github.com/outscale/osc-sdk-go/v3/pkg/osc"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -43,6 +45,7 @@ type DynamicallyProvisionedResizeVolumeTest struct {
 	CSIDriver driver.DynamicPVTestDriver
 	Pod       PodDetails
 	Online    bool
+	Cloud     cloud.Cloud
 }
 
 func (t *DynamicallyProvisionedResizeVolumeTest) Run(client clientset.Interface, namespace *v1.Namespace) {
@@ -70,10 +73,17 @@ func (t *DynamicallyProvisionedResizeVolumeTest) Run(client clientset.Interface,
 	}
 
 	newSize := pvc.Spec.Resources.Requests["storage"]
-	delta := resource.Quantity{}
-	delta.Set(util.GiBToBytes(3))
-	newSize.Add(delta)
+	newSize.Add(newSize)
 	pvc.Spec.Resources.Requests["storage"] = newSize
+	updatedIops := -1
+	if volume.VolumeType == osc.VolumeTypeIo1 {
+		if volume.AbsoluteIops {
+			updatedIops, _ = strconv.Atoi(volume.Iops)
+		} else {
+			iopsPerGB, _ := strconv.Atoi(volume.Iops)
+			updatedIops = util.BytesToGiB(newSize.Value()) * iopsPerGB
+		}
+	}
 
 	By("resizing the pvc")
 	updatedPvc, err := client.CoreV1().PersistentVolumeClaims(namespace.Name).Update(context.TODO(), pvc, metav1.UpdateOptions{})
@@ -83,7 +93,7 @@ func (t *DynamicallyProvisionedResizeVolumeTest) Run(client clientset.Interface,
 	updatedSize := updatedPvc.Spec.Resources.Requests["storage"]
 
 	By("waiting for the resize")
-	err = waitForPvToResize(client, namespace, updatedPvc.Spec.VolumeName, updatedSize, 5*time.Minute, 10*time.Second)
+	err = t.waitForPvToResize(client, namespace, updatedPvc.Spec.VolumeName, updatedSize, updatedIops, 5*time.Minute, 10*time.Second)
 	framework.ExpectNoError(err)
 
 	if t.Online {
@@ -107,13 +117,22 @@ func (t *DynamicallyProvisionedResizeVolumeTest) Run(client clientset.Interface,
 }
 
 // waitForPvToResize waiting for pvc size to be resized to desired size
-func waitForPvToResize(c clientset.Interface, ns *v1.Namespace, pvName string, desiredSize resource.Quantity, timeout time.Duration, interval time.Duration) error {
+func (t *DynamicallyProvisionedResizeVolumeTest) waitForPvToResize(c clientset.Interface, ns *v1.Namespace, pvName string, desiredSize resource.Quantity, desiredIops int, timeout time.Duration, interval time.Duration) error {
 	By(fmt.Sprintf("Waiting up to %v for pv to be resized", timeout))
 	for start := time.Now(); time.Since(start) < timeout; time.Sleep(interval) {
 		newPv, _ := c.CoreV1().PersistentVolumes().Get(context.TODO(), pvName, metav1.GetOptions{})
 		newPvSize := newPv.Spec.Capacity["storage"]
 		_, _ = fmt.Fprintf(GinkgoWriter, "storage capacity: %v\n", newPvSize.String())
-		if desiredSize.Equal(newPvSize) {
+		curIops := -1
+		if desiredIops > 0 && newPv.Spec.CSI != nil {
+			dsk, err := t.Cloud.GetVolumeByID(context.TODO(), newPv.Spec.CSI.VolumeHandle)
+			if err != nil {
+				continue
+			}
+			By(fmt.Sprintf("iops %d (expected %d)", dsk.IOPS, desiredIops))
+			curIops = dsk.IOPS
+		}
+		if desiredSize.Equal(newPvSize) && curIops == desiredIops {
 			By("PV size is updated")
 			return nil
 		}

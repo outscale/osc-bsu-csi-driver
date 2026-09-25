@@ -333,7 +333,7 @@ var _ = Describe("[bsu-csi-e2e] [single-az] Dynamic Provisioning", func() {
 					{
 						VolumeType: osc.VolumeTypeIo1,
 						FSType:     bsucsidriver.FSTypeExt4,
-						IopsPerGB:  strconv.Itoa(osccloud.MaxIopsPerGb),
+						Iops:       strconv.Itoa(osccloud.MaxIopsPerGb),
 						ClaimSize:  "44Gi",
 						VolumeMount: testsuites.VolumeMountDetails{
 							NameGenerate:      "test-volume-",
@@ -359,7 +359,7 @@ var _ = Describe("[bsu-csi-e2e] [single-az] Dynamic Provisioning", func() {
 					{
 						VolumeType: osc.VolumeTypeIo1,
 						FSType:     bsucsidriver.FSTypeExt4,
-						IopsPerGB:  strconv.Itoa(osccloud.MaxIopsPerGb + 1),
+						Iops:       strconv.Itoa(osccloud.MaxIopsPerGb + 1),
 						ClaimSize:  "4Gi",
 						VolumeMount: testsuites.VolumeMountDetails{
 							NameGenerate:      "test-volume-",
@@ -448,50 +448,72 @@ var _ = Describe("[bsu-csi-e2e] [single-az] Dynamic Provisioning", func() {
 		}
 		test.Run(cs, ns)
 	})
-	It("should create an EXT4 on demand volume and offline resize it", func() {
+	It("should create an EXT4 on demand volume with absolute iops and offline resize it, iops are not updated", func() {
 		allowVolumeExpansion := true
 		pod := testsuites.PodDetails{
 			Cmd: "echo 'hello world' >> /mnt/test-1/data && grep 'hello world' /mnt/test-1/data && sync",
 			Volumes: []testsuites.VolumeDetails{
 				{
-					VolumeType: osc.VolumeTypeGp2,
+					VolumeType: osc.VolumeTypeIo1,
 					FSType:     bsucsidriver.FSTypeExt4,
-					ClaimSize:  driver.MinimumSizeForVolumeType(osc.VolumeTypeGp2),
+					ClaimSize:  driver.MinimumSizeForVolumeType(osc.VolumeTypeIo1),
 					VolumeMount: testsuites.VolumeMountDetails{
 						NameGenerate:      "test-volume-",
 						MountPathGenerate: "/mnt/test-",
 					},
 					AllowVolumeExpansion: &allowVolumeExpansion,
+					Iops:                 "100",
+					AbsoluteIops:         true,
 				},
 			},
 		}
+		cloud, err := osccloud.NewCloud(ctx, options.CloudOptions{})
+		if err != nil {
+			Fail(fmt.Sprintf("could not get NewCloud: %v", err))
+		}
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+		cloud.Start(ctx)
+
 		test := testsuites.DynamicallyProvisionedResizeVolumeTest{
 			CSIDriver: bsuDriver,
 			Pod:       pod,
+			Cloud:     cloud,
 		}
 		test.Run(cs, ns)
 	})
-	It("should create an EXT4 on demand volume and online resize it", func() {
+	It("should create an EXT4 with iopsPerGB and online resize it, with updated iops", func() {
 		allowVolumeExpansion := true
 		pod := testsuites.PodDetails{
 			Cmd: "while true; do echo $(date -u) >> /mnt/test-1/data; sleep 1; done",
 			Volumes: []testsuites.VolumeDetails{
 				{
-					VolumeType: osc.VolumeTypeGp2,
+					VolumeType: osc.VolumeTypeIo1,
 					FSType:     bsucsidriver.FSTypeExt4,
-					ClaimSize:  driver.MinimumSizeForVolumeType(osc.VolumeTypeGp2),
+					ClaimSize:  driver.MinimumSizeForVolumeType(osc.VolumeTypeIo1),
 					VolumeMount: testsuites.VolumeMountDetails{
 						NameGenerate:      "test-volume-",
 						MountPathGenerate: "/mnt/test-",
 					},
 					AllowVolumeExpansion: &allowVolumeExpansion,
+					Iops:                 "100",
+					AbsoluteIops:         false,
 				},
 			},
 		}
+		cloud, err := osccloud.NewCloud(ctx, options.CloudOptions{})
+		if err != nil {
+			Fail(fmt.Sprintf("could not get NewCloud: %v", err))
+		}
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+		cloud.Start(ctx)
+
 		test := testsuites.DynamicallyProvisionedResizeVolumeTest{
 			CSIDriver: bsuDriver,
 			Pod:       pod,
 			Online:    true,
+			Cloud:     cloud,
 		}
 		test.Run(cs, ns)
 	})
@@ -512,9 +534,18 @@ var _ = Describe("[bsu-csi-e2e] [single-az] Dynamic Provisioning", func() {
 				},
 			},
 		}
+		cloud, err := osccloud.NewCloud(ctx, options.CloudOptions{})
+		if err != nil {
+			Fail(fmt.Sprintf("could not get NewCloud: %v", err))
+		}
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+		cloud.Start(ctx)
+
 		test := testsuites.DynamicallyProvisionedResizeVolumeTest{
 			CSIDriver: bsuDriver,
 			Pod:       pod,
+			Cloud:     cloud,
 		}
 		test.Run(cs, ns)
 	})

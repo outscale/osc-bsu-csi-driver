@@ -40,9 +40,6 @@
 
 The **Outscale Block Storage Unit (BSU) CSI Driver** implements the Container Storage Interface ([CSI](https://github.com/container-storage-interface/spec/blob/master/spec.md)) for OUTSCALE BSU volumes. It allows container orchestrators (e.g., Kubernetes) to provision, attach, mount, snapshot, modify and expand BSU volumes.
 
-> We currently maintain two branches: **v1.x** (`main`) and **v0.x** (`OSC-MIGRATION`). If you use **v0.x**, see the migration guide: [Upgrading from v0.x to v1.0.0](#upgrading-from-v0x-to-v100).
-> v0.x will continue to receive bug and CVE fixes while in use, but **no new features** will be added.
-
 ---
 
 ## 🔗 Compatibility
@@ -198,6 +195,20 @@ Common issues and diagnostics are covered in **[Troubleshooting](./troubleshooti
 ---
 
 ## ⬆️ Upgrade Notes
+
+### Upgrading from v1.11.0 to v1.12.0
+
+Volumes created by v1.12.0+ using `iopsPerGB` have their IOPS raised when resized.
+Volumes created by a previous version will not be upgraded by default.
+You can either:
+* manually add tags to existing volumes:
+```
+octl iaas api CreateTags --ResourceIds vol-xxx,vol-xxx --Tags.0.Key CSIIOPSPerGB --Tags.0.Value <iopsPerGB value> --Tags.1.Key CSIUpdateIOPSOnResize --Tags.1.Value true
+```
+* configure the CSI driver to assume that all untagged volumes are configured using `iopsPerGB` and raise IOPS when resizing to maintain a constant IOPS/size ratio:
+```
+helm [...] --set driver.updateIOPSOnResize=assume
+```
 
 ### Upgrading from v0.x to v1.0.0
 

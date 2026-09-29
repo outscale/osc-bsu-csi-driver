@@ -102,23 +102,20 @@ func TestHelmTemplate_Deployment(t *testing.T) {
 			"--name=bsu.csi.outscale.com",
 			"--endpoint=$(CSI_ENDPOINT)",
 			"--v=3",
+			"--iops-on-resize=tag",
 		}, manager.Args)
 		assert.Equal(t, []corev1.EnvVar{
 			{Name: "CSI_ENDPOINT", Value: "unix:///var/lib/csi/sockets/pluginproxy/csi.sock"},
 			{Name: "OSC_ACCESS_KEY", ValueFrom: &corev1.EnvVarSource{
 				SecretKeyRef: &corev1.SecretKeySelector{
-					LocalObjectReference: corev1.LocalObjectReference{
-						Name: "osc-csi-bsu",
-					},
+					Name:     "osc-csi-bsu",
 					Key:      "access_key",
 					Optional: new(true),
 				},
 			}},
 			{Name: "OSC_SECRET_KEY", ValueFrom: &corev1.EnvVarSource{
 				SecretKeyRef: &corev1.SecretKeySelector{
-					LocalObjectReference: corev1.LocalObjectReference{
-						Name: "osc-csi-bsu",
-					},
+					Name:     "osc-csi-bsu",
 					Key:      "secret_key",
 					Optional: new(true),
 				},
@@ -135,7 +132,7 @@ func TestHelmTemplate_Deployment(t *testing.T) {
 		}, manager.Resources)
 	})
 
-	t.Run("Lgging can be configured", func(t *testing.T) {
+	t.Run("Logging can be configured", func(t *testing.T) {
 		dep := getDeployment(
 			t,
 			"driver.enableVolumeSnapshot=true",

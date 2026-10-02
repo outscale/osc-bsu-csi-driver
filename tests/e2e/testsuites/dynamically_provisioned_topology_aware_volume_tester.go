@@ -19,7 +19,7 @@ import (
 
 	. "github.com/onsi/ginkgo/v2" //nolint
 	"github.com/outscale/osc-bsu-csi-driver/tests/e2e/driver"
-	v1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	clientset "k8s.io/client-go/kubernetes"
 )
 
@@ -32,7 +32,7 @@ type DynamicallyProvisionedTopologyAwareVolumeTest struct {
 	Pods      []PodDetails
 }
 
-func (t *DynamicallyProvisionedTopologyAwareVolumeTest) Run(client clientset.Interface, namespace *v1.Namespace) {
+func (t *DynamicallyProvisionedTopologyAwareVolumeTest) Run(client clientset.Interface, namespace *corev1.Namespace) {
 	for _, pod := range t.Pods {
 		tpod := NewTestPod(client, namespace, pod.Cmd)
 		tpvcs := make([]*TestPersistentVolumeClaim, len(pod.Volumes))

@@ -20,9 +20,9 @@ import (
 	"regexp"
 
 	. "github.com/onsi/ginkgo/v2" //nolint
-	omega "github.com/onsi/gomega"
+	"github.com/onsi/gomega"
 	"github.com/outscale/osc-bsu-csi-driver/tests/e2e/driver"
-	v1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	clientset "k8s.io/client-go/kubernetes"
 	"k8s.io/kubernetes/test/e2e/framework"
 	e2edeployment "k8s.io/kubernetes/test/e2e/framework/deployment"
@@ -41,8 +41,8 @@ type PodCmds struct {
 }
 
 func customizePod(customizePod []string, deployment *TestDeployment) *TestDeployment {
-	podSc := v1.PodSecurityContext{}
-	sc := v1.SecurityContext{}
+	podSc := corev1.PodSecurityContext{}
+	sc := corev1.SecurityContext{}
 	for _, custom := range customizePod {
 		err := podSc.Unmarshal([]byte(custom))
 		if err == nil {
@@ -59,7 +59,7 @@ func customizePod(customizePod []string, deployment *TestDeployment) *TestDeploy
 	return deployment
 }
 
-func (t *DynamicallyProvisionedCustomPodTest) Run(client clientset.Interface, namespace *v1.Namespace, f *framework.Framework) {
+func (t *DynamicallyProvisionedCustomPodTest) Run(client clientset.Interface, namespace *corev1.Namespace, f *framework.Framework) {
 	customImage := "busybox"
 	tDeployment, cleanup := t.Pod.SetupDeployment(client, namespace, t.CSIDriver, customImage)
 	// defer must be called here for resources not get removed before using them
@@ -86,7 +86,7 @@ func (t *DynamicallyProvisionedCustomPodTest) Run(client clientset.Interface, na
 		if err != nil {
 			panic(err.Error())
 		}
-		omega.Expect(singleSpacePattern.ReplaceAllString(stdout, " ")).To(omega.Equal(podCmd.ExpectedString), "Value should match the expected string")
+		gomega.Expect(singleSpacePattern.ReplaceAllString(stdout, " ")).To(gomega.Equal(podCmd.ExpectedString), "Value should match the expected string")
 		// framework.ExpectEqual(singleSpacePattern.ReplaceAllString(stdout, " "), podCmd.ExpectedString)
 	}
 }

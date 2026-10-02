@@ -30,7 +30,7 @@ import (
 	"github.com/outscale/osc-bsu-csi-driver/tests/e2e/driver"
 	"github.com/outscale/osc-bsu-csi-driver/tests/e2e/testsuites"
 	"github.com/outscale/osc-sdk-go/v3/pkg/osc"
-	v1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	storagev1 "k8s.io/api/storage/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -48,7 +48,7 @@ var _ = Describe("[bsu-csi-e2e] [single-az] Dynamic Provisioning", func() {
 	var (
 		ctx       context.Context
 		cs        clientset.Interface
-		ns        *v1.Namespace
+		ns        *corev1.Namespace
 		bsuDriver driver.PVTestDriver
 	)
 
@@ -377,8 +377,8 @@ var _ = Describe("[bsu-csi-e2e] [single-az] Dynamic Provisioning", func() {
 		test.Run(cs, ns)
 	})
 
-	It(fmt.Sprintf("should delete PV with reclaimPolicy %q", v1.PersistentVolumeReclaimDelete), func() {
-		reclaimPolicy := v1.PersistentVolumeReclaimDelete
+	It(fmt.Sprintf("should delete PV with reclaimPolicy %q", corev1.PersistentVolumeReclaimDelete), func() {
+		reclaimPolicy := corev1.PersistentVolumeReclaimDelete
 		volumes := []testsuites.VolumeDetails{
 			{
 				VolumeType:    osc.VolumeTypeGp2,
@@ -394,11 +394,11 @@ var _ = Describe("[bsu-csi-e2e] [single-az] Dynamic Provisioning", func() {
 		test.Run(cs, ns)
 	})
 
-	It(fmt.Sprintf("[env] should retain PV with reclaimPolicy %q", v1.PersistentVolumeReclaimRetain), func() {
+	It(fmt.Sprintf("[env] should retain PV with reclaimPolicy %q", corev1.PersistentVolumeReclaimRetain), func() {
 		if os.Getenv(awsAvailabilityZonesEnv) == "" {
 			Skip(fmt.Sprintf("env %q not set", awsAvailabilityZonesEnv))
 		}
-		reclaimPolicy := v1.PersistentVolumeReclaimRetain
+		reclaimPolicy := corev1.PersistentVolumeReclaimRetain
 		volumes := []testsuites.VolumeDetails{
 			{
 				VolumeType:    osc.VolumeTypeGp2,
@@ -554,7 +554,7 @@ var _ = Describe("[bsu-csi-e2e] [single-az] Dynamic Provisioning", func() {
 		fsGroup := int64(5000)
 		runAsGroup := int64(4000)
 		runAsUser := int64(2000)
-		podSecurityContext := v1.PodSecurityContext{
+		podSecurityContext := corev1.PodSecurityContext{
 			RunAsUser:  &runAsUser,
 			RunAsGroup: &runAsGroup,
 			FSGroup:    &fsGroup,
@@ -564,7 +564,7 @@ var _ = Describe("[bsu-csi-e2e] [single-az] Dynamic Provisioning", func() {
 			Fail(fmt.Sprintf("error encoding: %v, %v", podSecurityContext, err))
 		}
 		allowPrivilegeEscalation := false
-		securityContext := v1.SecurityContext{
+		securityContext := corev1.SecurityContext{
 			AllowPrivilegeEscalation: &allowPrivilegeEscalation,
 		}
 		sc, err := securityContext.Marshal()
@@ -613,7 +613,7 @@ var _ = Describe("[bsu-csi-e2e] [single-az] Dynamic Provisioning", func() {
 	// The right test should be create PVC/delete backing volume/delete PVC
 	It("should create a volume, delete it from outside and release the volume", func() {
 		binding := storagev1.VolumeBindingImmediate
-		retain := v1.PersistentVolumeReclaimDelete
+		retain := corev1.PersistentVolumeReclaimDelete
 		volume := testsuites.VolumeDetails{
 			VolumeType:        osc.VolumeTypeGp2,
 			FSType:            bsucsidriver.FSTypeExt4,
@@ -660,7 +660,7 @@ var _ = Describe("[bsu-csi-e2e] [single-az] Snapshot", func() {
 	var (
 		cs          clientset.Interface
 		snapshotrcs restclientset.Interface
-		ns          *v1.Namespace
+		ns          *corev1.Namespace
 		bsuDriver   driver.PVTestDriver
 	)
 
@@ -717,7 +717,7 @@ var _ = Describe("[bsu-csi-e2e] [single-az] Snapshot", func() {
 	// The right test should be create k8s snapshot/delete backing snapshot/delete k8s snapshot
 	It("should create a snapshot, delete it from outside and release the snapshot", func() {
 		binding := storagev1.VolumeBindingImmediate
-		retain := v1.PersistentVolumeReclaimDelete
+		retain := corev1.PersistentVolumeReclaimDelete
 		volume := testsuites.VolumeDetails{
 			VolumeType:        osc.VolumeTypeGp2,
 			FSType:            bsucsidriver.FSTypeExt4,
@@ -777,7 +777,7 @@ var _ = Describe("[bsu-csi-e2e] [multi-az] Dynamic Provisioning", func() {
 
 	var (
 		cs        clientset.Interface
-		ns        *v1.Namespace
+		ns        *corev1.Namespace
 		bsuDriver driver.DynamicPVTestDriver
 	)
 
@@ -870,7 +870,7 @@ var _ = Describe("[bsu-csi-e2e] [single-az] [encryption] Dynamic Provisioning", 
 
 	var (
 		cs        clientset.Interface
-		ns        *v1.Namespace
+		ns        *corev1.Namespace
 		bsuDriver driver.PVTestDriver
 	)
 
@@ -916,7 +916,7 @@ var _ = Describe("[bsu-csi-e2e] [single-az] Updating iops/volumeType using Volum
 
 	var (
 		cs        clientset.Interface
-		ns        *v1.Namespace
+		ns        *corev1.Namespace
 		bsuDriver driver.PVTestDriver
 		cancel    func()
 		cloud     osccloud.Cloud

@@ -17,10 +17,8 @@ package driver
 import (
 	volumesnapshotv1 "github.com/kubernetes-csi/external-snapshotter/client/v8/apis/volumesnapshot/v1"
 	"github.com/outscale/osc-sdk-go/v3/pkg/osc"
-	v1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	storagev1 "k8s.io/api/storage/v1"
-	storagev1beta1 "k8s.io/api/storage/v1beta1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const (
@@ -37,19 +35,19 @@ type PVTestDriver interface {
 // DynamicPVTestDriver represents an interface for a CSI driver that supports DynamicPV
 type DynamicPVTestDriver interface {
 	// GetDynamicProvisionStorageClass returns a StorageClass dynamic provision Persistent Volume
-	GetDynamicProvisionStorageClass(parameters map[string]string, mountOptions []string, reclaimPolicy *v1.PersistentVolumeReclaimPolicy, volumeExpansion *bool, bindingMode *storagev1.VolumeBindingMode, allowedTopologyValues []string, namespace string) *storagev1.StorageClass
+	GetDynamicProvisionStorageClass(parameters map[string]string, mountOptions []string, reclaimPolicy *corev1.PersistentVolumeReclaimPolicy, volumeExpansion *bool, bindingMode *storagev1.VolumeBindingMode, allowedTopologyValues []string, namespace string) *storagev1.StorageClass
 
 	// GetPassphraseSecret returns the secret
-	GetPassphraseSecret(name string, passphrase string) *v1.Secret
+	GetPassphraseSecret(name string, passphrase string) *corev1.Secret
 
 	// GetVolumeAttributesClass returns a StorageClass dynamic provision Persistent Volume
-	GetVolumeAttributesClass(namespace, name string, volumeType osc.VolumeType, iops bool, iopsPerGB string) *storagev1beta1.VolumeAttributesClass
+	GetVolumeAttributesClass(namespace, name string, volumeType osc.VolumeType, iops bool, iopsPerGB string) *storagev1.VolumeAttributesClass
 }
 
 // PreProvisionedVolumeTestDriver represents an interface for a CSI driver that supports pre-provisioned volume
 type PreProvisionedVolumeTestDriver interface {
 	// GetPersistentVolume returns a PersistentVolume with pre-provisioned volumeHandle
-	GetPersistentVolume(volumeID string, fsType string, size string, reclaimPolicy *v1.PersistentVolumeReclaimPolicy, namespace string) *v1.PersistentVolume
+	GetPersistentVolume(volumeID string, fsType string, size string, reclaimPolicy *corev1.PersistentVolumeReclaimPolicy, namespace string) *corev1.PersistentVolume
 }
 
 type VolumeSnapshotTestDriver interface {
@@ -61,13 +59,13 @@ func getStorageClass(
 	provisioner string,
 	parameters map[string]string,
 	mountOptions []string,
-	reclaimPolicy *v1.PersistentVolumeReclaimPolicy,
+	reclaimPolicy *corev1.PersistentVolumeReclaimPolicy,
 	volumeExpansion *bool,
 	bindingMode *storagev1.VolumeBindingMode,
-	allowedTopologies []v1.TopologySelectorTerm,
+	allowedTopologies []corev1.TopologySelectorTerm,
 ) *storagev1.StorageClass {
 	if reclaimPolicy == nil {
-		defaultReclaimPolicy := v1.PersistentVolumeReclaimDelete
+		defaultReclaimPolicy := corev1.PersistentVolumeReclaimDelete
 		reclaimPolicy = &defaultReclaimPolicy
 	}
 	if bindingMode == nil {
@@ -75,9 +73,7 @@ func getStorageClass(
 		bindingMode = &defaultBindingMode
 	}
 	return &storagev1.StorageClass{
-		ObjectMeta: metav1.ObjectMeta{
-			GenerateName: generateName,
-		},
+		GenerateName:         generateName,
 		Provisioner:          provisioner,
 		Parameters:           parameters,
 		MountOptions:         mountOptions,
@@ -90,13 +86,9 @@ func getStorageClass(
 
 func getVolumeSnapshotClass(generateName string, provisioner string) *volumesnapshotv1.VolumeSnapshotClass {
 	return &volumesnapshotv1.VolumeSnapshotClass{
-		TypeMeta: metav1.TypeMeta{
-			Kind:       VolumeSnapshotClassKind,
-			APIVersion: SnapshotAPIVersion,
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			GenerateName: generateName,
-		},
+		Kind:           VolumeSnapshotClassKind,
+		APIVersion:     SnapshotAPIVersion,
+		GenerateName:   generateName,
 		Driver:         provisioner,
 		DeletionPolicy: volumesnapshotv1.VolumeSnapshotContentDelete,
 	}

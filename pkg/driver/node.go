@@ -28,6 +28,7 @@ import (
 
 	csi "github.com/container-storage-interface/spec/lib/go/csi"
 	"github.com/outscale/goutils/sdk/metadata"
+	"github.com/outscale/goutils/sdk/ptr"
 	"github.com/outscale/osc-bsu-csi-driver/pkg/driver/internal"
 	"github.com/outscale/osc-bsu-csi-driver/pkg/driver/k8s"
 	"github.com/outscale/osc-bsu-csi-driver/pkg/driver/luks"
@@ -151,7 +152,7 @@ func (s *nodeService) NodeStageVolume(ctx context.Context, req *csi.NodeStageVol
 	}
 
 	var mountOptions []string
-	for _, f := range mount.MountFlags {
+	for _, f := range mount.GetMountFlags() {
 		if !hasMountOption(mountOptions, f) {
 			mountOptions = append(mountOptions, f)
 		}
@@ -165,7 +166,7 @@ func (s *nodeService) NodeStageVolume(ctx context.Context, req *csi.NodeStageVol
 		s.inFlight.Delete(req)
 	}()
 
-	devicePath, ok := req.PublishContext[DevicePathKey]
+	devicePath, ok := ptr.FromMap(req.GetPublishContext())[DevicePathKey]
 	if !ok {
 		return nil, status.Error(codes.InvalidArgument, "Device path not provided")
 	}
@@ -200,7 +201,7 @@ func (s *nodeService) NodeStageVolume(ctx context.Context, req *csi.NodeStageVol
 	}
 
 	isEncrypted := false
-	if encrypted, ok := req.PublishContext[EncryptedKey]; ok {
+	if encrypted, ok := ptr.FromMap(req.GetPublishContext())[EncryptedKey]; ok {
 		isEncrypted = encrypted == "true"
 	}
 
@@ -217,7 +218,7 @@ func (s *nodeService) NodeStageVolume(ctx context.Context, req *csi.NodeStageVol
 			return &csi.NodeStageVolumeResponse{}, nil
 		}
 
-		passphrase, ok := req.Secrets[LuksPassphraseKey]
+		passphrase, ok := ptr.FromMap(req.GetSecrets())[LuksPassphraseKey]
 		if !ok {
 			return nil, status.Error(codes.InvalidArgument, "no passphrase key has been provided")
 		}
@@ -226,9 +227,9 @@ func (s *nodeService) NodeStageVolume(ctx context.Context, req *csi.NodeStageVol
 		if !s.mounter.IsLuks(source) {
 			logger.V(5).Info("Encrypting device")
 			// It is not a luks device => format
-			luksCipher := req.PublishContext[LuksCipherKey]
-			luksHash := req.PublishContext[LuksHashKey]
-			luksKeySize := req.PublishContext[LuksKeySizeKey]
+			luksCipher := ptr.FromMap(req.GetPublishContext())[LuksCipherKey]
+			luksHash := ptr.FromMap(req.GetPublishContext())[LuksHashKey]
+			luksKeySize := ptr.FromMap(req.GetPublishContext())[LuksKeySizeKey]
 
 			if err := s.mounter.LuksFormat(source, passphrase, luks.LuksContext{Cipher: luksCipher, KeySize: luksKeySize, Hash: luksHash}); err != nil {
 				msg := fmt.Sprintf("error while formating luks partition on %v, err: %v", volumeID, err)
@@ -397,7 +398,7 @@ func (s *nodeService) NodeExpandVolume(ctx context.Context, req *csi.NodeExpandV
 	}
 
 	if isLuksMapping {
-		passphrase, ok := req.Secrets[LuksPassphraseKey]
+		passphrase, ok := ptr.FromMap(req.GetSecrets())[LuksPassphraseKey]
 		if !ok {
 			return nil, status.Error(codes.InvalidArgument, "no passphrase key has been provided")
 		}
@@ -522,31 +523,31 @@ func (s *nodeService) getBlockSizeBytes(devicePath string) (int64, error) {
 }
 
 func (s *nodeService) NodeGetVolumeStats(ctx context.Context, req *csi.NodeGetVolumeStatsRequest) (*csi.NodeGetVolumeStatsResponse, error) {
-	if len(req.VolumeId) == 0 {
+	if len(req.GetVolumeId()) == 0 {
 		return nil, status.Error(codes.InvalidArgument, "NodeGetVolumeStats empty Volume ID")
 	}
 
-	if len(req.VolumePath) == 0 {
+	if len(req.GetVolumePath()) == 0 {
 		return nil, status.Error(codes.InvalidArgument, "NodeGetVolumeStats empty Volume path")
 	}
 
-	exists, err := s.mounter.ExistsPath(req.VolumePath)
+	exists, err := s.mounter.ExistsPath(req.GetVolumePath())
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "unknown error when stat on %s: %v", req.VolumePath, err)
+		return nil, status.Errorf(codes.Internal, "unknown error when stat on %s: %v", req.GetVolumePath(), err)
 	}
 	if !exists {
-		return nil, status.Errorf(codes.NotFound, "path %s does not exist", req.VolumePath)
+		return nil, status.Errorf(codes.NotFound, "path %s does not exist", req.GetVolumePath())
 	}
 
-	isBlock, err := s.isBlockDevice(req.VolumePath)
+	isBlock, err := s.isBlockDevice(req.GetVolumePath())
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "failed to determine whether %s is block device: %v", req.VolumePath, err)
+		return nil, status.Errorf(codes.Internal, "failed to determine whether %s is block device: %v", req.GetVolumePath(), err)
 	}
 
 	if isBlock {
-		bcap, err := s.getBlockSizeBytes(req.VolumePath)
+		bcap, err := s.getBlockSizeBytes(req.GetVolumePath())
 		if err != nil {
-			return nil, status.Errorf(codes.Internal, "failed to get block capacity on path %s: %v", req.VolumePath, err)
+			return nil, status.Errorf(codes.Internal, "failed to get block capacity on path %s: %v", req.GetVolumePath(), err)
 		}
 		return &csi.NodeGetVolumeStatsResponse{
 			Usage: []*csi.VolumeUsage{
@@ -558,10 +559,10 @@ func (s *nodeService) NodeGetVolumeStats(ctx context.Context, req *csi.NodeGetVo
 		}, nil
 	}
 
-	metricsProvider := volume.NewMetricsStatFS(req.VolumePath)
+	metricsProvider := volume.NewMetricsStatFS(req.GetVolumePath())
 	metrics, err := metricsProvider.GetMetrics()
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "failed to get fs info on path %s: %v", req.VolumePath, err)
+		return nil, status.Errorf(codes.Internal, "failed to get fs info on path %s: %v", req.GetVolumePath(), err)
 	}
 
 	return &csi.NodeGetVolumeStatsResponse{
@@ -620,7 +621,7 @@ func (s *nodeService) nodePublishVolumeForBlock(ctx context.Context, req *csi.No
 	target := req.GetTargetPath()
 	volumeID := req.GetVolumeId()
 
-	devicePath, exists := req.PublishContext[DevicePathKey]
+	devicePath, exists := ptr.FromMap(req.GetPublishContext())[DevicePathKey]
 	if !exists {
 		return status.Error(codes.InvalidArgument, "Device path not provided")
 	}
@@ -679,11 +680,10 @@ func (s *nodeService) nodePublishVolumeForFileSystem(ctx context.Context, req *c
 	logger := klog.FromContext(ctx)
 	target := req.GetTargetPath()
 	source := req.GetStagingTargetPath()
-	if m := mode.Mount; m != nil {
-		for _, f := range m.MountFlags {
-			if !hasMountOption(mountOptions, f) {
-				mountOptions = append(mountOptions, f)
-			}
+	// GetMountFlags() will return nil if node.Mount is nil
+	for _, f := range mode.Mount.GetMountFlags() {
+		if !hasMountOption(mountOptions, f) {
+			mountOptions = append(mountOptions, f)
 		}
 	}
 

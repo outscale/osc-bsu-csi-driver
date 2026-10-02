@@ -17,7 +17,7 @@ package testsuites
 import (
 	. "github.com/onsi/ginkgo/v2" //nolint
 	"github.com/outscale/osc-bsu-csi-driver/tests/e2e/driver"
-	v1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	clientset "k8s.io/client-go/kubernetes"
 )
 
@@ -28,7 +28,7 @@ type PreProvisionedVolumeTest struct {
 	Pods      []PodDetails
 }
 
-func (t *PreProvisionedVolumeTest) Run(client clientset.Interface, namespace *v1.Namespace) {
+func (t *PreProvisionedVolumeTest) Run(client clientset.Interface, namespace *corev1.Namespace) {
 	for _, pod := range t.Pods {
 		tpod, cleanup := pod.SetupWithPreProvisionedVolumes(client, namespace, t.CSIDriver)
 		// defer must be called here for resources not get removed before using them

@@ -24,7 +24,7 @@ import (
 	"github.com/outscale/osc-bsu-csi-driver/pkg/cloud"
 	"github.com/outscale/osc-bsu-csi-driver/tests/e2e/driver"
 	"github.com/outscale/osc-sdk-go/v3/pkg/osc"
-	v1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	clientset "k8s.io/client-go/kubernetes"
 	"k8s.io/kubernetes/test/e2e/framework"
@@ -43,7 +43,7 @@ type DynamicallyProvisionedModifyVolumeTest struct {
 	IOPS      bool
 }
 
-func (t *DynamicallyProvisionedModifyVolumeTest) Run(client clientset.Interface, namespace *v1.Namespace) {
+func (t *DynamicallyProvisionedModifyVolumeTest) Run(client clientset.Interface, namespace *corev1.Namespace) {
 	volume := t.Pod.Volumes[0]
 	baseType := osc.VolumeTypeGp2
 	baseIops := "100"
@@ -106,7 +106,7 @@ func (t *DynamicallyProvisionedModifyVolumeTest) Run(client clientset.Interface,
 }
 
 // WaitForPvToModify waiting for pvc size to be Modifyd to desired size
-func (t *DynamicallyProvisionedModifyVolumeTest) WaitForPvToModify(client clientset.Interface, ns *v1.Namespace, pvName string, desiredType osc.VolumeType, desiredIops string, timeout time.Duration, interval time.Duration) error {
+func (t *DynamicallyProvisionedModifyVolumeTest) WaitForPvToModify(client clientset.Interface, ns *corev1.Namespace, pvName string, desiredType osc.VolumeType, desiredIops string, timeout time.Duration, interval time.Duration) error {
 	By(fmt.Sprintf("Waiting up to %v for pv in namespace %q to be complete", timeout, ns.Name))
 	for start := time.Now(); time.Since(start) < timeout; time.Sleep(interval) {
 		newPv, err := client.CoreV1().PersistentVolumes().Get(context.TODO(), pvName, metav1.GetOptions{})

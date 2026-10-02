@@ -173,8 +173,8 @@ github.com/opencontainers/selinux v1.13.1 h1:A8nNeceYngH9Ow++M+VVEwJVpdFmrlxsN22
 github.com/opencontainers/selinux v1.13.1/go.mod h1:S10WXZ/osk2kWOYKy1x2f/eXF5ZHJoUs8UU/2caNRbg=
 github.com/outscale/goutils/k8s v0.0.5 h1:8VLTygaiFFB7tF28VgLEbOgesHUySPZbVRzSonLqBFY=
 github.com/outscale/goutils/k8s v0.0.5/go.mod h1:HJKrhGgm1B7nrlUkkLAEzbRBEiE4DGoBFiADsw26uy8=
-github.com/outscale/goutils/sdk v0.0.9 h1:WIkd4ysSNol7EuLWhrimzK1GdKexLjyMCGjGeS4Yk7w=
-github.com/outscale/goutils/sdk v0.0.9/go.mod h1:bvrdXcIR9M+cjNaBLBDd3nUFToHJ2Vsh9ped8u1Ch3s=
+github.com/outscale/goutils/sdk v0.0.10 h1:ArjTK5Vd7iVCWTi3hwhsf4ZmZDt6fPqZh5fJjzlj6jA=
+github.com/outscale/goutils/sdk v0.0.10/go.mod h1:uyfyUiH7egPoczxPkGQZyH7xSakGBMo9qjSviifxhpk=
 github.com/outscale/kubernetes-csi-test/v5 v5.4.0-outscale h1:WB9CqCemzvwM7VIf3JYL4Y+gnFWCS/pisVBCNWmIqnQ=
 github.com/outscale/kubernetes-csi-test/v5 v5.4.0-outscale/go.mod h1:anAJKFUb/SdHhIHECgSKxC5LSiLzib+1I6mrWF5Hve8=
 github.com/outscale/osc-sdk-go/v3 v3.0.0-rc.5 h1:XP6smAeoacHJT/mTeNBMc9Y2Dqvw0fSgLOyazQN6gIY=

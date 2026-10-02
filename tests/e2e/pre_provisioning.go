@@ -31,7 +31,7 @@ import (
 	"github.com/outscale/osc-bsu-csi-driver/tests/e2e/testsuites"
 	"github.com/outscale/osc-sdk-go/v3/pkg/osc"
 	"github.com/rs/xid"
-	v1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	clientset "k8s.io/client-go/kubernetes"
 	"k8s.io/kubernetes/test/e2e/framework"
 	admissionapi "k8s.io/pod-security-admission/api"
@@ -52,7 +52,7 @@ var _ = Describe("[bsu-csi-e2e] [single-az] Pre-Provisioned", func() {
 
 	var (
 		cs        clientset.Interface
-		ns        *v1.Namespace
+		ns        *corev1.Namespace
 		bsuDriver driver.PreProvisionedVolumeTestDriver
 		cloud     osccloud.Cloud
 		volumeID  string
@@ -169,8 +169,8 @@ var _ = Describe("[bsu-csi-e2e] [single-az] Pre-Provisioned", func() {
 		test.Run(cs, ns)
 	})
 
-	It(fmt.Sprintf("[env] should use a pre-provisioned volume and retain PV with reclaimPolicy %q", v1.PersistentVolumeReclaimRetain), func() {
-		reclaimPolicy := v1.PersistentVolumeReclaimRetain
+	It(fmt.Sprintf("[env] should use a pre-provisioned volume and retain PV with reclaimPolicy %q", corev1.PersistentVolumeReclaimRetain), func() {
+		reclaimPolicy := corev1.PersistentVolumeReclaimRetain
 		volumes := []testsuites.VolumeDetails{
 			{
 				VolumeID:      volumeID,
@@ -186,8 +186,8 @@ var _ = Describe("[bsu-csi-e2e] [single-az] Pre-Provisioned", func() {
 		test.Run(cs, ns)
 	})
 
-	It(fmt.Sprintf("[env] should use a pre-provisioned volume and delete PV with reclaimPolicy %q", v1.PersistentVolumeReclaimDelete), func() {
-		reclaimPolicy := v1.PersistentVolumeReclaimDelete
+	It(fmt.Sprintf("[env] should use a pre-provisioned volume and delete PV with reclaimPolicy %q", corev1.PersistentVolumeReclaimDelete), func() {
+		reclaimPolicy := corev1.PersistentVolumeReclaimDelete
 		skipManuallyDeletingVolume = true
 		volumes := []testsuites.VolumeDetails{
 			{

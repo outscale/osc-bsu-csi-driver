@@ -25,7 +25,7 @@ import (
 
 	. "github.com/onsi/ginkgo/v2" //nolint
 	"github.com/outscale/osc-bsu-csi-driver/tests/e2e/driver"
-	v1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	clientset "k8s.io/client-go/kubernetes"
 	"k8s.io/kubernetes/test/e2e/framework"
 	e2edeployment "k8s.io/kubernetes/test/e2e/framework/deployment"
@@ -104,7 +104,7 @@ type DynamicallyProvisionedStatsPodTest struct {
 	Pod       PodDetails
 }
 
-func (t *DynamicallyProvisionedStatsPodTest) Run(client clientset.Interface, namespace *v1.Namespace, f *framework.Framework) {
+func (t *DynamicallyProvisionedStatsPodTest) Run(client clientset.Interface, namespace *corev1.Namespace, f *framework.Framework) {
 	customImage := "busybox"
 	tDeployment, cleanup := t.Pod.SetupDeployment(client, namespace, t.CSIDriver, customImage)
 	// defer must be called here for resources not get removed before using them
@@ -123,7 +123,7 @@ func (t *DynamicallyProvisionedStatsPodTest) Run(client clientset.Interface, nam
 
 	pod_host_ip := pods.Items[0].Status.HostIP
 	pvc_ns := tDeployment.namespace.Name
-	pvc_name := tDeployment.deployment.Spec.Template.Spec.Volumes[0].VolumeSource.PersistentVolumeClaim.ClaimName
+	pvc_name := tDeployment.deployment.Spec.Template.Spec.Volumes[0].PersistentVolumeClaim.ClaimName
 
 	By("checking volume stats using /metrics ")
 	metrics_kubelet_volume_stats := ""

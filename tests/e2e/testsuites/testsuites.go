@@ -25,10 +25,9 @@ import (
 	. "github.com/onsi/ginkgo/v2" //nolint
 	. "github.com/onsi/gomega"    //nolint
 	osccloud "github.com/outscale/osc-bsu-csi-driver/pkg/cloud"
-	apps "k8s.io/api/apps/v1"
-	v1 "k8s.io/api/core/v1"
+	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
 	storagev1 "k8s.io/api/storage/v1"
-	storagev1beta1 "k8s.io/api/storage/v1beta1"
 	apierrs "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -80,38 +79,38 @@ func (t *TestStorageClass) Cleanup() {
 
 type TestVolumeAttributesClass struct {
 	client                clientset.Interface
-	VolumeAttributesClass *storagev1beta1.VolumeAttributesClass
+	VolumeAttributesClass *storagev1.VolumeAttributesClass
 }
 
-func NewTestVolumeAttributesClass(c clientset.Interface, sc *storagev1beta1.VolumeAttributesClass) *TestVolumeAttributesClass {
+func NewTestVolumeAttributesClass(c clientset.Interface, sc *storagev1.VolumeAttributesClass) *TestVolumeAttributesClass {
 	return &TestVolumeAttributesClass{
 		client:                c,
 		VolumeAttributesClass: sc,
 	}
 }
 
-func (t *TestVolumeAttributesClass) Create() storagev1beta1.VolumeAttributesClass {
+func (t *TestVolumeAttributesClass) Create() storagev1.VolumeAttributesClass {
 	var err error
 
 	By("creating VolumeAttributesClass " + t.VolumeAttributesClass.Name)
-	t.VolumeAttributesClass, err = t.client.StorageV1beta1().VolumeAttributesClasses().Create(context.Background(), t.VolumeAttributesClass, metav1.CreateOptions{})
+	t.VolumeAttributesClass, err = t.client.StorageV1().VolumeAttributesClasses().Create(context.Background(), t.VolumeAttributesClass, metav1.CreateOptions{})
 	framework.ExpectNoError(err)
 	return *t.VolumeAttributesClass
 }
 
 func (t *TestVolumeAttributesClass) Cleanup() {
 	framework.Logf("deleting VolumeAttributesClass %s", t.VolumeAttributesClass.Name)
-	err := t.client.StorageV1beta1().VolumeAttributesClasses().Delete(context.Background(), t.VolumeAttributesClass.Name, metav1.DeleteOptions{})
+	err := t.client.StorageV1().VolumeAttributesClasses().Delete(context.Background(), t.VolumeAttributesClass.Name, metav1.DeleteOptions{})
 	framework.ExpectNoError(err)
 }
 
 type TestVolumeSnapshotClass struct {
 	client              restclientset.Interface
 	volumeSnapshotClass *volumesnapshotv1.VolumeSnapshotClass
-	namespace           *v1.Namespace
+	namespace           *corev1.Namespace
 }
 
-func NewTestVolumeSnapshotClass(c restclientset.Interface, ns *v1.Namespace, vsc *volumesnapshotv1.VolumeSnapshotClass) *TestVolumeSnapshotClass {
+func NewTestVolumeSnapshotClass(c restclientset.Interface, ns *corev1.Namespace, vsc *volumesnapshotv1.VolumeSnapshotClass) *TestVolumeSnapshotClass {
 	return &TestVolumeSnapshotClass{
 		client:              c,
 		volumeSnapshotClass: vsc,
@@ -126,17 +125,13 @@ func (t *TestVolumeSnapshotClass) Create() {
 	framework.ExpectNoError(err)
 }
 
-func (t *TestVolumeSnapshotClass) CreateSnapshot(pvc *v1.PersistentVolumeClaim) *volumesnapshotv1.VolumeSnapshot {
+func (t *TestVolumeSnapshotClass) CreateSnapshot(pvc *corev1.PersistentVolumeClaim) *volumesnapshotv1.VolumeSnapshot {
 	By("creating a VolumeSnapshot for " + pvc.Name)
 	snapshot := &volumesnapshotv1.VolumeSnapshot{
-		TypeMeta: metav1.TypeMeta{
-			Kind:       VolumeSnapshotKind,
-			APIVersion: SnapshotAPIVersion,
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			GenerateName: "volume-snapshot-",
-			Namespace:    t.namespace.Name,
-		},
+		Kind:         VolumeSnapshotKind,
+		APIVersion:   SnapshotAPIVersion,
+		GenerateName: "volume-snapshot-",
+		Namespace:    t.namespace.Name,
 		Spec: volumesnapshotv1.VolumeSnapshotSpec{
 			VolumeSnapshotClassName: &t.volumeSnapshotClass.Name,
 			Source: volumesnapshotv1.VolumeSnapshotSource{
@@ -198,18 +193,18 @@ func (t *TestVolumeSnapshotClass) waitForSnapshotDeleted(ns string, snapshotName
 
 type TestPreProvisionedPersistentVolume struct {
 	client                    clientset.Interface
-	persistentVolume          *v1.PersistentVolume
-	requestedPersistentVolume *v1.PersistentVolume
+	persistentVolume          *corev1.PersistentVolume
+	requestedPersistentVolume *corev1.PersistentVolume
 }
 
-func NewTestPreProvisionedPersistentVolume(c clientset.Interface, pv *v1.PersistentVolume) *TestPreProvisionedPersistentVolume {
+func NewTestPreProvisionedPersistentVolume(c clientset.Interface, pv *corev1.PersistentVolume) *TestPreProvisionedPersistentVolume {
 	return &TestPreProvisionedPersistentVolume{
 		client:                    c,
 		requestedPersistentVolume: pv,
 	}
 }
 
-func (pv *TestPreProvisionedPersistentVolume) Create() v1.PersistentVolume {
+func (pv *TestPreProvisionedPersistentVolume) Create() corev1.PersistentVolume {
 	var err error
 	By("creating a PV")
 	pv.persistentVolume, err = pv.client.CoreV1().PersistentVolumes().Create(context.Background(), pv.requestedPersistentVolume, metav1.CreateOptions{})
@@ -220,19 +215,19 @@ func (pv *TestPreProvisionedPersistentVolume) Create() v1.PersistentVolume {
 type TestPersistentVolumeClaim struct {
 	client                         clientset.Interface
 	claimSize                      string
-	volumeMode                     v1.PersistentVolumeMode
+	volumeMode                     corev1.PersistentVolumeMode
 	storageClass                   *storagev1.StorageClass
-	namespace                      *v1.Namespace
-	persistentVolume               *v1.PersistentVolume
-	persistentVolumeClaim          *v1.PersistentVolumeClaim
-	requestedPersistentVolumeClaim *v1.PersistentVolumeClaim
-	dataSource                     *v1.TypedLocalObjectReference
+	namespace                      *corev1.Namespace
+	persistentVolume               *corev1.PersistentVolume
+	persistentVolumeClaim          *corev1.PersistentVolumeClaim
+	requestedPersistentVolumeClaim *corev1.PersistentVolumeClaim
+	dataSource                     *corev1.TypedLocalObjectReference
 }
 
-func NewTestPersistentVolumeClaim(c clientset.Interface, ns *v1.Namespace, claimSize string, volumeMode VolumeMode, sc *storagev1.StorageClass) *TestPersistentVolumeClaim {
-	mode := v1.PersistentVolumeFilesystem
+func NewTestPersistentVolumeClaim(c clientset.Interface, ns *corev1.Namespace, claimSize string, volumeMode VolumeMode, sc *storagev1.StorageClass) *TestPersistentVolumeClaim {
+	mode := corev1.PersistentVolumeFilesystem
 	if volumeMode == Block {
-		mode = v1.PersistentVolumeBlock
+		mode = corev1.PersistentVolumeBlock
 	}
 	return &TestPersistentVolumeClaim{
 		client:       c,
@@ -243,10 +238,10 @@ func NewTestPersistentVolumeClaim(c clientset.Interface, ns *v1.Namespace, claim
 	}
 }
 
-func NewTestPersistentVolumeClaimWithDataSource(c clientset.Interface, ns *v1.Namespace, claimSize string, volumeMode VolumeMode, sc *storagev1.StorageClass, dataSource *v1.TypedLocalObjectReference) *TestPersistentVolumeClaim {
-	mode := v1.PersistentVolumeFilesystem
+func NewTestPersistentVolumeClaimWithDataSource(c clientset.Interface, ns *corev1.Namespace, claimSize string, volumeMode VolumeMode, sc *storagev1.StorageClass, dataSource *corev1.TypedLocalObjectReference) *TestPersistentVolumeClaim {
+	mode := corev1.PersistentVolumeFilesystem
 	if volumeMode == Block {
-		mode = v1.PersistentVolumeBlock
+		mode = corev1.PersistentVolumeBlock
 	}
 	return &TestPersistentVolumeClaim{
 		client:       c,
@@ -280,11 +275,11 @@ func (t *TestPersistentVolumeClaim) ValidateProvisionedPersistentVolume() {
 	framework.ExpectNoError(err)
 
 	// Check sizes
-	expectedCapacity := t.requestedPersistentVolumeClaim.Spec.Resources.Requests[v1.ResourceStorage]
-	claimCapacity := t.persistentVolumeClaim.Spec.Resources.Requests[v1.ResourceStorage]
+	expectedCapacity := t.requestedPersistentVolumeClaim.Spec.Resources.Requests[corev1.ResourceStorage]
+	claimCapacity := t.persistentVolumeClaim.Spec.Resources.Requests[corev1.ResourceStorage]
 	Expect(claimCapacity.Value()).To(Equal(expectedCapacity.Value()), "claimCapacity is not equal to requestedCapacity")
 
-	pvCapacity := t.persistentVolume.Spec.Capacity[v1.ResourceStorage]
+	pvCapacity := t.persistentVolume.Spec.Capacity[corev1.ResourceStorage]
 	Expect(pvCapacity.Value()).To(Equal(expectedCapacity.Value()), "pvCapacity is not equal to requestedCapacity")
 
 	// Check PV properties
@@ -311,11 +306,11 @@ func (t *TestPersistentVolumeClaim) ValidateProvisionedPersistentVolume() {
 	}
 }
 
-func (t *TestPersistentVolumeClaim) WaitForBound() v1.PersistentVolumeClaim {
+func (t *TestPersistentVolumeClaim) WaitForBound() corev1.PersistentVolumeClaim {
 	var err error
 
-	By(fmt.Sprintf("waiting for PVC to be in phase %q", v1.ClaimBound))
-	err = e2epv.WaitForPersistentVolumeClaimPhase(context.Background(), v1.ClaimBound, t.client, t.namespace.Name, t.persistentVolumeClaim.Name, framework.Poll, framework.ClaimProvisionTimeout)
+	By(fmt.Sprintf("waiting for PVC to be in phase %q", corev1.ClaimBound))
+	err = e2epv.WaitForPersistentVolumeClaimPhase(context.Background(), corev1.ClaimBound, t.client, t.namespace.Name, t.persistentVolumeClaim.Name, framework.Poll, framework.ClaimProvisionTimeout)
 	framework.ExpectNoError(err)
 
 	By("checking the PVC")
@@ -326,20 +321,18 @@ func (t *TestPersistentVolumeClaim) WaitForBound() v1.PersistentVolumeClaim {
 	return *t.persistentVolumeClaim
 }
 
-func generatePVC(namespace, storageClassName, claimSize string, volumeMode v1.PersistentVolumeMode, dataSource *v1.TypedLocalObjectReference) *v1.PersistentVolumeClaim {
-	return &v1.PersistentVolumeClaim{
-		ObjectMeta: metav1.ObjectMeta{
-			GenerateName: "pvc-",
-			Namespace:    namespace,
-		},
-		Spec: v1.PersistentVolumeClaimSpec{
+func generatePVC(namespace, storageClassName, claimSize string, volumeMode corev1.PersistentVolumeMode, dataSource *corev1.TypedLocalObjectReference) *corev1.PersistentVolumeClaim {
+	return &corev1.PersistentVolumeClaim{
+		GenerateName: "pvc-",
+		Namespace:    namespace,
+		Spec: corev1.PersistentVolumeClaimSpec{
 			StorageClassName: &storageClassName,
-			AccessModes: []v1.PersistentVolumeAccessMode{
-				v1.ReadWriteOnce,
+			AccessModes: []corev1.PersistentVolumeAccessMode{
+				corev1.ReadWriteOnce,
 			},
-			Resources: v1.VolumeResourceRequirements{
-				Requests: v1.ResourceList{
-					v1.ResourceStorage: resource.MustParse(claimSize),
+			Resources: corev1.VolumeResourceRequirements{
+				Requests: corev1.ResourceList{
+					corev1.ResourceStorage: resource.MustParse(claimSize),
 				},
 			},
 			VolumeMode: &volumeMode,
@@ -358,7 +351,7 @@ func (t *TestPersistentVolumeClaim) Cleanup() {
 	// attempts may fail, as the volume is still attached to a node because
 	// kubelet is slowly cleaning up the previous pod, however it should succeed
 	// in a couple of minutes.
-	if t.persistentVolume != nil && t.persistentVolume.Spec.PersistentVolumeReclaimPolicy == v1.PersistentVolumeReclaimDelete {
+	if t.persistentVolume != nil && t.persistentVolume.Spec.PersistentVolumeReclaimPolicy == corev1.PersistentVolumeReclaimDelete {
 		By(fmt.Sprintf("waiting for claim's PV %q to be deleted", t.persistentVolume.Name))
 		err := e2epv.WaitForPersistentVolumeDeleted(context.Background(), t.client, t.persistentVolume.Name, 5*time.Second, 20*time.Minute)
 		framework.ExpectNoError(err)
@@ -368,11 +361,11 @@ func (t *TestPersistentVolumeClaim) Cleanup() {
 	framework.ExpectNoError(err)
 }
 
-func (t *TestPersistentVolumeClaim) ReclaimPolicy() v1.PersistentVolumeReclaimPolicy {
+func (t *TestPersistentVolumeClaim) ReclaimPolicy() corev1.PersistentVolumeReclaimPolicy {
 	return t.persistentVolume.Spec.PersistentVolumeReclaimPolicy
 }
 
-func (t *TestPersistentVolumeClaim) WaitForPersistentVolumePhase(phase v1.PersistentVolumePhase) {
+func (t *TestPersistentVolumeClaim) WaitForPersistentVolumePhase(phase corev1.PersistentVolumePhase) {
 	err := e2epv.WaitForPersistentVolumePhase(context.Background(), phase, t.client, t.persistentVolume.Name, 5*time.Second, 20*time.Minute)
 	framework.ExpectNoError(err)
 }
@@ -395,18 +388,18 @@ func (t *TestPersistentVolumeClaim) DeleteBackingVolume(cloud osccloud.Cloud) {
 	}
 }
 
-func (t *TestPersistentVolumeClaim) GetPersistentVolume() *v1.PersistentVolume {
+func (t *TestPersistentVolumeClaim) GetPersistentVolume() *corev1.PersistentVolume {
 	return t.persistentVolume
 }
 
 type TestDeployment struct {
 	client     clientset.Interface
-	deployment *apps.Deployment
-	namespace  *v1.Namespace
+	deployment *appsv1.Deployment
+	namespace  *corev1.Namespace
 	podName    string
 }
 
-func NewTestDeployment(c clientset.Interface, ns *v1.Namespace, command string, pvc *v1.PersistentVolumeClaim, volumeName, mountPath string, readOnly bool, customImage ...string) *TestDeployment {
+func NewTestDeployment(c clientset.Interface, ns *corev1.Namespace, command string, pvc *corev1.PersistentVolumeClaim, volumeName, mountPath string, readOnly bool, customImage ...string) *TestDeployment {
 	imageName := imageutils.GetE2EImage(imageutils.BusyBox)
 	if len(customImage) > 0 {
 		imageName = customImage[0]
@@ -417,27 +410,23 @@ func NewTestDeployment(c clientset.Interface, ns *v1.Namespace, command string, 
 	return &TestDeployment{
 		client:    c,
 		namespace: ns,
-		deployment: &apps.Deployment{
-			ObjectMeta: metav1.ObjectMeta{
-				GenerateName: generateName,
-			},
-			Spec: apps.DeploymentSpec{
+		deployment: &appsv1.Deployment{
+			GenerateName: generateName,
+			Spec: appsv1.DeploymentSpec{
 				Replicas: &replicas,
 				Selector: &metav1.LabelSelector{
 					MatchLabels: map[string]string{"app": selectorValue},
 				},
-				Template: v1.PodTemplateSpec{
-					ObjectMeta: metav1.ObjectMeta{
-						Labels: map[string]string{"app": selectorValue},
-					},
-					Spec: v1.PodSpec{
-						Containers: []v1.Container{
+				Template: corev1.PodTemplateSpec{
+					Labels: map[string]string{"app": selectorValue},
+					Spec: corev1.PodSpec{
+						Containers: []corev1.Container{
 							{
 								Name:    "volume-tester",
 								Image:   imageName,
 								Command: []string{"/bin/sh"},
 								Args:    []string{"-c", command},
-								VolumeMounts: []v1.VolumeMount{
+								VolumeMounts: []corev1.VolumeMount{
 									{
 										Name:      volumeName,
 										MountPath: mountPath,
@@ -446,14 +435,12 @@ func NewTestDeployment(c clientset.Interface, ns *v1.Namespace, command string, 
 								},
 							},
 						},
-						RestartPolicy: v1.RestartPolicyAlways,
-						Volumes: []v1.Volume{
+						RestartPolicy: corev1.RestartPolicyAlways,
+						Volumes: []corev1.Volume{
 							{
 								Name: volumeName,
-								VolumeSource: v1.VolumeSource{
-									PersistentVolumeClaim: &v1.PersistentVolumeClaimVolumeSource{
-										ClaimName: pvc.Name,
-									},
+								PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
+									ClaimName: pvc.Name,
 								},
 							},
 						},
@@ -543,30 +530,28 @@ func waitForPersistentVolumeClaimDeleted(c clientset.Interface, ns string, pvcNa
 
 type TestPod struct {
 	client    clientset.Interface
-	pod       *v1.Pod
-	namespace *v1.Namespace
+	pod       *corev1.Pod
+	namespace *corev1.Namespace
 }
 
-func NewTestPod(c clientset.Interface, ns *v1.Namespace, command string) *TestPod {
+func NewTestPod(c clientset.Interface, ns *corev1.Namespace, command string) *TestPod {
 	return &TestPod{
 		client:    c,
 		namespace: ns,
-		pod: &v1.Pod{
-			ObjectMeta: metav1.ObjectMeta{
-				GenerateName: "bsu-volume-tester-",
-			},
-			Spec: v1.PodSpec{
-				Containers: []v1.Container{
+		pod: &corev1.Pod{
+			GenerateName: "bsu-volume-tester-",
+			Spec: corev1.PodSpec{
+				Containers: []corev1.Container{
 					{
 						Name:         "volume-tester",
 						Image:        imageutils.GetE2EImage(imageutils.BusyBox),
 						Command:      []string{"/bin/sh"},
 						Args:         []string{"-c", command},
-						VolumeMounts: make([]v1.VolumeMount, 0),
+						VolumeMounts: make([]corev1.VolumeMount, 0),
 					},
 				},
-				RestartPolicy: v1.RestartPolicyNever,
-				Volumes:       make([]v1.Volume, 0),
+				RestartPolicy: corev1.RestartPolicyNever,
+				Volumes:       make([]corev1.Volume, 0),
 			},
 		},
 	}
@@ -591,12 +576,12 @@ func (t *TestPod) WaitForRunning() {
 
 // Ideally this would be in "k8s.io/kubernetes/test/e2e/framework"
 // Similar to framework.WaitForPodSuccessInNamespaceSlow
-var podFailedCondition = func(pod *v1.Pod) (bool, error) {
+var podFailedCondition = func(pod *corev1.Pod) (bool, error) {
 	switch pod.Status.Phase {
-	case v1.PodFailed:
+	case corev1.PodFailed:
 		By("Saw pod failure")
 		return true, nil
-	case v1.PodSucceeded:
+	case corev1.PodSucceeded:
 		return true, fmt.Errorf("pod %q successed with reason: %q, message: %q", pod.Name, pod.Status.Reason, pod.Status.Message)
 	default:
 		return false, nil
@@ -608,38 +593,34 @@ func (t *TestPod) WaitForFailure() {
 	framework.ExpectNoError(err)
 }
 
-func (t *TestPod) SetupVolume(pvc *v1.PersistentVolumeClaim, name, mountPath string, readOnly bool) {
-	volumeMount := v1.VolumeMount{
+func (t *TestPod) SetupVolume(pvc *corev1.PersistentVolumeClaim, name, mountPath string, readOnly bool) {
+	volumeMount := corev1.VolumeMount{
 		Name:      name,
 		MountPath: mountPath,
 		ReadOnly:  readOnly,
 	}
 	t.pod.Spec.Containers[0].VolumeMounts = append(t.pod.Spec.Containers[0].VolumeMounts, volumeMount)
 
-	volume := v1.Volume{
+	volume := corev1.Volume{
 		Name: name,
-		VolumeSource: v1.VolumeSource{
-			PersistentVolumeClaim: &v1.PersistentVolumeClaimVolumeSource{
-				ClaimName: pvc.Name,
-			},
+		PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
+			ClaimName: pvc.Name,
 		},
 	}
 	t.pod.Spec.Volumes = append(t.pod.Spec.Volumes, volume)
 }
 
-func (t *TestPod) SetupRawBlockVolume(pvc *v1.PersistentVolumeClaim, name, devicePath string) {
-	volumeDevice := v1.VolumeDevice{
+func (t *TestPod) SetupRawBlockVolume(pvc *corev1.PersistentVolumeClaim, name, devicePath string) {
+	volumeDevice := corev1.VolumeDevice{
 		Name:       name,
 		DevicePath: devicePath,
 	}
 	t.pod.Spec.Containers[0].VolumeDevices = append(t.pod.Spec.Containers[0].VolumeDevices, volumeDevice)
 
-	volume := v1.Volume{
+	volume := corev1.Volume{
 		Name: name,
-		VolumeSource: v1.VolumeSource{
-			PersistentVolumeClaim: &v1.PersistentVolumeClaimVolumeSource{
-				ClaimName: pvc.Name,
-			},
+		PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
+			ClaimName: pvc.Name,
 		},
 	}
 	t.pod.Spec.Volumes = append(t.pod.Spec.Volumes, volume)
@@ -669,16 +650,16 @@ func cleanupPodOrFail(client clientset.Interface, name, namespace string) {
 }
 
 func podLogs(client clientset.Interface, name, namespace string) ([]byte, error) {
-	return client.CoreV1().Pods(namespace).GetLogs(name, &v1.PodLogOptions{}).Do(context.Background()).Raw()
+	return client.CoreV1().Pods(namespace).GetLogs(name, &corev1.PodLogOptions{}).Do(context.Background()).Raw()
 }
 
 type TestSecret struct {
 	client    clientset.Interface
-	secret    *v1.Secret
-	namespace *v1.Namespace
+	secret    *corev1.Secret
+	namespace *corev1.Namespace
 }
 
-func NewTestSecret(c clientset.Interface, ns *v1.Namespace, sc *v1.Secret) *TestSecret {
+func NewTestSecret(c clientset.Interface, ns *corev1.Namespace, sc *corev1.Secret) *TestSecret {
 	return &TestSecret{
 		client:    c,
 		secret:    sc,
@@ -686,7 +667,7 @@ func NewTestSecret(c clientset.Interface, ns *v1.Namespace, sc *v1.Secret) *Test
 	}
 }
 
-func (t *TestSecret) Create() v1.Secret {
+func (t *TestSecret) Create() corev1.Secret {
 	var err error
 
 	By("creating a Secret " + t.secret.Name)

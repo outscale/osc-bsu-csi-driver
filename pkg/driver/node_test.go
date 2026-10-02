@@ -17,7 +17,6 @@ limitations under the License.
 package driver
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"os"
@@ -36,7 +35,6 @@ import (
 	"google.golang.org/grpc/status"
 	corev1 "k8s.io/api/core/v1"
 	storagev1 "k8s.io/api/storage/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/fake"
@@ -97,7 +95,7 @@ func TestNodeStageVolume(t *testing.T) {
 				mockMounter.EXPECT().GetDeviceName(targetPath).Return("", 1, nil)
 				mockMounter.EXPECT().GetDiskFormat(devicePath).Return("", nil)
 				mockMounter.EXPECT().FormatAndMount(gomock.Eq(devicePath), gomock.Eq(targetPath), gomock.Eq(FSTypeExt4), gomock.Any())
-				_, err := oscDriver.NodeStageVolume(context.TODO(), req)
+				_, err := oscDriver.NodeStageVolume(t.Context(), req)
 				require.NoError(t, err)
 			},
 		},
@@ -129,7 +127,7 @@ func TestNodeStageVolume(t *testing.T) {
 					VolumeId: "vol-test",
 				}
 
-				_, err := oscDriver.NodeStageVolume(context.TODO(), req)
+				_, err := oscDriver.NodeStageVolume(t.Context(), req)
 				require.NoError(t, err)
 			},
 		},
@@ -173,7 +171,7 @@ func TestNodeStageVolume(t *testing.T) {
 				mockMounter.EXPECT().GetDiskFormat(gomock.Eq(devicePath)).Return("", nil)
 				mockMounter.EXPECT().Command(gomock.Eq("mkfs.xfs"), gomock.Eq(devicePath)).Return(exec.New().Command("mkfs"))
 				mockMounter.EXPECT().FormatAndMount(gomock.Eq(devicePath), gomock.Eq(targetPath), gomock.Eq(FSTypeXfs), gomock.Eq([]string{"dirsync", "noexec"}))
-				_, err := oscDriver.NodeStageVolume(context.TODO(), req)
+				_, err := oscDriver.NodeStageVolume(t.Context(), req)
 				require.NoError(t, err)
 			},
 		},
@@ -216,7 +214,7 @@ func TestNodeStageVolume(t *testing.T) {
 				mockMounter.EXPECT().GetDeviceName(targetPath).Return("", 1, nil)
 				mockMounter.EXPECT().GetDiskFormat(devicePath).Return("", nil)
 				mockMounter.EXPECT().FormatAndMount(gomock.Eq(devicePath), gomock.Eq(targetPath), gomock.Eq(FSTypeExt3), gomock.Any())
-				_, err := oscDriver.NodeStageVolume(context.TODO(), req)
+				_, err := oscDriver.NodeStageVolume(t.Context(), req)
 				require.NoError(t, err)
 			},
 		},
@@ -260,7 +258,7 @@ func TestNodeStageVolume(t *testing.T) {
 				mockMounter.EXPECT().GetDiskFormat(gomock.Eq(devicePath)).Return("", nil)
 				mockMounter.EXPECT().Command(gomock.Eq("mkfs.xfs"), gomock.Eq(devicePath)).Return(exec.New().Command("mkfs"))
 				mockMounter.EXPECT().FormatAndMount(gomock.Eq(devicePath), gomock.Eq(targetPath), gomock.Eq(FSTypeXfs), gomock.Any())
-				_, err := oscDriver.NodeStageVolume(context.TODO(), req)
+				_, err := oscDriver.NodeStageVolume(t.Context(), req)
 				require.NoError(t, err)
 			},
 		},
@@ -284,7 +282,7 @@ func TestNodeStageVolume(t *testing.T) {
 					VolumeCapability:  stdVolCap,
 				}
 
-				_, err := oscDriver.NodeStageVolume(context.TODO(), req)
+				_, err := oscDriver.NodeStageVolume(t.Context(), req)
 				expectErr(t, err, codes.InvalidArgument)
 			},
 		},
@@ -313,7 +311,7 @@ func TestNodeStageVolume(t *testing.T) {
 					},
 				}
 
-				_, err := oscDriver.NodeStageVolume(context.TODO(), req)
+				_, err := oscDriver.NodeStageVolume(t.Context(), req)
 				expectErr(t, err, codes.InvalidArgument)
 			},
 		},
@@ -338,7 +336,7 @@ func TestNodeStageVolume(t *testing.T) {
 					VolumeId:         "vol-test",
 				}
 
-				_, err := oscDriver.NodeStageVolume(context.TODO(), req)
+				_, err := oscDriver.NodeStageVolume(t.Context(), req)
 				expectErr(t, err, codes.InvalidArgument)
 			},
 		},
@@ -361,7 +359,7 @@ func TestNodeStageVolume(t *testing.T) {
 					StagingTargetPath: "/test/path",
 					VolumeId:          "vol-test",
 				}
-				_, err := oscDriver.NodeStageVolume(context.TODO(), req)
+				_, err := oscDriver.NodeStageVolume(t.Context(), req)
 				expectErr(t, err, codes.InvalidArgument)
 			},
 		},
@@ -389,7 +387,7 @@ func TestNodeStageVolume(t *testing.T) {
 					},
 					VolumeId: "vol-test",
 				}
-				_, err := oscDriver.NodeStageVolume(context.TODO(), req)
+				_, err := oscDriver.NodeStageVolume(t.Context(), req)
 				expectErr(t, err, codes.InvalidArgument)
 			},
 		},
@@ -412,7 +410,7 @@ func TestNodeStageVolume(t *testing.T) {
 					VolumeCapability:  stdVolCap,
 					VolumeId:          "vol-test",
 				}
-				_, err := oscDriver.NodeStageVolume(context.TODO(), req)
+				_, err := oscDriver.NodeStageVolume(t.Context(), req)
 				expectErr(t, err, codes.InvalidArgument)
 			},
 		},
@@ -443,7 +441,7 @@ func TestNodeStageVolume(t *testing.T) {
 
 				mockMounter.EXPECT().MakeDir(targetPath).Return(nil)
 				mockMounter.EXPECT().GetDeviceName(targetPath).Return(devicePath, 1, nil)
-				_, err := oscDriver.NodeStageVolume(context.TODO(), req)
+				_, err := oscDriver.NodeStageVolume(t.Context(), req)
 				require.NoError(t, err)
 			},
 		},
@@ -486,7 +484,7 @@ func TestNodeStageVolume(t *testing.T) {
 				mockMounter.EXPECT().GetDeviceName(targetPath).Return("", 1, nil)
 				mockMounter.EXPECT().GetDiskFormat(gomock.Eq(devicePath)).Return("ext4", nil)
 				mockMounter.EXPECT().FormatAndMount(gomock.Eq(devicePath), gomock.Eq(targetPath), gomock.Eq(FSTypeExt4), gomock.Any())
-				_, err := oscDriver.NodeStageVolume(context.TODO(), req)
+				_, err := oscDriver.NodeStageVolume(t.Context(), req)
 				require.NoError(t, err)
 			},
 		},
@@ -542,7 +540,7 @@ func TestNodeStageVolume(t *testing.T) {
 				// Format opened luks device
 				mockMounter.EXPECT().GetDiskFormat(gomock.Eq(encryptedDevicePath)).Return(defaultFsType, nil)
 				mockMounter.EXPECT().FormatAndMount(gomock.Eq(encryptedDevicePath), gomock.Eq(targetPath), gomock.Eq(defaultFsType), gomock.Any())
-				_, err := oscDriver.NodeStageVolume(context.TODO(), req)
+				_, err := oscDriver.NodeStageVolume(t.Context(), req)
 				require.NoError(t, err)
 			},
 		},
@@ -600,7 +598,7 @@ func TestNodeStageVolume(t *testing.T) {
 				// Format opened luks device
 				mockMounter.EXPECT().GetDiskFormat(gomock.Eq(encryptedDevicePath)).Return(defaultFsType, nil)
 				mockMounter.EXPECT().FormatAndMount(gomock.Eq(encryptedDevicePath), gomock.Eq(targetPath), gomock.Eq(defaultFsType), gomock.Any())
-				_, err := oscDriver.NodeStageVolume(context.TODO(), req)
+				_, err := oscDriver.NodeStageVolume(t.Context(), req)
 				require.NoError(t, err)
 			},
 		},
@@ -659,7 +657,7 @@ func TestNodeStageVolume(t *testing.T) {
 				// Format opened luks device
 				mockMounter.EXPECT().GetDiskFormat(gomock.Eq(encryptedDevicePath)).Return(defaultFsType, nil)
 				mockMounter.EXPECT().FormatAndMount(gomock.Eq(encryptedDevicePath), gomock.Eq(targetPath), gomock.Eq(defaultFsType), gomock.Any())
-				_, err := oscDriver.NodeStageVolume(context.TODO(), req)
+				_, err := oscDriver.NodeStageVolume(t.Context(), req)
 				require.NoError(t, err)
 			},
 		},
@@ -705,7 +703,7 @@ func TestNodeStageVolume(t *testing.T) {
 				mockMounter.EXPECT().MakeDir(targetPath).Return(nil)
 				mockMounter.EXPECT().GetDeviceName(targetPath).Return("", 1, nil)
 				// Check Luks
-				_, err := oscDriver.NodeStageVolume(context.TODO(), req)
+				_, err := oscDriver.NodeStageVolume(t.Context(), req)
 				require.Error(t, err)
 			},
 		},
@@ -760,7 +758,7 @@ func TestNodeStageVolume(t *testing.T) {
 				// Format opened luks device
 				mockMounter.EXPECT().GetDiskFormat(gomock.Eq(encryptedDevicePath)).Return(defaultFsType, nil)
 				mockMounter.EXPECT().FormatAndMount(gomock.Eq(encryptedDevicePath), gomock.Eq(targetPath), gomock.Eq(defaultFsType), gomock.Any())
-				_, err := oscDriver.NodeStageVolume(context.TODO(), req)
+				_, err := oscDriver.NodeStageVolume(t.Context(), req)
 				require.NoError(t, err)
 			},
 		},
@@ -802,7 +800,7 @@ func TestNodeUnstageVolume(t *testing.T) {
 					VolumeId:          "vol-test",
 				}
 
-				_, err := oscDriver.NodeUnstageVolume(context.TODO(), req)
+				_, err := oscDriver.NodeUnstageVolume(t.Context(), req)
 				require.NoError(t, err)
 			},
 		},
@@ -825,7 +823,7 @@ func TestNodeUnstageVolume(t *testing.T) {
 					StagingTargetPath: targetPath,
 					VolumeId:          "vol-test",
 				}
-				_, err := oscDriver.NodeUnstageVolume(context.TODO(), req)
+				_, err := oscDriver.NodeUnstageVolume(t.Context(), req)
 				require.NoError(t, err)
 			},
 		},
@@ -851,7 +849,7 @@ func TestNodeUnstageVolume(t *testing.T) {
 					VolumeId:          "vol-test",
 				}
 
-				_, err := oscDriver.NodeUnstageVolume(context.TODO(), req)
+				_, err := oscDriver.NodeUnstageVolume(t.Context(), req)
 				require.NoError(t, err)
 			},
 		},
@@ -872,7 +870,7 @@ func TestNodeUnstageVolume(t *testing.T) {
 					StagingTargetPath: targetPath,
 				}
 
-				_, err := oscDriver.NodeUnstageVolume(context.TODO(), req)
+				_, err := oscDriver.NodeUnstageVolume(t.Context(), req)
 				expectErr(t, err, codes.InvalidArgument)
 			},
 		},
@@ -892,7 +890,7 @@ func TestNodeUnstageVolume(t *testing.T) {
 				req := &csi.NodeUnstageVolumeRequest{
 					VolumeId: "vol-test",
 				}
-				_, err := oscDriver.NodeUnstageVolume(context.TODO(), req)
+				_, err := oscDriver.NodeUnstageVolume(t.Context(), req)
 				expectErr(t, err, codes.InvalidArgument)
 			},
 		},
@@ -916,7 +914,7 @@ func TestNodeUnstageVolume(t *testing.T) {
 					VolumeId:          "vol-test",
 				}
 
-				_, err := oscDriver.NodeUnstageVolume(context.TODO(), req)
+				_, err := oscDriver.NodeUnstageVolume(t.Context(), req)
 				expectErr(t, err, codes.Internal)
 			},
 		},
@@ -942,7 +940,7 @@ func TestNodeUnstageVolume(t *testing.T) {
 					VolumeId:          "vol-test",
 				}
 
-				_, err := oscDriver.NodeUnstageVolume(context.TODO(), req)
+				_, err := oscDriver.NodeUnstageVolume(t.Context(), req)
 				require.NoError(t, err)
 			},
 		},
@@ -994,7 +992,7 @@ func TestNodePublishVolume(t *testing.T) {
 					VolumeId:          "vol-test",
 				}
 
-				_, err := oscDriver.NodePublishVolume(context.TODO(), req)
+				_, err := oscDriver.NodePublishVolume(t.Context(), req)
 				require.NoError(t, err)
 			},
 		},
@@ -1022,7 +1020,7 @@ func TestNodePublishVolume(t *testing.T) {
 					VolumeId:          "vol-test",
 				}
 
-				_, err := oscDriver.NodePublishVolume(context.TODO(), req)
+				_, err := oscDriver.NodePublishVolume(t.Context(), req)
 				require.NoError(t, err)
 			},
 		},
@@ -1060,7 +1058,7 @@ func TestNodePublishVolume(t *testing.T) {
 					VolumeId: "vol-test",
 				}
 
-				_, err := oscDriver.NodePublishVolume(context.TODO(), req)
+				_, err := oscDriver.NodePublishVolume(t.Context(), req)
 				require.NoError(t, err)
 			},
 		},
@@ -1090,7 +1088,7 @@ func TestNodePublishVolume(t *testing.T) {
 					VolumeId:          "vol-test",
 				}
 
-				_, err := oscDriver.NodePublishVolume(context.TODO(), req)
+				_, err := oscDriver.NodePublishVolume(t.Context(), req)
 				require.NoError(t, err)
 			},
 		},
@@ -1132,7 +1130,7 @@ func TestNodePublishVolume(t *testing.T) {
 					VolumeId: "vol-test",
 				}
 
-				_, err := oscDriver.NodePublishVolume(context.TODO(), req)
+				_, err := oscDriver.NodePublishVolume(t.Context(), req)
 				require.NoError(t, err)
 			},
 		},
@@ -1173,7 +1171,7 @@ func TestNodePublishVolume(t *testing.T) {
 					VolumeId: "vol-test",
 				}
 
-				_, err := oscDriver.NodePublishVolume(context.TODO(), req)
+				_, err := oscDriver.NodePublishVolume(t.Context(), req)
 				require.NoError(t, err)
 			},
 		},
@@ -1204,7 +1202,7 @@ func TestNodePublishVolume(t *testing.T) {
 					VolumeId: "vol-test",
 				}
 
-				_, err := oscDriver.NodePublishVolume(context.TODO(), req)
+				_, err := oscDriver.NodePublishVolume(t.Context(), req)
 				expectErr(t, err, codes.InvalidArgument)
 			},
 		},
@@ -1238,7 +1236,7 @@ func TestNodePublishVolume(t *testing.T) {
 
 				mockMounter.EXPECT().ExistsPath(gomock.Eq(devicePath)).Return(false, errors.New("findDevicePath failed"))
 
-				_, err := oscDriver.NodePublishVolume(context.TODO(), req)
+				_, err := oscDriver.NodePublishVolume(t.Context(), req)
 				expectErr(t, err, codes.Internal)
 			},
 		},
@@ -1262,7 +1260,7 @@ func TestNodePublishVolume(t *testing.T) {
 					VolumeCapability:  stdVolCap,
 				}
 
-				_, err := oscDriver.NodePublishVolume(context.TODO(), req)
+				_, err := oscDriver.NodePublishVolume(t.Context(), req)
 				expectErr(t, err, codes.InvalidArgument)
 			},
 		},
@@ -1286,7 +1284,7 @@ func TestNodePublishVolume(t *testing.T) {
 					VolumeId:         "vol-test",
 				}
 
-				_, err := oscDriver.NodePublishVolume(context.TODO(), req)
+				_, err := oscDriver.NodePublishVolume(t.Context(), req)
 				expectErr(t, err, codes.InvalidArgument)
 			},
 		},
@@ -1310,7 +1308,7 @@ func TestNodePublishVolume(t *testing.T) {
 					VolumeId:          "vol-test",
 				}
 
-				_, err := oscDriver.NodePublishVolume(context.TODO(), req)
+				_, err := oscDriver.NodePublishVolume(t.Context(), req)
 				expectErr(t, err, codes.InvalidArgument)
 			},
 		},
@@ -1333,7 +1331,7 @@ func TestNodePublishVolume(t *testing.T) {
 					TargetPath:        targetPath,
 					VolumeId:          "vol-test",
 				}
-				_, err := oscDriver.NodePublishVolume(context.TODO(), req)
+				_, err := oscDriver.NodePublishVolume(t.Context(), req)
 				expectErr(t, err, codes.InvalidArgument)
 			},
 		},
@@ -1362,7 +1360,7 @@ func TestNodePublishVolume(t *testing.T) {
 					},
 				}
 
-				_, err := oscDriver.NodePublishVolume(context.TODO(), req)
+				_, err := oscDriver.NodePublishVolume(t.Context(), req)
 				expectErr(t, err, codes.InvalidArgument)
 			},
 		},
@@ -1400,7 +1398,7 @@ func TestNodeUnpublishVolume(t *testing.T) {
 
 				mockMounter.EXPECT().IsLikelyNotMountPoint(gomock.Eq(targetPath)).Return(false, nil)
 				mockMounter.EXPECT().Unmount(gomock.Eq(targetPath)).Return(nil)
-				_, err := oscDriver.NodeUnpublishVolume(context.TODO(), req)
+				_, err := oscDriver.NodeUnpublishVolume(t.Context(), req)
 				require.NoError(t, err)
 			},
 		},
@@ -1423,7 +1421,7 @@ func TestNodeUnpublishVolume(t *testing.T) {
 				}
 
 				mockMounter.EXPECT().IsLikelyNotMountPoint(gomock.Eq(targetPath)).Return(true, nil)
-				_, err := oscDriver.NodeUnpublishVolume(context.TODO(), req)
+				_, err := oscDriver.NodeUnpublishVolume(t.Context(), req)
 				require.NoError(t, err)
 			},
 		},
@@ -1444,7 +1442,7 @@ func TestNodeUnpublishVolume(t *testing.T) {
 					TargetPath: targetPath,
 				}
 
-				_, err := oscDriver.NodeUnpublishVolume(context.TODO(), req)
+				_, err := oscDriver.NodeUnpublishVolume(t.Context(), req)
 				expectErr(t, err, codes.InvalidArgument)
 			},
 		},
@@ -1465,7 +1463,7 @@ func TestNodeUnpublishVolume(t *testing.T) {
 					VolumeId: "vol-test",
 				}
 
-				_, err := oscDriver.NodeUnpublishVolume(context.TODO(), req)
+				_, err := oscDriver.NodeUnpublishVolume(t.Context(), req)
 				expectErr(t, err, codes.InvalidArgument)
 			},
 		},
@@ -1504,7 +1502,7 @@ func TestNodeGetVolumeStats(t *testing.T) {
 					VolumeId:   "vol-test",
 					VolumePath: VolumePath,
 				}
-				_, err = oscDriver.NodeGetVolumeStats(context.TODO(), req)
+				_, err = oscDriver.NodeGetVolumeStats(t.Context(), req)
 				require.NoError(t, err)
 			},
 		},
@@ -1529,7 +1527,7 @@ func TestNodeGetVolumeStats(t *testing.T) {
 					VolumeId:   "vol-test",
 					VolumePath: VolumePath,
 				}
-				_, err := oscDriver.NodeGetVolumeStats(context.TODO(), req)
+				_, err := oscDriver.NodeGetVolumeStats(t.Context(), req)
 				expectErr(t, err, codes.NotFound)
 			},
 		},
@@ -1554,7 +1552,7 @@ func TestNodeGetVolumeStats(t *testing.T) {
 					VolumeId:   "vol-test",
 					VolumePath: VolumePath,
 				}
-				_, err := oscDriver.NodeGetVolumeStats(context.TODO(), req)
+				_, err := oscDriver.NodeGetVolumeStats(t.Context(), req)
 				expectErr(t, err, codes.Internal)
 			},
 		},
@@ -1579,7 +1577,7 @@ func TestNodeGetVolumeStats(t *testing.T) {
 					VolumeId:   "vol-test",
 					VolumePath: VolumePath,
 				}
-				_, err := oscDriver.NodeGetVolumeStats(context.TODO(), req)
+				_, err := oscDriver.NodeGetVolumeStats(t.Context(), req)
 				expectErr(t, err, codes.Internal)
 			},
 		},
@@ -1625,7 +1623,7 @@ func TestNodeGetCapabilities(t *testing.T) {
 		},
 	}
 	req := &csi.NodeGetCapabilitiesRequest{}
-	resp, err := oscDriver.NodeGetCapabilities(context.TODO(), req)
+	resp, err := oscDriver.NodeGetCapabilities(t.Context(), req)
 	require.NoError(t, err)
 	assert.Equal(t, &csi.NodeGetCapabilitiesResponse{Capabilities: caps}, resp)
 }
@@ -1774,11 +1772,9 @@ func TestNodeGetInfo(t *testing.T) {
 			env:          "12",
 			objs: []runtime.Object{
 				&corev1.Node{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: nodeName,
-						Annotations: map[string]string{
-							NodeLimitAnnotation: "10",
-						},
+					Name: nodeName,
+					Annotations: map[string]string{
+						NodeLimitAnnotation: "10",
 					},
 				},
 				&storagev1.VolumeAttachment{
@@ -1800,11 +1796,9 @@ func TestNodeGetInfo(t *testing.T) {
 			env:          "12",
 			objs: []runtime.Object{
 				&corev1.Node{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: nodeName,
-						Annotations: map[string]string{
-							NodeLimitAnnotation: "255",
-						},
+					Name: nodeName,
+					Annotations: map[string]string{
+						NodeLimitAnnotation: "255",
 					},
 				},
 				&storagev1.VolumeAttachment{
@@ -1834,7 +1828,7 @@ func TestNodeGetInfo(t *testing.T) {
 			objs := tc.objs
 			if len(objs) == 0 {
 				objs = append(objs, &corev1.Node{
-					ObjectMeta: metav1.ObjectMeta{Name: nodeName},
+					Name: nodeName,
 				})
 			}
 			savedGetClient := k8s.GetClient
@@ -1850,7 +1844,7 @@ func TestNodeGetInfo(t *testing.T) {
 				inFlight:   internal.NewInFlight(),
 			}
 
-			resp, err := oscDriver.NodeGetInfo(context.TODO(), &csi.NodeGetInfoRequest{})
+			resp, err := oscDriver.NodeGetInfo(t.Context(), &csi.NodeGetInfoRequest{})
 			require.NoError(t, err)
 
 			assert.Equal(t, tc.instanceID, resp.GetNodeId(), "Invalid node ID")

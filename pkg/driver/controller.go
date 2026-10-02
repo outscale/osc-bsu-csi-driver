@@ -495,21 +495,23 @@ func pickAvailabilityZone(requirement *csi.TopologyRequirement) string {
 		return ""
 	}
 	for _, topology := range requirement.GetPreferred() {
-		zone, exists := topology.GetSegments()[TopologyKey]
+		segments := ptr.FromMap(topology.GetSegments())
+		zone, exists := segments[TopologyKey]
 		if exists {
 			return zone
 		}
-		zone, exists = topology.GetSegments()[TopologyK8sKey]
+		zone, exists = segments[TopologyK8sKey]
 		if exists {
 			return zone
 		}
 	}
 	for _, topology := range requirement.GetRequisite() {
-		zone, exists := topology.GetSegments()[TopologyKey]
+		segments := ptr.FromMap(topology.GetSegments())
+		zone, exists := segments[TopologyKey]
 		if exists {
 			return zone
 		}
-		zone, exists = topology.GetSegments()[TopologyK8sKey]
+		zone, exists = segments[TopologyK8sKey]
 		if exists {
 			return zone
 		}

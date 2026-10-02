@@ -28,7 +28,7 @@ import (
 	"github.com/outscale/osc-bsu-csi-driver/pkg/util"
 	"github.com/outscale/osc-bsu-csi-driver/tests/e2e/driver"
 	"github.com/outscale/osc-sdk-go/v3/pkg/osc"
-	v1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	clientset "k8s.io/client-go/kubernetes"
@@ -48,7 +48,7 @@ type DynamicallyProvisionedResizeVolumeTest struct {
 	Cloud     cloud.Cloud
 }
 
-func (t *DynamicallyProvisionedResizeVolumeTest) Run(client clientset.Interface, namespace *v1.Namespace) {
+func (t *DynamicallyProvisionedResizeVolumeTest) Run(client clientset.Interface, namespace *corev1.Namespace) {
 	volume := t.Pod.Volumes[0]
 	tpvc, _ := volume.SetupDynamicPersistentVolumeClaim(client, namespace, t.CSIDriver)
 	defer tpvc.Cleanup()
@@ -117,7 +117,7 @@ func (t *DynamicallyProvisionedResizeVolumeTest) Run(client clientset.Interface,
 }
 
 // waitForPvToResize waiting for pvc size to be resized to desired size
-func (t *DynamicallyProvisionedResizeVolumeTest) waitForPvToResize(c clientset.Interface, ns *v1.Namespace, pvName string, desiredSize resource.Quantity, desiredIops int, timeout time.Duration, interval time.Duration) error {
+func (t *DynamicallyProvisionedResizeVolumeTest) waitForPvToResize(c clientset.Interface, ns *corev1.Namespace, pvName string, desiredSize resource.Quantity, desiredIops int, timeout time.Duration, interval time.Duration) error {
 	By(fmt.Sprintf("Waiting up to %v for pv to be resized", timeout))
 	for start := time.Now(); time.Since(start) < timeout; time.Sleep(interval) {
 		newPv, _ := c.CoreV1().PersistentVolumes().Get(context.TODO(), pvName, metav1.GetOptions{})

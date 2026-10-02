@@ -17,7 +17,7 @@ package testsuites
 import (
 	. "github.com/onsi/ginkgo/v2" //nolint
 	"github.com/outscale/osc-bsu-csi-driver/tests/e2e/driver"
-	v1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	clientset "k8s.io/client-go/kubernetes"
 	restclientset "k8s.io/client-go/rest"
 )
@@ -34,7 +34,7 @@ type DynamicallyProvisionedVolumeSnapshotTest struct {
 	RestoredPod PodDetails
 }
 
-func (t *DynamicallyProvisionedVolumeSnapshotTest) Run(client clientset.Interface, restclient restclientset.Interface, namespace *v1.Namespace) {
+func (t *DynamicallyProvisionedVolumeSnapshotTest) Run(client clientset.Interface, restclient restclientset.Interface, namespace *corev1.Namespace) {
 	tpod := NewTestPod(client, namespace, t.Pod.Cmd)
 	volume := t.Pod.Volumes[0]
 	tpvc, pvcCleanup := volume.SetupDynamicPersistentVolumeClaim(client, namespace, t.CSIDriver)

@@ -20,7 +20,7 @@ import (
 	. "github.com/onsi/ginkgo/v2" //nolint
 	. "github.com/onsi/gomega"    //nolint
 	"github.com/outscale/osc-bsu-csi-driver/tests/e2e/driver"
-	v1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	clientset "k8s.io/client-go/kubernetes"
 	"k8s.io/kubernetes/test/e2e/framework"
 )
@@ -32,7 +32,7 @@ type PreProvisionedReadOnlyVolumeTest struct {
 	Pods      []PodDetails
 }
 
-func (t *PreProvisionedReadOnlyVolumeTest) Run(client clientset.Interface, namespace *v1.Namespace) {
+func (t *PreProvisionedReadOnlyVolumeTest) Run(client clientset.Interface, namespace *corev1.Namespace) {
 	for _, pod := range t.Pods {
 		tpod, cleanup := pod.SetupWithPreProvisionedVolumes(client, namespace, t.CSIDriver)
 		// defer must be called here for resources not get removed before using them

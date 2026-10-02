@@ -16,7 +16,7 @@ package testsuites
 
 import (
 	"github.com/outscale/osc-bsu-csi-driver/tests/e2e/driver"
-	v1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	clientset "k8s.io/client-go/kubernetes"
 )
 
@@ -27,7 +27,7 @@ type PreProvisionedReclaimPolicyTest struct {
 	Volumes   []VolumeDetails
 }
 
-func (t *PreProvisionedReclaimPolicyTest) Run(client clientset.Interface, namespace *v1.Namespace) {
+func (t *PreProvisionedReclaimPolicyTest) Run(client clientset.Interface, namespace *corev1.Namespace) {
 	for _, volume := range t.Volumes {
 		tpvc, _ := volume.SetupPreProvisionedPersistentVolumeClaim(client, namespace, t.CSIDriver)
 
@@ -35,8 +35,8 @@ func (t *PreProvisionedReclaimPolicyTest) Run(client clientset.Interface, namesp
 		// will also wait for PV to be deleted when reclaimPolicy=Delete
 		tpvc.Cleanup()
 		// first check PV stills exists, then manually delete it
-		if tpvc.ReclaimPolicy() == v1.PersistentVolumeReclaimRetain {
-			tpvc.WaitForPersistentVolumePhase(v1.VolumeReleased)
+		if tpvc.ReclaimPolicy() == corev1.PersistentVolumeReclaimRetain {
+			tpvc.WaitForPersistentVolumePhase(corev1.VolumeReleased)
 			tpvc.DeleteBoundPersistentVolume()
 		}
 	}

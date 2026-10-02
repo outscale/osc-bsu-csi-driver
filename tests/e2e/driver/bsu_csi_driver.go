@@ -20,11 +20,9 @@ import (
 	volumesnapshotv1 "github.com/kubernetes-csi/external-snapshotter/client/v8/apis/volumesnapshot/v1"
 	bsucsidriver "github.com/outscale/osc-bsu-csi-driver/pkg/driver"
 	"github.com/outscale/osc-sdk-go/v3/pkg/osc"
-	v1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	storagev1 "k8s.io/api/storage/v1"
-	storagev1beta1 "k8s.io/api/storage/v1beta1"
 	"k8s.io/apimachinery/pkg/api/resource"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const (
@@ -43,14 +41,14 @@ func InitBsuCSIDriver() PVTestDriver {
 	}
 }
 
-func (d *bsuCSIDriver) GetDynamicProvisionStorageClass(parameters map[string]string, mountOptions []string, reclaimPolicy *v1.PersistentVolumeReclaimPolicy, volumeExpansion *bool, bindingMode *storagev1.VolumeBindingMode, allowedTopologyValues []string, namespace string) *storagev1.StorageClass {
+func (d *bsuCSIDriver) GetDynamicProvisionStorageClass(parameters map[string]string, mountOptions []string, reclaimPolicy *corev1.PersistentVolumeReclaimPolicy, volumeExpansion *bool, bindingMode *storagev1.VolumeBindingMode, allowedTopologyValues []string, namespace string) *storagev1.StorageClass {
 	provisioner := d.driverName
 	generateName := fmt.Sprintf("%s-%s-dynamic-sc-", namespace, provisioner)
-	allowedTopologies := []v1.TopologySelectorTerm{}
+	allowedTopologies := []corev1.TopologySelectorTerm{}
 	if len(allowedTopologyValues) > 0 {
-		allowedTopologies = []v1.TopologySelectorTerm{
+		allowedTopologies = []corev1.TopologySelectorTerm{
 			{
-				MatchLabelExpressions: []v1.TopologySelectorLabelRequirement{
+				MatchLabelExpressions: []corev1.TopologySelectorLabelRequirement{
 					{
 						Key:    bsucsidriver.TopologyKey,
 						Values: allowedTopologyValues,
@@ -68,31 +66,29 @@ func (d *bsuCSIDriver) GetVolumeSnapshotClass(namespace string) *volumesnapshotv
 	return getVolumeSnapshotClass(generateName, provisioner)
 }
 
-func (d *bsuCSIDriver) GetPersistentVolume(volumeID string, fsType string, size string, reclaimPolicy *v1.PersistentVolumeReclaimPolicy, namespace string) *v1.PersistentVolume {
+func (d *bsuCSIDriver) GetPersistentVolume(volumeID string, fsType string, size string, reclaimPolicy *corev1.PersistentVolumeReclaimPolicy, namespace string) *corev1.PersistentVolume {
 	provisioner := d.driverName
 	generateName := fmt.Sprintf("%s-%s-preprovisioned-pv-", namespace, provisioner)
 	// Default to Retain ReclaimPolicy for pre-provisioned volumes
-	pvReclaimPolicy := v1.PersistentVolumeReclaimRetain
+	pvReclaimPolicy := corev1.PersistentVolumeReclaimRetain
 	if reclaimPolicy != nil {
 		pvReclaimPolicy = *reclaimPolicy
 	}
-	return &v1.PersistentVolume{
-		ObjectMeta: metav1.ObjectMeta{
-			GenerateName: generateName,
-			Namespace:    namespace,
-			// TODO remove if https://github.com/kubernetes-csi/external-provisioner/issues/202 is fixed
-			Annotations: map[string]string{
-				"pv.kubernetes.io/provisioned-by": provisioner,
-			},
+	return &corev1.PersistentVolume{
+		GenerateName: generateName,
+		Namespace:    namespace,
+		// TODO remove if https://github.com/kubernetes-csi/external-provisioner/issues/202 is fixed
+		Annotations: map[string]string{
+			"pv.kubernetes.io/provisioned-by": provisioner,
 		},
-		Spec: v1.PersistentVolumeSpec{
-			AccessModes: []v1.PersistentVolumeAccessMode{v1.ReadWriteOnce},
-			Capacity: v1.ResourceList{
-				v1.ResourceStorage: resource.MustParse(size),
+		Spec: corev1.PersistentVolumeSpec{
+			AccessModes: []corev1.PersistentVolumeAccessMode{corev1.ReadWriteOnce},
+			Capacity: corev1.ResourceList{
+				corev1.ResourceStorage: resource.MustParse(size),
 			},
 			PersistentVolumeReclaimPolicy: pvReclaimPolicy,
-			PersistentVolumeSource: v1.PersistentVolumeSource{
-				CSI: &v1.CSIPersistentVolumeSource{
+			PersistentVolumeSource: corev1.PersistentVolumeSource{
+				CSI: &corev1.CSIPersistentVolumeSource{
 					Driver:       provisioner,
 					VolumeHandle: volumeID,
 					FSType:       fsType,
@@ -155,24 +151,20 @@ func IOPSPerGBForVolumeType(volumeType osc.VolumeType) string {
 	return ""
 }
 
-func (d *bsuCSIDriver) GetPassphraseSecret(name string, passphrase string) *v1.Secret {
-	return &v1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: name,
-		},
+func (d *bsuCSIDriver) GetPassphraseSecret(name string, passphrase string) *corev1.Secret {
+	return &corev1.Secret{
+		Name: name,
 		StringData: map[string]string{
 			bsucsidriver.LuksPassphraseKey: passphrase,
 		},
 	}
 }
 
-func (d *bsuCSIDriver) GetVolumeAttributesClass(namespace, name string, volumeType osc.VolumeType, iops bool, iopsPerGB string) *storagev1beta1.VolumeAttributesClass {
+func (d *bsuCSIDriver) GetVolumeAttributesClass(namespace, name string, volumeType osc.VolumeType, iops bool, iopsPerGB string) *storagev1.VolumeAttributesClass {
 	if iops {
-		return &storagev1beta1.VolumeAttributesClass{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      name,
-				Namespace: namespace,
-			},
+		return &storagev1.VolumeAttributesClass{
+			Name:       name,
+			Namespace:  namespace,
 			DriverName: d.driverName,
 			Parameters: map[string]string{
 				bsucsidriver.VolumeTypeKey: string(volumeType),
@@ -180,11 +172,9 @@ func (d *bsuCSIDriver) GetVolumeAttributesClass(namespace, name string, volumeTy
 			},
 		}
 	}
-	return &storagev1beta1.VolumeAttributesClass{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      name,
-			Namespace: namespace,
-		},
+	return &storagev1.VolumeAttributesClass{
+		Name:       name,
+		Namespace:  namespace,
 		DriverName: d.driverName,
 		Parameters: map[string]string{
 			bsucsidriver.VolumeTypeKey: string(volumeType),

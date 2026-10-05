@@ -30,7 +30,7 @@ jobs:
     - name: 🔎 Docker lint
       run: bash -c "make dockerlint"
     - name: 🔎 golangci-lint
-      uses: outscale/goutils/.github/actions/lint@41f4efe660776303c374791006ab8d4dedf0f608 # v1.0.2
+      uses: outscale/goutils/.github/actions/lint@8372c6326b23c047417d312b859f9a0cf19b3ed9 # v1.0.3
     - name: 🔎 Reuse check
       run: make lint-reuse
   unit-test:

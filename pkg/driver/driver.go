@@ -68,7 +68,7 @@ const (
 type Driver struct {
 	controllerService
 	nodeService
-	metrics metrics.Manager
+	metrics *metrics.Manager
 
 	sifs []informers.SharedInformerFactory
 
@@ -129,9 +129,13 @@ func NewDriver(ctx context.Context, opts ...func(*DriverOptions)) (*Driver, erro
 		}
 		driverOptions.kubeClient = kubeClient
 	}
-	driver.metrics = metrics.NewManager(driverOptions.metricsOptions)
-	driver.metrics.RegisterRuntimeMetrics()
-	driver.metrics.StartHttp()
+	m, err := metrics.NewManager(ctx, node, DriverName, driverOptions.metricsOptions)
+	if err != nil {
+		return nil, fmt.Errorf("metrics: %w", err)
+	}
+	// m.RegisterRuntimeMetrics()
+	m.StartHttp()
+	driver.metrics = m
 
 	// no need to test for invalid modes, as ValidateDriverOptions has already done it.
 	if driverOptions.mode.HasController() {
@@ -149,11 +153,7 @@ func NewDriver(ctx context.Context, opts ...func(*DriverOptions)) (*Driver, erro
 		if err != nil {
 			return nil, fmt.Errorf("node service: %w", err)
 		}
-		nc, err := metrics.NewNodeCollector(ctx, node, DriverName, sifVolumes)
-		if err != nil {
-			return nil, fmt.Errorf("node metrics: %w", err)
-		}
-		driver.metrics.Register(nc)
+		driver.metrics.Register(metrics.NewNodeCollector(node, DriverName, sifVolumes))
 	}
 
 	return &driver, nil
@@ -206,8 +206,13 @@ func (d *Driver) Run(ctx context.Context) error {
 	}
 	klog.V(3).InfoS("Listening for connections on: " + listener.Addr().String())
 
+	grpcMetrics := metrics.NewGRPCCollector()
+	d.metrics.Register(grpcMetrics)
 	opts := []grpc.ServerOption{
-		grpc.UnaryInterceptor(LoggingInterceptor(version)),
+		grpc.ChainUnaryInterceptor(
+			LoggingInterceptor(version),
+			grpcMetrics.UnaryInterceptor(),
+		),
 	}
 	d.srv = grpc.NewServer(opts...)
 

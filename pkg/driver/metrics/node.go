@@ -2,7 +2,6 @@ package metrics
 
 import (
 	"bufio"
-	"context"
 	"errors"
 	"fmt"
 	"os"
@@ -10,7 +9,6 @@ import (
 	"reflect"
 	"strconv"
 
-	"github.com/outscale/goutils/sdk/metadata"
 	"github.com/outscale/goutils/sdk/ptr"
 	"github.com/outscale/osc-bsu-csi-driver/pkg/driver/consts"
 	"github.com/outscale/osc-bsu-csi-driver/pkg/driver/k8s"
@@ -21,10 +19,11 @@ import (
 )
 
 const (
-	metricReadOps     = namespace + "read_ops_total"
-	metricWriteOps    = namespace + "write_ops_total"
-	metricInFlight    = namespace + "in_flight"
-	metricTimeInQueue = namespace + "time_in_queue_total"
+	nodeSubsystem     = "blockdevice"
+	metricReadOps     = namespace + "_" + nodeSubsystem + "_read_ops_total"
+	metricWriteOps    = namespace + "_" + nodeSubsystem + "_write_ops_total"
+	metricInFlight    = namespace + "_" + nodeSubsystem + "_in_flight"
+	metricTimeInQueue = namespace + "_" + nodeSubsystem + "_time_in_queue_total"
 )
 
 type NodeCollector struct {
@@ -37,29 +36,27 @@ type NodeCollector struct {
 	logger klog.Logger
 }
 
-func NewNodeCollector(ctx context.Context, node, driver string, sifVolumes informers.SharedInformerFactory) (*NodeCollector, error) {
-	instanceID, err := metadata.GetInstanceID(ctx)
-	if err != nil {
-		return nil, err
+func NewNodeCollector(node, driver string, sifVolumes informers.SharedInformerFactory) *NodeCollector {
+	return &NodeCollector{
+		node:              node,
+		driver:            driver,
+		volumeAttachments: sifVolumes.Storage().V1().VolumeAttachments().Lister(),
 	}
-	variableLabels := []string{"pvc_id", "device"}
-	constLabels := prometheus.Labels{"instance_id": instanceID}
+}
+
+func (c *NodeCollector) SetLogger(logger klog.Logger) {
+	c.logger = logger
+}
+
+func (c *NodeCollector) ConfigureMetrics(constLabels prometheus.Labels) {
+	variableLabels := []string{"pvc", "device"}
 	nodeMetrics := map[string]*prometheus.Desc{
 		metricReadOps:     prometheus.NewDesc(metricReadOps, "The total number of completed read operations.", variableLabels, constLabels),
 		metricWriteOps:    prometheus.NewDesc(metricWriteOps, "The total number of completed write operations.", variableLabels, constLabels),
 		metricInFlight:    prometheus.NewDesc(metricInFlight, "The number of I/Os currently in flight.", variableLabels, constLabels),
 		metricTimeInQueue: prometheus.NewDesc(metricTimeInQueue, "The total wait time, in milliseconds, for all requests.", variableLabels, constLabels),
 	}
-	return &NodeCollector{
-		node:              node,
-		driver:            driver,
-		volumeAttachments: sifVolumes.Storage().V1().VolumeAttachments().Lister(),
-		metrics:           nodeMetrics,
-	}, nil
-}
-
-func (c *NodeCollector) SetLogger(logger klog.Logger) {
-	c.logger = logger
+	c.metrics = nodeMetrics
 }
 
 func (c *NodeCollector) Describe(ch chan<- *prometheus.Desc) {
@@ -151,4 +148,4 @@ func ReadStats(device string) (*blockStats, error) {
 	return bs, nil
 }
 
-var _ LoggingCollector = (*NodeCollector)(nil)
+var _ Collector = (*NodeCollector)(nil)

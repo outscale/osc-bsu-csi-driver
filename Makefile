@@ -156,7 +156,8 @@ helm_deploy:
 			--set cloud.region=${OSC_REGION} \
 			--set driver.image=$(REGISTRY_IMAGE) \
 			--set driver.tag=$(REGISTRY_TAG) \
-			--set logs.verbosity=5
+			--set logs.verbosity=5 \
+			--set sidecars.metrics=true
 
 helm-docs:
 	docker run --rm --volume "$$(pwd):/helm-docs" -u "$$(id -u)" jnorwood/helm-docs:v1.14.2 --output-file ../../docs/helm.md

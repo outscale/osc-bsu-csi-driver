@@ -71,6 +71,13 @@ spec:
             {{- if ne .Values.driver.updateIOPSOnResize "" }}
             - --iops-on-resize={{ .Values.driver.updateIOPSOnResize }}
             {{- end }}
+          {{- if .Values.controller.metrics }}
+            - --http-endpoint=:{{ .Values.controller.metricsPort }}
+          ports:
+            - name: controllerhttp
+              containerPort: {{ .Values.controller.metricsPort }}
+              protocol: TCP
+          {{- end }}
           env:
             - name: CSI_ENDPOINT
               value: unix:///var/lib/csi/sockets/pluginproxy/csi.sock
@@ -155,10 +162,10 @@ spec:
             {{- range .Values.sidecars.provisioner.additionalArgs }}
             - {{ . }}
             {{- end }}
-          {{- if .Values.sidecars.provisioner.metrics }}
+          {{- if .Values.sidecars.metrics }}
             - --http-endpoint=:{{ .Values.sidecars.provisioner.metricsPort }}
           ports:
-            - name: httpendpoint
+            - name: provisionerhttp
               containerPort: {{ .Values.sidecars.provisioner.metricsPort }}
               protocol: TCP
           {{- end }}
@@ -209,10 +216,10 @@ spec:
             {{- range .Values.sidecars.attacher.additionalArgs }}
             - {{ . }}
             {{- end }}
-          {{- if .Values.sidecars.attacher.metrics }}
+          {{- if .Values.sidecars.metrics }}
             - --http-endpoint=:{{ .Values.sidecars.attacher.metricsPort }}
           ports:
-            - name: httpendpoint
+            - name: attacherhttp
               containerPort: {{ .Values.sidecars.attacher.metricsPort }}
               protocol: TCP
           {{- end }}
@@ -264,10 +271,10 @@ spec:
             {{- range .Values.sidecars.snapshotter.additionalArgs }}
             - {{ . }}
             {{- end }}
-          {{- if .Values.sidecars.snapshotter.metrics }}
+          {{- if .Values.sidecars.metrics }}
             - --http-endpoint=:{{ .Values.sidecars.snapshotter.metricsPort }}
           ports:
-            - name: httpendpoint
+            - name: snapshotterhttp
               containerPort: {{ .Values.sidecars.snapshotter.metricsPort }}
               protocol: TCP
           {{- end }}
@@ -301,10 +308,10 @@ spec:
             {{- range .Values.sidecars.exporter.additionalArgs }}
             - {{ . }}
             {{- end }}
-          {{- if .Values.sidecars.exporter.metrics }}
+          {{- if .Values.sidecars.metrics }}
             - --metrics-bind-address=:{{ .Values.sidecars.exporter.metricsPort }}
           ports:
-            - name: httpendpoint
+            - name: exporterhttp
               containerPort: {{ .Values.sidecars.exporter.metricsPort }}
               protocol: TCP
           {{- end }}
@@ -381,10 +388,10 @@ spec:
             {{- range .Values.sidecars.resizer.additionalArgs }}
             - {{ . }}
             {{- end }}
-          {{- if .Values.sidecars.resizer.metrics }}
+          {{- if .Values.sidecars.metrics }}
             - --http-endpoint=:{{ .Values.sidecars.resizer.metricsPort }}
           ports:
-            - name: httpendpoint
+            - name: resizerhttp
               containerPort: {{ .Values.sidecars.resizer.metricsPort }}
               protocol: TCP
           {{- end }}

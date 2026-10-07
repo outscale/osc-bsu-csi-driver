@@ -38,6 +38,8 @@ Kubernetes: `>=1.25`
 | cloud.noProxy | string | `""` | Value used to create environment variable NO_PROXY |
 | cloud.region | string | `""` | Region to use, otherwise it will be looked up via metadata. By providing this parameter, the controller will not require to access the metadata. |
 | controller.affinity | object | `{}` | Affinity settings |
+| controller.metrics | bool | `true` | Enable metrics collection |
+| controller.metricsPort | string | `"8084"` | Port for metrics collection |
 | controller.nodeSelector | object | `{"node-role.kubernetes.io/control-plane":""}` | Node selector used to schedule controller pods. |
 | controller.podAnnotations | object | `{}` | Annotations for controller pod |
 | controller.podLabels | object | `{}` | Labels for controller pod |

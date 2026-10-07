@@ -20,12 +20,18 @@ import (
 	"context"
 	"fmt"
 	"net"
+	"os"
 	"strings"
 
 	csi "github.com/container-storage-interface/spec/lib/go/csi"
 	"github.com/outscale/osc-bsu-csi-driver/cmd/options"
+	"github.com/outscale/osc-bsu-csi-driver/pkg/driver/k8s"
+	"github.com/outscale/osc-bsu-csi-driver/pkg/driver/metrics"
 	"github.com/outscale/osc-bsu-csi-driver/pkg/util"
 	"google.golang.org/grpc"
+	"k8s.io/client-go/informers"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
 	klog "k8s.io/klog/v2"
 )
 
@@ -62,6 +68,9 @@ const (
 type Driver struct {
 	controllerService
 	nodeService
+	metrics metrics.Manager
+
+	sifs []informers.SharedInformerFactory
 
 	cancel func()
 
@@ -85,9 +94,14 @@ type DriverOptions struct {
 
 	// overridden services
 	mounter Mounter
+
+	kubeClient     kubernetes.Interface
+	metricsOptions options.MetricsOptions
 }
 
 func NewDriver(ctx context.Context, opts ...func(*DriverOptions)) (*Driver, error) {
+	node := os.Getenv(NodeNameEnv)
+
 	driverOptions := DriverOptions{
 		mode:     AllMode,
 		endpoint: options.DefaultCSIEndpoint,
@@ -104,16 +118,45 @@ func NewDriver(ctx context.Context, opts ...func(*DriverOptions)) (*Driver, erro
 		options: &driverOptions,
 	}
 
-	var err error
+	if driverOptions.kubeClient == nil {
+		cfg, err := rest.InClusterConfig()
+		if err != nil {
+			return nil, fmt.Errorf("kube config: %w", err)
+		}
+		kubeClient, err := kubernetes.NewForConfig(cfg)
+		if err != nil {
+			return nil, fmt.Errorf("kube client: %w", err)
+		}
+		driverOptions.kubeClient = kubeClient
+	}
+	driver.metrics = metrics.NewManager(driverOptions.metricsOptions)
+	driver.metrics.RegisterRuntimeMetrics()
+	driver.metrics.StartHttp()
+
 	// no need to test for invalid modes, as ValidateDriverOptions has already done it.
 	if driverOptions.mode.HasController() {
 		driver.controllerService = newControllerService(ctx, &driverOptions)
 	}
 	if driverOptions.mode.HasNode() {
-		driver.nodeService, err = newNodeService(ctx, &driverOptions)
+		// Build informers required for node
+		sifNode := k8s.GetNodeInformerFactory(node, driverOptions.kubeClient)
+		driver.sifs = append(driver.sifs, sifNode)
+		sifVolumes := k8s.GetVolumeInformerFactory(node, driverOptions.kubeClient)
+		driver.sifs = append(driver.sifs, sifVolumes)
+
+		var err error
+		driver.nodeService, err = newNodeService(ctx, node, &driverOptions, sifNode, sifVolumes)
+		if err != nil {
+			return nil, fmt.Errorf("node service: %w", err)
+		}
+		nc, err := metrics.NewNodeCollector(ctx, node, DriverName, sifVolumes)
+		if err != nil {
+			return nil, fmt.Errorf("node metrics: %w", err)
+		}
+		driver.metrics.Register(nc)
 	}
 
-	return &driver, err
+	return &driver, nil
 }
 
 func (d *Driver) checkTools() error {
@@ -151,8 +194,11 @@ func (d *Driver) Run(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
+
 	ctx, cancel := context.WithCancel(ctx)
 	d.cancel = cancel
+	defer cancel()
+
 	var lc net.ListenConfig
 	listener, err := lc.Listen(ctx, scheme, addr)
 	if err != nil {
@@ -180,11 +226,19 @@ func (d *Driver) Run(ctx context.Context) error {
 		}
 	}
 
+	for _, sif := range d.sifs {
+		sif.StartWithContext(ctx)
+		synced := sif.WaitForCacheSyncWithContext(ctx)
+		if err := synced.AsError(); err != nil {
+			return err
+		}
+	}
+
 	return d.srv.Serve(listener)
 }
 
 func (d *Driver) Stop() {
-	klog.V(0).InfoS("Stopping server")
+	klog.V(0).Info("Stopping server")
 	d.srv.Stop()
 	d.cancel()
 }
@@ -225,8 +279,20 @@ func WithCloudOptions(opts options.CloudOptions) func(*DriverOptions) {
 	}
 }
 
+func WithMetricsOptions(opts options.MetricsOptions) func(*DriverOptions) {
+	return func(o *DriverOptions) {
+		o.metricsOptions = opts
+	}
+}
+
 func WithMounter(mounter Mounter) func(*DriverOptions) {
 	return func(o *DriverOptions) {
 		o.mounter = mounter
+	}
+}
+
+func WithKubeClient(c kubernetes.Interface) func(*DriverOptions) {
+	return func(o *DriverOptions) {
+		o.kubeClient = c
 	}
 }

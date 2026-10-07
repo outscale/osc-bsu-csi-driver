@@ -29,6 +29,7 @@ import (
 	csi "github.com/container-storage-interface/spec/lib/go/csi"
 	"github.com/outscale/goutils/sdk/metadata"
 	"github.com/outscale/goutils/sdk/ptr"
+	"github.com/outscale/osc-bsu-csi-driver/pkg/driver/consts"
 	"github.com/outscale/osc-bsu-csi-driver/pkg/driver/internal"
 	"github.com/outscale/osc-bsu-csi-driver/pkg/driver/k8s"
 	"github.com/outscale/osc-bsu-csi-driver/pkg/driver/luks"
@@ -37,6 +38,9 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/client-go/informers"
+	listercorev1 "k8s.io/client-go/listers/core/v1"
+	listerstoragev1 "k8s.io/client-go/listers/storage/v1"
 	"k8s.io/klog/v2"
 	"k8s.io/kubernetes/pkg/volume"
 	mountutils "k8s.io/mount-utils"
@@ -87,12 +91,15 @@ type nodeService struct {
 	mounter  Mounter
 	inFlight *internal.InFlight
 
+	nodes             listercorev1.NodeLister
+	volumeAttachments listerstoragev1.VolumeAttachmentLister
+
 	csi.UnimplementedNodeServer
 }
 
 // newNodeService creates a new node service
 // it panics if failed to create the service
-func newNodeService(ctx context.Context, driverOptions *DriverOptions) (nodeService, error) {
+func newNodeService(ctx context.Context, nodeName string, driverOptions *DriverOptions, sifNode informers.SharedInformerFactory, sifVolumes informers.SharedInformerFactory) (nodeService, error) {
 	srv := nodeService{
 		driverOptions: driverOptions,
 		mounter:       driverOptions.mounter,
@@ -110,7 +117,9 @@ func newNodeService(ctx context.Context, driverOptions *DriverOptions) (nodeServ
 	if err != nil {
 		return nodeService{}, err
 	}
-	srv.nodeName = os.Getenv(NodeNameEnv)
+	srv.nodeName = nodeName
+	srv.nodes = sifNode.Core().V1().Nodes().Lister()
+	srv.volumeAttachments = sifVolumes.Storage().V1().VolumeAttachments().Lister()
 
 	return srv, nil
 }
@@ -166,7 +175,7 @@ func (s *nodeService) NodeStageVolume(ctx context.Context, req *csi.NodeStageVol
 		s.inFlight.Delete(req)
 	}()
 
-	devicePath, ok := ptr.FromMap(req.GetPublishContext())[DevicePathKey]
+	devicePath, ok := ptr.FromMap(req.GetPublishContext())[consts.DevicePathKey]
 	if !ok {
 		return nil, status.Error(codes.InvalidArgument, "Device path not provided")
 	}
@@ -201,7 +210,7 @@ func (s *nodeService) NodeStageVolume(ctx context.Context, req *csi.NodeStageVol
 	}
 
 	isEncrypted := false
-	if encrypted, ok := ptr.FromMap(req.GetPublishContext())[EncryptedKey]; ok {
+	if encrypted, ok := ptr.FromMap(req.GetPublishContext())[consts.EncryptedKey]; ok {
 		isEncrypted = encrypted == "true"
 	}
 
@@ -218,7 +227,7 @@ func (s *nodeService) NodeStageVolume(ctx context.Context, req *csi.NodeStageVol
 			return &csi.NodeStageVolumeResponse{}, nil
 		}
 
-		passphrase, ok := ptr.FromMap(req.GetSecrets())[LuksPassphraseKey]
+		passphrase, ok := ptr.FromMap(req.GetSecrets())[consts.LuksPassphraseKey]
 		if !ok {
 			return nil, status.Error(codes.InvalidArgument, "no passphrase key has been provided")
 		}
@@ -227,9 +236,9 @@ func (s *nodeService) NodeStageVolume(ctx context.Context, req *csi.NodeStageVol
 		if !s.mounter.IsLuks(source) {
 			logger.V(5).Info("Encrypting device")
 			// It is not a luks device => format
-			luksCipher := ptr.FromMap(req.GetPublishContext())[LuksCipherKey]
-			luksHash := ptr.FromMap(req.GetPublishContext())[LuksHashKey]
-			luksKeySize := ptr.FromMap(req.GetPublishContext())[LuksKeySizeKey]
+			luksCipher := ptr.FromMap(req.GetPublishContext())[consts.LuksCipherKey]
+			luksHash := ptr.FromMap(req.GetPublishContext())[consts.LuksHashKey]
+			luksKeySize := ptr.FromMap(req.GetPublishContext())[consts.LuksKeySizeKey]
 
 			if err := s.mounter.LuksFormat(source, passphrase, luks.LuksContext{Cipher: luksCipher, KeySize: luksKeySize, Hash: luksHash}); err != nil {
 				msg := fmt.Sprintf("error while formating luks partition on %v, err: %v", volumeID, err)
@@ -398,7 +407,7 @@ func (s *nodeService) NodeExpandVolume(ctx context.Context, req *csi.NodeExpandV
 	}
 
 	if isLuksMapping {
-		passphrase, ok := ptr.FromMap(req.GetSecrets())[LuksPassphraseKey]
+		passphrase, ok := ptr.FromMap(req.GetSecrets())[consts.LuksPassphraseKey]
 		if !ok {
 			return nil, status.Error(codes.InvalidArgument, "no passphrase key has been provided")
 		}
@@ -621,7 +630,7 @@ func (s *nodeService) nodePublishVolumeForBlock(ctx context.Context, req *csi.No
 	target := req.GetTargetPath()
 	volumeID := req.GetVolumeId()
 
-	devicePath, exists := ptr.FromMap(req.GetPublishContext())[DevicePathKey]
+	devicePath, exists := ptr.FromMap(req.GetPublishContext())[consts.DevicePathKey]
 	if !exists {
 		return status.Error(codes.InvalidArgument, "Device path not provided")
 	}
@@ -808,8 +817,10 @@ func getMaxVolumesFromNode(ctx context.Context, n *corev1.Node) (int64, bool) {
 func (s *nodeService) getVolumesLimit(ctx context.Context) (int64, error) {
 	logger := klog.FromContext(ctx)
 	// checking labels
-	node, err := k8s.GetNode(ctx, s.nodeName)
+	node, err := s.nodes.Get(s.nodeName)
 	switch {
+	case node == nil:
+		logger.Info("Unable to fetch node, not checking annotations", "nodeName", s.nodeName)
 	case err != nil:
 		logger.Error(err, "Unable to fetch node, not checking annotations", "nodeName", s.nodeName)
 	default:
@@ -835,16 +846,16 @@ func (s *nodeService) getVolumesLimit(ctx context.Context) (int64, error) {
 	logger.V(4).Info("Attached volumes", "count", volumes)
 
 	// count PVC
-	pvcs, err := k8s.CountVolumeAttachments(ctx, s.nodeName, DriverName)
+	lst, err := k8s.ListAttachedVolumes(s.nodeName, DriverName, s.volumeAttachments, logger)
 	if err != nil {
 		logger.Error(err, "Unable to count volume attachments, using default", "nodeName", s.nodeName)
 		return defaultMaxBSUVolumes - 1, nil
 	}
-	logger.V(4).Info("PVCs", "count", pvcs)
+	logger.V(4).Info("PVCs", "count", len(lst))
 
 	// devs includes the root volume
 	// we need to reserve getEnvReservedVolumes() + the root volume
-	maxVolumes = max(0, defaultMaxBSUVolumes-max(int64(volumes-pvcs), getEnvReservedVolumes()+1))
+	maxVolumes = max(0, defaultMaxBSUVolumes-max(int64(volumes-len(lst)), getEnvReservedVolumes()+1))
 	logger.V(3).Info("Computed limit", "maxVolumes", maxVolumes)
 	return maxVolumes, nil
 }

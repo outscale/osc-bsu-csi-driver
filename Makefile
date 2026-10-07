@@ -16,19 +16,25 @@
 DOCKERFILES := $(shell find . -type f -name '*Dockerfile*' !  -path "./debug/*" )
 LINTER_VERSION := v2.12.0
 
-E2E_ENV ?= "e2e/osc-bsu-csi-driver:0.0"
-E2E_ENV_RUN ?= "e2e-osc-bsu-csi-driver"
 E2E_FOCUS ?= single-az
 
 PKG := github.com/outscale/osc-bsu-csi-driver
 IMAGE := outscale/osc-bsu-csi-driver
-IMAGE_TAG ?= $(shell git describe --tags --always --dirty)
+DEV_REF ?= $(shell git rev-parse HEAD)
+IMAGE_TAG ?= ${DEV_REF}-amd64
+REGISTRY_IMAGE ?= localhost:$(KIND_REGISTRY_PORT)/osc-bsu-csi-driver
+REGISTRY_TAG ?= $(shell date '+%Y%m%d%H%M')
 VERSION ?= ${IMAGE_TAG}
 BUILD_DATE ?= $(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
 LDFLAGS ?= "-s -w -X ${PKG}/pkg/util.driverVersion=${VERSION} -X ${PKG}/pkg/util.buildDate=${BUILD_DATE}"
 GO111MODULE := on
 GOPROXY := direct
 TRIVY_IMAGE := aquasec/trivy:0.69.3
+
+KIND ?= kind
+KIND_CLUSTER ?= csi
+KIND_NODE_IMAGE ?= kindest/node:v1.34.8@sha256:02722c2dedddcfc00febf5d27fbeb9b7b2c14294c82109ff4a85d89ac9ba3256
+KIND_REGISTRY_PORT ?= 5001
 
 OSC_REGION ?= eu-west-2
 
@@ -48,18 +54,36 @@ help:
 	@echo "  - test-e2e-single-az : run e2e tests"
 	@echo "  - helm-docs          : generate helm doc"
 
+
+.PHONY: setup-kind
+setup-kind: ## Set up a Kind cluster for e2e tests if it does not exist
+	@command -v $(KIND) >/dev/null 2>&1 || { \
+		echo "Kind is not installed. Please install Kind manually."; \
+		exit 1; \
+	}
+	hack/ensure-dev.sh $(KIND_CLUSTER) $(KIND_NODE_IMAGE)
+
+.PHONY: use-kind
+use-kind:
+	kubectl config use-context kind-$(KIND_CLUSTER)
+
+.PHONY: credentials
+credentials: ## Set Credentials
+	octl kube secret --name osc-csi-bsu --namespace kube-system | kubectl apply -f - ||:
+
+.PHONY: setup-dev
+setup-dev: setup-kind use-kind credentials
+
+.PHONY: cleanup-dev
+cleanup-dev: ## Tear down the Kind cluster used for e2e tests
+	@$(KIND) delete cluster --name $(KIND_CLUSTER)
+
+.PHONY: deploy-dev
+deploy-dev: build image-tag image-push helm_deploy
+
 .PHONY: build
 build:
-	mkdir -p bin
-	CGO_ENABLED=0 GOOS=linux go build -ldflags ${LDFLAGS} -o bin/osc-bsu-csi-driver ./cmd/
-
-.PHONY: build-image
-build-image:
-	docker build --build-arg VERSION=$(VERSION) -t $(IMAGE):$(IMAGE_TAG) .
-
-.PHONY: buildx-image
-buildx-image:
-	docker buildx build --build-arg VERSION=$(VERSION) --load -t $(IMAGE):$(IMAGE_TAG) .
+	goreleaser release --clean --snapshot
 
 .PHONY: verify
 verify:
@@ -81,30 +105,6 @@ dockerlint:
 .PHONY: test-e2e
 test-e2e:
 	go test -v ./tests/e2e -test.timeout 180m -ginkgo.timeout 180m -ginkgo.focus="${E2E_FOCUS}" -ginkgo.v -ginkgo.show-node-events -test.v
-
-.PHONY: test-e2e-single-az-run
-test-e2e-single-az-run:
-	@echo "test-e2e-single-az-run"
-	docker run --rm \
-		-v ${PWD}:/root/osc-bsu-csi-driver \
-		-e OSC_ACCESS_KEY=${OSC_ACCESS_KEY} \
-		-e OSC_SECRET_KEY=${OSC_SECRET_KEY} \
-		-e AWS_AVAILABILITY_ZONES="${OSC_REGION}a" \
-		-e OSC_REGION=${OSC_REGION} \
-		-e KC="$${KC}" \
-		--name $(E2E_ENV_RUN) $(E2E_ENV) tests/e2e/docker/run_e2e_single_az.sh
-
-.PHONY: test-e2e-single-az
-test-e2e-single-az:
-	@echo "test-e2e-single-az"
-	docker build -t $(E2E_ENV) -f ./tests/e2e/docker/Dockerfile_e2eTest .
-	$(MAKE) test-e2e-single-az-run
-
-.PHONY: test-e2e-single-az-buildx
-test-e2e-single-az-buildx:
-	@echo "test-e2e-single-az"
-	docker buildx build  --load -t $(E2E_ENV) -f ./tests/e2e/docker/Dockerfile_e2eTest .
-	$(MAKE) test-e2e-single-az-run
 
 bin/mockgen:
 	go install github.com/golang/mock/mockgen@latest
@@ -137,16 +137,12 @@ trivy-ignore-check:
 lint-reuse:
 	docker run --rm --volume $(PWD):/data fsfe/reuse:5.1 lint
 
-REGISTRY_IMAGE ?= $(IMAGE)
-REGISTRY_TAG ?= $(IMAGE_TAG)
 image-tag:
 	docker tag $(IMAGE):$(IMAGE_TAG) $(REGISTRY_IMAGE):$(REGISTRY_TAG)
 
 image-push:
 	docker push $(REGISTRY_IMAGE):$(REGISTRY_TAG)
 
-TARGET_IMAGE ?= $(IMAGE)
-TARGET_TAG ?= $(IMAGE_TAG)
 helm_deploy:
 	helm upgrade \
 			--install \
@@ -158,8 +154,8 @@ helm_deploy:
 			--set driver.enableVolumeSnapshotExports=true \
 			--set driver.enableVolumeAttributesClass=true \
 			--set cloud.region=${OSC_REGION} \
-			--set driver.image=$(TARGET_IMAGE) \
-			--set driver.tag=$(TARGET_TAG) \
+			--set driver.image=$(REGISTRY_IMAGE) \
+			--set driver.tag=$(REGISTRY_TAG) \
 			--set logs.verbosity=5
 
 helm-docs:

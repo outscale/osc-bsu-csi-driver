@@ -26,7 +26,6 @@ import (
 
 	"github.com/outscale/goutils/k8s/batch"
 	"github.com/outscale/goutils/sdk/mocks_osc"
-	"github.com/outscale/goutils/sdk/ptr"
 	dm "github.com/outscale/osc-bsu-csi-driver/pkg/cloud/devicemanager"
 	"github.com/outscale/osc-bsu-csi-driver/pkg/util"
 	"github.com/outscale/osc-sdk-go/v3/pkg/osc"
@@ -257,7 +256,7 @@ func TestCreateVolume(t *testing.T) {
 			ClientToken:   &volName,
 			SubregionName: "az",
 			Size:          new(4),
-			VolumeType:    ptr.To(osc.VolumeTypeGp2),
+			VolumeType:    new(osc.VolumeTypeGp2),
 		})).Return(&osc.CreateVolumeResponse{
 			Volume: &firstVolume,
 		}, nil)
@@ -1324,7 +1323,8 @@ func TestResizeVolume(t *testing.T) {
 			if !reflect.DeepEqual(tc.modifiedVolume, osc.UpdateVolumeResponse{}) || tc.modifiedVolumeError != nil {
 				mockOscInterface.EXPECT().UpdateVolume(gomock.Any(), gomock.Any()).Return(
 					&tc.modifiedVolume,
-					tc.modifiedVolumeError).AnyTimes()
+					tc.modifiedVolumeError,
+				).AnyTimes()
 			}
 
 			newSize, err := c.ResizeVolume(ctx, tc.volumeID, util.GiBToBytes(tc.reqSizeGiB))

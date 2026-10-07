@@ -68,6 +68,8 @@ Kubernetes: `>=1.25`
 | logs.verbosity | int | `3` | Verbosity level of the plugin |
 | node.additionalArgs | list | `[]` | Node controller command line additional args |
 | node.affinity | object | `{}` | Affinity settings |
+| node.metrics | bool | `true` | Enable metrics collection |
+| node.metricsPort | string | `"8084"` | Port for metrics collection |
 | node.nodeSelector | object | `{}` | Node selector used to schedule node controller pods. |
 | node.podAnnotations | object | `{}` | Annotations for node controller pod |
 | node.podLabels | object | `{}` | Labels for node controller pod |

@@ -19,6 +19,7 @@ import (
 
 	volumesnapshotv1 "github.com/kubernetes-csi/external-snapshotter/client/v8/apis/volumesnapshot/v1"
 	bsucsidriver "github.com/outscale/osc-bsu-csi-driver/pkg/driver"
+	"github.com/outscale/osc-bsu-csi-driver/pkg/driver/consts"
 	"github.com/outscale/osc-sdk-go/v3/pkg/osc"
 	corev1 "k8s.io/api/core/v1"
 	storagev1 "k8s.io/api/storage/v1"
@@ -101,7 +102,7 @@ func (d *bsuCSIDriver) GetPersistentVolume(volumeID string, fsType string, size 
 // GetParameters returns the parameters specific for this driver
 func GetParameters(volumeType osc.VolumeType, fsType, iops string, absoluteIops, encrypted bool, secretName, secretNamespace string) map[string]string {
 	parameters := map[string]string{
-		bsucsidriver.VolumeTypeKey:  string(volumeType),
+		consts.VolumeTypeKey:        string(volumeType),
 		"csi.storage.k8s.io/fstype": fsType,
 	}
 
@@ -110,13 +111,13 @@ func GetParameters(volumeType osc.VolumeType, fsType, iops string, absoluteIops,
 	}
 	switch {
 	case iops != "" && absoluteIops:
-		parameters[bsucsidriver.IopsKey] = iops
+		parameters[consts.IopsKey] = iops
 	case iops != "" && !absoluteIops:
-		parameters[bsucsidriver.IopsPerGBKey] = iops
+		parameters[consts.IopsPerGBKey] = iops
 	}
 
 	if encrypted {
-		parameters[bsucsidriver.EncryptedKey] = True
+		parameters[consts.EncryptedKey] = True
 	}
 	if len(secretName) != 0 {
 		parameters["csi.storage.k8s.io/node-stage-secret-name"] = secretName
@@ -155,7 +156,7 @@ func (d *bsuCSIDriver) GetPassphraseSecret(name string, passphrase string) *core
 	return &corev1.Secret{
 		Name: name,
 		StringData: map[string]string{
-			bsucsidriver.LuksPassphraseKey: passphrase,
+			consts.LuksPassphraseKey: passphrase,
 		},
 	}
 }
@@ -167,8 +168,8 @@ func (d *bsuCSIDriver) GetVolumeAttributesClass(namespace, name string, volumeTy
 			Namespace:  namespace,
 			DriverName: d.driverName,
 			Parameters: map[string]string{
-				bsucsidriver.VolumeTypeKey: string(volumeType),
-				bsucsidriver.IopsKey:       iopsPerGB,
+				consts.VolumeTypeKey: string(volumeType),
+				consts.IopsKey:       iopsPerGB,
 			},
 		}
 	}
@@ -177,8 +178,8 @@ func (d *bsuCSIDriver) GetVolumeAttributesClass(namespace, name string, volumeTy
 		Namespace:  namespace,
 		DriverName: d.driverName,
 		Parameters: map[string]string{
-			bsucsidriver.VolumeTypeKey: string(volumeType),
-			bsucsidriver.IopsPerGBKey:  iopsPerGB,
+			consts.VolumeTypeKey: string(volumeType),
+			consts.IopsPerGBKey:  iopsPerGB,
 		},
 	}
 }

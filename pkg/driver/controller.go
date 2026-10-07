@@ -26,6 +26,7 @@ import (
 	csi "github.com/container-storage-interface/spec/lib/go/csi"
 	"github.com/outscale/goutils/sdk/ptr"
 	"github.com/outscale/osc-bsu-csi-driver/pkg/cloud"
+	"github.com/outscale/osc-bsu-csi-driver/pkg/driver/consts"
 	"github.com/outscale/osc-bsu-csi-driver/pkg/util"
 	"github.com/outscale/osc-sdk-go/v3/pkg/osc"
 	"github.com/samber/lo"
@@ -116,31 +117,31 @@ func (d *controllerService) CreateVolume(ctx context.Context, req *csi.CreateVol
 		switch strings.ToLower(key) {
 		case "fstype":
 			klog.FromContext(ctx).V(2).Info(`"fstype" is deprecated, please use "csi.storage.k8s.io/fstype" instead`)
-		case VolumeTypeKey:
+		case consts.VolumeTypeKey:
 			volumeType = osc.VolumeType(value)
-		case IopsKey:
+		case consts.IopsKey:
 			iops, err = strconv.ParseInt(value, 10, 32)
 			if err != nil {
 				return nil, status.Errorf(codes.InvalidArgument, "Could not parse invalid iops: %v", err)
 			}
-		case IopsPerGBKey:
+		case consts.IopsPerGBKey:
 			iopsPerGB, err = strconv.ParseInt(value, 10, 32)
 			if err != nil {
 				return nil, status.Errorf(codes.InvalidArgument, "Could not parse invalid iopsPerGB: %v", err)
 			}
-		case EncryptedKey:
+		case consts.EncryptedKey:
 			if value == "true" {
 				isEncrypted = true
 			} else {
 				isEncrypted = false
 			}
-		case KmsKeyIDKey:
+		case consts.KmsKeyIDKey:
 			kmsKeyID = value
-		case LuksCipherKey:
+		case consts.LuksCipherKey:
 			luksCipher = value
-		case LuksKeySizeKey:
+		case consts.LuksKeySizeKey:
 			luksKeySize = value
-		case LuksHashKey:
+		case consts.LuksHashKey:
 			luksHash = value
 		default:
 			return nil, status.Errorf(codes.InvalidArgument, "Invalid parameter key %s for CreateVolume", key)
@@ -150,10 +151,10 @@ func (d *controllerService) CreateVolume(ctx context.Context, req *csi.CreateVol
 	// Check for encryption parameters
 	if isEncrypted {
 		volumeContextExtra = map[string]string{
-			EncryptedKey:   strconv.FormatBool(isEncrypted),
-			LuksHashKey:    luksHash,
-			LuksCipherKey:  luksCipher,
-			LuksKeySizeKey: luksKeySize,
+			consts.EncryptedKey:   strconv.FormatBool(isEncrypted),
+			consts.LuksHashKey:    luksHash,
+			consts.LuksCipherKey:  luksCipher,
+			consts.LuksKeySizeKey: luksKeySize,
 		}
 	} else {
 		volumeContextExtra = map[string]string{}
@@ -262,7 +263,7 @@ func (d *controllerService) ControllerPublishVolume(ctx context.Context, req *cs
 	if volumeContext == nil {
 		volumeContext = map[string]string{}
 	}
-	volumeContext[DevicePathKey] = devicePath
+	volumeContext[consts.DevicePathKey] = devicePath
 	return &csi.ControllerPublishVolumeResponse{PublishContext: volumeContext}, nil
 }
 
@@ -367,15 +368,15 @@ func (d *controllerService) ControllerModifyVolume(ctx context.Context, req *csi
 
 	for key, value := range req.GetMutableParameters() {
 		switch strings.ToLower(key) {
-		case VolumeTypeKey:
+		case consts.VolumeTypeKey:
 			volumeType = osc.VolumeType(value)
-		case IopsKey:
+		case consts.IopsKey:
 			var err error
 			iops, err = strconv.ParseInt(value, 10, 32)
 			if err != nil {
 				return nil, status.Errorf(codes.InvalidArgument, "Invalid iops value: %v", err)
 			}
-		case IopsPerGBKey:
+		case consts.IopsPerGBKey:
 			var err error
 			iopsPerGB, err = strconv.ParseInt(value, 10, 32)
 			if err != nil {

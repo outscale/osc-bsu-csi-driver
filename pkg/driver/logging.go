@@ -8,6 +8,7 @@ import (
 
 	csi "github.com/container-storage-interface/spec/lib/go/csi"
 	"github.com/outscale/goutils/sdk/ptr"
+	"github.com/outscale/osc-bsu-csi-driver/pkg/driver/consts"
 	"github.com/rs/xid"
 	"google.golang.org/grpc"
 	"k8s.io/klog/v2"
@@ -62,7 +63,7 @@ func loggingContext(req any, info *grpc.UnaryServerInfo, version string) []any {
 	case *csi.DeleteSnapshotRequest:
 		kv = append(kv, "snapshot_id", req.GetSnapshotId())
 	case *csi.NodeStageVolumeRequest:
-		kv = append(kv, "volume_id", req.GetVolumeId(), "encrypted", ptr.FromMap(req.GetPublishContext())[EncryptedKey] == "true")
+		kv = append(kv, "volume_id", req.GetVolumeId(), "encrypted", ptr.FromMap(req.GetPublishContext())[consts.EncryptedKey] == "true")
 		volCap := req.GetVolumeCapability()
 		if volCap != nil {
 			// GetFsType() does not panic if GetMount() returns nil.

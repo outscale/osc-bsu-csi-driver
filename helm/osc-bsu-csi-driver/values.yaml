@@ -156,6 +156,10 @@ node:
   # -- Node controller DaemonSet update strategy
   updateStrategy:
     type: RollingUpdate
+  # -- Enable metrics collection
+  metrics: true
+  # -- Port for metrics collection
+  metricsPort: "8084"
 
 sidecars:
   # -- Timeout for sidecars calls to the CSI driver

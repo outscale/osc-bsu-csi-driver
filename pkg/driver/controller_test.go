@@ -24,6 +24,7 @@ import (
 
 	"github.com/container-storage-interface/spec/lib/go/csi"
 	"github.com/outscale/osc-bsu-csi-driver/pkg/cloud"
+	"github.com/outscale/osc-bsu-csi-driver/pkg/driver/consts"
 	"github.com/outscale/osc-bsu-csi-driver/pkg/driver/mocks"
 	"github.com/outscale/osc-bsu-csi-driver/pkg/util"
 	"github.com/outscale/osc-sdk-go/v3/pkg/osc"
@@ -382,8 +383,8 @@ func TestCreateVolume(t *testing.T) {
 			CapacityRange:      stdCapRange,
 			VolumeCapabilities: stdVolCap,
 			Parameters: map[string]string{
-				VolumeTypeKey: string(osc.VolumeTypeIo1),
-				IopsKey:       "50",
+				consts.VolumeTypeKey: string(osc.VolumeTypeIo1),
+				consts.IopsKey:       "50",
 			},
 		}
 
@@ -418,8 +419,8 @@ func TestCreateVolume(t *testing.T) {
 			CapacityRange:      stdCapRange,
 			VolumeCapabilities: stdVolCap,
 			Parameters: map[string]string{
-				VolumeTypeKey: string(osc.VolumeTypeIo1),
-				IopsPerGBKey:  "5",
+				consts.VolumeTypeKey: string(osc.VolumeTypeIo1),
+				consts.IopsPerGBKey:  "5",
 			},
 		}
 
@@ -454,7 +455,7 @@ func TestCreateVolume(t *testing.T) {
 			CapacityRange:      stdCapRange,
 			VolumeCapabilities: stdVolCap,
 			Parameters: map[string]string{
-				VolumeTypeKey: string(osc.VolumeTypeIo1),
+				consts.VolumeTypeKey: string(osc.VolumeTypeIo1),
 			},
 		}
 
@@ -487,7 +488,7 @@ func TestCreateVolume(t *testing.T) {
 			CapacityRange:      stdCapRange,
 			VolumeCapabilities: stdVolCap,
 			Parameters: map[string]string{
-				VolumeTypeKey: string(osc.VolumeTypeStandard),
+				consts.VolumeTypeKey: string(osc.VolumeTypeStandard),
 			},
 		}
 
@@ -520,7 +521,7 @@ func TestCreateVolume(t *testing.T) {
 			CapacityRange:      stdCapRange,
 			VolumeCapabilities: stdVolCap,
 			Parameters: map[string]string{
-				EncryptedKey: "true",
+				consts.EncryptedKey: "true",
 			},
 		}
 
@@ -546,7 +547,7 @@ func TestCreateVolume(t *testing.T) {
 
 		volumeResponse, err := oscDriver.CreateVolume(ctx, req)
 		require.NoError(t, err)
-		assert.Equal(t, "true", volumeResponse.GetVolume().VolumeContext[EncryptedKey])
+		assert.Equal(t, "true", volumeResponse.GetVolume().VolumeContext[consts.EncryptedKey])
 	})
 	t.Run("success with volume encryption", func(t *testing.T) {
 		req := &csi.CreateVolumeRequest{
@@ -554,7 +555,7 @@ func TestCreateVolume(t *testing.T) {
 			CapacityRange:      stdCapRange,
 			VolumeCapabilities: stdVolCap,
 			Parameters: map[string]string{
-				EncryptedKey: "true",
+				consts.EncryptedKey: "true",
 			},
 		}
 
@@ -580,10 +581,10 @@ func TestCreateVolume(t *testing.T) {
 
 		volumeResponse, err := oscDriver.CreateVolume(ctx, req)
 		require.NoError(t, err)
-		assert.Equal(t, "true", volumeResponse.GetVolume().VolumeContext[EncryptedKey])
-		assert.Empty(t, volumeResponse.GetVolume().VolumeContext[LuksCipherKey])
-		assert.Empty(t, volumeResponse.GetVolume().VolumeContext[LuksHashKey])
-		assert.Empty(t, volumeResponse.GetVolume().VolumeContext[LuksKeySizeKey])
+		assert.Equal(t, "true", volumeResponse.GetVolume().VolumeContext[consts.EncryptedKey])
+		assert.Empty(t, volumeResponse.GetVolume().VolumeContext[consts.LuksCipherKey])
+		assert.Empty(t, volumeResponse.GetVolume().VolumeContext[consts.LuksHashKey])
+		assert.Empty(t, volumeResponse.GetVolume().VolumeContext[consts.LuksKeySizeKey])
 	})
 	t.Run("success with volume encryption with parameters", func(t *testing.T) {
 		req := &csi.CreateVolumeRequest{
@@ -591,10 +592,10 @@ func TestCreateVolume(t *testing.T) {
 			CapacityRange:      stdCapRange,
 			VolumeCapabilities: stdVolCap,
 			Parameters: map[string]string{
-				EncryptedKey:   "true",
-				LuksCipherKey:  "cipher",
-				LuksHashKey:    "hash",
-				LuksKeySizeKey: "keysize",
+				consts.EncryptedKey:   "true",
+				consts.LuksCipherKey:  "cipher",
+				consts.LuksHashKey:    "hash",
+				consts.LuksKeySizeKey: "keysize",
 			},
 		}
 
@@ -620,10 +621,10 @@ func TestCreateVolume(t *testing.T) {
 
 		volumeResponse, err := oscDriver.CreateVolume(ctx, req)
 		require.NoError(t, err)
-		assert.Equal(t, "true", volumeResponse.GetVolume().VolumeContext[EncryptedKey])
-		assert.Equal(t, "cipher", volumeResponse.GetVolume().VolumeContext[LuksCipherKey])
-		assert.Equal(t, "hash", volumeResponse.GetVolume().VolumeContext[LuksHashKey])
-		assert.Equal(t, "keysize", volumeResponse.GetVolume().VolumeContext[LuksKeySizeKey])
+		assert.Equal(t, "true", volumeResponse.GetVolume().VolumeContext[consts.EncryptedKey])
+		assert.Equal(t, "cipher", volumeResponse.GetVolume().VolumeContext[consts.LuksCipherKey])
+		assert.Equal(t, "hash", volumeResponse.GetVolume().VolumeContext[consts.LuksHashKey])
+		assert.Equal(t, "keysize", volumeResponse.GetVolume().VolumeContext[consts.LuksKeySizeKey])
 	})
 	t.Run("fail with invalid volume parameter", func(t *testing.T) {
 		req := &csi.CreateVolumeRequest{
@@ -631,8 +632,8 @@ func TestCreateVolume(t *testing.T) {
 			CapacityRange:      stdCapRange,
 			VolumeCapabilities: stdVolCap,
 			Parameters: map[string]string{
-				VolumeTypeKey: string(osc.VolumeTypeIo1),
-				"unknownKey":  "unknownValue",
+				consts.VolumeTypeKey: string(osc.VolumeTypeIo1),
+				"unknownKey":         "unknownValue",
 			},
 		}
 
@@ -1562,7 +1563,7 @@ func TestControllerPublishVolume(t *testing.T) {
 					VolumeId:         "vol-test",
 				}
 				expResp := &csi.ControllerPublishVolumeResponse{
-					PublishContext: map[string]string{DevicePathKey: expDevicePath},
+					PublishContext: map[string]string{consts.DevicePathKey: expDevicePath},
 				}
 
 				ctx := t.Context()
@@ -1825,19 +1826,19 @@ func TestControllerPublishVolume(t *testing.T) {
 					VolumeCapability: stdVolCap,
 					VolumeId:         "vol-test",
 					VolumeContext: map[string]string{
-						EncryptedKey:   "true",
-						LuksCipherKey:  "cipher",
-						LuksHashKey:    "hash",
-						LuksKeySizeKey: "keySize",
+						consts.EncryptedKey:   "true",
+						consts.LuksCipherKey:  "cipher",
+						consts.LuksHashKey:    "hash",
+						consts.LuksKeySizeKey: "keySize",
 					},
 				}
 				expResp := &csi.ControllerPublishVolumeResponse{
 					PublishContext: map[string]string{
-						DevicePathKey:  expDevicePath,
-						EncryptedKey:   "true",
-						LuksCipherKey:  "cipher",
-						LuksHashKey:    "hash",
-						LuksKeySizeKey: "keySize",
+						consts.DevicePathKey:  expDevicePath,
+						consts.EncryptedKey:   "true",
+						consts.LuksCipherKey:  "cipher",
+						consts.LuksHashKey:    "hash",
+						consts.LuksKeySizeKey: "keySize",
 					},
 				}
 

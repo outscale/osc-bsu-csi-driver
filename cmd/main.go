@@ -29,13 +29,15 @@ func main() {
 	options := GetOptions(fs)
 
 	ctx := context.Background()
-	drv, err := driver.NewDriver(ctx,
+	drv, err := driver.NewDriver(
+		ctx,
 		driver.WithMode(options.DriverMode),
 		driver.WithEndpoint(options.Endpoint),
 		driver.WithExtraVolumeTags(options.ExtraVolumeTags),
 		driver.WithExtraSnapshotTags(options.ExtraSnapshotTags),
 		driver.WithLuksOpenFlags(options.LuksOpenFlags),
 		driver.WithCloudOptions(options.CloudOptions),
+		driver.WithMetricsOptions(options.MetricsOptions),
 	)
 	if err != nil {
 		klog.Fatalln(err)

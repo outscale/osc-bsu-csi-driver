@@ -10,6 +10,7 @@ import (
 	sanity "github.com/kubernetes-csi/csi-test/v5/pkg/sanity"
 	"github.com/outscale/osc-bsu-csi-driver/pkg/driver"
 	"github.com/rs/xid"
+	"k8s.io/client-go/kubernetes/fake"
 	"k8s.io/component-base/logs"
 	logsv1 "k8s.io/component-base/logs/api/v1"
 	testingexec "k8s.io/utils/exec/testing"
@@ -40,12 +41,14 @@ func TestSanity(t *testing.T) {
 	}
 
 	ctx := t.Context()
-	drv, err := driver.NewDriver(ctx,
+	drv, err := driver.NewDriver(
+		ctx,
 		driver.WithExtraSnapshotTags(map[string]string{"csi-sanity-test": "true"}),
 		driver.WithExtraVolumeTags(map[string]string{"csi-sanity-test": "true"}),
 		driver.WithMode(driver.AllMode),
 		driver.WithEndpoint(endpoint),
 		driver.WithMounter(newFakeMounter()),
+		driver.WithKubeClient(fake.NewSimpleClientset()),
 	)
 	if err != nil {
 		t.Fatal(err)

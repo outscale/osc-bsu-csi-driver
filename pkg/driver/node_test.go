@@ -21,11 +21,12 @@ import (
 	"fmt"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/container-storage-interface/spec/lib/go/csi"
 	"github.com/outscale/goutils/sdk/metadata/mocks_metadata"
+	"github.com/outscale/osc-bsu-csi-driver/pkg/driver/consts"
 	"github.com/outscale/osc-bsu-csi-driver/pkg/driver/internal"
-	"github.com/outscale/osc-bsu-csi-driver/pkg/driver/k8s"
 	"github.com/outscale/osc-bsu-csi-driver/pkg/driver/luks"
 	"github.com/outscale/osc-bsu-csi-driver/pkg/driver/mocks"
 	"github.com/stretchr/testify/assert"
@@ -36,7 +37,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	storagev1 "k8s.io/api/storage/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes/fake"
 	exec "k8s.io/utils/exec"
 )
@@ -80,7 +81,7 @@ func TestNodeStageVolume(t *testing.T) {
 				}
 
 				req := &csi.NodeStageVolumeRequest{
-					PublishContext:    map[string]string{DevicePathKey: devicePath},
+					PublishContext:    map[string]string{consts.DevicePathKey: devicePath},
 					StagingTargetPath: targetPath,
 					VolumeCapability:  stdVolCap,
 					VolumeId:          "vol-test",
@@ -114,7 +115,7 @@ func TestNodeStageVolume(t *testing.T) {
 				}
 
 				req := &csi.NodeStageVolumeRequest{
-					PublishContext:    map[string]string{DevicePathKey: "/dev/fake"},
+					PublishContext:    map[string]string{consts.DevicePathKey: "/dev/fake"},
 					StagingTargetPath: "/test/path",
 					VolumeCapability: &csi.VolumeCapability{
 						AccessType: &csi.VolumeCapability_Block{
@@ -146,7 +147,7 @@ func TestNodeStageVolume(t *testing.T) {
 				}
 
 				req := &csi.NodeStageVolumeRequest{
-					PublishContext:    map[string]string{DevicePathKey: devicePath},
+					PublishContext:    map[string]string{consts.DevicePathKey: devicePath},
 					StagingTargetPath: targetPath,
 					VolumeCapability: &csi.VolumeCapability{
 						AccessType: &csi.VolumeCapability_Mount{
@@ -190,7 +191,7 @@ func TestNodeStageVolume(t *testing.T) {
 				}
 
 				req := &csi.NodeStageVolumeRequest{
-					PublishContext:    map[string]string{DevicePathKey: devicePath},
+					PublishContext:    map[string]string{consts.DevicePathKey: devicePath},
 					StagingTargetPath: targetPath,
 					VolumeCapability: &csi.VolumeCapability{
 						AccessType: &csi.VolumeCapability_Mount{
@@ -233,7 +234,7 @@ func TestNodeStageVolume(t *testing.T) {
 				}
 
 				req := &csi.NodeStageVolumeRequest{
-					PublishContext:    map[string]string{DevicePathKey: devicePath},
+					PublishContext:    map[string]string{consts.DevicePathKey: devicePath},
 					StagingTargetPath: targetPath,
 					VolumeCapability: &csi.VolumeCapability{
 						AccessType: &csi.VolumeCapability_Mount{
@@ -277,7 +278,7 @@ func TestNodeStageVolume(t *testing.T) {
 				}
 
 				req := &csi.NodeStageVolumeRequest{
-					PublishContext:    map[string]string{DevicePathKey: devicePath},
+					PublishContext:    map[string]string{consts.DevicePathKey: devicePath},
 					StagingTargetPath: targetPath,
 					VolumeCapability:  stdVolCap,
 				}
@@ -301,7 +302,7 @@ func TestNodeStageVolume(t *testing.T) {
 				}
 
 				req := &csi.NodeStageVolumeRequest{
-					PublishContext:    map[string]string{DevicePathKey: devicePath},
+					PublishContext:    map[string]string{consts.DevicePathKey: devicePath},
 					StagingTargetPath: targetPath,
 					VolumeCapability: &csi.VolumeCapability{
 						AccessType: &csi.VolumeCapability_Mount{},
@@ -331,7 +332,7 @@ func TestNodeStageVolume(t *testing.T) {
 
 				devicePath := "/dev/fake"
 				req := &csi.NodeStageVolumeRequest{
-					PublishContext:   map[string]string{DevicePathKey: devicePath},
+					PublishContext:   map[string]string{consts.DevicePathKey: devicePath},
 					VolumeCapability: stdVolCap,
 					VolumeId:         "vol-test",
 				}
@@ -355,7 +356,7 @@ func TestNodeStageVolume(t *testing.T) {
 				}
 
 				req := &csi.NodeStageVolumeRequest{
-					PublishContext:    map[string]string{DevicePathKey: devicePath},
+					PublishContext:    map[string]string{consts.DevicePathKey: devicePath},
 					StagingTargetPath: "/test/path",
 					VolumeId:          "vol-test",
 				}
@@ -378,7 +379,7 @@ func TestNodeStageVolume(t *testing.T) {
 				}
 
 				req := &csi.NodeStageVolumeRequest{
-					PublishContext:    map[string]string{DevicePathKey: "/dev/fake"},
+					PublishContext:    map[string]string{consts.DevicePathKey: "/dev/fake"},
 					StagingTargetPath: "/test/path",
 					VolumeCapability: &csi.VolumeCapability{
 						AccessMode: &csi.VolumeCapability_AccessMode{
@@ -428,7 +429,7 @@ func TestNodeStageVolume(t *testing.T) {
 				}
 
 				req := &csi.NodeStageVolumeRequest{
-					PublishContext:    map[string]string{DevicePathKey: devicePath},
+					PublishContext:    map[string]string{consts.DevicePathKey: devicePath},
 					StagingTargetPath: targetPath,
 					VolumeCapability:  stdVolCap,
 					VolumeId:          "vol-test",
@@ -460,7 +461,7 @@ func TestNodeStageVolume(t *testing.T) {
 				}
 
 				req := &csi.NodeStageVolumeRequest{
-					PublishContext:    map[string]string{DevicePathKey: devicePath},
+					PublishContext:    map[string]string{consts.DevicePathKey: devicePath},
 					StagingTargetPath: targetPath,
 					VolumeCapability: &csi.VolumeCapability{
 						AccessType: &csi.VolumeCapability_Mount{
@@ -504,8 +505,8 @@ func TestNodeStageVolume(t *testing.T) {
 
 				req := &csi.NodeStageVolumeRequest{
 					PublishContext: map[string]string{
-						DevicePathKey: devicePath,
-						EncryptedKey:  "true",
+						consts.DevicePathKey: devicePath,
+						consts.EncryptedKey:  "true",
 					},
 					StagingTargetPath: targetPath,
 					VolumeCapability: &csi.VolumeCapability{
@@ -520,7 +521,7 @@ func TestNodeStageVolume(t *testing.T) {
 					},
 					VolumeId: "vol-test",
 					Secrets: map[string]string{
-						LuksPassphraseKey: passphrase,
+						consts.LuksPassphraseKey: passphrase,
 					},
 				}
 
@@ -562,8 +563,8 @@ func TestNodeStageVolume(t *testing.T) {
 
 				req := &csi.NodeStageVolumeRequest{
 					PublishContext: map[string]string{
-						DevicePathKey: devicePath,
-						EncryptedKey:  "true",
+						consts.DevicePathKey: devicePath,
+						consts.EncryptedKey:  "true",
 					},
 					StagingTargetPath: targetPath,
 					VolumeCapability: &csi.VolumeCapability{
@@ -578,7 +579,7 @@ func TestNodeStageVolume(t *testing.T) {
 					},
 					VolumeId: "vol-test",
 					Secrets: map[string]string{
-						LuksPassphraseKey: passphrase,
+						consts.LuksPassphraseKey: passphrase,
 					},
 				}
 
@@ -618,11 +619,11 @@ func TestNodeStageVolume(t *testing.T) {
 
 				req := &csi.NodeStageVolumeRequest{
 					PublishContext: map[string]string{
-						DevicePathKey:  devicePath,
-						EncryptedKey:   "true",
-						LuksCipherKey:  "anCipher",
-						LuksHashKey:    "AnHashAlgo",
-						LuksKeySizeKey: "AnKeySize",
+						consts.DevicePathKey:  devicePath,
+						consts.EncryptedKey:   "true",
+						consts.LuksCipherKey:  "anCipher",
+						consts.LuksHashKey:    "AnHashAlgo",
+						consts.LuksKeySizeKey: "AnKeySize",
 					},
 					StagingTargetPath: targetPath,
 					VolumeCapability: &csi.VolumeCapability{
@@ -637,7 +638,7 @@ func TestNodeStageVolume(t *testing.T) {
 					},
 					VolumeId: "vol-test",
 					Secrets: map[string]string{
-						LuksPassphraseKey: passphrase,
+						consts.LuksPassphraseKey: passphrase,
 					},
 				}
 
@@ -650,7 +651,11 @@ func TestNodeStageVolume(t *testing.T) {
 				mockMounter.EXPECT().GetDeviceName(targetPath).Return("", 1, nil)
 				// Check Luks
 				mockMounter.EXPECT().IsLuks(gomock.Eq(devicePath)).Return(false)
-				mockMounter.EXPECT().LuksFormat(gomock.Eq(devicePath), gomock.Eq(passphrase), gomock.Eq(luks.LuksContext{Cipher: req.PublishContext[LuksCipherKey], Hash: req.PublishContext[LuksHashKey], KeySize: req.PublishContext[LuksKeySizeKey]})).Return(nil)
+				mockMounter.EXPECT().LuksFormat(gomock.Eq(devicePath), gomock.Eq(passphrase), gomock.Eq(luks.LuksContext{
+					Cipher:  req.PublishContext[consts.LuksCipherKey],
+					Hash:    req.PublishContext[consts.LuksHashKey],
+					KeySize: req.PublishContext[consts.LuksKeySizeKey],
+				})).Return(nil)
 				mockMounter.EXPECT().CheckLuksPassphrase(gomock.Eq(devicePath), gomock.Eq(passphrase)).Return(nil)
 				mockMounter.EXPECT().LuksOpen(gomock.Eq(devicePath), gomock.Eq(encryptedDeviceName), gomock.Eq(passphrase))
 
@@ -677,8 +682,8 @@ func TestNodeStageVolume(t *testing.T) {
 
 				req := &csi.NodeStageVolumeRequest{
 					PublishContext: map[string]string{
-						DevicePathKey: devicePath,
-						EncryptedKey:  "true",
+						consts.DevicePathKey: devicePath,
+						consts.EncryptedKey:  "true",
 					},
 					StagingTargetPath: targetPath,
 					VolumeCapability: &csi.VolumeCapability{
@@ -723,8 +728,8 @@ func TestNodeStageVolume(t *testing.T) {
 
 				req := &csi.NodeStageVolumeRequest{
 					PublishContext: map[string]string{
-						DevicePathKey: devicePath,
-						EncryptedKey:  "true",
+						consts.DevicePathKey: devicePath,
+						consts.EncryptedKey:  "true",
 					},
 					StagingTargetPath: targetPath,
 					VolumeCapability: &csi.VolumeCapability{
@@ -739,7 +744,7 @@ func TestNodeStageVolume(t *testing.T) {
 					},
 					VolumeId: "vol-test",
 					Secrets: map[string]string{
-						LuksPassphraseKey: passphrase,
+						consts.LuksPassphraseKey: passphrase,
 					},
 				}
 
@@ -985,7 +990,7 @@ func TestNodePublishVolume(t *testing.T) {
 				mockMounter.EXPECT().Mount(gomock.Eq(stagingTargetPath), gomock.Eq(targetPath), gomock.Eq(defaultFsType), gomock.Eq([]string{"bind"})).Return(nil)
 
 				req := &csi.NodePublishVolumeRequest{
-					PublishContext:    map[string]string{DevicePathKey: devicePath},
+					PublishContext:    map[string]string{consts.DevicePathKey: devicePath},
 					StagingTargetPath: stagingTargetPath,
 					TargetPath:        targetPath,
 					VolumeCapability:  stdVolCap,
@@ -1013,7 +1018,7 @@ func TestNodePublishVolume(t *testing.T) {
 				mockMounter.EXPECT().IsLikelyNotMountPoint(gomock.Eq(targetPath)).Return(false, nil)
 
 				req := &csi.NodePublishVolumeRequest{
-					PublishContext:    map[string]string{DevicePathKey: devicePath},
+					PublishContext:    map[string]string{consts.DevicePathKey: devicePath},
 					StagingTargetPath: stagingTargetPath,
 					TargetPath:        targetPath,
 					VolumeCapability:  stdVolCap,
@@ -1042,7 +1047,7 @@ func TestNodePublishVolume(t *testing.T) {
 				mockMounter.EXPECT().Mount(gomock.Eq(stagingTargetPath), gomock.Eq(targetPath), gomock.Eq(FSTypeXfs), gomock.Eq([]string{"bind"})).Return(nil)
 
 				req := &csi.NodePublishVolumeRequest{
-					PublishContext:    map[string]string{DevicePathKey: devicePath},
+					PublishContext:    map[string]string{consts.DevicePathKey: devicePath},
 					StagingTargetPath: stagingTargetPath,
 					TargetPath:        targetPath,
 					VolumeCapability: &csi.VolumeCapability{
@@ -1080,7 +1085,7 @@ func TestNodePublishVolume(t *testing.T) {
 				mockMounter.EXPECT().Mount(gomock.Eq(stagingTargetPath), gomock.Eq(targetPath), gomock.Eq(defaultFsType), gomock.Eq([]string{"bind", "ro"})).Return(nil)
 
 				req := &csi.NodePublishVolumeRequest{
-					PublishContext:    map[string]string{DevicePathKey: devicePath},
+					PublishContext:    map[string]string{consts.DevicePathKey: devicePath},
 					Readonly:          true,
 					StagingTargetPath: stagingTargetPath,
 					TargetPath:        targetPath,
@@ -1110,7 +1115,7 @@ func TestNodePublishVolume(t *testing.T) {
 				mockMounter.EXPECT().Mount(gomock.Eq(stagingTargetPath), gomock.Eq(targetPath), gomock.Eq(defaultFsType), gomock.Eq([]string{"bind", "test-flag"})).Return(nil)
 
 				req := &csi.NodePublishVolumeRequest{
-					PublishContext:    map[string]string{DevicePathKey: "/dev/fake"},
+					PublishContext:    map[string]string{consts.DevicePathKey: "/dev/fake"},
 					StagingTargetPath: stagingTargetPath,
 					TargetPath:        targetPath,
 					VolumeCapability: &csi.VolumeCapability{
@@ -1157,7 +1162,7 @@ func TestNodePublishVolume(t *testing.T) {
 				mockMounter.EXPECT().Mount(gomock.Eq(devicePath), gomock.Eq(targetPath), gomock.Eq(""), gomock.Eq([]string{"bind"})).Return(nil)
 
 				req := &csi.NodePublishVolumeRequest{
-					PublishContext:    map[string]string{DevicePathKey: "/dev/fake"},
+					PublishContext:    map[string]string{consts.DevicePathKey: "/dev/fake"},
 					StagingTargetPath: stagingTargetPath,
 					TargetPath:        targetPath,
 					VolumeCapability: &csi.VolumeCapability{
@@ -1220,7 +1225,7 @@ func TestNodePublishVolume(t *testing.T) {
 				}
 
 				req := &csi.NodePublishVolumeRequest{
-					PublishContext:    map[string]string{DevicePathKey: "/dev/fake"},
+					PublishContext:    map[string]string{consts.DevicePathKey: "/dev/fake"},
 					StagingTargetPath: stagingTargetPath,
 					TargetPath:        targetPath,
 					VolumeCapability: &csi.VolumeCapability{
@@ -1254,7 +1259,7 @@ func TestNodePublishVolume(t *testing.T) {
 				}
 
 				req := &csi.NodePublishVolumeRequest{
-					PublishContext:    map[string]string{DevicePathKey: devicePath},
+					PublishContext:    map[string]string{consts.DevicePathKey: devicePath},
 					StagingTargetPath: stagingTargetPath,
 					TargetPath:        targetPath,
 					VolumeCapability:  stdVolCap,
@@ -1278,7 +1283,7 @@ func TestNodePublishVolume(t *testing.T) {
 				}
 
 				req := &csi.NodePublishVolumeRequest{
-					PublishContext:   map[string]string{DevicePathKey: devicePath},
+					PublishContext:   map[string]string{consts.DevicePathKey: devicePath},
 					TargetPath:       targetPath,
 					VolumeCapability: stdVolCap,
 					VolumeId:         "vol-test",
@@ -1302,7 +1307,7 @@ func TestNodePublishVolume(t *testing.T) {
 				}
 
 				req := &csi.NodePublishVolumeRequest{
-					PublishContext:    map[string]string{DevicePathKey: devicePath},
+					PublishContext:    map[string]string{consts.DevicePathKey: devicePath},
 					StagingTargetPath: stagingTargetPath,
 					VolumeCapability:  stdVolCap,
 					VolumeId:          "vol-test",
@@ -1326,7 +1331,7 @@ func TestNodePublishVolume(t *testing.T) {
 				}
 
 				req := &csi.NodePublishVolumeRequest{
-					PublishContext:    map[string]string{DevicePathKey: devicePath},
+					PublishContext:    map[string]string{consts.DevicePathKey: devicePath},
 					StagingTargetPath: stagingTargetPath,
 					TargetPath:        targetPath,
 					VolumeId:          "vol-test",
@@ -1349,7 +1354,7 @@ func TestNodePublishVolume(t *testing.T) {
 				}
 
 				req := &csi.NodePublishVolumeRequest{
-					PublishContext:    map[string]string{DevicePathKey: "/dev/fake"},
+					PublishContext:    map[string]string{consts.DevicePathKey: "/dev/fake"},
 					StagingTargetPath: "/test/staging/path",
 					TargetPath:        "/test/target/path",
 					VolumeId:          "vol-test",
@@ -1831,18 +1836,19 @@ func TestNodeGetInfo(t *testing.T) {
 					Name: nodeName,
 				})
 			}
-			savedGetClient := k8s.GetClient
-			defer func() { k8s.GetClient = savedGetClient }()
-			k8s.GetClient = func() (kubernetes.Interface, error) {
-				return fake.NewSimpleClientset(objs...), nil
-			}
+			kubeClient := fake.NewSimpleClientset(objs...)
+			sif := informers.NewSharedInformerFactory(kubeClient, 30*time.Minute)
 
 			oscDriver := &nodeService{
-				instanceID: tc.instanceID,
-				subRegion:  tc.subRegion,
-				nodeName:   nodeName,
-				inFlight:   internal.NewInFlight(),
+				instanceID:        tc.instanceID,
+				subRegion:         tc.subRegion,
+				nodeName:          nodeName,
+				inFlight:          internal.NewInFlight(),
+				nodes:             sif.Core().V1().Nodes().Lister(),
+				volumeAttachments: sif.Storage().V1().VolumeAttachments().Lister(),
 			}
+			sif.StartWithContext(t.Context())
+			_ = sif.WaitForCacheSyncWithContext(t.Context())
 
 			resp, err := oscDriver.NodeGetInfo(t.Context(), &csi.NodeGetInfoRequest{})
 			require.NoError(t, err)

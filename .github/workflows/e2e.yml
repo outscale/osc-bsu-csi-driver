@@ -123,8 +123,8 @@ jobs:
         OSC_ACCESS_KEY: ${{ secrets[env.OSC_ACCESS_KEY_NAME] }}
         OSC_SECRET_KEY: ${{ secrets[env.OSC_SECRET_KEY_NAME] }}
         OSC_REGION: ${{ env.OSC_REGION}}
-        TARGET_IMAGE: "${{ vars.REGISTRY }}/outscale/csi"
-        TARGET_TAG: ${{ github.sha }}
+        REGISTRY_IMAGE: "${{ vars.REGISTRY }}/outscale/csi"
+        REGISTRY_TAG: ${{ github.sha }}
     - name: 🧪 Run e2e tests
       run: make test-e2e
       env:

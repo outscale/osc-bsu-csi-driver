@@ -415,6 +415,7 @@ func TestHelmTemplate_DaemonSet(t *testing.T) {
 			"--name=bsu.csi.outscale.com",
 			"--endpoint=$(CSI_ENDPOINT)",
 			"--v=3",
+			"--http-endpoint=:8084",
 		}, manager.Args)
 		assert.Equal(t, []corev1.EnvVar{
 			{Name: "CSI_ENDPOINT", Value: "unix:/csi/csi.sock"},
@@ -526,6 +527,7 @@ func TestHelmTemplate_DaemonSet(t *testing.T) {
 			"--v=3",
 			"--luks-open-flags=--perf-no_read_workqueue",
 			"--luks-open-flags=--perf-no_write_workqueue",
+			"--http-endpoint=:8084",
 		},
 			dep.Spec.Template.Spec.Containers[0].Args)
 	})
@@ -572,5 +574,21 @@ func TestHelmTemplate_DaemonSet(t *testing.T) {
 			{Name: "regcred"},
 		},
 			dep.Spec.Template.Spec.ImagePullSecrets)
+	})
+	t.Run("metrics can be disabled", func(t *testing.T) {
+		dep := getDaemonSet(
+			t,
+			"node.metrics=false",
+		)
+		require.Len(t, dep.Spec.Template.Spec.Containers, 3)
+		assert.NotContains(t, dep.Spec.Template.Spec.Containers[0].Args, "--http-endpoint=:8084")
+	})
+	t.Run("metrics port can be configured", func(t *testing.T) {
+		dep := getDaemonSet(
+			t,
+			"node.metricsPort=8085",
+		)
+		require.Len(t, dep.Spec.Template.Spec.Containers, 3)
+		assert.Contains(t, dep.Spec.Template.Spec.Containers[0].Args, "--http-endpoint=:8085")
 	})
 }

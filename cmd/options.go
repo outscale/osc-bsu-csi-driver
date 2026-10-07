@@ -35,9 +35,10 @@ import (
 type Options struct {
 	DriverMode driver.Mode
 
-	*options.ServerOptions
-	*options.ControllerOptions
-	*options.NodeOptions
+	options.ServerOptions
+	options.ControllerOptions
+	options.NodeOptions
+	options.MetricsOptions
 }
 
 // used for testing
@@ -52,6 +53,8 @@ func GetOptions(fs *pflag.FlagSet) *Options {
 	serverOptions.AddFlags(fs)
 	logOptions := logs.NewOptions()
 	logsv1.AddFlags(logOptions, fs)
+	metricsOptions := options.MetricsOptions{}
+	metricsOptions.AddFlags(fs)
 
 	fs.StringVar(&driver.DriverName, "name", driver.DefaultDriverName, "Driver name")
 
@@ -111,8 +114,9 @@ func GetOptions(fs *pflag.FlagSet) *Options {
 	return &Options{
 		DriverMode: mode,
 
-		ServerOptions:     &serverOptions,
-		ControllerOptions: &controllerOptions,
-		NodeOptions:       &nodeOptions,
+		ServerOptions:     serverOptions,
+		ControllerOptions: controllerOptions,
+		NodeOptions:       nodeOptions,
+		MetricsOptions:    metricsOptions,
 	}
 }

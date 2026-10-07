@@ -63,6 +63,13 @@ spec:
           {{- range .Values.node.additionalArgs }}
             - {{ . }}
           {{- end }}
+          {{- if .Values.node.metrics }}
+            - --http-endpoint=:{{ .Values.node.metricsPort }}
+          ports:
+            - name: httpendpoint
+              containerPort: {{ .Values.node.metricsPort }}
+              protocol: TCP
+          {{- end }}
           env:
             - name: CSI_ENDPOINT
               value: unix:/csi/csi.sock
@@ -86,6 +93,8 @@ spec:
               mountPath: /csi
             - name: device-dir
               mountPath: /dev
+            - name: sys-block-dir
+              mountPath: /sys/block
           ports:
             - name: healthz
               containerPort: {{ .Values.sidecars.livenessProbe.port }}
@@ -181,4 +190,8 @@ spec:
         - name: device-dir
           hostPath:
             path: /dev
+            type: Directory
+        - name: sys-block-dir
+          hostPath:
+            path: /sys/block
             type: Directory

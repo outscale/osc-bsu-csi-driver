@@ -5,7 +5,8 @@ import (
 	"k8s.io/klog/v2"
 )
 
-type LoggingCollector interface {
+type Collector interface {
+	ConfigureMetrics(labels prometheus.Labels)
 	SetLogger(logger klog.Logger)
 	prometheus.Collector
 }

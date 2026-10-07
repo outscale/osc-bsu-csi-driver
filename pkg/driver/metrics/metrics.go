@@ -1,10 +1,13 @@
 package metrics
 
 import (
+	"context"
 	"net/http"
 	"time"
 
+	"github.com/outscale/goutils/sdk/metadata"
 	"github.com/outscale/osc-bsu-csi-driver/cmd/options"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/collectors"
 	"golang.org/x/time/rate"
 	"k8s.io/component-base/metrics"
@@ -12,22 +15,34 @@ import (
 )
 
 const (
-	namespace = "osc_csi_"
+	namespace = "osc_csi"
 )
 
 type Manager struct {
 	registry metrics.KubeRegistry
 	opts     options.MetricsOptions
 	logger   klog.Logger
+
+	constLabels prometheus.Labels
 }
 
-func NewManager(opts options.MetricsOptions) Manager {
-	m := Manager{
+func NewManager(ctx context.Context, node, driver string, opts options.MetricsOptions) (*Manager, error) {
+	instanceID, err := metadata.GetInstanceID(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	m := &Manager{
 		registry: metrics.NewKubeRegistry(),
 		opts:     opts,
 		logger:   klog.LoggerWithName(klog.Background(), "metrics"),
+		constLabels: prometheus.Labels{
+			"instance": instanceID,
+			"driver":   driver,
+			"node":     node,
+		},
 	}
-	return m
+	return m, nil
 }
 
 func (m *Manager) GetRegistry() metrics.KubeRegistry {
@@ -40,8 +55,9 @@ func (m *Manager) RegisterRuntimeMetrics() {
 	)
 }
 
-func (m *Manager) Register(collectors ...LoggingCollector) {
+func (m *Manager) Register(collectors ...Collector) {
 	for _, c := range collectors {
+		c.ConfigureMetrics(m.constLabels)
 		c.SetLogger(m.logger)
 		m.registry.RawMustRegister(c)
 	}

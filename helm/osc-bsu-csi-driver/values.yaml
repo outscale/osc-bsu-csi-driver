@@ -123,6 +123,10 @@ controller:
   affinity: {}
   # -- Security context for the controller container.
   securityContext: {}
+  # -- Enable metrics collection
+  metrics: true
+  # -- Port for metrics collection
+  metricsPort: "8084"
 
 node:
   # -- Annotations for node controller pod

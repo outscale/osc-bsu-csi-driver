@@ -66,7 +66,7 @@ spec:
           {{- if .Values.node.metrics }}
             - --http-endpoint=:{{ .Values.node.metricsPort }}
           ports:
-            - name: httpendpoint
+            - name: nodehttp
               containerPort: {{ .Values.node.metricsPort }}
               protocol: TCP
           {{- end }}
@@ -122,13 +122,6 @@ spec:
             - --kubelet-registration-path=$(DRIVER_REG_SOCK_PATH)
             - --v={{ .Values.logs.verbosity }}
             - --logging-format={{ .Values.logs.format }}
-          {{- if .Values.sidecars.metrics }}
-            - --http-endpoint=:{{ .Values.sidecars.nodeDriverRegistrar.metricsPort }}
-          ports:
-            - name: httpendpoint
-              containerPort: {{ .Values.sidecars.nodeDriverRegistrar.metricsPort }}
-              protocol: TCP
-          {{- end }}
           env:
             - name: ADDRESS
               value: /csi/csi.sock

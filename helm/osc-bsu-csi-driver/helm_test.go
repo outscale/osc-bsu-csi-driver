@@ -103,6 +103,7 @@ func TestHelmTemplate_Deployment(t *testing.T) {
 			"--endpoint=$(CSI_ENDPOINT)",
 			"--v=3",
 			"--iops-on-resize=tag",
+			"--http-endpoint=:8084",
 		}, manager.Args)
 		assert.Equal(t, []corev1.EnvVar{
 			{Name: "CSI_ENDPOINT", Value: "unix:///var/lib/csi/sockets/pluginproxy/csi.sock"},

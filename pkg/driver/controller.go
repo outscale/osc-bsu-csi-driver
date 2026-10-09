@@ -62,12 +62,7 @@ type controllerService struct {
 
 // newControllerService creates a new controller service
 // it panics if failed to create the service
-func newControllerService(ctx context.Context, driverOptions *DriverOptions) controllerService {
-	cloud, err := cloud.NewCloud(ctx, driverOptions.cloudOptions)
-	if err != nil {
-		panic(err)
-	}
-
+func newControllerService(cloud cloud.Cloud, driverOptions *DriverOptions) controllerService {
 	return controllerService{
 		cloud:         cloud,
 		driverOptions: driverOptions,

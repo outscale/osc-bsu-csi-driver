@@ -32,15 +32,18 @@ func NewManager(ctx context.Context, node, driver string, opts options.MetricsOp
 		return nil, err
 	}
 
+	labels := prometheus.Labels{
+		"instance": instanceID,
+		"driver":   driver,
+	}
+	if node != "" {
+		labels["node"] = node
+	}
 	m := &Manager{
-		registry: metrics.NewKubeRegistry(),
-		opts:     opts,
-		logger:   klog.LoggerWithName(klog.Background(), "metrics"),
-		constLabels: prometheus.Labels{
-			"instance": instanceID,
-			"driver":   driver,
-			"node":     node,
-		},
+		registry:    metrics.NewKubeRegistry(),
+		opts:        opts,
+		logger:      klog.LoggerWithName(klog.Background(), "metrics"),
+		constLabels: labels,
 	}
 	return m, nil
 }

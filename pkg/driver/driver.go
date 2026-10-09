@@ -25,6 +25,7 @@ import (
 
 	csi "github.com/container-storage-interface/spec/lib/go/csi"
 	"github.com/outscale/osc-bsu-csi-driver/cmd/options"
+	"github.com/outscale/osc-bsu-csi-driver/pkg/cloud"
 	"github.com/outscale/osc-bsu-csi-driver/pkg/driver/k8s"
 	"github.com/outscale/osc-bsu-csi-driver/pkg/driver/metrics"
 	"github.com/outscale/osc-bsu-csi-driver/pkg/util"
@@ -139,7 +140,16 @@ func NewDriver(ctx context.Context, opts ...func(*DriverOptions)) (*Driver, erro
 
 	// no need to test for invalid modes, as ValidateDriverOptions has already done it.
 	if driverOptions.mode.HasController() {
-		driver.controllerService = newControllerService(ctx, &driverOptions)
+		sifVolumes := k8s.GetVolumeInformerFactory(node, driverOptions.kubeClient)
+		driver.sifs = append(driver.sifs, sifVolumes)
+
+		cloud, err := cloud.NewCloud(ctx, driverOptions.cloudOptions)
+		if err != nil {
+			return nil, fmt.Errorf("cloud: %w", err)
+		}
+		driver.controllerService = newControllerService(cloud, &driverOptions)
+		driver.metrics.Register(metrics.NewControllerCollector(ctx, DriverName, cloud, sifVolumes))
+
 	}
 	if driverOptions.mode.HasNode() {
 		// Build informers required for node

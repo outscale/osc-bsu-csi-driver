@@ -196,8 +196,9 @@ See **[Deploy](./deploy.md)** for step-by-step installation (Helm/Manifests) and
 | Metric name | Type | Labels | Description |
 | ----------- | ---- | ------ | ----------- |
 | osc_csi_grpc_operations | counter | method, status | The total number of CSI driver operations |
+| osc_csi_volume_iops | gauge | pvc, namespace, pv, storage_class, volume_attribute_class, volume_id, volume_type | IOPS configuration of volumes |
 
-> All metrics share the same base labels: node, instance and driver.
+> All metrics share the same base labels: instance and driver.
 </details>
 
 <details>
@@ -206,10 +207,11 @@ See **[Deploy](./deploy.md)** for step-by-step installation (Helm/Manifests) and
 | Metric name | Type | Labels | Description |
 | ----------- | ---- | ------ | ----------- |
 | osc_csi_grpc_operations | counter | method, status | The total number of CSI driver operations |
-| osc_csi_blockdevice_read_ops_total | counter | pvc, device | The total number of completed read operations |
-| osc_csi_blockdevice_write_ops_total | counter | pvc, device | The total number of completed write operations |
-| osc_csi_blockdevice_in_flight | gauge | pvc, device | The number of I/Os currently in flight |
-| osc_csi_blockdevice_time_in_queue_total | counter |  pvc, device | The total wait time, in milliseconds, for all requests |
+| osc_csi_volume_attachments | gauge | pv, device | Volume attachment information |
+| osc_csi_blockdevice_read_ops_total | counter | pv, device | The total number of completed read operations |
+| osc_csi_blockdevice_write_ops_total | counter | pv, device | The total number of completed write operations |
+| osc_csi_blockdevice_in_flight | gauge | pv, device | The number of I/Os currently in flight |
+| osc_csi_blockdevice_time_in_queue_total | counter |  pv, device | The total wait time, in milliseconds, for all requests |
 
 > All metrics share the same base labels: node, instance and driver.
 </details>

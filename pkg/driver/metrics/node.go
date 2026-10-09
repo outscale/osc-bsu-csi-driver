@@ -19,11 +19,12 @@ import (
 )
 
 const (
-	nodeSubsystem     = "blockdevice"
-	metricReadOps     = namespace + "_" + nodeSubsystem + "_read_ops_total"
-	metricWriteOps    = namespace + "_" + nodeSubsystem + "_write_ops_total"
-	metricInFlight    = namespace + "_" + nodeSubsystem + "_in_flight"
-	metricTimeInQueue = namespace + "_" + nodeSubsystem + "_time_in_queue_total"
+	metricAttachment     = namespace + "_" + volumeSubsystem + "_attachment"
+	blockDeviceSubsystem = "blockdevice"
+	metricReadOps        = namespace + "_" + blockDeviceSubsystem + "_read_ops_total"
+	metricWriteOps       = namespace + "_" + blockDeviceSubsystem + "_write_ops_total"
+	metricInFlight       = namespace + "_" + blockDeviceSubsystem + "_in_flight"
+	metricTimeInQueue    = namespace + "_" + blockDeviceSubsystem + "_time_in_queue_total"
 )
 
 type NodeCollector struct {
@@ -49,8 +50,9 @@ func (c *NodeCollector) SetLogger(logger klog.Logger) {
 }
 
 func (c *NodeCollector) ConfigureMetrics(constLabels prometheus.Labels) {
-	variableLabels := []string{"pvc", "device"}
+	variableLabels := []string{"pv", "device"}
 	nodeMetrics := map[string]*prometheus.Desc{
+		metricAttachment:  prometheus.NewDesc(metricAttachment, "Volume attachments.", variableLabels, constLabels),
 		metricReadOps:     prometheus.NewDesc(metricReadOps, "The total number of completed read operations.", variableLabels, constLabels),
 		metricWriteOps:    prometheus.NewDesc(metricWriteOps, "The total number of completed write operations.", variableLabels, constLabels),
 		metricInFlight:    prometheus.NewDesc(metricInFlight, "The number of I/Os currently in flight.", variableLabels, constLabels),
@@ -67,7 +69,7 @@ func (c *NodeCollector) Describe(ch chan<- *prometheus.Desc) {
 
 func (c *NodeCollector) Collect(ch chan<- prometheus.Metric) {
 	logger := c.logger.V(5)
-	logger.Info("Collecting node stats")
+	logger.Info("Collecting metrics")
 	vas, err := k8s.ListAttachedVolumes(c.node, c.driver, c.volumeAttachments, c.logger)
 	if err != nil {
 		logger.Error(err, "Cannot list VolumeAttachments")
@@ -76,6 +78,9 @@ func (c *NodeCollector) Collect(ch chan<- prometheus.Metric) {
 	for _, va := range vas {
 		pv := ptr.From(va.Spec.Source.PersistentVolumeName)
 		devicePath := va.Status.AttachmentMetadata[consts.DevicePathKey]
+
+		ch <- prometheus.MustNewConstMetric(c.metrics[metricAttachment], prometheus.GaugeValue, 1, pv, devicePath)
+
 		device := devicePath
 		if info, err := os.Lstat(device); err == nil && (info.Mode()&os.ModeSymlink != 0) {
 			device, err = os.Readlink(device)

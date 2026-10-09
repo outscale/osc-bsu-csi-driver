@@ -216,13 +216,8 @@ func (d *Driver) Run(ctx context.Context) error {
 	}
 	klog.V(3).InfoS("Listening for connections on: " + listener.Addr().String())
 
-	grpcMetrics := metrics.NewGRPCCollector()
-	d.metrics.Register(grpcMetrics)
 	opts := []grpc.ServerOption{
-		grpc.ChainUnaryInterceptor(
-			LoggingInterceptor(version),
-			grpcMetrics.UnaryInterceptor(),
-		),
+		grpc.UnaryInterceptor(LoggingInterceptor(version)),
 	}
 	d.srv = grpc.NewServer(opts...)
 

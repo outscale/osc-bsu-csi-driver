@@ -1,17 +1,17 @@
 kind: VolumeAttributesClass
-apiVersion: storage.k8s.io/v1beta1
+apiVersion: storage.k8s.io/v1
 metadata:
   name: bsu-vac
-provisioner: bsu.csi.outscale.com
+driverName: bsu.csi.outscale.com
 parameters:
   iops: "1000"
   type: "io1"
 ---
 kind: VolumeAttributesClass
-apiVersion: storage.k8s.io/v1beta1
+apiVersion: storage.k8s.io/v1
 metadata:
   name: bsu-vac-after
-provisioner: bsu.csi.outscale.com
+driverName: bsu.csi.outscale.com
 parameters:
   iops: "2000"
   type: "io1"

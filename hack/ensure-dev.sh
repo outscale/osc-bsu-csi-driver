@@ -27,6 +27,8 @@ fi
 cat <<EOF | kind create cluster --name ${CLUSTER_NAME} --image ${IMAGE} --config=-
 kind: Cluster
 apiVersion: kind.x-k8s.io/v1alpha4
+featureGates:
+  "VolumeAttributesClass": true
 nodes:
   - role: control-plane
     extraMounts:

@@ -895,14 +895,43 @@ func (c *cloud) UpdateVolume(ctx context.Context, volumeID string, volumeType os
 		req.Iops = &iops
 		update = true
 	}
-	if !update {
+	if update {
+		logger.V(3).Info(fmt.Sprintf("Updating type to %q and iops to %d", volumeType, iops))
+		_, err = c.client.UpdateVolume(ctx, req)
+		if err != nil {
+			return fmt.Errorf("modify volume: %w", err)
+		}
+	} else {
 		logger.V(4).Info("No update applied")
-		return nil
 	}
-	logger.V(4).Info(fmt.Sprintf("Updating type to %q and iops to %d", volumeType, iops))
-	_, err = c.client.UpdateVolume(ctx, req)
-	if err != nil {
-		return fmt.Errorf("modify volume: %w", err)
+	if iopsPerGB > 0 {
+		var resourceTags []osc.ResourceTag
+		if !tags.Has(vol.Tags, UpdateOPSOnResizeTagKey) {
+			resourceTags = append(
+				resourceTags,
+				osc.ResourceTag{Key: UpdateOPSOnResizeTagKey, Value: "true"},
+			)
+		}
+
+		iopsPerGBStr, found := tags.GetValue(vol.Tags, IOPSPerGBTagKey)
+		iopsPerGBNew := strconv.Itoa(iopsPerGB)
+		if !found || iopsPerGBStr != iopsPerGBNew {
+			resourceTags = append(
+				resourceTags,
+				osc.ResourceTag{Key: IOPSPerGBTagKey, Value: iopsPerGBNew},
+			)
+		}
+		if len(resourceTags) > 0 {
+			logger.V(4).Info("Fixing volume tags")
+			_, err = c.client.CreateTags(ctx, osc.CreateTagsRequest{
+				ResourceIds: []string{vol.VolumeId},
+				Tags:        resourceTags,
+			})
+			if err != nil {
+				return fmt.Errorf("update tags: %w", err)
+			}
+		}
 	}
+
 	return nil
 }

@@ -19,11 +19,12 @@ package cloud
 import (
 	"context"
 	"errors"
-	"reflect"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/outscale/goutils/k8s/batch"
 	"github.com/outscale/goutils/sdk/mocks_osc"
 	dm "github.com/outscale/osc-bsu-csi-driver/pkg/cloud/devicemanager"
@@ -1293,7 +1294,7 @@ func TestResizeVolume(t *testing.T) {
 			defer cancel()
 			c.Start(ctx)
 
-			if !reflect.DeepEqual(tc.existingVolume, osc.Volume{}) || tc.existingVolumeError != nil {
+			if !cmp.Equal(tc.existingVolume, osc.Volume{}) || tc.existingVolumeError != nil {
 				mockOscInterface.EXPECT().ReadVolumes(gomock.Any(), gomock.Any()).Return(
 					&osc.ReadVolumesResponse{
 						Volumes: &[]osc.Volume{
@@ -1320,7 +1321,7 @@ func TestResizeVolume(t *testing.T) {
 					)
 				}
 			}
-			if !reflect.DeepEqual(tc.modifiedVolume, osc.UpdateVolumeResponse{}) || tc.modifiedVolumeError != nil {
+			if !cmp.Equal(tc.modifiedVolume, osc.UpdateVolumeResponse{}) || tc.modifiedVolumeError != nil {
 				mockOscInterface.EXPECT().UpdateVolume(gomock.Any(), gomock.Any()).Return(
 					&tc.modifiedVolume,
 					tc.modifiedVolumeError,
@@ -1333,6 +1334,214 @@ func TestResizeVolume(t *testing.T) {
 			} else {
 				require.NoError(t, err)
 				assert.Equal(t, util.GiBToBytes(tc.reqSizeGiB), newSize)
+			}
+
+			mockCtrl.Finish()
+		})
+	}
+}
+
+func TestUpdateVolume(t *testing.T) {
+	volumeId := "vol-test"
+	defaultSize := 10
+	defaultType := osc.VolumeTypeIo1
+	defaultIOPS := 500
+	defaultIOPSPerGB := 50
+	updatedType := osc.VolumeTypeGp2
+	updatedIOPS := 1000
+	updatedIOPSPerGB := 100
+	testCases := []struct {
+		name                string
+		volumeID            string
+		existingVolume      osc.Volume
+		existingVolumeError error
+		modifiedVolume      osc.UpdateVolumeResponse
+		modifiedVolumeError error
+		reqNewType          osc.VolumeType
+		reqNewIOPS          int
+		reqNewIOPSPerGB     int
+		expSetResizeTag     bool
+		expSetIOPSTag       bool
+		expErr              error
+	}{
+		{
+			name:     "success: normal (iops)",
+			volumeID: "vol-test",
+			existingVolume: osc.Volume{
+				VolumeId:   volumeId,
+				Size:       defaultSize,
+				VolumeType: defaultType,
+				Iops:       defaultIOPS,
+			},
+			modifiedVolume: osc.UpdateVolumeResponse{
+				Volume: &osc.Volume{
+					VolumeId:   volumeId,
+					Size:       defaultSize,
+					VolumeType: updatedType,
+					Iops:       updatedIOPS,
+				},
+			},
+			reqNewType: updatedType,
+			reqNewIOPS: updatedIOPS,
+		},
+		{
+			name:     "success: normal (iopsPerGB)",
+			volumeID: "vol-test",
+			existingVolume: osc.Volume{
+				VolumeId:   volumeId,
+				Size:       defaultSize,
+				VolumeType: defaultType,
+				Iops:       defaultIOPS,
+				Tags: []osc.ResourceTag{
+					{Key: UpdateOPSOnResizeTagKey, Value: "true"},
+					{Key: IOPSPerGBTagKey, Value: strconv.Itoa(defaultIOPSPerGB)},
+				},
+			},
+			modifiedVolume: osc.UpdateVolumeResponse{
+				Volume: &osc.Volume{
+					VolumeId:   volumeId,
+					Size:       defaultSize,
+					VolumeType: updatedType,
+					Iops:       updatedIOPS,
+				},
+			},
+			reqNewType:      updatedType,
+			reqNewIOPSPerGB: updatedIOPSPerGB,
+			expSetIOPSTag:   true,
+		},
+		{
+			name:     "success: missing tags (resize)",
+			volumeID: "vol-test",
+			existingVolume: osc.Volume{
+				VolumeId:   volumeId,
+				Size:       defaultSize,
+				VolumeType: defaultType,
+				Iops:       defaultIOPS,
+				Tags: []osc.ResourceTag{
+					{Key: IOPSPerGBTagKey, Value: strconv.Itoa(defaultIOPSPerGB)},
+				},
+			},
+			modifiedVolume: osc.UpdateVolumeResponse{
+				Volume: &osc.Volume{
+					VolumeId:   volumeId,
+					Size:       defaultSize,
+					VolumeType: updatedType,
+					Iops:       defaultIOPS,
+				},
+			},
+			reqNewType:      updatedType,
+			reqNewIOPSPerGB: defaultIOPSPerGB,
+			expSetResizeTag: true,
+		},
+		{
+			name:     "success: missing tags (iopsPerGB)",
+			volumeID: "vol-test",
+			existingVolume: osc.Volume{
+				VolumeId:   volumeId,
+				Size:       defaultSize,
+				VolumeType: defaultType,
+				Iops:       defaultIOPS,
+				Tags: []osc.ResourceTag{
+					{Key: UpdateOPSOnResizeTagKey, Value: "true"},
+				},
+			},
+			modifiedVolume: osc.UpdateVolumeResponse{
+				Volume: &osc.Volume{
+					VolumeId:   volumeId,
+					Size:       defaultSize,
+					VolumeType: updatedType,
+					Iops:       defaultIOPS,
+				},
+			},
+			reqNewType:      updatedType,
+			reqNewIOPSPerGB: defaultIOPSPerGB,
+			expSetIOPSTag:   true,
+		},
+		{
+			name:     "success: missing tags (resize + iopsPerGB)",
+			volumeID: "vol-test",
+			existingVolume: osc.Volume{
+				VolumeId:   volumeId,
+				Size:       defaultSize,
+				VolumeType: defaultType,
+				Iops:       defaultIOPS,
+			},
+			modifiedVolume: osc.UpdateVolumeResponse{
+				Volume: &osc.Volume{
+					VolumeId:   volumeId,
+					Size:       defaultSize,
+					VolumeType: updatedType,
+					Iops:       updatedIOPS,
+				},
+			},
+			reqNewType:      updatedType,
+			reqNewIOPSPerGB: updatedIOPSPerGB,
+			expSetIOPSTag:   true,
+			expSetResizeTag: true,
+		},
+		{
+			name:                "fail: volume doesn't exist",
+			volumeID:            "vol-test",
+			existingVolumeError: errors.New("InvalidVolume.NotFound"),
+			reqNewType:          updatedType,
+			reqNewIOPS:          updatedIOPS,
+			expErr:              errors.New("ResizeDisk generic error"),
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			mockCtrl := gomock.NewController(t)
+			mockOscInterface := mocks_osc.NewMockClient(mockCtrl)
+			c := newCloud(mockOscInterface)
+			ctx, cancel := context.WithTimeout(t.Context(), 5*time.Second)
+			defer cancel()
+			c.Start(ctx)
+
+			mockOscInterface.EXPECT().ReadVolumes(gomock.Any(), gomock.Any()).Return(
+				&osc.ReadVolumesResponse{
+					Volumes: &[]osc.Volume{
+						tc.existingVolume,
+					},
+				},
+				tc.existingVolumeError,
+			)
+			if tc.existingVolumeError == nil {
+				mockOscInterface.EXPECT().UpdateVolume(gomock.Any(), gomock.Any()).Return(
+					&tc.modifiedVolume,
+					tc.modifiedVolumeError,
+				)
+			}
+			switch {
+			case tc.expSetIOPSTag && tc.expSetResizeTag:
+				mockOscInterface.EXPECT().CreateTags(gomock.Any(), gomock.Eq(osc.CreateTagsRequest{
+					ResourceIds: []string{volumeId},
+					Tags: []osc.ResourceTag{
+						{Key: UpdateOPSOnResizeTagKey, Value: "true"},
+						{Key: IOPSPerGBTagKey, Value: strconv.Itoa(tc.reqNewIOPSPerGB)},
+					},
+				})).Return(&osc.CreateTagsResponse{}, nil)
+			case tc.expSetIOPSTag:
+				mockOscInterface.EXPECT().CreateTags(gomock.Any(), gomock.Eq(osc.CreateTagsRequest{
+					ResourceIds: []string{volumeId},
+					Tags: []osc.ResourceTag{
+						{Key: IOPSPerGBTagKey, Value: strconv.Itoa(tc.reqNewIOPSPerGB)},
+					},
+				})).Return(&osc.CreateTagsResponse{}, nil)
+			case tc.expSetResizeTag:
+				mockOscInterface.EXPECT().CreateTags(gomock.Any(), gomock.Eq(osc.CreateTagsRequest{
+					ResourceIds: []string{volumeId},
+					Tags: []osc.ResourceTag{
+						{Key: UpdateOPSOnResizeTagKey, Value: "true"},
+					},
+				})).Return(&osc.CreateTagsResponse{}, nil)
+			}
+
+			err := c.UpdateVolume(ctx, tc.volumeID, tc.reqNewType, tc.reqNewIOPS, tc.reqNewIOPSPerGB)
+			if tc.expErr != nil {
+				require.Error(t, err)
+			} else {
+				require.NoError(t, err)
 			}
 
 			mockCtrl.Finish()

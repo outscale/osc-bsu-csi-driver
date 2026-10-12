@@ -33,7 +33,7 @@ TRIVY_IMAGE := aquasec/trivy:0.69.3
 
 KIND ?= kind
 KIND_CLUSTER ?= csi
-KIND_NODE_IMAGE ?= kindest/node:v1.34.8@sha256:02722c2dedddcfc00febf5d27fbeb9b7b2c14294c82109ff4a85d89ac9ba3256
+KIND_NODE_IMAGE ?= kindest/node:v1.36.4@sha256:597367624b4748b74b98e4fe2d661cd78063d02ecdaca702fd90572375b83e67
 KIND_REGISTRY_PORT ?= 5001
 
 OSC_REGION ?= eu-west-2

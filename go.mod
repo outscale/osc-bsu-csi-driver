@@ -2,7 +2,7 @@ module github.com/outscale/osc-bsu-csi-driver
 
 go 1.27.0
 
-toolchain go1.27.1
+toolchain go1.27.2
 
 require (
 	github.com/container-storage-interface/spec v1.12.0

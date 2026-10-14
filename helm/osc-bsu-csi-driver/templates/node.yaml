@@ -95,18 +95,6 @@ spec:
               mountPath: /dev
             - name: sys-block-dir
               mountPath: /sys/block
-          ports:
-            - name: healthz
-              containerPort: {{ .Values.sidecars.livenessProbe.port }}
-              protocol: TCP
-          livenessProbe:
-            httpGet:
-              path: /healthz
-              port: healthz
-            initialDelaySeconds: 10
-            timeoutSeconds: 3
-            periodSeconds: 10
-            failureThreshold: 5
           {{- with .Values.node.resources }}
           resources: {{ toYaml . | nindent 12 }}
           {{- end }}
@@ -154,6 +142,18 @@ spec:
           volumeMounts:
             - name: plugin-dir
               mountPath: /csi
+          ports:
+            - name: healthz
+              containerPort: {{ .Values.sidecars.livenessProbe.port }}
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: healthz
+            initialDelaySeconds: 10
+            timeoutSeconds: 3
+            periodSeconds: 10
+            failureThreshold: 5
           {{- if .Values.sidecars.livenessProbe.resources }}
             {{- with .Values.sidecars.livenessProbe.resources }}
           resources: {{ toYaml . | nindent 12 }}

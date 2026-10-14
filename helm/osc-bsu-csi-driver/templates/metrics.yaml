@@ -1,0 +1,41 @@
+{{- if .Values.metrics.podMonitors.enable }}
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: osc-csi-controller
+  namespace: kube-system
+  {{- with .Values.metrics.podMonitors.labels }}
+  labels: {{ toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  selector:
+    matchLabels:
+      app: osc-csi-controller
+  podMetricsEndpoints:
+  {{- if .Values.controller.metrics }}
+  - port: controllerhttp
+  {{- end }}
+  {{- if .Values.sidecars.metrics }}
+  - port: provisionerhttp
+  - port: attacherhttp
+  - port: snapshotterhttp
+  - port: resizerhttp
+  {{- end }}
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: osc-csi-node
+  namespace: kube-system
+  {{- with .Values.metrics.podMonitors.labels }}
+  labels: {{ toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  selector:
+    matchLabels:
+      app: osc-csi-node
+  podMetricsEndpoints:
+  {{- if .Values.node.metrics }}
+  - port: nodehttp
+  {{- end }}
+{{- end }}

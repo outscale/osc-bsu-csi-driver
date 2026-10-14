@@ -71,8 +71,16 @@ use-kind:
 credentials: ## Set Credentials
 	octl kube secret --name osc-csi-bsu --namespace kube-system | kubectl apply -f - ||:
 
+.PHONY: crd
+crd:
+	kubectl apply -f https://raw.githubusercontent.com/kubernetes-csi/external-snapshotter/release-8.6/client/config/crd/snapshot.storage.k8s.io_volumesnapshotclasses.yaml
+	kubectl apply -f https://raw.githubusercontent.com/kubernetes-csi/external-snapshotter/release-8.6/client/config/crd/snapshot.storage.k8s.io_volumesnapshotcontents.yaml
+	kubectl apply -f https://raw.githubusercontent.com/kubernetes-csi/external-snapshotter/release-8.6/client/config/crd/snapshot.storage.k8s.io_volumesnapshots.yaml
+	kubectl apply -f https://raw.githubusercontent.com/kubernetes-csi/external-snapshotter/release-8.6/deploy/kubernetes/snapshot-controller/rbac-snapshot-controller.yaml
+	kubectl apply -f https://raw.githubusercontent.com/kubernetes-csi/external-snapshotter/release-8.6/deploy/kubernetes/snapshot-controller/setup-snapshot-controller.yaml
+
 .PHONY: setup-dev
-setup-dev: setup-kind use-kind credentials
+setup-dev: setup-kind use-kind credentials crd
 
 .PHONY: cleanup-dev
 cleanup-dev: ## Tear down the Kind cluster used for e2e tests

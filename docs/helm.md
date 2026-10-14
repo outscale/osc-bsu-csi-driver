@@ -68,6 +68,8 @@ Kubernetes: `>=1.25`
 | imagePullSecrets | list | `[]` | Specify image pull secrets |
 | logs.format | string | `"text"` | Format of logs: text or json (requires CSI driver v1.9.0 or later) |
 | logs.verbosity | int | `3` | Verbosity level of the plugin |
+| metrics.podMonitors.enable | bool | `false` | Configure Podmonitor resources for node and controller |
+| metrics.podMonitors.labels | object | `{}` | Labels for Podmonitors |
 | node.additionalArgs | list | `[]` | Node controller command line additional args |
 | node.affinity | object | `{}` | Affinity settings |
 | node.metrics | bool | `true` | Enable metrics collection |

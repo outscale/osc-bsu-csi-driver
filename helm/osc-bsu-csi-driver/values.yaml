@@ -245,3 +245,10 @@ sidecars:
     additionalArgs: []
     # -- Sidecar resources. If not set, the top-level resources will be used.
     resources: {}
+
+metrics:
+  podMonitors:
+    # -- Configure Podmonitor resources for node and controller
+    enable: false
+    # -- Labels for Podmonitors
+    labels: {}

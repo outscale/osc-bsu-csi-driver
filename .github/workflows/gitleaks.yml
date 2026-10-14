@@ -19,6 +19,6 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
-      - uses: outscale/.github/gitleaks@2d75eac744aeab89dc784a17c9c99e9881c6e30d # v1.2.0
+      - uses: outscale/.github/gitleaks@82a9889d98a317d5ef844026429dbc8827f306f2 # v1.2.1
         with:
           gitleaks-license: ${{ secrets.GITLEAKS_LICENSE }}

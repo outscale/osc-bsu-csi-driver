@@ -40,7 +40,7 @@ jobs:
           output: 'trivy-results.sarif'
           severity: 'CRITICAL,HIGH'
           trivyignores: '.trivyignore'
-          version: 'v0.74.0'
+          version: 'v0.75.0'
 
       - name: ⬆️ Upload Trivy results
         if: ${{ github.event_name != 'pull_request' }}

@@ -1,5 +1,31 @@
 # Changelog
 
+## [v1.13.0](https://github.com/outscale/osc-bsu-csi-driver/releases/tag/v1.13.0) - 2026-10-20
+
+### ✨ Added
+* ✨ feat: update iops on resized iopsPerGB volumes by @jfbus in https://github.com/outscale/osc-bsu-csi-driver/pull/1265
+* ✨ feat(node): add block device stats metrics by @jfbus in https://github.com/outscale/osc-bsu-csi-driver/pull/1276
+* ✨ feat(metrics): add GRPC metrics by @jfbus in https://github.com/outscale/osc-bsu-csi-driver/pull/1277
+* ✨ feat(controller): add volume iops metric by @jfbus in https://github.com/outscale/osc-bsu-csi-driver/pull/1281
+* 📈 feat(helm): configure Prometheus podMonitors by @jfbus in https://github.com/outscale/osc-bsu-csi-driver/pull/1286
+### 🛠️ Changed / Refactoring
+* 🔒️ security: sanitize logs by @jfbus in https://github.com/outscale/osc-bsu-csi-driver/pull/1258
+* 🚨 lint: linter fixes by @jfbus in https://github.com/outscale/osc-bsu-csi-driver/pull/1273
+### 📝 Documentation
+* 📝 doc(examples): fix VolumeAttributesClass example by @jfbus in https://github.com/outscale/osc-bsu-csi-driver/pull/1285
+### 🗑️ Removed
+* 🔥 cleanup(node/controller): drop GRPC metric by @jfbus in https://github.com/outscale/osc-bsu-csi-driver/pull/1282
+### 🐛 Fixed
+* 🐛 fix(ControllerModifyVolume): create or update iopsPerGB tags by @jfbus in https://github.com/outscale/osc-bsu-csi-driver/pull/1284
+### 📦 Dependency updates
+* ⬆️ deps(gomod): update module github.com/stretchr/testify to v1.12.1 by @Open-Source-Bot in https://github.com/outscale/osc-bsu-csi-driver/pull/1237
+* ⬆️ deps(gomod): update go toolchain directive to v1.27.2 by @Open-Source-Bot in https://github.com/outscale/osc-bsu-csi-driver/pull/1288
+* ⬆️ deps(dockerfile): update debian:12 docker digest to 2c037a0 by @Open-Source-Bot in https://github.com/outscale/osc-bsu-csi-driver/pull/1266
+* ⬆️ deps(gomod): update go toolchain directive to v1.27.3 by @Open-Source-Bot in https://github.com/outscale/osc-bsu-csi-driver/pull/1292
+### 🌱 Others
+* 🚀 v2.2.0-helm by @jfbus in https://github.com/outscale/osc-bsu-csi-driver/pull/1255
+
+
 ## [v2.2.0-helm](https://github.com/outscale/osc-bsu-csi-driver/releases/tag/v2.2.0-helm) - 2026-09-09
 
 ### 📦 Dependency updates

@@ -1,5 +1,8 @@
 # Changelog
 
+## [v2.3.0-helm](https://github.com/outscale/osc-bsu-csi-driver/releases/tag/v2.3.0-helm) - 2026-10-21
+
+
 ## [v2.2.0-helm](https://github.com/outscale/osc-bsu-csi-driver/releases/tag/v2.2.0-helm) - 2026-09-09
 
 ### 📦 Dependency updates

@@ -1,6 +1,6 @@
 # osc-bsu-csi-driver
 
-![Version: 2.2.0](https://img.shields.io/badge/Version-2.2.0-informational?style=flat-square) ![AppVersion: v1.12.0](https://img.shields.io/badge/AppVersion-v1.12.0-informational?style=flat-square)
+![Version: 2.3.0](https://img.shields.io/badge/Version-2.3.0-informational?style=flat-square) ![AppVersion: v1.13.0](https://img.shields.io/badge/AppVersion-v1.13.0-informational?style=flat-square)
 
 A Helm chart for the Outscale BSU CSI Driver
 
@@ -63,7 +63,7 @@ Kubernetes: `>=1.25`
 | driver.maxBsuVolumes | string | `""` | Maximum number of volumes that can be attached to a node, autocomputed by default (see [Docs](https://docs.outscale.com/en/userguide/About-Volumes.html)) |
 | driver.name | string | `"bsu.csi.outscale.com"` |  |
 | driver.reservedBsuVolumes | string | `""` | Number of slots to reserve for OS-level volumes when automatically computing maxBsuVolumes |
-| driver.tag | string | `"v1.12.0"` | Container image tag to deploy |
+| driver.tag | string | `"v1.13.0"` | Container image tag to deploy |
 | driver.updateIOPSOnResize | string | `"tag"` | Update IOPS on resize (never, tag, assume, always) |
 | imagePullSecrets | list | `[]` | Specify image pull secrets |
 | logs.format | string | `"text"` | Format of logs: text or json (requires CSI driver v1.9.0 or later) |

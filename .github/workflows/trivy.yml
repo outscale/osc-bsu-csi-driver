@@ -39,7 +39,6 @@ jobs:
           format: 'sarif'
           output: 'trivy-results.sarif'
           severity: 'CRITICAL,HIGH'
-          trivyignores: '.trivyignore'
           version: 'v0.76.0'
 
       - name: ⬆️ Upload Trivy results

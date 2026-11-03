@@ -16,45 +16,16 @@ on:
 
 permissions:
   contents: read
+  id-token: write
 
 jobs:
-  sanity:
-    runs-on: [self-hosted, linux]
-    steps:
-    - name: ⬇️ Checkout repository
-      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      with:
-        persist-credentials: false
-    - name: 🔐 Set ak/sk name based on runner region
-      run: .github/scripts/runneraksk.sh
-    - name: ⬇️ Install Go
-      uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
-      with:
-        go-version-file: 'go.mod'
-    - name: 🧹 Frieza
-      uses: outscale/frieza-github-actions/frieza-clean@d361dd8cc864cfb9575429ee54fde4a0e8e7b124 # v0.17.2
-      with:
-        access_key: ${{ secrets[env.OSC_ACCESS_KEY_NAME] }}
-        secret_key: ${{ secrets[env.OSC_SECRET_KEY_NAME] }}
-        region: ${{ env.OSC_REGION }}
-        exclude_resource_types: access_key
-    - name: 🧪 Sanity test
-      run:
-        make test-sanity
-      env:
-        OSC_ACCESS_KEY: ${{ secrets[env.OSC_ACCESS_KEY_NAME] }}
-        OSC_SECRET_KEY: ${{ secrets[env.OSC_SECRET_KEY_NAME] }}
-        OSC_REGION: ${{ env.OSC_REGION }}
   e2e:
-    runs-on: [self-hosted, linux]
-    needs: [sanity]
+    runs-on: [self-hosted, linux, kube]
     steps:
     - name: ⬇️ Checkout repository
       uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       with:
         persist-credentials: false
-    - name: 🔐 Set ak/sk name based on runner region
-      run: .github/scripts/runneraksk.sh
     - name: ⬇️ Install kubectl
       uses: azure/setup-kubectl@829323503d1be3d00ca8346e5391ca0b07a9ab0d # v5.1.0
       with:
@@ -70,32 +41,35 @@ jobs:
     - name: ⬇️ Set up Docker Buildx
       uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
     - name: 🧹 Frieza
-      uses: outscale/frieza-github-actions/frieza-clean@d361dd8cc864cfb9575429ee54fde4a0e8e7b124 # v0.17.2
+      id: secrets
+      uses: outscale/.github/vault-frieza-clean@3473e386226175ad703740601d34849b9b61364f # v1.4.0
       with:
-        access_key: ${{ secrets[env.OSC_ACCESS_KEY_NAME] }}
-        secret_key: ${{ secrets[env.OSC_SECRET_KEY_NAME] }}
-        region: ${{ env.OSC_REGION }}
+        vault_role: outscale-osc-bsu-csi-driver
+        exclude_resource_types: access_key
+    - name: ⬇️ Install octl
+      uses: outscale/octl/.github/actions/setup_octl@b5e8714f317ca1625a4a4a8705c649d90bac4f72 # v0.0.34
+      with:
+        OSC_ACCESS_KEY: ${{ steps.secrets.outputs.access_key }}
+        OSC_SECRET_KEY: ${{ steps.secrets.outputs.secret_key }}
+        OSC_REGION: ${{ steps.secrets.outputs.region }}
     - name: 👷 Deploy test cluster
       id: caposc
-      uses: outscale/cluster-api-provider-outscale/.github/actions/deploy_cluster@e847b18eb46f68896868bf83597c78ed1eb02d81 # v1.5.3
+      uses: outscale/.github/deploy-cluster@fix_kubeconfig
       with:
-        RUNNER_NAME: ${{ runner.name }}
-        OKS_ACCESS_KEY: ${{ secrets.OKS_ACCESS_KEY }}
-        OKS_SECRET_KEY: ${{ secrets.OKS_SECRET_KEY }}
-        OKS_REGION: ${{ vars.OKS_REGION }}
-        OSC_ACCESS_KEY: ${{ secrets[env.OSC_ACCESS_KEY_NAME] }}
-        OSC_SECRET_KEY: ${{ secrets[env.OSC_SECRET_KEY_NAME] }}
-        OSC_REGION: ${{ env.OSC_REGION }}
-        CLUSTER_NAME: "csi"
+        OSC_ACCESS_KEY: ${{ steps.secrets.outputs.access_key }}
+        OSC_SECRET_KEY: ${{ steps.secrets.outputs.secret_key }}
+        OSC_REGION: ${{ steps.secrets.outputs.region }}
+        CLUSTER_NAME: ${{ steps.secrets.outputs.osc_account }}
         IMAGE_NAME: ${{ vars.IMG_MANAGEMENT }}
         CCM: true
         KUSTOMIZE_PATH: "tests/e2e/capi-kustomize"
+        vault_token: ${{ steps.secrets.outputs.vault_token }}
     - name: 🐳 Login to Harbor
       uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
       with:
         registry: ${{ vars.REGISTRY }}
-        username: admin
-        password: ${{ secrets.HARBOR_ADMIN_PASSWORD }}
+        username: ${{ secrets.HARBOR_USER }}
+        password: ${{ secrets.HARBOR_PASSWORD }}
     - name: 📦 Run GoReleaser
       uses: goreleaser/goreleaser-action@f06c13b6b1a9625abc9e6e439d9c05a8f2190e94 # v7.2.3
       with:
@@ -120,16 +94,16 @@ jobs:
         make helm_deploy
       env:
         KUBECONFIG: "${{ github.workspace }}/${{ steps.caposc.outputs.KUBECONFIG }}"
-        OSC_ACCESS_KEY: ${{ secrets[env.OSC_ACCESS_KEY_NAME] }}
-        OSC_SECRET_KEY: ${{ secrets[env.OSC_SECRET_KEY_NAME] }}
-        OSC_REGION: ${{ env.OSC_REGION}}
+        OSC_ACCESS_KEY: ${{ steps.secrets.outputs.access_key }}
+        OSC_SECRET_KEY: ${{ steps.secrets.outputs.secret_key }}
+        OSC_REGION: ${{ steps.secrets.outputs.region }}
         REGISTRY_IMAGE: "${{ vars.REGISTRY }}/outscale/csi"
         REGISTRY_TAG: ${{ github.sha }}
     - name: 🧪 Run e2e tests
       run: make test-e2e
       env:
         KUBECONFIG: "${{ github.workspace }}/${{ steps.caposc.outputs.KUBECONFIG }}"
-        OSC_ACCESS_KEY: ${{ secrets[env.OSC_ACCESS_KEY_NAME] }}
-        OSC_SECRET_KEY: ${{ secrets[env.OSC_SECRET_KEY_NAME] }}
-        OSC_REGION: ${{ env.OSC_REGION }}
+        OSC_ACCESS_KEY: ${{ steps.secrets.outputs.access_key }}
+        OSC_SECRET_KEY: ${{ steps.secrets.outputs.secret_key }}
+        OSC_REGION: ${{ steps.secrets.outputs.region }}
         AWS_AVAILABILITY_ZONES: ${{ env.OSC_SUBREGION_NAME }}

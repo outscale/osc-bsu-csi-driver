@@ -395,9 +395,6 @@ var _ = Describe("[bsu-csi-e2e] [single-az] Dynamic Provisioning", func() {
 	})
 
 	It(fmt.Sprintf("[env] should retain PV with reclaimPolicy %q", corev1.PersistentVolumeReclaimRetain), func() {
-		if os.Getenv(awsAvailabilityZonesEnv) == "" {
-			Skip(fmt.Sprintf("env %q not set", awsAvailabilityZonesEnv))
-		}
 		reclaimPolicy := corev1.PersistentVolumeReclaimRetain
 		volumes := []testsuites.VolumeDetails{
 			{

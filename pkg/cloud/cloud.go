@@ -888,15 +888,16 @@ func (c *cloud) UpdateVolume(ctx context.Context, volumeID string, volumeType os
 	}
 	update := false
 	if volumeType != "" && volumeType != vol.VolumeType {
+		logger.V(3).Info(fmt.Sprintf("Updating type to %q", volumeType))
 		req.VolumeType = &volumeType
 		update = true
 	}
-	if iops != vol.Iops {
+	if volumeType == osc.VolumeTypeIo1 && iops != vol.Iops {
+		logger.V(3).Info(fmt.Sprintf("Updating iops to %d", iops))
 		req.Iops = &iops
 		update = true
 	}
 	if update {
-		logger.V(3).Info(fmt.Sprintf("Updating type to %q and iops to %d", volumeType, iops))
 		_, err = c.client.UpdateVolume(ctx, req)
 		if err != nil {
 			return fmt.Errorf("modify volume: %w", err)

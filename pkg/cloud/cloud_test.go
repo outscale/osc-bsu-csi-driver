@@ -1342,148 +1342,172 @@ func TestResizeVolume(t *testing.T) {
 }
 
 func TestUpdateVolume(t *testing.T) {
-	volumeId := "vol-test"
+	volumeID := "vol-test"
 	defaultSize := 10
-	defaultType := osc.VolumeTypeIo1
 	defaultIOPS := 500
 	defaultIOPSPerGB := 50
-	updatedType := osc.VolumeTypeGp2
 	updatedIOPS := 1000
 	updatedIOPSPerGB := 100
 	testCases := []struct {
 		name                string
-		volumeID            string
 		existingVolume      osc.Volume
 		existingVolumeError error
-		modifiedVolume      osc.UpdateVolumeResponse
-		modifiedVolumeError error
 		reqNewType          osc.VolumeType
 		reqNewIOPS          int
 		reqNewIOPSPerGB     int
+		updateReq           *osc.UpdateVolumeRequest
+		updateErr           error
+		updateResp          osc.UpdateVolumeResponse
 		expSetResizeTag     bool
 		expSetIOPSTag       bool
 		expErr              error
 	}{
 		{
-			name:     "success: normal (iops)",
-			volumeID: "vol-test",
+			name: "success: no update",
 			existingVolume: osc.Volume{
-				VolumeId:   volumeId,
 				Size:       defaultSize,
-				VolumeType: defaultType,
+				VolumeType: osc.VolumeTypeIo1,
 				Iops:       defaultIOPS,
 			},
-			modifiedVolume: osc.UpdateVolumeResponse{
-				Volume: &osc.Volume{
-					VolumeId:   volumeId,
-					Size:       defaultSize,
-					VolumeType: updatedType,
-					Iops:       updatedIOPS,
-				},
+			reqNewType: osc.VolumeTypeIo1,
+			reqNewIOPS: defaultIOPS,
+		},
+		{
+			name: "success: no update (gp2, no iops update)",
+			existingVolume: osc.Volume{
+				Size:       defaultSize,
+				VolumeType: osc.VolumeTypeGp2,
+				Iops:       defaultIOPS,
 			},
-			reqNewType: updatedType,
+			reqNewType: osc.VolumeTypeGp2,
 			reqNewIOPS: updatedIOPS,
 		},
 		{
-			name:     "success: normal (iopsPerGB)",
-			volumeID: "vol-test",
+			name: "success: normal (io1 to gp2)",
 			existingVolume: osc.Volume{
-				VolumeId:   volumeId,
 				Size:       defaultSize,
-				VolumeType: defaultType,
+				VolumeType: osc.VolumeTypeIo1,
+				Iops:       defaultIOPS,
+			},
+			reqNewType: osc.VolumeTypeGp2,
+			updateReq: &osc.UpdateVolumeRequest{
+				VolumeType: new(osc.VolumeTypeGp2),
+			},
+			updateResp: osc.UpdateVolumeResponse{
+				Volume: &osc.Volume{
+					Size:       defaultSize,
+					VolumeType: osc.VolumeTypeGp2,
+				},
+			},
+		},
+		{
+			name: "success: normal (gp2 to io1)",
+			existingVolume: osc.Volume{
+				Size:       defaultSize,
+				VolumeType: osc.VolumeTypeGp2,
+			},
+			reqNewType: osc.VolumeTypeIo1,
+			reqNewIOPS: defaultIOPS,
+			updateReq: &osc.UpdateVolumeRequest{
+				VolumeType: new(osc.VolumeTypeIo1),
+				Iops:       &defaultIOPS,
+			},
+			updateResp: osc.UpdateVolumeResponse{
+				Volume: &osc.Volume{
+					Size:       defaultSize,
+					VolumeType: osc.VolumeTypeIo1,
+				},
+			},
+		},
+		{
+			name: "success: normal (io1, iops)",
+			existingVolume: osc.Volume{
+				Size:       defaultSize,
+				VolumeType: osc.VolumeTypeIo1,
+				Iops:       defaultIOPS,
+			},
+			reqNewType: osc.VolumeTypeIo1,
+			reqNewIOPS: updatedIOPS,
+			updateReq: &osc.UpdateVolumeRequest{
+				Iops: &updatedIOPS,
+			},
+			updateResp: osc.UpdateVolumeResponse{
+				Volume: &osc.Volume{
+					Size:       defaultSize,
+					VolumeType: osc.VolumeTypeIo1,
+					Iops:       updatedIOPS,
+				},
+			},
+		},
+		{
+			name: "success: normal (io1, iopsPerGB)",
+			existingVolume: osc.Volume{
+				Size:       defaultSize,
+				VolumeType: osc.VolumeTypeIo1,
 				Iops:       defaultIOPS,
 				Tags: []osc.ResourceTag{
 					{Key: UpdateOPSOnResizeTagKey, Value: "true"},
 					{Key: IOPSPerGBTagKey, Value: strconv.Itoa(defaultIOPSPerGB)},
 				},
 			},
-			modifiedVolume: osc.UpdateVolumeResponse{
+			reqNewType:      osc.VolumeTypeIo1,
+			reqNewIOPSPerGB: updatedIOPSPerGB,
+			updateReq: &osc.UpdateVolumeRequest{
+				Iops: &updatedIOPS,
+			},
+			updateResp: osc.UpdateVolumeResponse{
 				Volume: &osc.Volume{
-					VolumeId:   volumeId,
 					Size:       defaultSize,
-					VolumeType: updatedType,
+					VolumeType: osc.VolumeTypeIo1,
 					Iops:       updatedIOPS,
 				},
 			},
-			reqNewType:      updatedType,
-			reqNewIOPSPerGB: updatedIOPSPerGB,
-			expSetIOPSTag:   true,
+			expSetIOPSTag: true,
 		},
 		{
-			name:     "success: missing tags (resize)",
-			volumeID: "vol-test",
+			name: "success: missing resize tag",
 			existingVolume: osc.Volume{
-				VolumeId:   volumeId,
 				Size:       defaultSize,
-				VolumeType: defaultType,
+				VolumeType: osc.VolumeTypeIo1,
 				Iops:       defaultIOPS,
 				Tags: []osc.ResourceTag{
 					{Key: IOPSPerGBTagKey, Value: strconv.Itoa(defaultIOPSPerGB)},
 				},
 			},
-			modifiedVolume: osc.UpdateVolumeResponse{
-				Volume: &osc.Volume{
-					VolumeId:   volumeId,
-					Size:       defaultSize,
-					VolumeType: updatedType,
-					Iops:       defaultIOPS,
-				},
-			},
-			reqNewType:      updatedType,
+			reqNewType:      osc.VolumeTypeIo1,
 			reqNewIOPSPerGB: defaultIOPSPerGB,
 			expSetResizeTag: true,
 		},
 		{
-			name:     "success: missing tags (iopsPerGB)",
-			volumeID: "vol-test",
+			name: "success: missing iopsPerGB tag",
 			existingVolume: osc.Volume{
-				VolumeId:   volumeId,
 				Size:       defaultSize,
-				VolumeType: defaultType,
+				VolumeType: osc.VolumeTypeIo1,
 				Iops:       defaultIOPS,
 				Tags: []osc.ResourceTag{
 					{Key: UpdateOPSOnResizeTagKey, Value: "true"},
 				},
 			},
-			modifiedVolume: osc.UpdateVolumeResponse{
-				Volume: &osc.Volume{
-					VolumeId:   volumeId,
-					Size:       defaultSize,
-					VolumeType: updatedType,
-					Iops:       defaultIOPS,
-				},
-			},
-			reqNewType:      updatedType,
+			reqNewType:      osc.VolumeTypeIo1,
 			reqNewIOPSPerGB: defaultIOPSPerGB,
 			expSetIOPSTag:   true,
 		},
 		{
-			name:     "success: missing tags (resize + iopsPerGB)",
-			volumeID: "vol-test",
+			name: "success: missing tags",
 			existingVolume: osc.Volume{
-				VolumeId:   volumeId,
 				Size:       defaultSize,
-				VolumeType: defaultType,
+				VolumeType: osc.VolumeTypeIo1,
 				Iops:       defaultIOPS,
 			},
-			modifiedVolume: osc.UpdateVolumeResponse{
-				Volume: &osc.Volume{
-					VolumeId:   volumeId,
-					Size:       defaultSize,
-					VolumeType: updatedType,
-					Iops:       updatedIOPS,
-				},
-			},
-			reqNewType:      updatedType,
-			reqNewIOPSPerGB: updatedIOPSPerGB,
+			reqNewType:      osc.VolumeTypeIo1,
+			reqNewIOPSPerGB: defaultIOPSPerGB,
 			expSetIOPSTag:   true,
 			expSetResizeTag: true,
 		},
 		{
 			name:                "fail: volume doesn't exist",
-			volumeID:            "vol-test",
 			existingVolumeError: errors.New("InvalidVolume.NotFound"),
-			reqNewType:          updatedType,
+			reqNewType:          osc.VolumeTypeIo1,
 			reqNewIOPS:          updatedIOPS,
 			expErr:              errors.New("ResizeDisk generic error"),
 		},
@@ -1498,6 +1522,7 @@ func TestUpdateVolume(t *testing.T) {
 			defer cancel()
 			c.Start(ctx)
 
+			tc.existingVolume.VolumeId = volumeID
 			mockOscInterface.EXPECT().ReadVolumes(gomock.Any(), gomock.Any()).Return(
 				&osc.ReadVolumesResponse{
 					Volumes: &[]osc.Volume{
@@ -1506,16 +1531,21 @@ func TestUpdateVolume(t *testing.T) {
 				},
 				tc.existingVolumeError,
 			)
-			if tc.existingVolumeError == nil {
-				mockOscInterface.EXPECT().UpdateVolume(gomock.Any(), gomock.Any()).Return(
-					&tc.modifiedVolume,
-					tc.modifiedVolumeError,
+			if tc.existingVolumeError == nil && tc.updateReq != nil {
+				req := *tc.updateReq
+				req.VolumeId = volumeID
+				if tc.updateResp.Volume != nil {
+					tc.updateResp.Volume.VolumeId = volumeID
+				}
+				mockOscInterface.EXPECT().UpdateVolume(gomock.Any(), gomock.Eq(req)).Return(
+					&tc.updateResp,
+					tc.updateErr,
 				)
 			}
 			switch {
 			case tc.expSetIOPSTag && tc.expSetResizeTag:
 				mockOscInterface.EXPECT().CreateTags(gomock.Any(), gomock.Eq(osc.CreateTagsRequest{
-					ResourceIds: []string{volumeId},
+					ResourceIds: []string{volumeID},
 					Tags: []osc.ResourceTag{
 						{Key: UpdateOPSOnResizeTagKey, Value: "true"},
 						{Key: IOPSPerGBTagKey, Value: strconv.Itoa(tc.reqNewIOPSPerGB)},
@@ -1523,21 +1553,21 @@ func TestUpdateVolume(t *testing.T) {
 				})).Return(&osc.CreateTagsResponse{}, nil)
 			case tc.expSetIOPSTag:
 				mockOscInterface.EXPECT().CreateTags(gomock.Any(), gomock.Eq(osc.CreateTagsRequest{
-					ResourceIds: []string{volumeId},
+					ResourceIds: []string{volumeID},
 					Tags: []osc.ResourceTag{
 						{Key: IOPSPerGBTagKey, Value: strconv.Itoa(tc.reqNewIOPSPerGB)},
 					},
 				})).Return(&osc.CreateTagsResponse{}, nil)
 			case tc.expSetResizeTag:
 				mockOscInterface.EXPECT().CreateTags(gomock.Any(), gomock.Eq(osc.CreateTagsRequest{
-					ResourceIds: []string{volumeId},
+					ResourceIds: []string{volumeID},
 					Tags: []osc.ResourceTag{
 						{Key: UpdateOPSOnResizeTagKey, Value: "true"},
 					},
 				})).Return(&osc.CreateTagsResponse{}, nil)
 			}
 
-			err := c.UpdateVolume(ctx, tc.volumeID, tc.reqNewType, tc.reqNewIOPS, tc.reqNewIOPSPerGB)
+			err := c.UpdateVolume(ctx, volumeID, tc.reqNewType, tc.reqNewIOPS, tc.reqNewIOPSPerGB)
 			if tc.expErr != nil {
 				require.Error(t, err)
 			} else {

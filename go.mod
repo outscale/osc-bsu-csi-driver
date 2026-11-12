@@ -13,7 +13,7 @@ require (
 	github.com/onsi/gomega v1.40.0
 	github.com/outscale/goutils/k8s v0.0.5
 	github.com/outscale/goutils/sdk v0.0.10
-	github.com/outscale/osc-sdk-go/v3 v3.0.0-rc.5
+	github.com/outscale/osc-sdk-go/v3 v3.0.0-rc.6
 	github.com/prometheus/client_golang v1.24.1
 	github.com/rs/xid v1.6.0
 	github.com/samber/lo v1.53.0

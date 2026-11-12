@@ -103,7 +103,7 @@ test:
 
 .PHONY: test-sanity
 test-sanity:
-	go test -v -race ./tests/sanity/... -ginkgo.v -ginkgo.show-node-events
+	go test -v -race ./tests/sanity/... -ginkgo.v -ginkgo.show-node-events -test.timeout 15m -ginkgo.timeout 15m
 
 .PHONY: dockerlint
 dockerlint:

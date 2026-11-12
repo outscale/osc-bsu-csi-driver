@@ -72,7 +72,7 @@ jobs:
         vault_role: outscale-osc-bsu-csi-driver
         exclude_resource_types: access_key
     - name: ⬇️ Install octl
-      uses: outscale/octl/.github/actions/setup_octl@b5e8714f317ca1625a4a4a8705c649d90bac4f72 # v0.0.34
+      uses: outscale/octl/.github/actions/setup_octl@03e63a67e6eaa5cab021eccf4d9c25a681903165 # v0.0.35
       with:
         OSC_ACCESS_KEY: ${{ steps.secrets.outputs.access_key }}
         OSC_SECRET_KEY: ${{ steps.secrets.outputs.secret_key }}

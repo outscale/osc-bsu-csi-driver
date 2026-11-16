@@ -108,7 +108,6 @@ func GetOptions(fs *pflag.FlagSet) *Options {
 
 	if err := logsv1.ValidateAndApply(logOptions, nil); err != nil {
 		klog.Fatalln(err)
-		osExit(1)
 	}
 
 	return &Options{

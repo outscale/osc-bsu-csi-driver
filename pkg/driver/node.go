@@ -259,7 +259,7 @@ func (s *nodeService) NodeStageVolume(ctx context.Context, req *csi.NodeStageVol
 		}
 
 		source = encryptedDevicePath
-	} else if device == source {
+	} else if sameDevice(device, source) {
 		// This operation (NodeStageVolume) MUST be idempotent.
 		// If the volume corresponding to the volume_id is already staged to the staging_target_path,
 		// and is identical to the specified volume_capability the Plugin MUST reply 0 OK.
@@ -747,6 +747,27 @@ func (s *nodeService) findDevicePath(devicePath, volumeID string) (string, error
 	}
 
 	return findScsiVolume(scsiName)
+}
+
+// sameDevice reports whether two device paths designate the same device.
+// The device path given by the controller (e.g. /dev/xvdb) may be a udev symlink to
+// the kernel device (e.g. /dev/sda), while /proc/mounts always reports the kernel device.
+func sameDevice(a, b string) bool {
+	if a == "" || b == "" {
+		return false
+	}
+	if a == b {
+		return true
+	}
+	ra, err := filepath.EvalSymlinks(a)
+	if err != nil {
+		return false
+	}
+	rb, err := filepath.EvalSymlinks(b)
+	if err != nil {
+		return false
+	}
+	return ra == rb
 }
 
 func findScsiName(devicePath string) (string, error) {

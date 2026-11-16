@@ -20,6 +20,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"path/filepath"
 	"testing"
 	"time"
 
@@ -442,6 +443,44 @@ func TestNodeStageVolume(t *testing.T) {
 
 				mockMounter.EXPECT().MakeDir(targetPath).Return(nil)
 				mockMounter.EXPECT().GetDeviceName(targetPath).Return(devicePath, 1, nil)
+				_, err := oscDriver.NodeStageVolume(t.Context(), req)
+				require.NoError(t, err)
+			},
+		},
+		{
+			name: "success device already mounted at target through a symlinked device path",
+			testFunc: func(t *testing.T) {
+				mockCtl := gomock.NewController(t)
+				defer mockCtl.Finish()
+
+				mockMounter := mocks.NewMockMounter(mockCtl)
+
+				oscDriver := &nodeService{
+					mounter:  mockMounter,
+					inFlight: internal.NewInFlight(),
+				}
+
+				// The device path from the publish context (e.g. /dev/xvdb) is a udev symlink
+				// to the kernel device (e.g. /dev/sda), which is what /proc/mounts reports.
+				dir := t.TempDir()
+				realDevice := filepath.Join(dir, "sda")
+				symlinkDevice := filepath.Join(dir, "xvdb")
+				require.NoError(t, os.WriteFile(realDevice, nil, 0o600))
+				require.NoError(t, os.Symlink(realDevice, symlinkDevice))
+
+				req := &csi.NodeStageVolumeRequest{
+					PublishContext:    map[string]string{consts.DevicePathKey: symlinkDevice},
+					StagingTargetPath: targetPath,
+					VolumeCapability:  stdVolCap,
+					VolumeId:          "vol-test",
+				}
+
+				gomock.InOrder(
+					mockMounter.EXPECT().ExistsPath(gomock.Eq(symlinkDevice)).Return(true, nil),
+					mockMounter.EXPECT().ExistsPath(gomock.Eq(targetPath)).Return(true, nil),
+				)
+
+				mockMounter.EXPECT().GetDeviceName(targetPath).Return(realDevice, 1, nil)
 				_, err := oscDriver.NodeStageVolume(t.Context(), req)
 				require.NoError(t, err)
 			},

@@ -1,5 +1,21 @@
 # Changelog
 
+## [v1.13.1](https://github.com/outscale/osc-bsu-csi-driver/releases/tag/v1.13.1) - 2026-11-17
+
+### 🛠️ Changed / Refactoring
+* 🔥 cleanup: drop unreacheable code by @jfbus in https://github.com/outscale/osc-bsu-csi-driver/pull/1314
+### 🐛 Fixed
+* 🐛 fix(ControllerModifyVolume): never update iops on a gp2 volume by @jfbus in https://github.com/outscale/osc-bsu-csi-driver/pull/1301
+* 🐛 fix(NodeStageVolume): detect an already staged volume through a symlinked device path by @sebglon in https://github.com/outscale/osc-bsu-csi-driver/pull/1313
+### 📦 Dependency updates
+* ⬆️ deps(dockerfile): update debian:12 docker digest to 854dd8a by @Open-Source-Bot in https://github.com/outscale/osc-bsu-csi-driver/pull/1294
+* ⬆️ deps(gomod): update kubernetes monorepo to v0.36.5 by @Open-Source-Bot in https://github.com/outscale/osc-bsu-csi-driver/pull/1248
+* ⬆️ deps(gomod): update go toolchain directive to v1.27.4 by @Open-Source-Bot in https://github.com/outscale/osc-bsu-csi-driver/pull/1302
+* ⬆️ deps(dockerfile): update debian:12 docker digest to 268fb24 by @Open-Source-Bot in https://github.com/outscale/osc-bsu-csi-driver/pull/1303
+* ⬆️ deps(gomod): update module github.com/outscale/osc-sdk-go/v3 to v3.0.0-rc.6 by @Open-Source-Bot in https://github.com/outscale/osc-bsu-csi-driver/pull/1304
+* ⬆️ deps(gomod): update module google.golang.org/grpc to v1.85.0 by @Open-Source-Bot in https://github.com/outscale/osc-bsu-csi-driver/pull/1275
+
+
 ## [v2.2.0-helm](https://github.com/outscale/osc-bsu-csi-driver/releases/tag/v2.2.0-helm) - 2026-09-09
 
 ### 📦 Dependency updates

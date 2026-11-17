@@ -32,7 +32,7 @@ jobs:
         go-version-file: 'go.mod'
     - name: 🧹 Frieza
       id: secrets
-      uses: outscale/.github/vault-frieza-clean@98c7b1b43a6ffe54858f960aee70c98991035bff # v1.5.0
+      uses: outscale/.github/vault-frieza-clean@cc76c3e03f3c7a83a09914b1ed65b7fea5605fb8 # v1.5.1
       with:
         vault_role: outscale-osc-bsu-csi-driver
         exclude_resource_types: access_key
@@ -67,7 +67,7 @@ jobs:
       uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
     - name: 🧹 Frieza
       id: secrets
-      uses: outscale/.github/vault-frieza-clean@98c7b1b43a6ffe54858f960aee70c98991035bff # v1.5.0
+      uses: outscale/.github/vault-frieza-clean@cc76c3e03f3c7a83a09914b1ed65b7fea5605fb8 # v1.5.1
       with:
         vault_role: outscale-osc-bsu-csi-driver
         exclude_resource_types: access_key
@@ -79,7 +79,7 @@ jobs:
         OSC_REGION: ${{ steps.secrets.outputs.region }}
     - name: 👷 Deploy test cluster
       id: caposc
-      uses: outscale/.github/kube-setup@98c7b1b43a6ffe54858f960aee70c98991035bff # v1.5.0
+      uses: outscale/.github/kube-setup@cc76c3e03f3c7a83a09914b1ed65b7fea5605fb8 # v1.5.1
       timeout-minutes: 40
       with:
         OSC_REGION: ${{ steps.secrets.outputs.region }}
@@ -129,6 +129,6 @@ jobs:
         OSC_REGION: ${{ steps.secrets.outputs.region }}
     - name: 🧹 Teardown test cluster
       if: ${{ always() }}
-      uses: outscale/.github/kube-teardown@98c7b1b43a6ffe54858f960aee70c98991035bff # v1.5.0
+      uses: outscale/.github/kube-teardown@cc76c3e03f3c7a83a09914b1ed65b7fea5605fb8 # v1.5.1
       with:
         CLUSTER_NAME: ${{ steps.secrets.outputs.osc_account }}

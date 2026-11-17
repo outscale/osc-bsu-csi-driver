@@ -1,5 +1,11 @@
 # Changelog
 
+## [v2.3.1-helm](https://github.com/outscale/osc-bsu-csi-driver/releases/tag/v2.3.1-helm) - 2026-11-17
+
+### 📦 Dependency updates
+* ⬆️ deps(helm): bump driver to v1.13.1 & exporter sidecar to v0.5.0 by @jfbus in https://github.com/outscale/osc-bsu-csi-driver/pull/1315
+
+
 ## [v2.2.0-helm](https://github.com/outscale/osc-bsu-csi-driver/releases/tag/v2.2.0-helm) - 2026-09-09
 
 ### 📦 Dependency updates
